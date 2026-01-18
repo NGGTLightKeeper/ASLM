@@ -47,13 +47,13 @@ namespace ASHS.PageModels
         [ObservableProperty]
         private List<IconData> _icons = new List<IconData>
         {
-            new IconData { Icon = FluentUI.ribbon_24_regular, Description = "Ribbon Icon" },
-            new IconData { Icon = FluentUI.ribbon_star_24_regular, Description = "Ribbon Star Icon" },
-            new IconData { Icon = FluentUI.trophy_24_regular, Description = "Trophy Icon" },
-            new IconData { Icon = FluentUI.badge_24_regular, Description = "Badge Icon" },
-            new IconData { Icon = FluentUI.book_24_regular, Description = "Book Icon" },
-            new IconData { Icon = FluentUI.people_24_regular, Description = "People Icon" },
-            new IconData { Icon = FluentUI.bot_24_regular, Description = "Bot Icon" }
+            new IconData { Icon = "\uea28", Description = "Ribbon Icon" },
+            new IconData { Icon = "\uea30", Description = "Ribbon Star Icon" },
+            new IconData { Icon = "\uf837", Description = "Trophy Icon" },
+            new IconData { Icon = "\uf1b5", Description = "Badge Icon" },
+            new IconData { Icon = "\uf8fe", Description = "Book Icon" },
+            new IconData { Icon = "\uf5a9", Description = "People Icon" },
+            new IconData { Icon = "\uf1f9", Description = "Bot Icon" }
         };
 
         private bool _canDelete;
@@ -191,7 +191,7 @@ namespace ASHS.PageModels
             _project.Name = Name;
             _project.Description = Description;
             _project.CategoryID = Category?.ID ?? 0;
-            _project.Icon = Icon.Icon ?? FluentUI.ribbon_24_regular;
+            _project.Icon = Icon.Icon ?? "\uea28";
             await _projectRepository.SaveItemAsync(_project);
 
             foreach (var tag in AllTags)
