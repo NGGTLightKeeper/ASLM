@@ -6,7 +6,6 @@
              xmlns:pages="clr-namespace:ASHS.Pages"
              xmlns:sf="clr-namespace:Syncfusion.Maui.Toolkit.TextInputLayout;assembly=Syncfusion.Maui.Toolkit"
              xmlns:controls="clr-namespace:ASHS.Pages.Controls"
-             xmlns:fonts="clr-namespace:Fonts"
              x:Class="ASHS.Pages.ProjectDetailPage"
              x:DataType="pageModels:ProjectDetailPageModel"
              Title="Project">
@@ -82,7 +81,7 @@
                                 <Label 
                                     Text="{Binding Icon}"
                                     x:Name="IconImage"
-                                    FontFamily="{x:Static fonts:FluentUI.FontFamily}" 
+                                    FontFamily="FluentUI"
                                     FontSize="24" 
                                     VerticalOptions="Center"
                                     HorizontalOptions="Center"

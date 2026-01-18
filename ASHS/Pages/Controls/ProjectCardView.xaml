@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
         xmlns:controls="clr-namespace:ASHS.Pages.Controls"
         xmlns:models="clr-namespace:ASHS.Models"
-        xmlns:fonts="clr-namespace:Fonts"
         xmlns:pageModels="clr-namespace:ASHS.PageModels"
         xmlns:shimmer="clr-namespace:Syncfusion.Maui.Toolkit.Shimmer;assembly=Syncfusion.Maui.Toolkit"
         x:Class="ASHS.Pages.Controls.ProjectCardView"
@@ -41,7 +40,7 @@
                     <Image.Source>
                         <FontImageSource 
                     Glyph="{Binding Icon}" 
-                    FontFamily="{x:Static fonts:FluentUI.FontFamily}" 
+                    FontFamily="FluentUI"
                     Color="{AppThemeBinding Light={StaticResource DarkOnLightBackground}, Dark={StaticResource LightOnDarkBackground}}"
                     Size="{StaticResource IconSize}"/>
                     </Image.Source>
