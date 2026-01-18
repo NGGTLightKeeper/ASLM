@@ -56,3 +56,11 @@ nunit-*.xml
 .vs/*
 .vscode
 .vsconfig
+
+Data/*
+Engines/Python/*
+Models/ASR/*
+Models/LLM/*
+Models/TtS/*
+venv/
+!.gitkeep
