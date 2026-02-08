@@ -1,15 +1,29 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:pageModels="clr-namespace:ASHS.PageModels"             
              x:Class="ASHS.Pages.MainPage"
-             x:DataType="pageModels:MainPageModel"
-             Title="ASHS">
+             Title="ASHS"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
 
     <Grid>
-        <Label Text="Welcome to ASHS"
-               VerticalOptions="Center"
-               HorizontalOptions="Center" />
+        <WebView x:Name="Browser"
+                 IsVisible="False"
+                 Navigating="Browser_Navigating" />
+
+        <Grid x:Name="LoadingOverlay"
+              IsVisible="True"
+              BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+            <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="20">
+                <ActivityIndicator IsRunning="True"
+                                   WidthRequest="50"
+                                   HeightRequest="50"
+                                   Color="{AppThemeBinding Light=Blue, Dark=LightBlue}" />
+                <Label Text="Waiting for server..."
+                       FontSize="18"
+                       HorizontalOptions="Center"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+            </VerticalStackLayout>
+        </Grid>
     </Grid>
 
 </ContentPage>
