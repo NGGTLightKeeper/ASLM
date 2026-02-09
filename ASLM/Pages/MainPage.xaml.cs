@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
 
-namespace ASHS.Pages
+namespace ASLM.Pages
 {
     public partial class MainPage : ContentPage
     {

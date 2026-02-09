@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
-using ASHS.Pages;
+using ASLM.Pages;
 
-namespace ASHS
+namespace ASLM
 {
     public static class MauiProgram
     {
