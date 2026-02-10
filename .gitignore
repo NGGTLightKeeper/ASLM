@@ -56,11 +56,17 @@ nunit-*.xml
 .vs/*
 .vscode
 .vsconfig
+ASLM.slnLaunch.user
 
-Data/*
+Build/*
+Data/App/*
 Engines/Python/*
 Models/ASR/*
 Models/LLM/*
 Models/TtS/*
+Modules/ASR/*
+Modules/TtS/*
+Modules/VAD/*
 venv/
 !.gitkeep
+!ASLM_*.json
