@@ -1,0 +1,38 @@
+{
+    "id": "nodejs-runtime",
+    "name": "Node.js Runtime",
+    "description": "Node.js v25.6.1 JavaScript runtime for ASLM modules",
+    "version": "25.6.1",
+    "type": "runtime",
+    "requirements": {
+        "os": "windows",
+        "arch": "x64",
+        "diskSpaceMb": 150
+    },
+    "install": [
+        {
+            "action": "download",
+            "url": "https://nodejs.org/dist/v25.6.1/node-v25.6.1-win-x64.zip",
+            "dest": "{temp}/node.zip"
+        },
+        {
+            "action": "extract",
+            "source": "{temp}/node.zip",
+            "dest": "{temp}/node-extract"
+        },
+        {
+            "action": "move",
+            "source": "{temp}/node-extract/node-v25.6.1-win-x64",
+            "dest": "Engines/NodeJS/runtime"
+        },
+        {
+            "action": "cleanup",
+            "target": "{temp}"
+        }
+    ],
+    "status": {
+        "installed": false,
+        "installedVersion": null,
+        "lastChecked": null
+    }
+}
