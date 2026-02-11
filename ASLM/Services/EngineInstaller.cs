@@ -55,6 +55,27 @@ namespace ASLM.Services
                     if (config != null)
                     {
                         config.SourcePath = jsonFile;
+
+                        // Validate that "installed" engines actually have their runtime on disk.
+                        // If a user manually deleted the runtime folder, reset the status.
+                        if (config.Status.Installed)
+                        {
+                            var engineDir = Path.GetDirectoryName(jsonFile)!;
+                            var runtimeDir = Path.Combine(engineDir, "runtime");
+
+                            if (!Directory.Exists(runtimeDir) ||
+                                !Directory.EnumerateFileSystemEntries(runtimeDir).Any())
+                            {
+                                Debug.WriteLine($"Runtime missing for {config.Name}, resetting installed status.");
+                                config.Status.Installed = false;
+                                config.Status.InstalledVersion = null;
+
+                                // Persist the reset status back to JSON.
+                                var updatedJson = JsonSerializer.Serialize(config, _jsonOptions);
+                                File.WriteAllText(jsonFile, updatedJson);
+                            }
+                        }
+
                         engines.Add(config);
                     }
                 }
