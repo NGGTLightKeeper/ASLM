@@ -1,0 +1,49 @@
+{
+    "id": "python-runtime",
+    "name": "Python Runtime",
+    "description": "Python 3.12 interpreter used as the core engine for ASLM modules",
+    "version": "3.12.8",
+    "type": "runtime",
+    "requirements": {
+        "os": "windows",
+        "arch": "x64",
+        "diskSpaceMb": 200
+    },
+    "install": [
+        {
+            "action": "download",
+            "url": "https://www.python.org/ftp/python/3.12.8/python-3.12.8-embed-amd64.zip",
+            "dest": "{temp}/python-embed.zip",
+            "sha256": ""
+        },
+        {
+            "action": "extract",
+            "source": "{temp}/python-embed.zip",
+            "dest": "Engines/Python/runtime"
+        },
+        {
+            "action": "modify_file",
+            "path": "Engines/Python/runtime/python312._pth",
+            "find": "#import site",
+            "replace": "import site"
+        },
+        {
+            "action": "download",
+            "url": "https://bootstrap.pypa.io/get-pip.py",
+            "dest": "{temp}/get-pip.py"
+        },
+        {
+            "action": "execute",
+            "command": "Engines/Python/runtime/python.exe {temp}/get-pip.py"
+        },
+        {
+            "action": "cleanup",
+            "target": "{temp}"
+        }
+    ],
+    "status": {
+        "installed": false,
+        "installedVersion": null,
+        "lastChecked": null
+    }
+}
