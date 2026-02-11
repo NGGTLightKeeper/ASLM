@@ -1,58 +1,61 @@
+using System.Text;
 using ASLM.Models;
 using ASLM.Services;
 
 namespace ASLM.Pages
 {
     /// <summary>
-    /// Displayed at startup when one or more engines need installation.
-    /// Shows a real-time log, per-download progress bar, and an overall progress indicator.
-    /// After all engines are installed, offers a Continue button to navigate to <see cref="MainPage"/>.
+    /// UI page for discovering and installing machine learning models.
+    /// Handles the installation workflow, progress tracking, and log display.
     /// </summary>
-    public partial class EngineSetupPage : ContentPage
+    public partial class ModelSetupPage : ContentPage
     {
-        private readonly EngineInstaller _installer;
-        private List<EngineConfig> _pendingEngines = [];
+        private readonly ModelInstaller _installer;
+        private readonly StringBuilder _logBuffer = new();
+        private List<ModelConfig> _pendingModels = [];
         private CancellationTokenSource? _cts;
 
-        public EngineSetupPage(EngineInstaller installer)
+        public ModelSetupPage(ModelInstaller installer)
         {
             InitializeComponent();
             _installer = installer;
 
-            // Fire-and-forget is safe here: exceptions are caught inside LoadEnginesAsync.
-            Loaded += async (_, _) => await LoadEnginesAsync();
+            // Automatically load models when the page appears
+            Loaded += async (_, _) => await LoadModelsAsync();
         }
 
         /// <summary>
-        /// Discovers engines and populates the pending list.
-        /// Runs on the <see cref="Page.Loaded"/> event so the UI is fully initialized.
+        /// Discovers models asynchronously and updates the UI.
         /// </summary>
-        private async Task LoadEnginesAsync()
+        private async Task LoadModelsAsync()
         {
             try
             {
-                var engines = await Task.Run(() => _installer.DiscoverEngines());
-                _pendingEngines = engines.Where(e => !e.Status.Installed).ToList();
+                var models = await Task.Run(() => _installer.DiscoverModels());
+                _pendingModels = models.Where(m => !m.Status.Installed).ToList();
 
-                if (_pendingEngines.Count == 0)
+                if (_pendingModels.Count == 0)
                 {
-                    EngineInfoLabel.Text = "All engines are installed.";
+                    ModelInfoLabel.Text = "All models are installed.";
                     InstallButton.IsEnabled = false;
-                    AddLog("✓ No engines require installation.");
+                    AddLog("✓ No models require installation.");
                     ShowContinueButton();
                     return;
                 }
 
-                var names = string.Join(", ", _pendingEngines.Select(e => $"{e.Name} v{e.Version}"));
-                EngineInfoLabel.Text = $"Engines to install: {names}";
-                AddLog($"Found {_pendingEngines.Count} engine(s) to install:");
+                var names = string.Join(", ", _pendingModels.Select(m => m.Name));
+                ModelInfoLabel.Text = $"Models to install: {names}";
+                AddLog($"Found {_pendingModels.Count} model(s) to install:");
 
-                foreach (var engine in _pendingEngines)
-                    AddLog($"  • {engine.Name} v{engine.Version} ({engine.Install.Count} steps)");
+                foreach (var model in _pendingModels)
+                {
+                    AddLog($"  • {model.Name} ({model.Source.RepoId})");
+                    AddLog($"    {model.Files.Count} files to download");
+                }
             }
             catch (Exception ex)
             {
-                AddLog($"Error discovering engines: {ex.Message}");
+                AddLog($"Error discovering models: {ex.Message}");
             }
         }
 
@@ -64,15 +67,13 @@ namespace ASLM.Pages
             CancelButton.IsEnabled = true;
             _cts = new CancellationTokenSource();
 
-            // Progress<T> captures the SynchronizationContext, so callbacks
-            // already run on the UI thread — no need for extra dispatching.
             var logProgress = new Progress<string>(AddLog);
             var downloadProgress = new Progress<DownloadProgress>(UpdateDownloadProgress);
 
             int completed = 0;
-            int total = _pendingEngines.Count;
+            int total = _pendingModels.Count;
 
-            foreach (var engine in _pendingEngines)
+            foreach (var model in _pendingModels)
             {
                 if (_cts.Token.IsCancellationRequested)
                     break;
@@ -80,7 +81,7 @@ namespace ASLM.Pages
                 try
                 {
                     await Task.Run(() => _installer.InstallAsync(
-                        engine, logProgress, downloadProgress, _cts.Token), _cts.Token);
+                        model, logProgress, downloadProgress, _cts.Token), _cts.Token);
 
                     completed++;
                     HideDownloadProgress();
@@ -94,7 +95,7 @@ namespace ASLM.Pages
                 }
                 catch (Exception ex)
                 {
-                    AddLog($"✗ Error installing {engine.Name}: {ex.Message}");
+                    AddLog($"✗ Error installing {model.Name}: {ex.Message}");
                 }
             }
 
@@ -104,8 +105,8 @@ namespace ASLM.Pages
 
             if (completed == total)
             {
-                ProgressLabel.Text = "All engines installed!";
-                AddLog("=== All engines installed successfully ===");
+                ProgressLabel.Text = "All models installed!";
+                AddLog("=== All models installed successfully ===");
                 ShowContinueButton();
             }
             else
@@ -128,9 +129,6 @@ namespace ASLM.Pages
 
         // --- UI Helpers ------------------------------------------------------
 
-        /// <summary>
-        /// Replaces the Install button with a Continue button that navigates to MainPage.
-        /// </summary>
         private void ShowContinueButton()
         {
             InstallButton.Text = "Continue";
@@ -140,16 +138,13 @@ namespace ASLM.Pages
             CancelButton.IsVisible = false;
         }
 
-        /// <summary>Appends a log line and auto-scrolls the editor to the bottom.</summary>
         private void AddLog(string message)
         {
-            LogEditor.Text += message + "\n";
-
-            // Auto-scroll to bottom by setting cursor to end.
+            _logBuffer.AppendLine(message);
+            LogEditor.Text = _logBuffer.ToString();
             LogEditor.CursorPosition = LogEditor.Text.Length;
         }
 
-        /// <summary>Shows and updates the green download progress bar.</summary>
         private void UpdateDownloadProgress(DownloadProgress dp)
         {
             DownloadProgressPanel.IsVisible = true;
@@ -161,7 +156,6 @@ namespace ASLM.Pages
             DownloadInfoLabel.Text = $"{pct}%  —  {downloadedMb:F1} MB / {totalMb:F1} MB";
         }
 
-        /// <summary>Hides the download progress bar between downloads.</summary>
         private void HideDownloadProgress()
         {
             DownloadProgressPanel.IsVisible = false;
@@ -169,17 +163,15 @@ namespace ASLM.Pages
             DownloadInfoLabel.Text = "";
         }
 
-        /// <summary>Swaps the current page to <see cref="MainPage"/>.</summary>
+        /// <summary>
+        /// Navigates to the main application page or the next setup page in the chain.
+        /// </summary>
         private async Task NavigateToMainAsync()
         {
             if (Application.Current?.Windows.FirstOrDefault() is Window window)
             {
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    // Re-run the startup logic to determine the next page.
-                    // If models are missing, App.CreateWindow (or equivalent logic)
-                    // would show ModelSetupPage.
-                    
                     var newPage = (Application.Current as App)?.CreateStartupPage();
                     if (newPage != null)
                     {

@@ -14,17 +14,30 @@ namespace ASLM
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            // Check if any engines need installation
-            var installer = _services.GetRequiredService<EngineInstaller>();
-            var engines = installer.DiscoverEngines();
-            var needsSetup = engines.Any(e => !e.Status.Installed);
+            var page = CreateStartupPage();
+            return new Window(page);
+        }
 
-            if (needsSetup)
+        public Page CreateStartupPage()
+        {
+            // 1. Check Engines
+            var engineInstaller = _services.GetRequiredService<EngineInstaller>();
+            var engines = engineInstaller.DiscoverEngines();
+            if (engines.Any(e => !e.Status.Installed))
             {
-                return new Window(_services.GetRequiredService<EngineSetupPage>());
+                return _services.GetRequiredService<EngineSetupPage>();
             }
 
-            return new Window(_services.GetRequiredService<MainPage>());
+            // 2. Check Models
+            var modelInstaller = _services.GetRequiredService<ModelInstaller>();
+            var models = modelInstaller.DiscoverModels();
+            if (models.Any(m => !m.Status.Installed))
+            {
+                return _services.GetRequiredService<ModelSetupPage>();
+            }
+
+            // 3. Main App
+            return _services.GetRequiredService<MainPage>();
         }
     }
 }

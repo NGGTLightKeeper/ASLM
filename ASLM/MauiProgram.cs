@@ -25,8 +25,11 @@ namespace ASLM
 #endif
 
             builder.Services.AddSingleton<EngineInstaller>();
+            builder.Services.AddSingleton<ModelInstaller>();
+            
             builder.Services.AddSingleton<MainPage>();
             builder.Services.AddTransient<EngineSetupPage>();
+            builder.Services.AddTransient<ModelSetupPage>();
 
             return builder.Build();
         }
