@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using ASLM.Pages;
+using ASLM.Services;
 
 namespace ASLM
 {
@@ -23,7 +24,9 @@ namespace ASLM
     		builder.Services.AddLogging(configure => configure.AddDebug());
 #endif
 
+            builder.Services.AddSingleton<EngineInstaller>();
             builder.Services.AddSingleton<MainPage>();
+            builder.Services.AddTransient<EngineSetupPage>();
 
             return builder.Build();
         }
