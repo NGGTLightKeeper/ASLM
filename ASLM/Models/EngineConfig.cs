@@ -22,11 +22,32 @@ namespace ASLM.Models
         [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Relative path to the main executable (e.g. "runtime/python.exe").
+        /// </summary>
+        [JsonPropertyName("executablePath")]
+        public string ExecutablePath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Describes how to install libraries for this engine.
+        /// E.g. Python uses <c>"-m pip install"</c>, Node.js uses <c>"install"</c> with <c>npm.cmd</c>.
+        /// </summary>
+        [JsonPropertyName("packageManager")]
+        public EnginePackageManager? PackageManager { get; set; }
+
         [JsonPropertyName("requirements")]
         public EngineRequirements? Requirements { get; set; }
 
         [JsonPropertyName("install")]
         public List<InstallStep> Install { get; set; } = [];
+
+        /// <summary>
+        /// Steps executed after all <see cref="Install"/> steps complete successfully.
+        /// Used for engine-specific fixes (e.g. renaming restrictive config files).
+        /// Supports the same actions as <see cref="Install"/>.
+        /// </summary>
+        [JsonPropertyName("postInstall")]
+        public List<InstallStep> PostInstall { get; set; } = [];
 
         [JsonPropertyName("status")]
         public EngineStatus Status { get; set; } = new();
@@ -48,6 +69,10 @@ namespace ASLM.Models
     {
         [JsonPropertyName("action")]
         public string Action { get; set; } = string.Empty;
+
+        /// <summary>Human-readable name for logging.</summary>
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
 
         // --- download --------------------------------------------------------
 
@@ -87,6 +112,27 @@ namespace ASLM.Models
 
         [JsonPropertyName("target")]
         public string? Target { get; set; }
+    }
+
+    /// <summary>
+    /// Describes how to install third-party libraries for this engine.
+    /// </summary>
+    public class EnginePackageManager
+    {
+        /// <summary>
+        /// Arguments prepended before library names.
+        /// E.g. <c>"-m pip install"</c> for Python.
+        /// </summary>
+        [JsonPropertyName("command")]
+        public string Command { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Relative path to the package manager executable.
+        /// If null, the engine's own executable (<see cref="EngineConfig.ExecutablePath"/>) is used.
+        /// E.g. <c>"runtime/npm.cmd"</c> for Node.js.
+        /// </summary>
+        [JsonPropertyName("executable")]
+        public string? Executable { get; set; }
     }
 
     /// <summary>

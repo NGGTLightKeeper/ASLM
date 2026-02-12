@@ -4,6 +4,11 @@
     "description": "Node.js v25.6.1 JavaScript runtime for ASLM modules",
     "version": "25.6.1",
     "type": "runtime",
+    "executablePath": "runtime/node.exe",
+    "packageManager": {
+        "command": "install",
+        "executable": "runtime/npm.cmd"
+    },
     "requirements": {
         "os": "windows",
         "arch": "x64",
@@ -30,6 +35,7 @@
             "target": "{temp}"
         }
     ],
+    "postInstall": [],
     "status": {
         "installed": false,
         "installedVersion": null,

@@ -4,6 +4,10 @@
     "description": "Python 3.12 interpreter used as the core engine for ASLM modules",
     "version": "3.12.8",
     "type": "runtime",
+    "executablePath": "runtime/python.exe",
+    "packageManager": {
+        "command": "-m pip install"
+    },
     "requirements": {
         "os": "windows",
         "arch": "x64",
@@ -39,6 +43,14 @@
         {
             "action": "cleanup",
             "target": "{temp}"
+        }
+    ],
+    "postInstall": [
+        {
+            "action": "rename_file",
+            "name": "Disable embedded path restriction",
+            "source": "Engines/Python/runtime/python312._pth",
+            "dest": "Engines/Python/runtime/python312._pth.bak"
         }
     ],
     "status": {

@@ -88,6 +88,36 @@ namespace ASLM.Services
             return engines;
         }
 
+        // --- Helpers ---------------------------------------------------------
+
+        /// <summary>
+        /// Resolves the absolute path to the engine's executable.
+        /// Returns null if engine not found or not installed.
+        /// </summary>
+        public string? GetEngineExecutablePath(string engineId)
+        {
+            var engine = GetEngineConfig(engineId);
+
+            if (engine == null || string.IsNullOrEmpty(engine.ExecutablePath))
+                return null;
+
+            var engineDir = Path.GetDirectoryName(engine.SourcePath);
+            if (string.IsNullOrEmpty(engineDir)) return null;
+
+            var fullPath = Path.Combine(engineDir, engine.ExecutablePath);
+            return File.Exists(fullPath) ? fullPath : null;
+        }
+
+        /// <summary>
+        /// Returns the full <see cref="EngineConfig"/> for the given engine ID,
+        /// or null if not found / not installed.
+        /// </summary>
+        public EngineConfig? GetEngineConfig(string engineId)
+        {
+            var engines = DiscoverEngines();
+            return engines.FirstOrDefault(e => e.Id == engineId && e.Status.Installed);
+        }
+
         // --- Installation ----------------------------------------------------
 
         /// <summary>
@@ -141,9 +171,47 @@ namespace ASLM.Services
                     case "cleanup":
                         ExecuteCleanup(step, context, log);
                         break;
+                    case "rename_file":
+                        ExecuteRenameFile(step, context, log);
+                        break;
+                    case "delete_file":
+                        ExecuteDeleteFile(step, context, log);
+                        break;
                     default:
                         log.Report($"  ⚠ Unknown action: {step.Action}, skipping.");
                         break;
+                }
+            }
+
+            // Execute post-install steps (engine-specific fixes)
+            if (config.PostInstall.Count > 0)
+            {
+                log.Report($"Running {config.PostInstall.Count} post-install step(s)...");
+                for (int i = 0; i < config.PostInstall.Count; i++)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var step = config.PostInstall[i];
+                    var label = step.Name ?? step.Action;
+                    log.Report($"[PostInstall {i + 1}/{config.PostInstall.Count}] {label}");
+
+                    switch (step.Action.ToLowerInvariant())
+                    {
+                        case "rename_file":
+                            ExecuteRenameFile(step, context, log);
+                            break;
+                        case "delete_file":
+                            ExecuteDeleteFile(step, context, log);
+                            break;
+                        case "modify_file":
+                            ExecuteModifyFile(step, context, log);
+                            break;
+                        case "execute":
+                            await ExecuteCommandAsync(step, context, log, ct);
+                            break;
+                        default:
+                            log.Report($"  ⚠ Unknown post-install action: {step.Action}, skipping.");
+                            break;
+                    }
                 }
             }
 
@@ -355,6 +423,40 @@ namespace ASLM.Services
             {
                 log.Report("  Directory not found, nothing to clean.");
             }
+        }
+
+        /// <summary>Renames a file from <c>step.Source</c> to <c>step.Dest</c>.</summary>
+        private static void ExecuteRenameFile(InstallStep step, StepContext ctx, IProgress<string> log)
+        {
+            var source = ctx.ResolvePath(step.Source ?? throw new InvalidOperationException("rename_file step missing 'source'."));
+            var dest = ctx.ResolvePath(step.Dest ?? throw new InvalidOperationException("rename_file step missing 'dest'."));
+
+            if (!File.Exists(source))
+            {
+                log.Report($"  File not found: {source}, skipping.");
+                return;
+            }
+
+            if (File.Exists(dest))
+                File.Delete(dest);
+
+            File.Move(source, dest);
+            log.Report($"  ✓ Renamed: {Path.GetFileName(source)} → {Path.GetFileName(dest)}");
+        }
+
+        /// <summary>Deletes a file at <c>step.Target</c>.</summary>
+        private static void ExecuteDeleteFile(InstallStep step, StepContext ctx, IProgress<string> log)
+        {
+            var target = ctx.ResolvePath(step.Target ?? throw new InvalidOperationException("delete_file step missing 'target'."));
+
+            if (!File.Exists(target))
+            {
+                log.Report($"  File not found: {target}, skipping.");
+                return;
+            }
+
+            File.Delete(target);
+            log.Report($"  ✓ Deleted: {Path.GetFileName(target)}");
         }
 
         // --- Helpers ---------------------------------------------------------
