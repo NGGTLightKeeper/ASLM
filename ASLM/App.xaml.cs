@@ -36,7 +36,15 @@ namespace ASLM
                 return _services.GetRequiredService<ModelSetupPage>();
             }
 
-            // 3. Main App
+            // 3. Check Modules
+            var moduleInstaller = _services.GetRequiredService<ModuleInstaller>();
+            var modules = moduleInstaller.DiscoverModules();
+            if (modules.Any(m => !m.Status.FirstRunCompleted))
+            {
+               return _services.GetRequiredService<ModuleSetupPage>();
+            }
+
+            // 4. Main App
             return _services.GetRequiredService<MainPage>();
         }
     }
