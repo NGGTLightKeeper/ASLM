@@ -283,6 +283,13 @@ namespace ASLM.Services
             return Directory.GetParent(appDir)?.FullName ?? appDir;
         }
 
+        public void SaveModuleConfig(ModuleConfig config)
+        {
+            if (string.IsNullOrEmpty(config.SourcePath)) return;
+            var json = JsonSerializer.Serialize(config, _jsonOptions);
+            File.WriteAllText(config.SourcePath, json);
+        }
+
         public async Task SaveConfigAsync(ModuleConfig config)
         {
             if (string.IsNullOrEmpty(config.SourcePath)) return;

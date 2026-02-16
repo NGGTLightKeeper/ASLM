@@ -3,27 +3,88 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ASLM.Pages.MainPage"
              Title="ASLM"
-             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+             BackgroundColor="#1E1E1E">
 
-    <Grid>
-        <WebView x:Name="Browser"
-                 IsVisible="False"
-                 Navigating="Browser_Navigating" />
+    <Grid ColumnDefinitions="Auto, *">
 
-        <Grid x:Name="LoadingOverlay"
-              IsVisible="True"
-              BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
-            <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="20">
-                <ActivityIndicator IsRunning="True"
-                                   WidthRequest="50"
-                                   HeightRequest="50"
-                                   Color="{AppThemeBinding Light=Blue, Dark=LightBlue}" />
-                <Label Text="Waiting for server..."
-                       FontSize="18"
-                       HorizontalOptions="Center"
-                       TextColor="{AppThemeBinding Light=Black, Dark=White}" />
-            </VerticalStackLayout>
+        <!-- Left Sidebar -->
+        <Grid x:Name="SidePanel" Grid.Column="0"
+              WidthRequest="300"
+              RowDefinitions="Auto, Auto, *, Auto"
+              BackgroundColor="#252526"
+              Padding="8">
+
+            <!-- Collapse Toggle -->
+            <Button x:Name="CollapseButton"
+                    Grid.Row="0"
+                    Text="◀"
+                    BackgroundColor="Transparent"
+                    TextColor="#AAA"
+                    FontSize="14"
+                    HeightRequest="32"
+                    WidthRequest="32"
+                    HorizontalOptions="End"
+                    Clicked="OnCollapseClicked" />
+
+            <!-- Home Button -->
+            <Button x:Name="HomeButton"
+                    Grid.Row="1"
+                    Text="🏠 Home"
+                    BackgroundColor="#0078D4"
+                    TextColor="White"
+                    FontSize="13"
+                    HeightRequest="40"
+                    HorizontalOptions="Fill"
+                    Margin="0,0,0,8"
+                    Clicked="OnHomeClicked" />
+
+            <!-- Module Pages -->
+            <ScrollView Grid.Row="2">
+                <VerticalStackLayout Spacing="4">
+                    <Label x:Name="PagesHeader" Text="Pages"
+                           FontSize="11" FontAttributes="Bold"
+                           TextColor="#666" Margin="4,0,0,4" />
+                    <VerticalStackLayout x:Name="ModulePagePanel" Spacing="4" />
+                </VerticalStackLayout>
+            </ScrollView>
+
+            <!-- Settings Button -->
+            <Button x:Name="SettingsButton" Grid.Row="3"
+                    Text="⚙ Settings"
+                    BackgroundColor="#333"
+                    TextColor="White"
+                    FontSize="13"
+                    HeightRequest="40"
+                    Margin="0,8,0,0"
+                    Clicked="OnSettingsClicked" />
         </Grid>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Column="1">
+
+            <!-- Module Dashboard (Home view) -->
+            <ScrollView x:Name="DashboardView" IsVisible="True" Padding="30">
+                <VerticalStackLayout Spacing="20">
+                    <Label Text="Modules"
+                           FontSize="24" FontAttributes="Bold"
+                           TextColor="White" />
+                    <Label x:Name="DashboardSubtitle"
+                           Text="Manage your installed modules"
+                           FontSize="13" TextColor="#888"
+                           Margin="0,0,0,10" />
+                    <!-- Module cards are inserted here -->
+                    <VerticalStackLayout x:Name="ModuleCardsPanel"
+                                         Spacing="12" />
+                </VerticalStackLayout>
+            </ScrollView>
+
+            <!-- WebView (visible when a module page is selected) -->
+            <WebView x:Name="Browser"
+                     IsVisible="False"
+                     Navigating="Browser_Navigating" />
+
+        </Grid>
+
     </Grid>
 
 </ContentPage>

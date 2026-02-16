@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ASLM.Pages.SettingsPage"
+             Title="Settings"
+             BackgroundColor="#1E1E1E">
+
+    <Grid RowDefinitions="Auto, *, Auto" Padding="30">
+
+        <!-- Header -->
+        <Label Text="Settings"
+               FontSize="24"
+               FontAttributes="Bold"
+               TextColor="White"
+               Grid.Row="0"
+               Margin="0,0,0,20" />
+
+        <!-- Settings Content -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="20">
+
+                <!-- User Profile -->
+                <Border BackgroundColor="#252526"
+                        Stroke="#333" StrokeThickness="1"
+                        StrokeShape="RoundRectangle 6"
+                        Padding="15">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="User Profile" FontSize="16" FontAttributes="Bold" TextColor="White" />
+                        <Label Text="Display Name" FontSize="12" TextColor="#AAA" />
+                        <Entry x:Name="UsernameEntry"
+                               FontSize="14" TextColor="White"
+                               BackgroundColor="#2D2D2D" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Port Allocation -->
+                <Border BackgroundColor="#252526"
+                        Stroke="#333" StrokeThickness="1"
+                        StrokeShape="RoundRectangle 6"
+                        Padding="15">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Port Allocation" FontSize="16" FontAttributes="Bold" TextColor="White" />
+
+                        <Label Text="Official modules start port (100 ports)" FontSize="12" TextColor="#AAA" />
+                        <Entry x:Name="OfficialPortEntry"
+                               Keyboard="Numeric"
+                               FontSize="14" TextColor="White"
+                               BackgroundColor="#2D2D2D" />
+
+                        <Label Text="Third-party modules start port (1000 ports)" FontSize="12" TextColor="#AAA" />
+                        <Entry x:Name="ThirdPartyPortEntry"
+                               Keyboard="Numeric"
+                               FontSize="14" TextColor="White"
+                               BackgroundColor="#2D2D2D" />
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Bottom Buttons -->
+        <HorizontalStackLayout Grid.Row="2" Spacing="15"
+                               HorizontalOptions="End"
+                               Margin="0,20,0,0">
+            <Button Text="Cancel"
+                    BackgroundColor="#333"
+                    TextColor="White"
+                    FontSize="14"
+                    WidthRequest="100"
+                    Clicked="OnCancelClicked" />
+            <Button Text="Save"
+                    BackgroundColor="#0078D4"
+                    TextColor="White"
+                    FontSize="14"
+                    WidthRequest="100"
+                    Clicked="OnSaveClicked" />
+        </HorizontalStackLayout>
+
+    </Grid>
+
+</ContentPage>

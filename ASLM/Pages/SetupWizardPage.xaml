@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ASLM.Pages.SetupWizardPage"
+             Title="ASLM Setup"
+             BackgroundColor="#1E1E1E">
+
+    <Grid RowDefinitions="Auto, *, Auto" Padding="40">
+
+        <!-- Header -->
+        <VerticalStackLayout Grid.Row="0" Spacing="5" Margin="0,0,0,20">
+            <Label Text="ASLM Setup"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   TextColor="White" />
+            <Label x:Name="StepLabel"
+                   Text="Step 1 of 3 — User Profile"
+                   FontSize="14"
+                   TextColor="#888" />
+        </VerticalStackLayout>
+
+        <!-- Step Content -->
+        <Grid Grid.Row="1">
+
+            <!-- Step 1: User Profile -->
+            <VerticalStackLayout x:Name="Step1Panel" IsVisible="True" Spacing="15"
+                                 VerticalOptions="Center" HorizontalOptions="Center"
+                                 WidthRequest="400">
+                <Label Text="Choose a display name"
+                       FontSize="18" TextColor="White" />
+                <Entry x:Name="UsernameEntry"
+                       Placeholder="Your name"
+                       FontSize="16"
+                       TextColor="White"
+                       PlaceholderColor="#666"
+                       BackgroundColor="#2D2D2D" />
+            </VerticalStackLayout>
+
+            <!-- Step 2: Port Configuration -->
+            <VerticalStackLayout x:Name="Step2Panel" IsVisible="False" Spacing="15"
+                                 VerticalOptions="Center" HorizontalOptions="Center"
+                                 WidthRequest="400">
+                <Label Text="Port Allocation"
+                       FontSize="18" TextColor="White" />
+                <Label Text="Official modules (100 ports)"
+                       FontSize="13" TextColor="#AAA" />
+                <Entry x:Name="OfficialPortEntry"
+                       Text="8000"
+                       Keyboard="Numeric"
+                       FontSize="16"
+                       TextColor="White"
+                       BackgroundColor="#2D2D2D" />
+                <Label Text="Third-party modules (1000 ports)"
+                       FontSize="13" TextColor="#AAA" />
+                <Entry x:Name="ThirdPartyPortEntry"
+                       Text="9000"
+                       Keyboard="Numeric"
+                       FontSize="16"
+                       TextColor="White"
+                       BackgroundColor="#2D2D2D" />
+            </VerticalStackLayout>
+
+            <!-- Step 3: Module Selection + Install -->
+            <Grid x:Name="Step3Panel" IsVisible="False"
+                  RowDefinitions="Auto, *">
+
+                <!-- Module selection list -->
+                <ScrollView x:Name="ModuleListScroll" Grid.Row="1">
+                    <VerticalStackLayout x:Name="ModuleList" Spacing="8" />
+                </ScrollView>
+
+                <!-- Install view (progress bar + log toggle) -->
+                <Grid x:Name="InstallPanel" Grid.Row="0" Grid.RowSpan="2"
+                      IsVisible="False"
+                      RowDefinitions="Auto, Auto, Auto, *">
+
+                    <!-- Current operation -->
+                    <Label x:Name="InstallStatusLabel"
+                           Text="Preparing..."
+                           FontSize="14" TextColor="#CCC"
+                           Grid.Row="0" Margin="0,0,0,8" />
+
+                    <!-- Progress bar -->
+                    <ProgressBar x:Name="InstallProgress"
+                                 Grid.Row="1"
+                                 Progress="0"
+                                 ProgressColor="#0078D4"
+                                 HeightRequest="6"
+                                 Margin="0,0,0,10" />
+
+                    <!-- Toggle log button -->
+                    <Button x:Name="ToggleLogButton"
+                            Text="Show Log"
+                            Grid.Row="2"
+                            BackgroundColor="#333"
+                            TextColor="#AAA"
+                            FontSize="12"
+                            HeightRequest="30"
+                            WidthRequest="120"
+                            HorizontalOptions="Start"
+                            Margin="0,0,0,8"
+                            Clicked="OnToggleLogClicked" />
+
+                    <!-- Selectable log area (Editor is selectable, Label is not) -->
+                    <ScrollView x:Name="LogScroll" Grid.Row="3" IsVisible="False">
+                        <Editor x:Name="LogEditor"
+                                FontSize="12"
+                                FontFamily="Consolas"
+                                TextColor="#CCC"
+                                BackgroundColor="#1A1A1A"
+                                IsReadOnly="True"
+                                AutoSize="TextChanges" />
+                    </ScrollView>
+                </Grid>
+            </Grid>
+
+        </Grid>
+
+        <!-- Navigation Buttons -->
+        <HorizontalStackLayout x:Name="ButtonPanel" Grid.Row="2" Spacing="15"
+                               HorizontalOptions="End"
+                               Margin="0,20,0,0">
+            <Button x:Name="BackButton"
+                    Text="Back"
+                    BackgroundColor="#333"
+                    TextColor="White"
+                    FontSize="14"
+                    WidthRequest="100"
+                    IsVisible="False"
+                    Clicked="OnBackClicked" />
+            <Button x:Name="NextButton"
+                    Text="Next"
+                    BackgroundColor="#0078D4"
+                    TextColor="White"
+                    FontSize="14"
+                    WidthRequest="100"
+                    Clicked="OnNextClicked" />
+        </HorizontalStackLayout>
+
+    </Grid>
+
+</ContentPage>

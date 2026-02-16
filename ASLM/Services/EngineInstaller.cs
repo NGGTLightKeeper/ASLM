@@ -298,11 +298,33 @@ namespace ASLM.Services
             log.Report($"  Extracting: {source}");
             log.Report($"  To: {dest}");
 
-            if (Directory.Exists(dest))
-                Directory.Delete(dest, true);
-
             Directory.CreateDirectory(dest);
-            ZipFile.ExtractToDirectory(source, dest);
+
+            using var archive = ZipFile.OpenRead(source);
+            foreach (var entry in archive.Entries)
+            {
+                var targetPath = Path.GetFullPath(Path.Combine(dest, entry.FullName));
+
+                // Directory entry
+                if (string.IsNullOrEmpty(entry.Name))
+                {
+                    Directory.CreateDirectory(targetPath);
+                    continue;
+                }
+
+                // Ensure parent directory exists
+                Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+
+                try
+                {
+                    entry.ExtractToFile(targetPath, overwrite: true);
+                }
+                catch (IOException)
+                {
+                    // File is locked (e.g. by a running process) — skip it
+                    log.Report($"  ⚠ Skipped (locked): {entry.FullName}");
+                }
+            }
 
             log.Report("  ✓ Extraction complete.");
         }

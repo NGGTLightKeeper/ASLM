@@ -1,3 +1,4 @@
+using ASLM.Pages;
 using ASLM.Services;
 
 namespace ASLM
@@ -20,31 +21,13 @@ namespace ASLM
 
         public Page CreateStartupPage()
         {
-            // 1. Check Engines
-            var engineInstaller = _services.GetRequiredService<EngineInstaller>();
-            var engines = engineInstaller.DiscoverEngines();
-            if (engines.Any(e => !e.Status.Installed))
+            var appData = _services.GetRequiredService<AppDataService>();
+
+            if (appData.IsFirstRun)
             {
-                return _services.GetRequiredService<EngineSetupPage>();
+                return _services.GetRequiredService<SetupWizardPage>();
             }
 
-            // 2. Check Models
-            var modelInstaller = _services.GetRequiredService<ModelInstaller>();
-            var models = modelInstaller.DiscoverModels();
-            if (models.Any(m => !m.Status.Installed))
-            {
-                return _services.GetRequiredService<ModelSetupPage>();
-            }
-
-            // 3. Check Modules
-            var moduleInstaller = _services.GetRequiredService<ModuleInstaller>();
-            var modules = moduleInstaller.DiscoverModules();
-            if (modules.Any(m => !m.Status.FirstRunCompleted))
-            {
-               return _services.GetRequiredService<ModuleSetupPage>();
-            }
-
-            // 4. Main App
             return _services.GetRequiredService<MainPage>();
         }
     }

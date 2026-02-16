@@ -40,6 +40,14 @@ namespace ASLM.Models
         [JsonPropertyName("commands")]
         public ModuleCommands Commands { get; set; } = new();
 
+        // --- UI ----------------------------------------------------------
+
+        /// <summary>
+        /// Whether this module provides a web page accessible from the main panel.
+        /// </summary>
+        [JsonPropertyName("hasPage")]
+        public bool HasPage { get; set; }
+
         // --- Settings --------------------------------------------------------
 
         [JsonPropertyName("settings")]

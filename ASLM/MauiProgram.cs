@@ -24,15 +24,17 @@ namespace ASLM
     		builder.Services.AddLogging(configure => configure.AddDebug());
 #endif
 
+            // Services
+            builder.Services.AddSingleton<AppDataService>();
             builder.Services.AddSingleton<EngineInstaller>();
             builder.Services.AddSingleton<ModelInstaller>();
             builder.Services.AddSingleton<ModuleInstaller>();
             builder.Services.AddSingleton<ModuleRunner>();
-            
-            builder.Services.AddSingleton<MainPage>();
-            builder.Services.AddTransient<EngineSetupPage>();
-            builder.Services.AddTransient<ModelSetupPage>();
-            builder.Services.AddTransient<ModuleSetupPage>();
+
+            // Pages
+            builder.Services.AddTransient<MainPage>();
+            builder.Services.AddTransient<SetupWizardPage>();
+            builder.Services.AddTransient<SettingsPage>();
 
             return builder.Build();
         }

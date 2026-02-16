@@ -59,6 +59,32 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Executes all 'Run' commands for a module (e.g. start a server).
+        /// These are typically long-running processes.
+        /// </summary>
+        public async Task<bool> ExecuteRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct)
+        {
+            if (module.Commands.Run.Count == 0)
+            {
+                log.Report($"No run commands for {module.Name}.");
+                return true;
+            }
+
+            log.Report($"Starting {module.Name}...");
+
+            foreach (var cmd in module.Commands.Run)
+            {
+                if (ct.IsCancellationRequested) return false;
+
+                log.Report($"[Run] {cmd.Name}: {cmd.Description}");
+                // Run commands are long-running — we don't wait for exit
+                _ = RunCommandAsync(module, cmd, log, ct);
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Installs required libraries for each engine dependency using the
         /// engine's <see cref="EnginePackageManager"/> configuration.
         /// </summary>

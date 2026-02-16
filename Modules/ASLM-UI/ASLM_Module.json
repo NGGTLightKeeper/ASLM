@@ -5,6 +5,7 @@
     "version": "0.0.1",
     "author": "NGGT-ASLM",
     "type": "ui",
+    "hasPage": true,
     "source": {
         "type": "github",
         "repo": "NGGTLightKeeper/ASLM-UI"

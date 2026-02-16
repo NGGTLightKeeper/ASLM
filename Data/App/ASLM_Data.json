@@ -1,0 +1,12 @@
+{
+    "firstRunCompleted": false,
+    "user": {
+        "name": ""
+    },
+    "ports": {
+        "officialStart": 8000,
+        "officialCount": 100,
+        "thirdPartyStart": 9000,
+        "thirdPartyCount": 1000
+    }
+}
