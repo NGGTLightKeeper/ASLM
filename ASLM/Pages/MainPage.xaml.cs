@@ -6,7 +6,7 @@ namespace ASLM.Pages
 {
     /// <summary>
     /// Main application page.
-    /// Left sidebar: Home button, module page buttons, settings.
+    /// Left sidebar: collapsible nav with home, module pages, settings.
     /// Main area: module dashboard (cards with enable/disable) or WebView.
     /// </summary>
     public partial class MainPage : ContentPage
@@ -19,8 +19,14 @@ namespace ASLM.Pages
         private ModuleConfig? _activeModule;
         private bool _panelExpanded = true;
 
-        private const double PanelExpandedWidth = 300;
-        private const double PanelCollapsedWidth = 48;
+        private const double PanelExpandedWidth = 240;
+        private const double PanelCollapsedWidth = 60;
+
+        // Colors
+        private static readonly Color ActiveTextColor = Colors.White;
+        private static readonly Color InactiveTextColor = Color.FromArgb("#888");
+        private static readonly Color ActiveBg = Color.FromArgb("#2D2D30");
+        private static readonly Color TransparentBg = Colors.Transparent;
 
         public MainPage(
             ModuleInstaller moduleInstaller,
@@ -32,6 +38,10 @@ namespace ASLM.Pages
             _services = services;
             InitializeComponent();
             Loaded += OnPageLoaded;
+
+            // Left-align static sidebar buttons via native handler
+            HomeButton.HandlerChanged += AlignButtonLeft;
+            SettingsButton.HandlerChanged += AlignButtonLeft;
         }
 
         private void OnPageLoaded(object? sender, EventArgs e)
@@ -51,28 +61,27 @@ namespace ASLM.Pages
 
             SidePanel.WidthRequest = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
             CollapseButton.Text = _panelExpanded ? "◀" : "▶";
+            CollapseButton.HorizontalOptions = _panelExpanded ? LayoutOptions.End : LayoutOptions.Center;
             PagesHeader.IsVisible = _panelExpanded;
-            HomeButton.Text = _panelExpanded ? "🏠 Home" : "🏠";
+
+            // Update button text for expanded/collapsed
+            HomeButton.Text = _panelExpanded ? "🏠  Home" : "🏠";
 
             foreach (var child in ModulePagePanel.Children)
             {
                 if (child is Button btn)
                 {
-                    btn.Text = _panelExpanded ? (btn.AutomationId ?? "?") : "";
-                    btn.WidthRequest = _panelExpanded ? -1 : PanelCollapsedWidth - 16;
-                    btn.HeightRequest = _panelExpanded ? 40 : PanelCollapsedWidth - 16;
+                    var icon = btn.ClassId ?? "📄";
+                    btn.Text = _panelExpanded ? $"{icon}  {btn.AutomationId}" : icon;
                 }
             }
 
-            SettingsButton.Text = _panelExpanded ? "⚙ Settings" : "⚙";
+            SettingsButton.Text = _panelExpanded ? "⚙  Settings" : "⚙";
         }
 
         // --- Home / Dashboard ------------------------------------------------
 
-        private void OnHomeClicked(object? sender, EventArgs e)
-        {
-            ShowDashboard();
-        }
+        private void OnHomeClicked(object? sender, EventArgs e) => ShowDashboard();
 
         private void ShowDashboard()
         {
@@ -80,15 +89,18 @@ namespace ASLM.Pages
             Browser.IsVisible = false;
             DashboardView.IsVisible = true;
 
-            // Reset page button highlights
+            // Highlight home button
+            HomeButton.TextColor = ActiveTextColor;
+            HomeButton.BackgroundColor = ActiveBg;
+
             foreach (var child in ModulePagePanel.Children)
             {
                 if (child is Button btn)
-                    btn.BackgroundColor = Color.FromArgb("#333");
+                {
+                    btn.TextColor = InactiveTextColor;
+                    btn.BackgroundColor = TransparentBg;
+                }
             }
-
-            // Highlight home button
-            HomeButton.BackgroundColor = Color.FromArgb("#0078D4");
         }
 
         // --- Module Cards (Dashboard) ----------------------------------------
@@ -117,106 +129,170 @@ namespace ASLM.Pages
 
         private Border CreateModuleCard(ModuleConfig module)
         {
-            // Status indicator
-            var statusDot = new BoxView
-            {
-                WidthRequest = 10,
-                HeightRequest = 10,
-                CornerRadius = 5,
-                Color = module.Status.Enabled
-                    ? Color.FromArgb("#4EC9B0")
-                    : Color.FromArgb("#555"),
-                VerticalOptions = LayoutOptions.Center,
-                Margin = new Thickness(0, 0, 8, 0)
-            };
-
-            // Module name
-            var nameLabel = new Label
-            {
-                Text = module.Name,
-                FontSize = 16,
-                FontAttributes = FontAttributes.Bold,
-                TextColor = Colors.White,
-                VerticalOptions = LayoutOptions.Center
-            };
-
-            // Header row
-            var header = new HorizontalStackLayout { Spacing = 0 };
-            header.Children.Add(statusDot);
-            header.Children.Add(nameLabel);
-
-            // Version
-            var versionLabel = new Label
-            {
-                Text = $"v{module.Version}",
-                FontSize = 11,
-                TextColor = Color.FromArgb("#888"),
-                Margin = new Thickness(0, 2, 0, 4)
-            };
-
-            // Description
-            var descLabel = new Label
-            {
-                Text = module.Description,
-                FontSize = 12,
-                TextColor = Color.FromArgb("#AAA"),
-                LineBreakMode = LineBreakMode.WordWrap,
-                MaxLines = 2
-            };
-
-            // Enable/Disable toggle row
-            var toggleLabel = new Label
-            {
-                Text = module.Status.Enabled ? "Enabled" : "Disabled",
-                FontSize = 12,
-                TextColor = module.Status.Enabled
-                    ? Color.FromArgb("#4EC9B0")
-                    : Color.FromArgb("#888"),
-                VerticalOptions = LayoutOptions.Center
-            };
-
-            var toggle = new Microsoft.Maui.Controls.Switch
-            {
-                IsToggled = module.Status.Enabled,
-                OnColor = Color.FromArgb("#0078D4"),
-                ThumbColor = Colors.White,
-                VerticalOptions = LayoutOptions.Center
-            };
-
-            var captured = module;
-            toggle.Toggled += (s, e) =>
-            {
-                OnModuleToggled(captured, e.Value);
-                // Update card visuals
-                statusDot.Color = e.Value
-                    ? Color.FromArgb("#4EC9B0")
-                    : Color.FromArgb("#555");
-                toggleLabel.Text = e.Value ? "Enabled" : "Disabled";
-                toggleLabel.TextColor = e.Value
-                    ? Color.FromArgb("#4EC9B0")
-                    : Color.FromArgb("#888");
-            };
-
-            var toggleRow = new Grid
+            // --- Main layout: icon (left) | content (right) ---
+            var cardGrid = new Grid
             {
                 ColumnDefinitions =
                 [
-                    new ColumnDefinition(GridLength.Star),
-                    new ColumnDefinition(GridLength.Auto)
-                ],
-                Margin = new Thickness(0, 8, 0, 0)
+                    new ColumnDefinition(GridLength.Auto),  // icon
+                    new ColumnDefinition(GridLength.Star)    // text + buttons
+                ]
             };
-            Grid.SetColumn(toggleLabel, 0);
-            Grid.SetColumn(toggle, 1);
-            toggleRow.Children.Add(toggleLabel);
-            toggleRow.Children.Add(toggle);
 
-            // Card content
-            var content = new VerticalStackLayout { Spacing = 2 };
-            content.Children.Add(header);
-            content.Children.Add(versionLabel);
-            content.Children.Add(descLabel);
-            content.Children.Add(toggleRow);
+            // Square icon — full card height, left side
+            var iconPath = module.IconFullPath;
+            if (iconPath != null && File.Exists(iconPath))
+            {
+                var iconBorder = new Border
+                {
+                    StrokeThickness = 0,
+                    StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle
+                    {
+                        CornerRadius = new CornerRadius(0, 0, 0, 0)
+                    },
+                    BackgroundColor = Color.FromArgb("#252526"),
+                    WidthRequest = 164,
+                    HeightRequest = 164,
+                    Padding = new Thickness(0),
+                    Margin = new Thickness(8, 8, 0, 8),
+                    Content = new Image
+                    {
+                        Source = ImageSource.FromFile(iconPath),
+                        Aspect = Aspect.AspectFit,
+                        HorizontalOptions = LayoutOptions.Fill,
+                        VerticalOptions = LayoutOptions.Fill
+                    }
+                };
+                Grid.SetColumn(iconBorder, 0);
+                cardGrid.Children.Add(iconBorder);
+            }
+
+            // Right side: Grid with text on top, buttons pinned to bottom
+            var rightGrid = new Grid
+            {
+                RowDefinitions =
+                [
+                    new RowDefinition(GridLength.Star),  // text area
+                    new RowDefinition(GridLength.Auto)    // buttons at bottom
+                ],
+                Padding = new Thickness(8, 8, 8, 8)
+            };
+
+            // Text area (top)
+            var textArea = new VerticalStackLayout { Spacing = 2 };
+            textArea.Children.Add(new Label
+            {
+                Text = module.Name,
+                FontSize = 18,
+                FontAttributes = FontAttributes.Bold,
+                TextColor = Colors.White
+            });
+            textArea.Children.Add(new Label
+            {
+                Text = $"v{module.Version}",
+                FontSize = 14,
+                TextColor = Color.FromArgb("#888")
+            });
+            Grid.SetRow(textArea, 0);
+            rightGrid.Children.Add(textArea);
+
+            // Action buttons (bottom, full width)
+            var captured = module;
+
+            if (module.Status.Enabled)
+            {
+                // Running — Stop + Restart, equal width
+                var buttonsGrid = new Grid
+                {
+                    ColumnDefinitions =
+                    [
+                        new ColumnDefinition(GridLength.Star),
+                        new ColumnDefinition(GridLength.Star)
+                    ],
+                    ColumnSpacing = 8,
+                    Margin = new Thickness(0, 0, 0, 0)
+                };
+
+                var stopBtn = new Button
+                {
+                    Text = "⏹ Stop",
+                    BackgroundColor = Color.FromArgb("#8B0000"),
+                    TextColor = Colors.White,
+                    FontSize = 12,
+                    HeightRequest = 24,
+                    CornerRadius = 4,
+                    HorizontalOptions = LayoutOptions.Fill
+                };
+                stopBtn.Clicked += (s, e) =>
+                {
+                    captured.Status.Enabled = false;
+                    _moduleInstaller.SaveModuleConfig(captured);
+                    BuildModuleCards();
+                    BuildPageButtons();
+                };
+
+                var restartBtn = new Button
+                {
+                    Text = "🔄 Restart",
+                    BackgroundColor = Color.FromArgb("#333"),
+                    TextColor = Colors.White,
+                    FontSize = 12,
+                    HeightRequest = 24,
+                    CornerRadius = 4,
+                    HorizontalOptions = LayoutOptions.Fill
+                };
+                restartBtn.Clicked += async (s, e) =>
+                {
+                    var logProgress = new Progress<string>(msg =>
+                        Debug.WriteLine($"[Restart] {msg}"));
+                    await Task.Run(() =>
+                        _moduleRunner.ExecuteRunAsync(captured, logProgress, CancellationToken.None));
+                };
+
+                Grid.SetColumn(stopBtn, 0);
+                Grid.SetColumn(restartBtn, 1);
+                buttonsGrid.Children.Add(stopBtn);
+                buttonsGrid.Children.Add(restartBtn);
+
+                Grid.SetRow(buttonsGrid, 1);
+                rightGrid.Children.Add(buttonsGrid);
+            }
+            else
+            {
+                // Stopped — Launch, full width
+                var launchBtn = new Button
+                {
+                    Text = "▶ Launch",
+                    BackgroundColor = Color.FromArgb("#0078D4"),
+                    TextColor = Colors.White,
+                    FontSize = 12,
+                    HeightRequest = 24,
+                    CornerRadius = 4,
+                    HorizontalOptions = LayoutOptions.Fill,
+                    Margin = new Thickness(0, 0, 0, 0)
+                };
+                launchBtn.Clicked += async (s, e) =>
+                {
+                    captured.Status.Enabled = true;
+                    _moduleInstaller.SaveModuleConfig(captured);
+                    BuildModuleCards();
+                    BuildPageButtons();
+
+                    if (captured.Commands.Run.Count > 0)
+                    {
+                        var logProgress = new Progress<string>(msg =>
+                            Debug.WriteLine($"[Launch] {msg}"));
+                        await Task.Run(() =>
+                            _moduleRunner.ExecuteRunAsync(captured, logProgress, CancellationToken.None));
+                    }
+                };
+
+                Grid.SetRow(launchBtn, 1);
+                rightGrid.Children.Add(launchBtn);
+            }
+
+            Grid.SetColumn(rightGrid, 1);
+            cardGrid.Children.Add(rightGrid);
 
             // Card border
             var card = new Border
@@ -225,11 +301,17 @@ namespace ASLM.Pages
                 Stroke = Color.FromArgb("#3F3F46"),
                 StrokeThickness = 1,
                 StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 8 },
-                Padding = new Thickness(16),
-                MaximumWidthRequest = 500,
-                HorizontalOptions = LayoutOptions.Start,
-                Content = content
+                Padding = 0,
+                HeightRequest = 180,
+                Margin = new Thickness(0, 0, 10, 10),
+                HorizontalOptions = LayoutOptions.Fill,
+                Content = cardGrid
             };
+
+            // FlexLayout: fixed 400px width, NO grow (0) to behave like a strict grid
+            FlexLayout.SetBasis(card, new Microsoft.Maui.Layouts.FlexBasis(400));
+            FlexLayout.SetGrow(card, 0);
+            FlexLayout.SetShrink(card, 0);
 
             return card;
         }
@@ -240,16 +322,7 @@ namespace ASLM.Pages
         {
             module.Status.Enabled = enabled;
             _moduleInstaller.SaveModuleConfig(module);
-
-            if (enabled && module.Commands.Run.Count > 0)
-            {
-                var logProgress = new Progress<string>(msg =>
-                    Debug.WriteLine($"[ModuleToggle] {msg}"));
-                _ = Task.Run(() =>
-                    _moduleRunner.ExecuteRunAsync(module, logProgress, CancellationToken.None));
-            }
-
-            // Rebuild sidebar page buttons
+            BuildModuleCards();
             BuildPageButtons();
         }
 
@@ -265,19 +338,22 @@ namespace ASLM.Pages
 
             foreach (var module in pageModules)
             {
+                var icon = "📄";
                 var btn = new Button
                 {
-                    Text = module.Name,
+                    Text = _panelExpanded ? $"{icon}  {module.Name}" : icon,
                     AutomationId = module.Name,
-                    BackgroundColor = Color.FromArgb("#333"),
-                    TextColor = Colors.White,
-                    FontSize = 13,
-                    HeightRequest = 40,
+                    ClassId = icon,
+                    BackgroundColor = TransparentBg,
+                    TextColor = InactiveTextColor,
+                    FontSize = 12,
+                    HeightRequest = 24,
                     HorizontalOptions = LayoutOptions.Fill
                 };
 
                 var captured = module;
                 btn.Clicked += (s, e) => ActivateModulePage(captured);
+                btn.HandlerChanged += AlignButtonLeft;
                 ModulePagePanel.Children.Add(btn);
             }
 
@@ -285,10 +361,10 @@ namespace ASLM.Pages
             {
                 ModulePagePanel.Children.Add(new Label
                 {
-                    Text = "No module pages",
+                    Text = _panelExpanded ? "No module pages" : "",
                     FontSize = 11,
-                    TextColor = Color.FromArgb("#555"),
-                    Margin = new Thickness(4, 2, 0, 0)
+                    TextColor = Color.FromArgb("#444"),
+                    Margin = new Thickness(8, 2, 0, 0)
                 });
             }
         }
@@ -305,14 +381,17 @@ namespace ASLM.Pages
             Browser.Source = url;
             Browser.IsVisible = true;
 
-            // Highlight active page button, dim home
-            HomeButton.BackgroundColor = Color.FromArgb("#333");
+            // Dim home, highlight active page button
+            HomeButton.TextColor = InactiveTextColor;
+            HomeButton.BackgroundColor = TransparentBg;
+
             foreach (var child in ModulePagePanel.Children)
             {
                 if (child is Button btn)
                 {
                     var isActive = btn.AutomationId == module.Name;
-                    btn.BackgroundColor = Color.FromArgb(isActive ? "#0078D4" : "#333");
+                    btn.TextColor = isActive ? ActiveTextColor : InactiveTextColor;
+                    btn.BackgroundColor = isActive ? ActiveBg : TransparentBg;
                 }
             }
         }
@@ -365,6 +444,17 @@ namespace ASLM.Pages
                 var settingsPage = _services.GetRequiredService<SettingsPage>();
                 Application.Current.Windows[0].Page = settingsPage;
             }
+        }
+
+        /// <summary>Sets native WinUI button content alignment to left.</summary>
+        private static void AlignButtonLeft(object? sender, EventArgs e)
+        {
+#if WINDOWS
+            if (sender is Button btn && btn.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Button native)
+            {
+                native.HorizontalContentAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Left;
+            }
+#endif
         }
     }
 }

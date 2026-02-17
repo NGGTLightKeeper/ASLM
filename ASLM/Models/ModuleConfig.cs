@@ -48,6 +48,21 @@ namespace ASLM.Models
         [JsonPropertyName("hasPage")]
         public bool HasPage { get; set; }
 
+        /// <summary>
+        /// Relative path to the module icon (e.g. "icon.png"). Optional.
+        /// </summary>
+        [JsonPropertyName("icon")]
+        public string? Icon { get; set; }
+
+        /// <summary>
+        /// Absolute path to the icon file. Resolved at runtime from <see cref="SourcePath"/>.
+        /// </summary>
+        [JsonIgnore]
+        public string? IconFullPath =>
+            !string.IsNullOrEmpty(Icon) && !string.IsNullOrEmpty(SourcePath)
+                ? Path.Combine(Path.GetDirectoryName(SourcePath)!, Icon)
+                : null;
+
         // --- Settings --------------------------------------------------------
 
         [JsonPropertyName("settings")]

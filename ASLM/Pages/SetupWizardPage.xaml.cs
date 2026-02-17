@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using ASLM.Models;
 using ASLM.Services;
@@ -5,8 +6,11 @@ using ASLM.Services;
 namespace ASLM.Pages
 {
     /// <summary>
-    /// First-run setup wizard. Collects username, configures port ranges,
-    /// lets the user choose modules to install, then runs the full install pipeline.
+    /// First-run setup wizard.
+    /// Step 0: Welcome (Setup / Fast Setup).
+    /// Step 1: Display name.
+    /// Step 2: Port allocation with overlap validation.
+    /// Step 3: Module selection and installation with dual progress bars.
     /// </summary>
     public partial class SetupWizardPage : ContentPage
     {
@@ -16,14 +20,18 @@ namespace ASLM.Pages
         private readonly ModuleRunner _moduleRunner;
         private readonly IServiceProvider _services;
 
-        private int _currentStep = 1;
+        private int _currentStep;
         private const int TotalSteps = 3;
 
-        // Module checkboxes for step 3
         private readonly List<(ModuleConfig Module, CheckBox Check)> _moduleChecks = [];
         private readonly StringBuilder _logBuffer = new();
         private CancellationTokenSource? _cts;
         private bool _logVisible;
+
+        // For speed calculation
+        private long _lastDownloadedBytes;
+        private DateTime _lastSpeedUpdate = DateTime.UtcNow;
+        private double _lastSpeed;
 
         public SetupWizardPage(
             AppDataService appData,
@@ -39,16 +47,38 @@ namespace ASLM.Pages
             _services = services;
             InitializeComponent();
 
-            // Pre-fill from existing data
-            UsernameEntry.Text = _appData.Data.User.Name;
+            // Auto-fill username from Windows or existing data
+            var existingName = _appData.Data.User.Name;
+            UsernameEntry.Text = string.IsNullOrWhiteSpace(existingName)
+                ? Environment.UserName
+                : existingName;
+
             OfficialPortEntry.Text = _appData.Data.Ports.OfficialStart.ToString();
             ThirdPartyPortEntry.Text = _appData.Data.Ports.ThirdPartyStart.ToString();
+
+            // Use Loaded instead of OnAppearing — OnAppearing doesn't fire on WinUI
+            Loaded += (_, _) => PopulateModuleList();
         }
 
-        protected override void OnAppearing()
+        // --- Welcome Screen --------------------------------------------------
+
+        private void OnSetupClicked(object? sender, EventArgs e)
         {
-            base.OnAppearing();
-            PopulateModuleList();
+            _currentStep = 1;
+            UpdateStepUI();
+        }
+
+        private async void OnFastSetupClicked(object? sender, EventArgs e)
+        {
+            // Auto-configure: Windows username + default ports
+            _appData.Data.User.Name = Environment.UserName;
+            _appData.Data.Ports.OfficialStart = 8000;
+            _appData.Data.Ports.ThirdPartyStart = 9000;
+            await _appData.SaveAsync();
+
+            // Skip to module selection
+            _currentStep = 3;
+            UpdateStepUI();
         }
 
         // --- Module Discovery ------------------------------------------------
@@ -110,43 +140,33 @@ namespace ASLM.Pages
         {
             if (_currentStep < TotalSteps)
             {
-                // Validate current step
                 if (_currentStep == 1 && string.IsNullOrWhiteSpace(UsernameEntry.Text))
                 {
                     await DisplayAlertAsync("Error", "Please enter a display name.", "OK");
                     return;
                 }
 
-                if (_currentStep == 2)
-                {
-                    if (!int.TryParse(OfficialPortEntry.Text, out var op) || op < 1024 || op > 65000)
-                    {
-                        await DisplayAlertAsync("Error", "Official port must be between 1024 and 65000.", "OK");
-                        return;
-                    }
-                    if (!int.TryParse(ThirdPartyPortEntry.Text, out var tp) || tp < 1024 || tp > 64000)
-                    {
-                        await DisplayAlertAsync("Error", "Third-party port must be between 1024 and 64000.", "OK");
-                        return;
-                    }
-                }
+                if (_currentStep == 2 && !ValidatePorts())
+                    return;
 
                 _currentStep++;
                 UpdateStepUI();
             }
             else
             {
-                // Final step — start installation
                 await StartInstallAsync();
             }
         }
 
         private void UpdateStepUI()
         {
+            Step0Panel.IsVisible = _currentStep == 0;
             Step1Panel.IsVisible = _currentStep == 1;
             Step2Panel.IsVisible = _currentStep == 2;
             Step3Panel.IsVisible = _currentStep == 3;
 
+            HeaderRow.IsVisible = _currentStep > 0;
+            ButtonPanel.IsVisible = _currentStep > 0;
             BackButton.IsVisible = _currentStep > 1;
             NextButton.Text = _currentStep == TotalSteps ? "Install" : "Next";
 
@@ -157,6 +177,40 @@ namespace ASLM.Pages
                 3 => "Step 3 of 3 — Module Selection",
                 _ => ""
             };
+        }
+
+        // --- Port Validation -------------------------------------------------
+
+        private bool ValidatePorts()
+        {
+            PortErrorLabel.IsVisible = false;
+
+            if (!int.TryParse(OfficialPortEntry.Text, out var op) || op < 1024 || op > 65000)
+            {
+                ShowPortError("Official port must be between 1024 and 65000.");
+                return false;
+            }
+            if (!int.TryParse(ThirdPartyPortEntry.Text, out var tp) || tp < 1024 || tp > 64000)
+            {
+                ShowPortError("Third-party port must be between 1024 and 64000.");
+                return false;
+            }
+
+            int opEnd = op + 100;
+            int tpEnd = tp + 1000;
+            if (op < tpEnd && tp < opEnd)
+            {
+                ShowPortError($"Port ranges overlap! Official {op}–{opEnd - 1} conflicts with Third-party {tp}–{tpEnd - 1}.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ShowPortError(string message)
+        {
+            PortErrorLabel.Text = message;
+            PortErrorLabel.IsVisible = true;
         }
 
         // --- Log Toggle ------------------------------------------------------
@@ -174,11 +228,12 @@ namespace ASLM.Pages
         {
             // Save user data first
             _appData.Data.User.Name = UsernameEntry.Text?.Trim() ?? "";
-            _appData.Data.Ports.OfficialStart = int.TryParse(OfficialPortEntry.Text, out var op) ? op : 8000;
-            _appData.Data.Ports.ThirdPartyStart = int.TryParse(ThirdPartyPortEntry.Text, out var tp) ? tp : 9000;
+            if (int.TryParse(OfficialPortEntry.Text, out var op))
+                _appData.Data.Ports.OfficialStart = op;
+            if (int.TryParse(ThirdPartyPortEntry.Text, out var tp))
+                _appData.Data.Ports.ThirdPartyStart = tp;
             await _appData.SaveAsync();
 
-            // Gather selected modules
             var selectedModules = _moduleChecks
                 .Where(mc => mc.Check.IsChecked)
                 .Select(mc => mc.Module)
@@ -186,25 +241,23 @@ namespace ASLM.Pages
 
             if (selectedModules.Count == 0)
             {
-                // No modules selected — just finish setup
                 await FinishSetupAsync();
                 return;
             }
 
-            // Switch UI to install mode — hide buttons and module list, show progress
+            // Switch UI to install mode
             ButtonPanel.IsVisible = false;
             ModuleListScroll.IsVisible = false;
             InstallPanel.IsVisible = true;
+            ToggleLogButton.IsVisible = true;
             StepLabel.Text = "Installing...";
 
             _cts = new CancellationTokenSource();
             var logProgress = new Progress<string>(AddLog);
 
-            // Count total work steps for progress bar
             var totalSteps = 0;
             var completedSteps = 0;
 
-            // Count engines to install
             var requiredEngineIds = selectedModules
                 .SelectMany(m => m.Dependencies.Engines)
                 .Select(e => e.Id)
@@ -212,19 +265,40 @@ namespace ASLM.Pages
                 .ToList();
             var allEngines = _engineInstaller.DiscoverEngines();
             totalSteps += requiredEngineIds.Count;
-            // Each module = download + firstRun = 2 steps
             totalSteps += selectedModules.Count * 2;
+
+            // Download progress: updates BOTH bars
+            _lastDownloadedBytes = 0;
+            _lastSpeedUpdate = DateTime.UtcNow;
+            _lastSpeed = 0;
 
             var downloadProgress = new Progress<DownloadProgress>(dp =>
             {
-                if (dp.TotalBytes > 0)
+                if (dp.TotalBytes <= 0) return;
+
+                var fileFraction = (double)dp.DownloadedBytes / dp.TotalBytes;
+                var overallFraction = (completedSteps + fileFraction * 0.9) / totalSteps;
+
+                // Calculate speed
+                var now = DateTime.UtcNow;
+                var elapsed = (now - _lastSpeedUpdate).TotalSeconds;
+                if (elapsed >= 0.5)
                 {
-                    // Show download progress within current step
-                    var stepFraction = (double)dp.DownloadedBytes / dp.TotalBytes;
-                    var overall = (completedSteps + stepFraction * 0.9) / totalSteps;
-                    MainThread.BeginInvokeOnMainThread(() =>
-                        InstallProgress.Progress = overall);
+                    _lastSpeed = (dp.DownloadedBytes - _lastDownloadedBytes) / elapsed;
+                    _lastDownloadedBytes = dp.DownloadedBytes;
+                    _lastSpeedUpdate = now;
                 }
+
+                var detail = $"{FormatBytes(dp.DownloadedBytes)} / {FormatBytes(dp.TotalBytes)}";
+                if (_lastSpeed > 0)
+                    detail += $" — {FormatBytes((long)_lastSpeed)}/s";
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    InstallProgress.Progress = overallFraction;
+                    FileProgress.Progress = fileFraction;
+                    DownloadDetailLabel.Text = detail;
+                });
             });
 
             try
@@ -243,44 +317,50 @@ namespace ASLM.Pages
                     {
                         AddLog($"✓ Engine '{engine.Name}' already installed.");
                         completedSteps++;
-                        UpdateProgress(completedSteps, totalSteps);
+                        UpdateOverallProgress(completedSteps, totalSteps);
                         continue;
                     }
 
                     UpdateInstallStatus($"Installing engine: {engine.Name}...");
+                    ResetFileProgress();
                     await Task.Run(() =>
                         _engineInstaller.InstallAsync(engine, logProgress, downloadProgress, _cts.Token),
                         _cts.Token);
                     completedSteps++;
-                    UpdateProgress(completedSteps, totalSteps);
+                    UpdateOverallProgress(completedSteps, totalSteps);
+                    ResetFileProgress();
                 }
 
                 // 2. Install each selected module
                 foreach (var module in selectedModules)
                 {
-                    // Download source
                     UpdateInstallStatus($"Downloading {module.Name}...");
+                    ResetFileProgress();
+                    _lastDownloadedBytes = 0;
+                    _lastSpeedUpdate = DateTime.UtcNow;
+                    _lastSpeed = 0;
+
                     var downloaded = await Task.Run(() =>
                         _moduleInstaller.DownloadSourceAsync(module, logProgress, downloadProgress, _cts.Token),
                         _cts.Token);
                     completedSteps++;
-                    UpdateProgress(completedSteps, totalSteps);
+                    UpdateOverallProgress(completedSteps, totalSteps);
+                    ResetFileProgress();
 
                     if (!downloaded)
                     {
                         AddLog($"✗ Source download failed for {module.Name}");
-                        completedSteps++; // skip firstRun step
-                        UpdateProgress(completedSteps, totalSteps);
+                        completedSteps++;
+                        UpdateOverallProgress(completedSteps, totalSteps);
                         continue;
                     }
 
-                    // Install deps + firstRun
                     UpdateInstallStatus($"Setting up {module.Name}...");
                     var success = await Task.Run(() =>
                         _moduleRunner.ExecuteFirstRunAsync(module, logProgress, _cts.Token),
                         _cts.Token);
                     completedSteps++;
-                    UpdateProgress(completedSteps, totalSteps);
+                    UpdateOverallProgress(completedSteps, totalSteps);
 
                     AddLog(success
                         ? $"✓ {module.Name} installed successfully"
@@ -310,29 +390,55 @@ namespace ASLM.Pages
             NextButton.Clicked += async (s, e) => await FinishSetupAsync();
         }
 
+        // --- Helpers ---------------------------------------------------------
+
         private void UpdateInstallStatus(string message)
         {
             MainThread.BeginInvokeOnMainThread(() =>
                 InstallStatusLabel.Text = message);
         }
 
-        private void UpdateProgress(int completed, int total)
+        private void UpdateOverallProgress(int completed, int total)
         {
             if (total <= 0) return;
             MainThread.BeginInvokeOnMainThread(() =>
                 InstallProgress.Progress = (double)completed / total);
         }
 
+        private void ResetFileProgress()
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                FileProgress.Progress = 0;
+                DownloadDetailLabel.Text = "";
+            });
+        }
+
+        private static string FormatBytes(long bytes)
+        {
+            if (bytes >= 1_073_741_824) return $"{bytes / 1_073_741_824.0:F1} GB";
+            if (bytes >= 1_048_576) return $"{bytes / 1_048_576.0:F1} MB";
+            if (bytes >= 1024) return $"{bytes / 1024.0:F1} KB";
+            return $"{bytes} B";
+        }
+
         private async Task FinishSetupAsync()
         {
-            _appData.Data.FirstRunCompleted = true;
-            await _appData.SaveAsync();
-
-            // Navigate to MainPage
-            if (Application.Current?.Windows.Count > 0)
+            try
             {
-                var mainPage = _services.GetRequiredService<MainPage>();
-                Application.Current.Windows[0].Page = mainPage;
+                _appData.Data.FirstRunCompleted = true;
+                await _appData.SaveAsync();
+
+                if (Application.Current?.Windows.Count > 0)
+                {
+                    var mainPage = _services.GetRequiredService<MainPage>();
+                    Application.Current.Windows[0].Page = mainPage;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[SetupWizard] FinishSetupAsync error: {ex}");
+                await DisplayAlertAsync("Error", $"Failed to navigate: {ex.Message}", "OK");
             }
         }
 
@@ -345,7 +451,6 @@ namespace ASLM.Pages
             MainThread.BeginInvokeOnMainThread(async () =>
             {
                 LogEditor.Text = _logBuffer.ToString();
-                // Auto-scroll to bottom
                 await LogScroll.ScrollToAsync(0, LogScroll.ContentSize.Height, false);
             });
         }

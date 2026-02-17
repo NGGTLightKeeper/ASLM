@@ -3,12 +3,14 @@
     "name": "Example",
     "description": "Example Module.",
     "version": "1.0.0",
-    "author": "ASLM",
+    "author": "NGGT-ASLM",
+    "type": "example",
+    "hasPage": true,
+    "icon": "icon.png",
     "source": {
         "type": "github",
         "repo": "NGGTLightKeeper/ASLM"
     },
-    "type": "example",
     "dependencies": {
         "engines": [
             {

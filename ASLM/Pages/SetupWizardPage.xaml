@@ -7,23 +7,71 @@
 
     <Grid RowDefinitions="Auto, *, Auto" Padding="40">
 
-        <!-- Header -->
-        <VerticalStackLayout Grid.Row="0" Spacing="5" Margin="0,0,0,20">
-            <Label Text="ASLM Setup"
-                   FontSize="28"
-                   FontAttributes="Bold"
-                   TextColor="White" />
-            <Label x:Name="StepLabel"
-                   Text="Step 1 of 3 — User Profile"
-                   FontSize="14"
-                   TextColor="#888" />
-        </VerticalStackLayout>
+        <!-- Header (hidden on welcome step) -->
+        <Grid x:Name="HeaderRow" Grid.Row="0" ColumnDefinitions="*, Auto"
+              Margin="0,0,0,20" IsVisible="False">
+            <VerticalStackLayout Grid.Column="0" Spacing="5">
+                <Label Text="ASLM Setup"
+                       FontSize="28"
+                       FontAttributes="Bold"
+                       TextColor="White" />
+                <Label x:Name="StepLabel"
+                       Text="Step 1 of 3 — User Profile"
+                       FontSize="14"
+                       TextColor="#888" />
+            </VerticalStackLayout>
+            <Button x:Name="ToggleLogButton"
+                    Grid.Column="1"
+                    Text="Show Log"
+                    BackgroundColor="#333"
+                    TextColor="#AAA"
+                    FontSize="12"
+                    HeightRequest="30"
+                    WidthRequest="120"
+                    VerticalOptions="End"
+                    IsVisible="False"
+                    Clicked="OnToggleLogClicked" />
+        </Grid>
 
         <!-- Step Content -->
         <Grid Grid.Row="1">
 
+            <!-- Step 0: Welcome -->
+            <VerticalStackLayout x:Name="Step0Panel" IsVisible="True"
+                                 VerticalOptions="Center" HorizontalOptions="Center"
+                                 Spacing="12">
+                <Label Text="Welcome to ASLM!"
+                       FontSize="36" FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalTextAlignment="Center" />
+                <Label Text="Advanced System Language Models"
+                       FontSize="16" TextColor="#888"
+                       HorizontalTextAlignment="Center"
+                       Margin="0,0,0,30" />
+                <Button Text="Setup"
+                        BackgroundColor="#0078D4"
+                        TextColor="White"
+                        FontSize="16"
+                        HeightRequest="48"
+                        WidthRequest="280"
+                        HorizontalOptions="Center"
+                        Clicked="OnSetupClicked" />
+                <Button Text="Fast Setup"
+                        BackgroundColor="#333"
+                        TextColor="#CCC"
+                        FontSize="16"
+                        HeightRequest="48"
+                        WidthRequest="280"
+                        HorizontalOptions="Center"
+                        Clicked="OnFastSetupClicked" />
+                <Label Text="Fast Setup uses your Windows username and default ports"
+                       FontSize="11" TextColor="#555"
+                       HorizontalTextAlignment="Center"
+                       Margin="0,4,0,0" />
+            </VerticalStackLayout>
+
             <!-- Step 1: User Profile -->
-            <VerticalStackLayout x:Name="Step1Panel" IsVisible="True" Spacing="15"
+            <VerticalStackLayout x:Name="Step1Panel" IsVisible="False" Spacing="15"
                                  VerticalOptions="Center" HorizontalOptions="Center"
                                  WidthRequest="400">
                 <Label Text="Choose a display name"
@@ -58,6 +106,10 @@
                        FontSize="16"
                        TextColor="White"
                        BackgroundColor="#2D2D2D" />
+                <Label x:Name="PortErrorLabel"
+                       Text=""
+                       FontSize="12" TextColor="#E74C3C"
+                       IsVisible="False" />
             </VerticalStackLayout>
 
             <!-- Step 3: Module Selection + Install -->
@@ -69,10 +121,10 @@
                     <VerticalStackLayout x:Name="ModuleList" Spacing="8" />
                 </ScrollView>
 
-                <!-- Install view (progress bar + log toggle) -->
+                <!-- Install view (progress + log) -->
                 <Grid x:Name="InstallPanel" Grid.Row="0" Grid.RowSpan="2"
                       IsVisible="False"
-                      RowDefinitions="Auto, Auto, Auto, *">
+                      RowDefinitions="Auto, Auto, Auto, Auto, Auto, *">
 
                     <!-- Current operation -->
                     <Label x:Name="InstallStatusLabel"
@@ -80,29 +132,31 @@
                            FontSize="14" TextColor="#CCC"
                            Grid.Row="0" Margin="0,0,0,8" />
 
-                    <!-- Progress bar -->
+                    <!-- Overall progress bar -->
+                    <Label Text="Overall Progress"
+                           FontSize="10" TextColor="#555"
+                           Grid.Row="1" Margin="0,0,0,2" />
                     <ProgressBar x:Name="InstallProgress"
-                                 Grid.Row="1"
+                                 Grid.Row="2"
                                  Progress="0"
                                  ProgressColor="#0078D4"
                                  HeightRequest="6"
                                  Margin="0,0,0,10" />
 
-                    <!-- Toggle log button -->
-                    <Button x:Name="ToggleLogButton"
-                            Text="Show Log"
-                            Grid.Row="2"
-                            BackgroundColor="#333"
-                            TextColor="#AAA"
-                            FontSize="12"
-                            HeightRequest="30"
-                            WidthRequest="120"
-                            HorizontalOptions="Start"
-                            Margin="0,0,0,8"
-                            Clicked="OnToggleLogClicked" />
+                    <!-- File download progress bar -->
+                    <Label x:Name="DownloadDetailLabel"
+                           Text=""
+                           FontSize="10" TextColor="#555"
+                           Grid.Row="3" Margin="0,0,0,2" />
+                    <ProgressBar x:Name="FileProgress"
+                                 Grid.Row="4"
+                                 Progress="0"
+                                 ProgressColor="#4EC9B0"
+                                 HeightRequest="4"
+                                 Margin="0,0,0,10" />
 
-                    <!-- Selectable log area (Editor is selectable, Label is not) -->
-                    <ScrollView x:Name="LogScroll" Grid.Row="3" IsVisible="False">
+                    <!-- Selectable log area -->
+                    <ScrollView x:Name="LogScroll" Grid.Row="5" IsVisible="False">
                         <Editor x:Name="LogEditor"
                                 FontSize="12"
                                 FontFamily="Consolas"
@@ -116,10 +170,11 @@
 
         </Grid>
 
-        <!-- Navigation Buttons -->
+        <!-- Navigation Buttons (hidden on step 0) -->
         <HorizontalStackLayout x:Name="ButtonPanel" Grid.Row="2" Spacing="15"
                                HorizontalOptions="End"
-                               Margin="0,20,0,0">
+                               Margin="0,20,0,0"
+                               IsVisible="False">
             <Button x:Name="BackButton"
                     Text="Back"
                     BackgroundColor="#333"

@@ -16,7 +16,13 @@ namespace ASLM
         protected override Window CreateWindow(IActivationState? activationState)
         {
             var page = CreateStartupPage();
-            return new Window(page);
+            var window = new Window(page)
+            {
+                Title = "ASLM",
+                MinimumWidth = 960,
+                MinimumHeight = 540
+            };
+            return window;
         }
 
         public Page CreateStartupPage()

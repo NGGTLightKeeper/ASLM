@@ -5,76 +5,110 @@
              Title="Settings"
              BackgroundColor="#1E1E1E">
 
-    <Grid RowDefinitions="Auto, *, Auto" Padding="30">
+    <Grid ColumnDefinitions="220, *">
 
-        <!-- Header -->
-        <Label Text="Settings"
-               FontSize="24"
-               FontAttributes="Bold"
-               TextColor="White"
-               Grid.Row="0"
-               Margin="0,0,0,20" />
+        <!-- Left Sidebar Navigation -->
+        <VerticalStackLayout Grid.Column="0"
+                             BackgroundColor="#252526"
+                             Padding="12" Spacing="4">
+            <Label Text="Settings"
+                   FontSize="20" FontAttributes="Bold"
+                   TextColor="White"
+                   Margin="4,8,0,16" />
 
-        <!-- Settings Content -->
-        <ScrollView Grid.Row="1">
-            <VerticalStackLayout Spacing="20">
+            <Button x:Name="NavUserProfile"
+                    Text="User Profile"
+                    BackgroundColor="Transparent"
+                    TextColor="White"
+                    FontSize="13"
+                    HeightRequest="36"
+                    HorizontalOptions="Fill"
+
+                    Clicked="OnUserProfileClicked" />
+
+            <Button x:Name="NavPorts"
+                    Text="Ports"
+                    BackgroundColor="Transparent"
+                    TextColor="#888"
+                    FontSize="13"
+                    HeightRequest="36"
+                    HorizontalOptions="Fill"
+
+                    Clicked="OnPortsClicked" />
+
+            <!-- Spacer -->
+            <BoxView HeightRequest="1" Color="#333"
+                     Margin="0,12,0,12" />
+
+            <!-- Bottom buttons -->
+            <Button Text="← Back"
+                    BackgroundColor="Transparent"
+                    TextColor="#888"
+                    FontSize="13"
+                    HeightRequest="36"
+                    HorizontalOptions="Fill"
+
+                    Clicked="OnCancelClicked" />
+        </VerticalStackLayout>
+
+        <!-- Main Content Area -->
+        <ScrollView x:Name="SettingsScroll" Grid.Column="1" Padding="30">
+            <VerticalStackLayout Spacing="24">
 
                 <!-- User Profile -->
-                <Border BackgroundColor="#252526"
-                        Stroke="#333" StrokeThickness="1"
-                        StrokeShape="RoundRectangle 6"
-                        Padding="15">
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="User Profile" FontSize="16" FontAttributes="Bold" TextColor="White" />
+                <Border x:Name="UserProfileSection"
+                        BackgroundColor="#2D2D30"
+                        Stroke="#3F3F46" StrokeThickness="1"
+                        StrokeShape="RoundRectangle 8"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="User Profile" FontSize="18" FontAttributes="Bold" TextColor="White" />
                         <Label Text="Display Name" FontSize="12" TextColor="#AAA" />
                         <Entry x:Name="UsernameEntry"
                                FontSize="14" TextColor="White"
-                               BackgroundColor="#2D2D2D" />
+                               BackgroundColor="#1E1E1E" />
                     </VerticalStackLayout>
                 </Border>
 
                 <!-- Port Allocation -->
-                <Border BackgroundColor="#252526"
-                        Stroke="#333" StrokeThickness="1"
-                        StrokeShape="RoundRectangle 6"
-                        Padding="15">
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="Port Allocation" FontSize="16" FontAttributes="Bold" TextColor="White" />
+                <Border x:Name="PortsSection"
+                        BackgroundColor="#2D2D30"
+                        Stroke="#3F3F46" StrokeThickness="1"
+                        StrokeShape="RoundRectangle 8"
+                        Padding="20">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Port Allocation" FontSize="18" FontAttributes="Bold" TextColor="White" />
 
-                        <Label Text="Official modules start port (100 ports)" FontSize="12" TextColor="#AAA" />
+                        <Label Text="Official modules start port (100 ports reserved)" FontSize="12" TextColor="#AAA" />
                         <Entry x:Name="OfficialPortEntry"
                                Keyboard="Numeric"
                                FontSize="14" TextColor="White"
-                               BackgroundColor="#2D2D2D" />
+                               BackgroundColor="#1E1E1E" />
 
-                        <Label Text="Third-party modules start port (1000 ports)" FontSize="12" TextColor="#AAA" />
+                        <Label Text="Third-party modules start port (1000 ports reserved)" FontSize="12" TextColor="#AAA" />
                         <Entry x:Name="ThirdPartyPortEntry"
                                Keyboard="Numeric"
                                FontSize="14" TextColor="White"
-                               BackgroundColor="#2D2D2D" />
+                               BackgroundColor="#1E1E1E" />
+
+                        <Label x:Name="PortErrorLabel"
+                               Text=""
+                               FontSize="12" TextColor="#E74C3C"
+                               IsVisible="False" />
                     </VerticalStackLayout>
                 </Border>
 
+                <!-- Save Button -->
+                <Button Text="Save"
+                        BackgroundColor="#0078D4"
+                        TextColor="White"
+                        FontSize="14"
+                        WidthRequest="120"
+                        HorizontalOptions="End"
+                        Clicked="OnSaveClicked" />
+
             </VerticalStackLayout>
         </ScrollView>
-
-        <!-- Bottom Buttons -->
-        <HorizontalStackLayout Grid.Row="2" Spacing="15"
-                               HorizontalOptions="End"
-                               Margin="0,20,0,0">
-            <Button Text="Cancel"
-                    BackgroundColor="#333"
-                    TextColor="White"
-                    FontSize="14"
-                    WidthRequest="100"
-                    Clicked="OnCancelClicked" />
-            <Button Text="Save"
-                    BackgroundColor="#0078D4"
-                    TextColor="White"
-                    FontSize="14"
-                    WidthRequest="100"
-                    Clicked="OnSaveClicked" />
-        </HorizontalStackLayout>
 
     </Grid>
 
