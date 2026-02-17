@@ -1,0 +1,103 @@
+{
+    "id": "example",
+    "name": "Example",
+    "description": "Example Module.",
+    "version": "1.0.0",
+    "author": "NGGT-ASLM",
+    "type": "example",
+    "hasPage": true,
+    "icon": "icon.png",
+    "source": {
+        "type": "github",
+        "repo": "NGGTLightKeeper/ASLM"
+    },
+    "dependencies": {
+        "engines": [
+            {
+                "id": "python-runtime",
+                "libraries": [
+                    "requests",
+                    "numpy"
+                ]
+            }
+        ],
+        "models": [
+            "ASR"
+        ]
+    },
+    "commands": {
+        "firstRun": [
+            {
+                "name": "Install Dependencies",
+                "description": "Installs required Python packages",
+                "engine": "python-runtime",
+                "exec": "setup.py install"
+            }
+        ],
+        "run": [
+            {
+                "name": "Start Server",
+                "description": "Launches the main API server",
+                "engine": "python-runtime",
+                "exec": "manage.py runserver --port 8000"
+            },
+            {
+                "name": "Run Transcriber",
+                "description": "Runs the transcription pipeline",
+                "engine": "python-runtime",
+                "exec": "main.py"
+            }
+        ]
+    },
+    "settings": [
+        {
+            "key": "port",
+            "name": "Server Port",
+            "description": "Port the module server listens on",
+            "type": "port",
+            "default": "8000",
+            "engine": "python-runtime",
+            "getExec": "config.py get --key port",
+            "setExec": "config.py set --key port --value {value}"
+        },
+        {
+            "key": "mode",
+            "name": "Transcription Mode",
+            "description": "Quality vs speed trade-off",
+            "type": "select",
+            "default": "fast",
+            "allowedValues": [
+                "fast",
+                "accurate"
+            ],
+            "engine": "python-runtime",
+            "getExec": "config.py get --key mode",
+            "setExec": "config.py set --key mode --value {value}"
+        },
+        {
+            "key": "threads",
+            "name": "Thread Count",
+            "description": "Number of worker threads",
+            "type": "int",
+            "default": "4",
+            "engine": "python-runtime",
+            "getExec": "config.py get --key threads",
+            "setExec": "config.py set --key threads --value {value}"
+        },
+        {
+            "key": "custom_param",
+            "name": "Custom Parameter",
+            "description": "Any custom string value",
+            "type": "string",
+            "default": "default-value",
+            "engine": "python-runtime",
+            "getExec": "config.py get --key custom_param",
+            "setExec": "config.py set --key custom_param --value {value}"
+        }
+    ],
+    "status": {
+        "installed": false,
+        "enabled": false,
+        "firstRunCompleted": false
+    }
+}

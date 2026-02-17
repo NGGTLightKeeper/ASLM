@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ASLM/ASLM.csproj" />
+  <Project Path="Launcher/Launcher.csproj" Id="ea771c0c-e673-4e08-9116-326070460555">
+    <BuildDependency Project="ASLM/ASLM.csproj" />
+  </Project>
+</Solution>

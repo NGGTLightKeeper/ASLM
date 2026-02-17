@@ -1,0 +1,9 @@
+{
+  "id": "tts",
+  "name": "TtS (Placeholder)",
+  "version": "0.0.1",
+  "description": "Text-to-Speech module (Placeholder)",
+  "status": {
+    "installed": false
+  }
+}

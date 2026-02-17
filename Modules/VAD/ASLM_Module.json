@@ -1,0 +1,9 @@
+{
+  "id": "vad",
+  "name": "VAD (Placeholder)",
+  "version": "0.0.1",
+  "description": "Voice Activity Detection module (Placeholder)",
+  "status": {
+    "installed": false
+  }
+}
