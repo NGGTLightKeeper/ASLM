@@ -19,6 +19,10 @@ namespace ASLM.Services
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ModuleInstaller"/> class.
+        /// </summary>
+        /// <param name="moduleRunner">The module runner service used for first-run execution.</param>
         public ModuleInstaller(ModuleRunner moduleRunner)
         {
             _moduleRunner = moduleRunner;
@@ -29,6 +33,7 @@ namespace ASLM.Services
         /// <summary>
         /// Scans <c>Modules/*/ASLM_Module.json</c> to find installed modules.
         /// </summary>
+        /// <returns>A list of discovered module configurations.</returns>
         public List<ModuleConfig> DiscoverModules()
         {
             var baseDir = GetRootDirectory();
@@ -49,7 +54,7 @@ namespace ASLM.Services
                         config.SourcePath = jsonFile;
                         
                         // If the JSON exists, we assume it's installed.
-                        // Ideally we'd validte entryPoint exists too.
+                        // Ideally we'd validate entryPoint exists too.
                         config.Status.Installed = true; 
                         
                         modules.Add(config);
@@ -63,12 +68,18 @@ namespace ASLM.Services
 
             return modules;
         }
+
         // --- Source Download --------------------------------------------------
 
         /// <summary>
         /// Downloads module source code from <see cref="ModuleSource"/> (e.g. GitHub)
         /// into the module's directory.
         /// </summary>
+        /// <param name="module">The module configuration.</param>
+        /// <param name="log">Progress logger.</param>
+        /// <param name="downloadProgress">Download progress reporter.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>True if source was downloaded successfully (or skipped appropriately).</returns>
         public async Task<bool> DownloadSourceAsync(
             ModuleConfig module,
             IProgress<string> log,
@@ -84,6 +95,7 @@ namespace ASLM.Services
             var moduleDir = Path.GetDirectoryName(module.SourcePath);
             if (string.IsNullOrEmpty(moduleDir)) return false;
 
+            // Note: This assumes the default branch is 'main'.
             var zipUrl = $"https://github.com/{module.Source.Repo}/archive/refs/heads/main.zip";
             var tempZip = Path.GetTempFileName();
             var tempExtractDir = Path.Combine(Path.GetTempPath(), "ASLM_ModuleSrc_" + Guid.NewGuid());
@@ -126,6 +138,10 @@ namespace ASLM.Services
         /// and discovers the contained <c>ASLM_Module.json</c>.
         /// </summary>
         /// <param name="zipUrl">Direct link to a ZIP file.</param>
+        /// <param name="log">Progress logger.</param>
+        /// <param name="downloadProgress">Download progress reporter.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The installed module configuration.</returns>
         public async Task<ModuleConfig> InstallFromUrlAsync(
             string zipUrl,
             IProgress<string> log,
@@ -216,6 +232,11 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Recursively copies a directory to a destination.
+        /// </summary>
+        /// <param name="sourceDir">Source directory path.</param>
+        /// <param name="destDir">Destination directory path.</param>
         private static void CopyDirectory(string sourceDir, string destDir)
         {
             Directory.CreateDirectory(destDir);
@@ -233,6 +254,9 @@ namespace ASLM.Services
 
         // --- Download --------------------------------------------------------
 
+        /// <summary>
+        /// Helper to download a file with progress tracking.
+        /// </summary>
         private async Task DownloadFileAsync(
             string url,
             string destinationPath,
@@ -277,12 +301,18 @@ namespace ASLM.Services
             log.Report("  Download complete.");
         }
 
+        /// <summary>
+        /// Returns the application root directory.
+        /// </summary>
         private static string GetRootDirectory()
         {
             var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
             return Directory.GetParent(appDir)?.FullName ?? appDir;
         }
 
+        /// <summary>
+        /// Saves the module configuration synchronously.
+        /// </summary>
         public void SaveModuleConfig(ModuleConfig config)
         {
             if (string.IsNullOrEmpty(config.SourcePath)) return;
@@ -290,6 +320,9 @@ namespace ASLM.Services
             File.WriteAllText(config.SourcePath, json);
         }
 
+        /// <summary>
+        /// Saves the module configuration asynchronously.
+        /// </summary>
         public async Task SaveConfigAsync(ModuleConfig config)
         {
             if (string.IsNullOrEmpty(config.SourcePath)) return;

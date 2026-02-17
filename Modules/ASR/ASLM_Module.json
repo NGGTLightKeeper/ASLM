@@ -1,0 +1,9 @@
+{
+  "id": "asr",
+  "name": "ASR (Placeholder)",
+  "version": "0.0.1",
+  "description": "Automatic Speech Recognition module (Placeholder)",
+  "status": {
+    "installed": false
+  }
+}

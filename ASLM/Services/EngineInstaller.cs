@@ -37,6 +37,7 @@ namespace ASLM.Services
         /// This method is intentionally synchronous because it is called from
         /// <see cref="App.CreateWindow"/> which runs on the UI thread and cannot safely await.
         /// </summary>
+        /// <returns>A list of discovered engine configurations.</returns>
         public List<EngineConfig> DiscoverEngines()
         {
             var baseDir = GetRootDirectory();
@@ -94,6 +95,8 @@ namespace ASLM.Services
         /// Resolves the absolute path to the engine's executable.
         /// Returns null if engine not found or not installed.
         /// </summary>
+        /// <param name="engineId">The unique ID of the engine.</param>
+        /// <returns>The full path to the executable, or null.</returns>
         public string? GetEngineExecutablePath(string engineId)
         {
             var engine = GetEngineConfig(engineId);
@@ -112,6 +115,8 @@ namespace ASLM.Services
         /// Returns the full <see cref="EngineConfig"/> for the given engine ID,
         /// or null if not found / not installed.
         /// </summary>
+        /// <param name="engineId">The unique ID of the engine.</param>
+        /// <returns>The engine configuration, or null.</returns>
         public EngineConfig? GetEngineConfig(string engineId)
         {
             var engines = DiscoverEngines();
@@ -127,6 +132,7 @@ namespace ASLM.Services
         /// <param name="log">Receives human-readable log messages for the UI console.</param>
         /// <param name="downloadProgress">Receives download fraction updates for the progress bar.</param>
         /// <param name="ct">Cancellation token for cooperative cancellation.</param>
+        /// <returns>A task representing the installation process.</returns>
         public async Task InstallAsync(
             EngineConfig config,
             IProgress<string> log,
@@ -230,6 +236,11 @@ namespace ASLM.Services
         /// Downloads a file from <c>step.Url</c> to <c>step.Dest</c>,
         /// optionally verifying the SHA-256 checksum.
         /// </summary>
+        /// <param name="step">The installation step configuration.</param>
+        /// <param name="ctx">Context for resolving paths.</param>
+        /// <param name="log">Progress logger.</param>
+        /// <param name="downloadProgress">Download progress reporter.</param>
+        /// <param name="ct">Cancellation token.</param>
         private async Task ExecuteDownloadAsync(
             InstallStep step,
             StepContext ctx,
@@ -290,6 +301,9 @@ namespace ASLM.Services
         }
 
         /// <summary>Extracts a zip archive from <c>step.Source</c> to <c>step.Dest</c>.</summary>
+        /// <param name="step">The installation step configuration.</param>
+        /// <param name="ctx">Context for resolving paths.</param>
+        /// <param name="log">Progress logger.</param>
         private static void ExecuteExtract(InstallStep step, StepContext ctx, IProgress<string> log)
         {
             var source = ctx.ResolvePath(step.Source ?? throw new InvalidOperationException("Extract step missing 'source'."));
@@ -330,6 +344,9 @@ namespace ASLM.Services
         }
 
         /// <summary>Performs a find-and-replace inside <c>step.Path</c>.</summary>
+        /// <param name="step">The installation step configuration.</param>
+        /// <param name="ctx">Context for resolving paths.</param>
+        /// <param name="log">Progress logger.</param>
         private static void ExecuteModifyFile(InstallStep step, StepContext ctx, IProgress<string> log)
         {
             var path = ctx.ResolvePath(step.Path ?? throw new InvalidOperationException("ModifyFile step missing 'path'."));
@@ -358,6 +375,10 @@ namespace ASLM.Services
         /// as the executable path; remaining tokens are arguments. Paths containing
         /// slashes are automatically resolved to absolute paths.
         /// </summary>
+        /// <param name="step">The installation step configuration.</param>
+        /// <param name="ctx">Context for resolving paths.</param>
+        /// <param name="log">Progress logger.</param>
+        /// <param name="ct">Cancellation token.</param>
         private static async Task ExecuteCommandAsync(InstallStep step, StepContext ctx, IProgress<string> log, CancellationToken ct)
         {
             var command = step.Command ?? throw new InvalidOperationException("Execute step missing 'command'.");
@@ -413,6 +434,9 @@ namespace ASLM.Services
         }
 
         /// <summary>Moves (renames) a directory from <c>step.Source</c> to <c>step.Dest</c>.</summary>
+        /// <param name="step">The installation step configuration.</param>
+        /// <param name="ctx">Context for resolving paths.</param>
+        /// <param name="log">Progress logger.</param>
         private static void ExecuteMove(InstallStep step, StepContext ctx, IProgress<string> log)
         {
             var source = ctx.ResolvePath(step.Source ?? throw new InvalidOperationException("Move step missing 'source'."));
@@ -430,6 +454,9 @@ namespace ASLM.Services
         }
 
         /// <summary>Recursively deletes <c>step.Target</c> directory (defaults to temp dir).</summary>
+        /// <param name="step">The installation step configuration.</param>
+        /// <param name="ctx">Context for resolving paths.</param>
+        /// <param name="log">Progress logger.</param>
         private static void ExecuteCleanup(InstallStep step, StepContext ctx, IProgress<string> log)
         {
             var target = ctx.ResolvePath(step.Target ?? ctx.TempDir);
@@ -448,6 +475,9 @@ namespace ASLM.Services
         }
 
         /// <summary>Renames a file from <c>step.Source</c> to <c>step.Dest</c>.</summary>
+        /// <param name="step">The installation step configuration.</param>
+        /// <param name="ctx">Context for resolving paths.</param>
+        /// <param name="log">Progress logger.</param>
         private static void ExecuteRenameFile(InstallStep step, StepContext ctx, IProgress<string> log)
         {
             var source = ctx.ResolvePath(step.Source ?? throw new InvalidOperationException("rename_file step missing 'source'."));
@@ -467,6 +497,9 @@ namespace ASLM.Services
         }
 
         /// <summary>Deletes a file at <c>step.Target</c>.</summary>
+        /// <param name="step">The installation step configuration.</param>
+        /// <param name="ctx">Context for resolving paths.</param>
+        /// <param name="log">Progress logger.</param>
         private static void ExecuteDeleteFile(InstallStep step, StepContext ctx, IProgress<string> log)
         {
             var target = ctx.ResolvePath(step.Target ?? throw new InvalidOperationException("delete_file step missing 'target'."));
@@ -488,6 +521,7 @@ namespace ASLM.Services
         /// The MAUI executable runs from <c>ASLM/App/</c>, but data directories
         /// (<c>Engines/</c>, <c>Modules/</c>, etc.) live one level up at <c>ASLM/</c>.
         /// </summary>
+        /// <returns>The root directory path.</returns>
         private static string GetRootDirectory()
         {
             var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
@@ -495,6 +529,9 @@ namespace ASLM.Services
         }
 
         /// <summary>Computes a lowercase hex SHA-256 hash for the given file.</summary>
+        /// <param name="filePath">Path to the file to hash.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Lowercase hex string of the SHA256 hash.</returns>
         private static async Task<string> ComputeSha256Async(string filePath, CancellationToken ct)
         {
             await using var stream = File.OpenRead(filePath);
@@ -503,6 +540,7 @@ namespace ASLM.Services
         }
 
         /// <summary>Serializes the engine config back to its source JSON file.</summary>
+        /// <param name="config">The config to save.</param>
         private async Task SaveConfigAsync(EngineConfig config)
         {
             if (string.IsNullOrEmpty(config.SourcePath))
@@ -518,6 +556,8 @@ namespace ASLM.Services
         /// Holds directory paths for a single installation run.
         /// Avoids storing mutable state as fields on the singleton service.
         /// </summary>
+        /// <param name="baseDir">The application base directory.</param>
+        /// <param name="tempDir">The temporary directory for this installation.</param>
         private sealed class StepContext(string baseDir, string tempDir)
         {
             public string BaseDir { get; } = baseDir;
