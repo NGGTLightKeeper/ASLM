@@ -1,4 +1,8 @@
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using ASLM.Models;
 using ASLM.Services;
 
@@ -9,7 +13,7 @@ namespace ASLM.Pages
     /// Left sidebar: collapsible nav with home, module pages, settings.
     /// Main area: module dashboard (cards with enable/disable) or WebView.
     /// </summary>
-    public partial class MainPage : ContentPage
+    public partial class MainPage : ContentPage, INotifyPropertyChanged
     {
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
@@ -21,12 +25,30 @@ namespace ASLM.Pages
 
         private const double PanelExpandedWidth = 240;
         private const double PanelCollapsedWidth = 60;
+        private const double MinCardWidth = 400;
 
         // Colors
         private static readonly Color ActiveTextColor = Colors.White;
         private static readonly Color InactiveTextColor = Color.FromArgb("#888");
         private static readonly Color ActiveBg = Color.FromArgb("#2D2D30");
         private static readonly Color TransparentBg = Colors.Transparent;
+
+        // ViewModel Properties
+        public ObservableCollection<ModuleViewModel> Modules { get; } = new();
+
+        private int _gridSpan = 1;
+        public int GridSpan
+        {
+            get => _gridSpan;
+            set
+            {
+                if (_gridSpan != value)
+                {
+                    _gridSpan = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public MainPage(
             ModuleInstaller moduleInstaller,
@@ -37,6 +59,7 @@ namespace ASLM.Pages
             _moduleRunner = moduleRunner;
             _services = services;
             InitializeComponent();
+            BindingContext = this;
             Loaded += OnPageLoaded;
 
             // Left-align static sidebar buttons via native handler
@@ -44,13 +67,54 @@ namespace ASLM.Pages
             SettingsButton.HandlerChanged += AlignButtonLeft;
         }
 
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected override void OnSizeAllocated(double width, double height)
+        {
+            base.OnSizeAllocated(width, height);
+
+            // Calculate available width for the dashboard
+            // We subtract the SidePanel width (approximated if not laid out yet)
+            var sidePanelWidth = SidePanel.Width > 0 ? SidePanel.Width : (_panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth);
+            // Also subtract margins (30 on left + 30 on right = 60)
+            var dashboardMargin = 60;
+            var availableWidth = width - sidePanelWidth - dashboardMargin;
+
+            if (availableWidth > 0)
+            {
+                var newSpan = Math.Max(1, (int)(availableWidth / MinCardWidth));
+                GridSpan = newSpan;
+            }
+        }
+
         private void OnPageLoaded(object? sender, EventArgs e)
         {
-            _allModules = _moduleInstaller.DiscoverModules();
-            BuildPageButtons();
-            BuildModuleCards();
+            RefreshModules();
             ShowDashboard();
             _ = StartEnabledModulesAsync();
+        }
+
+        private void RefreshModules()
+        {
+            _allModules = _moduleInstaller.DiscoverModules();
+
+            Modules.Clear();
+            foreach (var module in _allModules)
+            {
+                Modules.Add(new ModuleViewModel(module, _moduleInstaller, _moduleRunner, OnModuleStateChanged));
+            }
+
+            BuildPageButtons();
+        }
+
+        private void OnModuleStateChanged()
+        {
+            // Update sidebar buttons when module state changes (e.g. enabled/disabled)
+            BuildPageButtons();
         }
 
         // --- Panel Collapse/Expand -------------------------------------------
@@ -101,229 +165,6 @@ namespace ASLM.Pages
                     btn.BackgroundColor = TransparentBg;
                 }
             }
-        }
-
-        // --- Module Cards (Dashboard) ----------------------------------------
-
-        private void BuildModuleCards()
-        {
-            ModuleCardsPanel.Children.Clear();
-
-            foreach (var module in _allModules)
-            {
-                var card = CreateModuleCard(module);
-                ModuleCardsPanel.Children.Add(card);
-            }
-
-            if (_allModules.Count == 0)
-            {
-                ModuleCardsPanel.Children.Add(new Label
-                {
-                    Text = "No modules found. Install modules via the Setup Wizard.",
-                    FontSize = 14,
-                    TextColor = Color.FromArgb("#888"),
-                    Margin = new Thickness(0, 20, 0, 0)
-                });
-            }
-        }
-
-        private Border CreateModuleCard(ModuleConfig module)
-        {
-            // --- Main layout: icon (left) | content (right) ---
-            var cardGrid = new Grid
-            {
-                ColumnDefinitions =
-                [
-                    new ColumnDefinition(GridLength.Auto),  // icon
-                    new ColumnDefinition(GridLength.Star)    // text + buttons
-                ]
-            };
-
-            // Square icon — full card height, left side
-            var iconPath = module.IconFullPath;
-            if (iconPath != null && File.Exists(iconPath))
-            {
-                var iconBorder = new Border
-                {
-                    StrokeThickness = 0,
-                    StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle
-                    {
-                        CornerRadius = new CornerRadius(0, 0, 0, 0)
-                    },
-                    BackgroundColor = Color.FromArgb("#252526"),
-                    WidthRequest = 164,
-                    HeightRequest = 164,
-                    Padding = new Thickness(0),
-                    Margin = new Thickness(8, 8, 0, 8),
-                    Content = new Image
-                    {
-                        Source = ImageSource.FromFile(iconPath),
-                        Aspect = Aspect.AspectFit,
-                        HorizontalOptions = LayoutOptions.Fill,
-                        VerticalOptions = LayoutOptions.Fill
-                    }
-                };
-                Grid.SetColumn(iconBorder, 0);
-                cardGrid.Children.Add(iconBorder);
-            }
-
-            // Right side: Grid with text on top, buttons pinned to bottom
-            var rightGrid = new Grid
-            {
-                RowDefinitions =
-                [
-                    new RowDefinition(GridLength.Star),  // text area
-                    new RowDefinition(GridLength.Auto)    // buttons at bottom
-                ],
-                Padding = new Thickness(8, 8, 8, 8)
-            };
-
-            // Text area (top)
-            var textArea = new VerticalStackLayout { Spacing = 2 };
-            textArea.Children.Add(new Label
-            {
-                Text = module.Name,
-                FontSize = 18,
-                FontAttributes = FontAttributes.Bold,
-                TextColor = Colors.White
-            });
-            textArea.Children.Add(new Label
-            {
-                Text = $"v{module.Version}",
-                FontSize = 14,
-                TextColor = Color.FromArgb("#888")
-            });
-            Grid.SetRow(textArea, 0);
-            rightGrid.Children.Add(textArea);
-
-            // Action buttons (bottom, full width)
-            var captured = module;
-
-            if (module.Status.Enabled)
-            {
-                // Running — Stop + Restart, equal width
-                var buttonsGrid = new Grid
-                {
-                    ColumnDefinitions =
-                    [
-                        new ColumnDefinition(GridLength.Star),
-                        new ColumnDefinition(GridLength.Star)
-                    ],
-                    ColumnSpacing = 8,
-                    Margin = new Thickness(0, 0, 0, 0)
-                };
-
-                var stopBtn = new Button
-                {
-                    Text = "⏹ Stop",
-                    BackgroundColor = Color.FromArgb("#8B0000"),
-                    TextColor = Colors.White,
-                    FontSize = 12,
-                    HeightRequest = 24,
-                    CornerRadius = 4,
-                    HorizontalOptions = LayoutOptions.Fill
-                };
-                stopBtn.Clicked += (s, e) =>
-                {
-                    captured.Status.Enabled = false;
-                    _moduleInstaller.SaveModuleConfig(captured);
-                    BuildModuleCards();
-                    BuildPageButtons();
-                };
-
-                var restartBtn = new Button
-                {
-                    Text = "🔄 Restart",
-                    BackgroundColor = Color.FromArgb("#333"),
-                    TextColor = Colors.White,
-                    FontSize = 12,
-                    HeightRequest = 24,
-                    CornerRadius = 4,
-                    HorizontalOptions = LayoutOptions.Fill
-                };
-                restartBtn.Clicked += async (s, e) =>
-                {
-                    var logProgress = new Progress<string>(msg =>
-                        Debug.WriteLine($"[Restart] {msg}"));
-                    await Task.Run(() =>
-                        _moduleRunner.ExecuteRunAsync(captured, logProgress, CancellationToken.None));
-                };
-
-                Grid.SetColumn(stopBtn, 0);
-                Grid.SetColumn(restartBtn, 1);
-                buttonsGrid.Children.Add(stopBtn);
-                buttonsGrid.Children.Add(restartBtn);
-
-                Grid.SetRow(buttonsGrid, 1);
-                rightGrid.Children.Add(buttonsGrid);
-            }
-            else
-            {
-                // Stopped — Launch, full width
-                var launchBtn = new Button
-                {
-                    Text = "▶ Launch",
-                    BackgroundColor = Color.FromArgb("#0078D4"),
-                    TextColor = Colors.White,
-                    FontSize = 12,
-                    HeightRequest = 24,
-                    CornerRadius = 4,
-                    HorizontalOptions = LayoutOptions.Fill,
-                    Margin = new Thickness(0, 0, 0, 0)
-                };
-                launchBtn.Clicked += async (s, e) =>
-                {
-                    captured.Status.Enabled = true;
-                    _moduleInstaller.SaveModuleConfig(captured);
-                    BuildModuleCards();
-                    BuildPageButtons();
-
-                    if (captured.Commands.Run.Count > 0)
-                    {
-                        var logProgress = new Progress<string>(msg =>
-                            Debug.WriteLine($"[Launch] {msg}"));
-                        await Task.Run(() =>
-                            _moduleRunner.ExecuteRunAsync(captured, logProgress, CancellationToken.None));
-                    }
-                };
-
-                Grid.SetRow(launchBtn, 1);
-                rightGrid.Children.Add(launchBtn);
-            }
-
-            Grid.SetColumn(rightGrid, 1);
-            cardGrid.Children.Add(rightGrid);
-
-            // Card border
-            var card = new Border
-            {
-                BackgroundColor = Color.FromArgb("#2D2D30"),
-                Stroke = Color.FromArgb("#3F3F46"),
-                StrokeThickness = 1,
-                StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 8 },
-                Padding = 0,
-                HeightRequest = 180,
-                Margin = new Thickness(0, 0, 10, 10),
-                HorizontalOptions = LayoutOptions.Fill,
-                Content = cardGrid
-            };
-
-            // FlexLayout: fixed 400px width, NO grow (0) to behave like a strict grid
-            FlexLayout.SetBasis(card, new Microsoft.Maui.Layouts.FlexBasis(400));
-            FlexLayout.SetGrow(card, 0);
-            FlexLayout.SetShrink(card, 0);
-
-            return card;
-        }
-
-        // --- Module Toggle ---------------------------------------------------
-
-        private void OnModuleToggled(ModuleConfig module, bool enabled)
-        {
-            module.Status.Enabled = enabled;
-            _moduleInstaller.SaveModuleConfig(module);
-            BuildModuleCards();
-            BuildPageButtons();
         }
 
         // --- Module Page Buttons (Sidebar) -----------------------------------
@@ -455,6 +296,85 @@ namespace ASLM.Pages
                 native.HorizontalContentAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Left;
             }
 #endif
+        }
+    }
+
+    /// <summary>
+    /// ViewModel wrapper for ModuleConfig to handle UI state and commands.
+    /// </summary>
+    public class ModuleViewModel : INotifyPropertyChanged
+    {
+        private readonly ModuleConfig _config;
+        private readonly ModuleInstaller _installer;
+        private readonly ModuleRunner _runner;
+        private readonly Action _onStateChanged;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        public ModuleViewModel(ModuleConfig config, ModuleInstaller installer, ModuleRunner runner, Action onStateChanged)
+        {
+            _config = config;
+            _installer = installer;
+            _runner = runner;
+            _onStateChanged = onStateChanged;
+
+            LaunchCommand = new Command(OnLaunch);
+            StopCommand = new Command(OnStop);
+            RestartCommand = new Command(OnRestart);
+        }
+
+        public string Name => _config.Name;
+        public string VersionString => $"v{_config.Version}";
+        public string? IconFullPath => _config.IconFullPath;
+
+        public bool IsRunning => _config.Status.Enabled;
+        public bool IsStopped => !_config.Status.Enabled;
+
+        public ICommand LaunchCommand { get; }
+        public ICommand StopCommand { get; }
+        public ICommand RestartCommand { get; }
+
+        private async void OnLaunch()
+        {
+            _config.Status.Enabled = true;
+            _installer.SaveModuleConfig(_config);
+            NotifyStateChanged();
+            _onStateChanged?.Invoke();
+
+            if (_config.Commands.Run.Count > 0)
+            {
+                var logProgress = new Progress<string>(msg =>
+                    Debug.WriteLine($"[Launch] {msg}"));
+                await Task.Run(() =>
+                    _runner.ExecuteRunAsync(_config, logProgress, CancellationToken.None));
+            }
+        }
+
+        private void OnStop()
+        {
+            _config.Status.Enabled = false;
+            _installer.SaveModuleConfig(_config);
+            NotifyStateChanged();
+            _onStateChanged?.Invoke();
+        }
+
+        private async void OnRestart()
+        {
+            var logProgress = new Progress<string>(msg =>
+                Debug.WriteLine($"[Restart] {msg}"));
+            await Task.Run(() =>
+                _runner.ExecuteRunAsync(_config, logProgress, CancellationToken.None));
+        }
+
+        private void NotifyStateChanged()
+        {
+            OnPropertyChanged(nameof(IsRunning));
+            OnPropertyChanged(nameof(IsStopped));
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
