@@ -18,9 +18,20 @@ namespace ASLM.Services
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        /// <summary>Current application data. Never null after construction.</summary>
+        /// <summary>
+        /// Gets the current application data. This property is never null after construction.
+        /// </summary>
         public AppData Data { get; private set; } = new();
 
+        /// <summary>
+        /// Gets a value indicating whether the first-run wizard has been completed.
+        /// </summary>
+        public bool IsFirstRun => !Data.FirstRunCompleted;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AppDataService"/> class.
+        /// automatically loading data from disk.
+        /// </summary>
         public AppDataService()
         {
             var rootDir = GetRootDirectory();
@@ -29,7 +40,7 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Loads data from disk. Creates default data if file is missing or empty.
+        /// Loads data from disk synchronously. Creates default data if the file is missing or empty.
         /// </summary>
         public void Load()
         {
@@ -48,6 +59,7 @@ namespace ASLM.Services
             catch
             {
                 // Corrupted file — fall through to defaults.
+                // In a production app, we might want to backup the corrupted file.
             }
 
             Data = new AppData();
@@ -59,10 +71,7 @@ namespace ASLM.Services
         /// </summary>
         public void Save()
         {
-            var dir = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrEmpty(dir))
-                Directory.CreateDirectory(dir);
-
+            EnsureDirectoryExists();
             var json = JsonSerializer.Serialize(Data, _jsonOptions);
             File.WriteAllText(_filePath, json);
         }
@@ -70,22 +79,30 @@ namespace ASLM.Services
         /// <summary>
         /// Persists the current <see cref="Data"/> to disk asynchronously.
         /// </summary>
+        /// <returns>A task representing the asynchronous save operation.</returns>
         public async Task SaveAsync()
         {
-            var dir = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrEmpty(dir))
-                Directory.CreateDirectory(dir);
-
+            EnsureDirectoryExists();
             var json = JsonSerializer.Serialize(Data, _jsonOptions);
             await File.WriteAllTextAsync(_filePath, json);
         }
 
-        /// <summary>Whether the first-run wizard has been completed.</summary>
-        public bool IsFirstRun => !Data.FirstRunCompleted;
+        /// <summary>
+        /// Ensures the directory for the data file exists.
+        /// </summary>
+        private void EnsureDirectoryExists()
+        {
+            var dir = Path.GetDirectoryName(_filePath);
+            if (!string.IsNullOrEmpty(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+        }
 
         /// <summary>
         /// Returns the application root directory (one level above the App/ directory).
         /// </summary>
+        /// <returns>The full path to the root directory.</returns>
         private static string GetRootDirectory()
         {
             var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);

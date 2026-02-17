@@ -33,10 +33,15 @@ namespace ASLM.Pages
         private static readonly Color ActiveBg = Color.FromArgb("#2D2D30");
         private static readonly Color TransparentBg = Colors.Transparent;
 
-        // ViewModel Properties
+        /// <summary>
+        /// Collection of view models for the dashboard.
+        /// </summary>
         public ObservableCollection<ModuleViewModel> Modules { get; } = new();
 
         private int _gridSpan = 1;
+        /// <summary>
+        /// Gets or sets the column span for the responsive grid layout.
+        /// </summary>
         public int GridSpan
         {
             get => _gridSpan;
@@ -50,6 +55,9 @@ namespace ASLM.Pages
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainPage"/> class.
+        /// </summary>
         public MainPage(
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
@@ -67,12 +75,19 @@ namespace ASLM.Pages
             SettingsButton.HandlerChanged += AlignButtonLeft;
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        /// <inheritdoc />
+        public new event PropertyChangedEventHandler? PropertyChanged;
+
+        /// <summary>
+        /// Invokes the PropertyChanged event.
+        /// </summary>
+        /// <param name="propertyName">Name of the property that changed.</param>
+        protected new void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        /// <inheritdoc />
         protected override void OnSizeAllocated(double width, double height)
         {
             base.OnSizeAllocated(width, height);
@@ -309,8 +324,12 @@ namespace ASLM.Pages
         private readonly ModuleRunner _runner;
         private readonly Action _onStateChanged;
 
+        /// <inheritdoc />
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ModuleViewModel"/> class.
+        /// </summary>
         public ModuleViewModel(ModuleConfig config, ModuleInstaller installer, ModuleRunner runner, Action onStateChanged)
         {
             _config = config;
@@ -323,15 +342,23 @@ namespace ASLM.Pages
             RestartCommand = new Command(OnRestart);
         }
 
+        /// <summary>Module Name.</summary>
         public string Name => _config.Name;
+        /// <summary>Formatted Version.</summary>
         public string VersionString => $"v{_config.Version}";
+        /// <summary>Icon path.</summary>
         public string? IconFullPath => _config.IconFullPath;
 
+        /// <summary>Is the module currently enabled/running.</summary>
         public bool IsRunning => _config.Status.Enabled;
+        /// <summary>Is the module currently stopped.</summary>
         public bool IsStopped => !_config.Status.Enabled;
 
+        /// <summary>Command to launch the module.</summary>
         public ICommand LaunchCommand { get; }
+        /// <summary>Command to stop the module.</summary>
         public ICommand StopCommand { get; }
+        /// <summary>Command to restart the module.</summary>
         public ICommand RestartCommand { get; }
 
         private async void OnLaunch()
@@ -372,6 +399,9 @@ namespace ASLM.Pages
             OnPropertyChanged(nameof(IsStopped));
         }
 
+        /// <summary>
+        /// Invokes the PropertyChanged event.
+        /// </summary>
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

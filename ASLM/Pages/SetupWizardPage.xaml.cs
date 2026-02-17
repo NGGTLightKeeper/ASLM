@@ -33,6 +33,9 @@ namespace ASLM.Pages
         private DateTime _lastSpeedUpdate = DateTime.UtcNow;
         private double _lastSpeed;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SetupWizardPage"/> class.
+        /// </summary>
         public SetupWizardPage(
             AppDataService appData,
             EngineInstaller engineInstaller,

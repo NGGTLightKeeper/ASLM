@@ -4,8 +4,15 @@ using ASLM.Services;
 
 namespace ASLM
 {
+    /// <summary>
+    /// Static class responsible for creating and configuring the MAUI application.
+    /// </summary>
     public static class MauiProgram
     {
+        /// <summary>
+        /// Creates and configures the MauiApp.
+        /// </summary>
+        /// <returns>The configured MauiApp.</returns>
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();

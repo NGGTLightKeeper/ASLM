@@ -10,6 +10,9 @@ namespace ASLM.Pages
         private readonly AppDataService _appData;
         private readonly IServiceProvider _services;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SettingsPage"/> class.
+        /// </summary>
         public SettingsPage(AppDataService appData, IServiceProvider services)
         {
             _appData = appData;
@@ -35,14 +38,14 @@ namespace ASLM.Pages
         private void OnUserProfileClicked(object? sender, EventArgs e)
         {
             UserProfileSection.Focus();
-            SettingsScroll.ScrollToAsync(UserProfileSection, ScrollToPosition.Start, true);
+            _ = SettingsScroll.ScrollToAsync(UserProfileSection, ScrollToPosition.Start, true);
             HighlightCategory(NavUserProfile);
         }
 
         private void OnPortsClicked(object? sender, EventArgs e)
         {
             PortsSection.Focus();
-            SettingsScroll.ScrollToAsync(PortsSection, ScrollToPosition.Start, true);
+            _ = SettingsScroll.ScrollToAsync(PortsSection, ScrollToPosition.Start, true);
             HighlightCategory(NavPorts);
         }
 

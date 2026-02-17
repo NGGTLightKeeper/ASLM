@@ -22,6 +22,7 @@ namespace ASLM.Services
         /// <summary>
         /// Synchronously scans <c>Models/*/ASLM_Model.json</c> files.
         /// </summary>
+        /// <returns>A list of discovered model configurations.</returns>
         public List<ModelConfig> DiscoverModels()
         {
             var baseDir = GetRootDirectory();
@@ -77,6 +78,11 @@ namespace ASLM.Services
         /// Downloads model files from HuggingFace. If no files are listed in config,
         /// fetches the file list from the API first.
         /// </summary>
+        /// <param name="config">The model configuration.</param>
+        /// <param name="log">Progress logger.</param>
+        /// <param name="downloadProgress">Download progress reporter.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A task representing the installation process.</returns>
         public async Task InstallAsync(
             ModelConfig config,
             IProgress<string> log,
@@ -134,6 +140,9 @@ namespace ASLM.Services
         /// Queries the HuggingFace API definition for a model and extracts the list
         /// of files (siblings), excluding .git* and README.md.
         /// </summary>
+        /// <param name="repoId">The HuggingFace repository ID (e.g. 'openai/whisper-tiny').</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of filenames.</returns>
         private async Task<List<string>> FetchFileListAsync(string repoId, CancellationToken ct)
         {
             var url = $"https://huggingface.co/api/models/{repoId}";
@@ -166,6 +175,11 @@ namespace ASLM.Services
         /// <summary>
         /// Downloads a single file with progress reporting and throttling.
         /// </summary>
+        /// <param name="url">The download URL.</param>
+        /// <param name="destPath">The local destination path.</param>
+        /// <param name="log">Progress logger.</param>
+        /// <param name="downloadProgress">Download progress reporter.</param>
+        /// <param name="ct">Cancellation token.</param>
         private async Task DownloadFileAsync(
             string url,
             string destPath,
@@ -215,12 +229,18 @@ namespace ASLM.Services
 
         // --- Helpers ---------------------------------------------------------
 
+        /// <summary>
+        /// Returns the application root directory.
+        /// </summary>
         private static string GetRootDirectory()
         {
             var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
             return Directory.GetParent(appDir)?.FullName ?? appDir;
         }
 
+        /// <summary>
+        /// Saves the configuration synchronously.
+        /// </summary>
         private void SaveConfig(ModelConfig config)
         {
             if (string.IsNullOrEmpty(config.SourcePath)) return;
@@ -228,6 +248,9 @@ namespace ASLM.Services
             File.WriteAllText(config.SourcePath, json);
         }
 
+        /// <summary>
+        /// Saves the configuration asynchronously.
+        /// </summary>
         private async Task SaveConfigAsync(ModelConfig config)
         {
             if (string.IsNullOrEmpty(config.SourcePath)) return;

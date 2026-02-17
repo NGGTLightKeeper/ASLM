@@ -7,18 +7,33 @@ namespace ASLM.Models
     /// </summary>
     public class EngineConfig
     {
+        /// <summary>
+        /// Unique identifier for the engine (e.g., "python-runtime").
+        /// </summary>
         [JsonPropertyName("id")]
         public string Id { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Human-readable name of the engine.
+        /// </summary>
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Description of the engine's purpose.
+        /// </summary>
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Version string of the engine (e.g., "3.12.8").
+        /// </summary>
         [JsonPropertyName("version")]
         public string Version { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Type of the engine (e.g., "runtime").
+        /// </summary>
         [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
 
@@ -35,9 +50,15 @@ namespace ASLM.Models
         [JsonPropertyName("packageManager")]
         public EnginePackageManager? PackageManager { get; set; }
 
+        /// <summary>
+        /// System requirements needed to install this engine.
+        /// </summary>
         [JsonPropertyName("requirements")]
         public EngineRequirements? Requirements { get; set; }
 
+        /// <summary>
+        /// List of steps to install the engine.
+        /// </summary>
         [JsonPropertyName("install")]
         public List<InstallStep> Install { get; set; } = [];
 
@@ -49,6 +70,9 @@ namespace ASLM.Models
         [JsonPropertyName("postInstall")]
         public List<InstallStep> PostInstall { get; set; } = [];
 
+        /// <summary>
+        /// Current installation status of the engine.
+        /// </summary>
         [JsonPropertyName("status")]
         public EngineStatus Status { get; set; } = new();
 
@@ -67,49 +91,81 @@ namespace ASLM.Models
     /// </summary>
     public class InstallStep
     {
+        /// <summary>
+        /// The action to perform (e.g., "download", "extract", "execute").
+        /// </summary>
         [JsonPropertyName("action")]
         public string Action { get; set; } = string.Empty;
 
-        /// <summary>Human-readable name for logging.</summary>
+        /// <summary>
+        /// Human-readable name for logging purposes.
+        /// </summary>
         [JsonPropertyName("name")]
         public string? Name { get; set; }
 
         // --- download --------------------------------------------------------
 
+        /// <summary>
+        /// URL for download actions.
+        /// </summary>
         [JsonPropertyName("url")]
         public string? Url { get; set; }
 
+        /// <summary>
+        /// Expected SHA-256 checksum for verification.
+        /// </summary>
         [JsonPropertyName("sha256")]
         public string? Sha256 { get; set; }
 
         // --- download, extract, move -----------------------------------------
 
+        /// <summary>
+        /// Destination path for the action.
+        /// </summary>
         [JsonPropertyName("dest")]
         public string? Dest { get; set; }
 
         // --- extract, move ---------------------------------------------------
 
+        /// <summary>
+        /// Source path for extraction or move actions.
+        /// </summary>
         [JsonPropertyName("source")]
         public string? Source { get; set; }
 
         // --- modify_file -----------------------------------------------------
 
+        /// <summary>
+        /// Path to the file to modify.
+        /// </summary>
         [JsonPropertyName("path")]
         public string? Path { get; set; }
 
+        /// <summary>
+        /// String pattern to find in the file.
+        /// </summary>
         [JsonPropertyName("find")]
         public string? Find { get; set; }
 
+        /// <summary>
+        /// String to replace the found pattern with.
+        /// </summary>
         [JsonPropertyName("replace")]
         public string? Replace { get; set; }
 
         // --- execute ---------------------------------------------------------
 
+        /// <summary>
+        /// Command line string to execute.
+        /// </summary>
         [JsonPropertyName("command")]
         public string? Command { get; set; }
 
         // --- cleanup ---------------------------------------------------------
 
+        /// <summary>
+        /// Target directory or file to clean up (delete).
+        /// </summary>
         [JsonPropertyName("target")]
         public string? Target { get; set; }
     }
@@ -140,12 +196,21 @@ namespace ASLM.Models
     /// </summary>
     public class EngineRequirements
     {
+        /// <summary>
+        /// Required Operating System (e.g., "windows").
+        /// </summary>
         [JsonPropertyName("os")]
         public string Os { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Required Architecture (e.g., "x64").
+        /// </summary>
         [JsonPropertyName("arch")]
         public string Arch { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Required disk space in Megabytes.
+        /// </summary>
         [JsonPropertyName("diskSpaceMb")]
         public int DiskSpaceMb { get; set; }
     }
@@ -156,12 +221,21 @@ namespace ASLM.Models
     /// </summary>
     public class EngineStatus
     {
+        /// <summary>
+        /// Gets or sets whether the engine is currently installed.
+        /// </summary>
         [JsonPropertyName("installed")]
         public bool Installed { get; set; }
 
+        /// <summary>
+        /// Gets or sets the version currently installed.
+        /// </summary>
         [JsonPropertyName("installedVersion")]
         public string? InstalledVersion { get; set; }
 
+        /// <summary>
+        /// Timestamp of the last check/update.
+        /// </summary>
         [JsonPropertyName("lastChecked")]
         public string? LastChecked { get; set; }
     }
