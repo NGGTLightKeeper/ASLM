@@ -30,6 +30,9 @@ namespace ASLM.Services
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
+        private List<EngineConfig>? _cachedEngines;
+        private readonly object _cacheLock = new();
+
         // --- Discovery -------------------------------------------------------
 
         /// <summary>
@@ -40,53 +43,60 @@ namespace ASLM.Services
         /// <returns>A list of discovered engine configurations.</returns>
         public List<EngineConfig> DiscoverEngines()
         {
-            var baseDir = GetRootDirectory();
-            var enginesRoot = Path.Combine(baseDir, "Engines");
-            var engines = new List<EngineConfig>();
-
-            if (!Directory.Exists(enginesRoot))
-                return engines;
-
-            foreach (var jsonFile in Directory.EnumerateFiles(enginesRoot, "ASLM_Engine.json", SearchOption.AllDirectories))
+            lock (_cacheLock)
             {
-                try
+                if (_cachedEngines != null)
+                    return _cachedEngines.ToList();
+
+                var baseDir = GetRootDirectory();
+                var enginesRoot = Path.Combine(baseDir, "Engines");
+                var engines = new List<EngineConfig>();
+
+                if (Directory.Exists(enginesRoot))
                 {
-                    var json = File.ReadAllText(jsonFile);
-                    var config = JsonSerializer.Deserialize<EngineConfig>(json, _jsonOptions);
-                    if (config != null)
+                    foreach (var jsonFile in Directory.EnumerateFiles(enginesRoot, "ASLM_Engine.json", SearchOption.AllDirectories))
                     {
-                        config.SourcePath = jsonFile;
-
-                        // Validate that "installed" engines actually have their runtime on disk.
-                        // If a user manually deleted the runtime folder, reset the status.
-                        if (config.Status.Installed)
+                        try
                         {
-                            var engineDir = Path.GetDirectoryName(jsonFile)!;
-                            var runtimeDir = Path.Combine(engineDir, "runtime");
-
-                            if (!Directory.Exists(runtimeDir) ||
-                                !Directory.EnumerateFileSystemEntries(runtimeDir).Any())
+                            var json = File.ReadAllText(jsonFile);
+                            var config = JsonSerializer.Deserialize<EngineConfig>(json, _jsonOptions);
+                            if (config != null)
                             {
-                                Debug.WriteLine($"Runtime missing for {config.Name}, resetting installed status.");
-                                config.Status.Installed = false;
-                                config.Status.InstalledVersion = null;
+                                config.SourcePath = jsonFile;
 
-                                // Persist the reset status back to JSON.
-                                var updatedJson = JsonSerializer.Serialize(config, _jsonOptions);
-                                File.WriteAllText(jsonFile, updatedJson);
+                                // Validate that "installed" engines actually have their runtime on disk.
+                                // If a user manually deleted the runtime folder, reset the status.
+                                if (config.Status.Installed)
+                                {
+                                    var engineDir = Path.GetDirectoryName(jsonFile)!;
+                                    var runtimeDir = Path.Combine(engineDir, "runtime");
+
+                                    if (!Directory.Exists(runtimeDir) ||
+                                        !Directory.EnumerateFileSystemEntries(runtimeDir).Any())
+                                    {
+                                        Debug.WriteLine($"Runtime missing for {config.Name}, resetting installed status.");
+                                        config.Status.Installed = false;
+                                        config.Status.InstalledVersion = null;
+
+                                        // Persist the reset status back to JSON.
+                                        var updatedJson = JsonSerializer.Serialize(config, _jsonOptions);
+                                        File.WriteAllText(jsonFile, updatedJson);
+                                    }
+                                }
+
+                                engines.Add(config);
                             }
                         }
-
-                        engines.Add(config);
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Failed to parse {jsonFile}: {ex.Message}");
+                        }
                     }
                 }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Failed to parse {jsonFile}: {ex.Message}");
-                }
-            }
 
-            return engines;
+                _cachedEngines = engines;
+                return _cachedEngines.ToList();
+            }
         }
 
         // --- Helpers ---------------------------------------------------------
@@ -228,6 +238,11 @@ namespace ASLM.Services
 
             await SaveConfigAsync(config);
             log.Report($"=== {config.Name} installed successfully ===");
+
+            lock (_cacheLock)
+            {
+                _cachedEngines = null;
+            }
         }
 
         // --- Step Executors --------------------------------------------------
