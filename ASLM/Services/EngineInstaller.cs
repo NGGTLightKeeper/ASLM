@@ -314,10 +314,18 @@ namespace ASLM.Services
 
             Directory.CreateDirectory(dest);
 
+            // Ensure destination has a trailing separator for reliable prefix matching (Zip Slip prevention).
+            var destPrefix = dest;
+            if (!destPrefix.EndsWith(Path.DirectorySeparatorChar) && !destPrefix.EndsWith(Path.AltDirectorySeparatorChar))
+                destPrefix += Path.DirectorySeparatorChar;
+
             using var archive = ZipFile.OpenRead(source);
             foreach (var entry in archive.Entries)
             {
                 var targetPath = Path.GetFullPath(Path.Combine(dest, entry.FullName));
+
+                if (!targetPath.StartsWith(destPrefix, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Security violation: Zip entry '{entry.FullName}' attempts to extract to '{targetPath}' which is outside the destination directory.");
 
                 // Directory entry
                 if (string.IsNullOrEmpty(entry.Name))
@@ -558,33 +566,82 @@ namespace ASLM.Services
         /// </summary>
         /// <param name="baseDir">The application base directory.</param>
         /// <param name="tempDir">The temporary directory for this installation.</param>
-        private sealed class StepContext(string baseDir, string tempDir)
+        private sealed class StepContext
         {
-            public string BaseDir { get; } = baseDir;
-            public string TempDir { get; } = tempDir;
+            /// <summary>
+            /// Normalized absolute path to the application base directory.
+            /// </summary>
+            public string BaseDir { get; }
+
+            /// <summary>
+            /// Normalized absolute path to the temporary installation directory.
+            /// </summary>
+            public string TempDir { get; }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="StepContext"/> class.
+            /// </summary>
+            /// <param name="baseDir">The application base directory.</param>
+            /// <param name="tempDir">The temporary directory for this installation.</param>
+            public StepContext(string baseDir, string tempDir)
+            {
+                BaseDir = EnsureTrailingSeparator(Path.GetFullPath(baseDir));
+                TempDir = EnsureTrailingSeparator(Path.GetFullPath(tempDir));
+            }
+
+            /// <summary>
+            /// Ensures that a directory path ends with a directory separator.
+            /// </summary>
+            /// <param name="path">The path to normalize.</param>
+            /// <returns>The path with a trailing separator.</returns>
+            private static string EnsureTrailingSeparator(string path)
+            {
+                if (!path.EndsWith(Path.DirectorySeparatorChar) && !path.EndsWith(Path.AltDirectorySeparatorChar))
+                    return path + Path.DirectorySeparatorChar;
+                return path;
+            }
 
             /// <summary>Replaces <c>{temp}</c> placeholder with the actual temp directory.</summary>
+            /// <param name="input">The string containing variables to resolve.</param>
+            /// <returns>The string with variables replaced.</returns>
             public string ResolveVariables(string input)
-                => input.Replace("{temp}", TempDir);
+                => input.Replace("{temp}", TempDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
 
             /// <summary>
             /// Resolves <c>{temp}</c> variable and converts relative paths to absolute
-            /// (relative to <see cref="BaseDir"/>). Normalises path separators.
+            /// (relative to <see cref="BaseDir"/>). Validates that the resulting path
+            /// is within either <see cref="BaseDir"/> or <see cref="TempDir"/>.
             /// </summary>
+            /// <param name="path">The path to resolve.</param>
+            /// <returns>A validated absolute path.</returns>
+            /// <exception cref="InvalidOperationException">Thrown if a path traversal attempt is detected.</exception>
             public string ResolvePath(string path)
             {
                 path = ResolveVariables(path);
 
-                if (!Path.IsPathRooted(path))
-                    path = Path.Combine(BaseDir, path);
+                string combined = Path.IsPathRooted(path) ? path : Path.Combine(BaseDir, path);
+                var fullPath = Path.GetFullPath(combined);
 
-                return Path.GetFullPath(path);
+                // For secure comparison, ensure we're checking against directory boundaries correctly.
+                var comparePath = fullPath;
+                if (!comparePath.EndsWith(Path.DirectorySeparatorChar) && !comparePath.EndsWith(Path.AltDirectorySeparatorChar))
+                    comparePath += Path.DirectorySeparatorChar;
+
+                if (!comparePath.StartsWith(BaseDir, StringComparison.OrdinalIgnoreCase) &&
+                    !comparePath.StartsWith(TempDir, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException($"Security violation: Path '{path}' resolves to '{fullPath}' which is outside allowed boundaries.");
+                }
+
+                return fullPath;
             }
 
             /// <summary>
             /// Resolves path-like tokens inside an argument string.
-            /// Any token containing <c>/</c> or <c>\</c> is treated as a path.
+            /// Any token containing <c>/</c> or <c>\</c> is treated as a path and resolved.
             /// </summary>
+            /// <param name="args">The argument string to process.</param>
+            /// <returns>The argument string with resolved paths.</returns>
             public string ResolveArgPaths(string args)
             {
                 var tokens = args.Split(' ');
