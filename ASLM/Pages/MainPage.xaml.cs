@@ -378,8 +378,11 @@ namespace ASLM.Pages
             }
         }
 
-        private void OnStop()
+        private async void OnStop()
         {
+            // Actually kill the running processes
+            await _runner.StopModuleAsync(_config.SourcePath);
+
             _config.Status.Enabled = false;
             _installer.SaveModuleConfig(_config);
             NotifyStateChanged();
@@ -388,6 +391,9 @@ namespace ASLM.Pages
 
         private async void OnRestart()
         {
+            // Stop existing processes first
+            await _runner.StopModuleAsync(_config.SourcePath);
+
             var logProgress = new Progress<string>(msg =>
                 Debug.WriteLine($"[Restart] {msg}"));
             await Task.Run(() =>

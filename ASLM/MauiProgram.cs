@@ -36,6 +36,7 @@ namespace ASLM
             builder.Services.AddSingleton<EngineInstaller>();
             builder.Services.AddSingleton<ModelInstaller>();
             builder.Services.AddSingleton<ModuleInstaller>();
+            builder.Services.AddSingleton<ProcessTracker>();
             builder.Services.AddSingleton<ModuleRunner>();
 
             // Pages
