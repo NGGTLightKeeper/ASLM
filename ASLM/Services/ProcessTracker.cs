@@ -14,7 +14,7 @@ namespace ASLM.Services
     /// </summary>
     public sealed class ProcessTracker : IDisposable
     {
-        private SafeFileHandle? _jobHandle;
+        private readonly SafeFileHandle? _jobHandle;
         private readonly ILogger<ProcessTracker> _logger;
         private bool _disposed;
 
@@ -71,15 +71,7 @@ namespace ASLM.Services
             // the same Job Object as the main application process.
             if (!AssignProcessToJobObject(_jobHandle, Process.GetCurrentProcess().Handle))
             {
-                // If we cannot assign ASLM to the job (e.g., already in a job),
-                // we must NOT assign child processes to this new job either.
-                // Otherwise, they will be split into a separate group in Task Manager.
-                // By abandoning this custom job, child processes will naturally inherit
-                // ASLM's existing job (or lack thereof), keeping them grouped together.
-                _logger.LogWarning("Failed to assign current process to Job Object (Error: {Error}). Disabling custom process grouping.", Marshal.GetLastWin32Error());
-
-                _jobHandle.Dispose();
-                _jobHandle = null;
+                _logger.LogWarning("Failed to assign current process to Job Object. Error: {Error}", Marshal.GetLastWin32Error());
             }
             else
             {
@@ -95,12 +87,8 @@ namespace ASLM.Services
         /// <returns>True if the process was successfully assigned.</returns>
         public bool AddProcess(Process process)
         {
-            if (_disposed) return false;
-
-            // If the job handle was disabled (because ASLM couldn't be assigned),
-            // we return true to indicate "handled via default inheritance".
-            if (_jobHandle == null || _jobHandle.IsInvalid)
-                return true;
+            if (_disposed || _jobHandle == null || _jobHandle.IsInvalid)
+                return false;
 
             try
             {
