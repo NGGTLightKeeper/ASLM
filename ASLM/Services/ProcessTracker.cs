@@ -33,7 +33,9 @@ namespace ASLM.Services
                 return;
             }
 
-            _jobHandle = CreateJobObject(IntPtr.Zero, "ASLM_ProcessGroup");
+            // Use an anonymous job object (no name) to avoid conflicts or permissions issues.
+            // This is safer and cleaner than using a named global object like "ASLM_ProcessGroup".
+            _jobHandle = CreateJobObject(IntPtr.Zero, null);
             if (_jobHandle.IsInvalid)
             {
                 _logger.LogError("Failed to create Job Object. Error: {Error}", Marshal.GetLastWin32Error());
@@ -118,7 +120,7 @@ namespace ASLM.Services
         // ─── Win32 P/Invoke ──────────────────────────────────────────
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern SafeFileHandle CreateJobObject(IntPtr lpJobAttributes, string lpName);
+        private static extern SafeFileHandle CreateJobObject(IntPtr lpJobAttributes, string? lpName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool SetInformationJobObject(SafeFileHandle hJob, JobObjectInfoType infoType,

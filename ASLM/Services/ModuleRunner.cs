@@ -1,10 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text;
 using ASLM.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Win32.SafeHandles;
 
 namespace ASLM.Services
 {
@@ -264,7 +262,6 @@ namespace ASLM.Services
             CancellationToken ct,
             bool trackProcess = false)
         {
-            Process? process = null;
             try
             {
                 var moduleDir = Path.GetDirectoryName(module.SourcePath);
@@ -285,11 +282,15 @@ namespace ASLM.Services
                     }
 
                     fileName = enginePath;
+                    // Combine engine + script/args
+                    // cmd.Exec = "manage.py runserver"
+                    // We need to ensure we run it in the module directory context
                     arguments = cmd.Exec; 
                 }
                 else
                 {
-                    // Run directly
+                    // Run directly (e.g. valid executable on PATH)
+                    // Properly parse the command string to handle quotes
                     var parts = SplitCommand(cmd.Exec);
                     if (parts.Count == 0) return false;
 
@@ -297,7 +298,7 @@ namespace ASLM.Services
                     arguments = parts.Count > 1 ? ParseArguments(parts.Skip(1)) : "";
                 }
 
-                // 2. Prepare Process StartInfo
+                // 2. Prepare Process
                 var psi = new ProcessStartInfo
                 {
                     FileName = fileName,
@@ -311,36 +312,24 @@ namespace ASLM.Services
                 
                 log.Report($"Exec: {Path.GetFileName(fileName)} {arguments}");
 
-                // 3. Start Process
-                // On Windows, use robust launch (Suspended -> Job -> Resume)
-                if (OperatingSystem.IsWindows())
-                {
-                    process = StartSuspendedAndAssignToJob(psi, _processTracker, log);
-                    if (process == null)
-                    {
-                        log.Report("Failed to start process (Windows robust launch).");
-                        return false;
-                    }
-                }
-                else
-                {
-                    process = new Process { StartInfo = psi };
-                    process.OutputDataReceived += (s, e) => { if (e.Data != null) log.Report($"  {e.Data}"); };
-                    process.ErrorDataReceived += (s, e) => { if (e.Data != null) log.Report($"  err: {e.Data}"); };
+                var process = new Process { StartInfo = psi };
 
-                    if (!process.Start())
-                    {
-                        log.Report("Failed to start process.");
-                        process.Dispose();
-                        return false;
-                    }
+                // 3. Output Handling
+                process.OutputDataReceived += (s, e) => { if (e.Data != null) log.Report($"  {e.Data}"); };
+                process.ErrorDataReceived += (s, e) => { if (e.Data != null) log.Report($"  err: {e.Data}"); };
 
-                    _processTracker.AddProcess(process);
-                    process.BeginOutputReadLine();
-                    process.BeginErrorReadLine();
+                // 4. Start & Wait
+                if (!process.Start())
+                {
+                    log.Report("Failed to start process.");
+                    process.Dispose();
+                    return false;
                 }
 
-                // 4. Track Process
+                // Assign to Job Object — groups under ASLM in Task Manager
+                _processTracker.AddProcess(process);
+
+                // Track the process for module stop functionality
                 if (trackProcess)
                 {
                     lock (_processLock)
@@ -350,39 +339,38 @@ namespace ASLM.Services
                     }
                 }
 
-                // 5. Wait for Exit
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+
                 await process.WaitForExitAsync(ct);
 
-                // Remove from tracking
+                // Remove from tracking after process exits naturally
                 if (trackProcess)
                 {
                     RemoveProcess(module.SourcePath, process);
                 }
 
-                int exitCode = process.ExitCode;
-                process.Dispose(); // Dispose only after getting exit code
-
-                if (exitCode == 0)
+                if (process.ExitCode == 0)
                 {
+                    process.Dispose();
                     return true;
                 }
                 else
                 {
-                    log.Report($"Process exited with code {exitCode}");
+                    log.Report($"Process exited with code {process.ExitCode}");
+                    process.Dispose();
                     return false;
                 }
             }
             catch (OperationCanceledException)
             {
                 log.Report("Operation canceled.");
-                process?.Dispose();
                 return false;
             }
             catch (Exception ex)
             {
                 log.Report($"Execution error: {ex.Message}");
                 _logger.LogError(ex, "Command execution failed");
-                process?.Dispose();
                 return false;
             }
         }
@@ -473,219 +461,6 @@ namespace ASLM.Services
                 }
                 _runningProcesses.Clear();
             }
-        }
-
-        /// <summary>
-        /// Starts a process in a suspended state, assigns it to the Job Object, and then resumes it.
-        /// This ensures the process is part of the job group from the very first moment.
-        /// </summary>
-        private unsafe Process? StartSuspendedAndAssignToJob(ProcessStartInfo psi, ProcessTracker tracker, IProgress<string> log)
-        {
-            try
-            {
-                var commandLine = BuildCommandLine(psi.FileName, psi.Arguments);
-                var startupInfo = new STARTUPINFO();
-                startupInfo.cb = Marshal.SizeOf(startupInfo);
-                startupInfo.dwFlags = 0x00000100; // STARTF_USESTDHANDLES
-
-                // Create pipes for stdout/stderr
-                var security = new SECURITY_ATTRIBUTES();
-                security.nLength = Marshal.SizeOf(security);
-                security.bInheritHandle = 1; // True
-
-                IntPtr hReadOut, hWriteOut;
-                IntPtr hReadErr, hWriteErr;
-
-                if (!CreatePipe(out hReadOut, out hWriteOut, ref security, 0) ||
-                    !CreatePipe(out hReadErr, out hWriteErr, ref security, 0))
-                {
-                    log.Report("Failed to create pipes for process.");
-                    return null;
-                }
-
-                // Ensure read handles are NOT inherited
-                SetHandleInformation(hReadOut, 1, 0); // HANDLE_FLAG_INHERIT = 1
-                SetHandleInformation(hReadErr, 1, 0);
-
-                startupInfo.hStdOutput = hWriteOut;
-                startupInfo.hStdError = hWriteErr;
-                startupInfo.hStdInput = IntPtr.Zero; // We don't need input for now
-
-                if (psi.CreateNoWindow)
-                {
-                    startupInfo.dwFlags |= 0x00000001; // STARTF_USESHOWWINDOW
-                    startupInfo.wShowWindow = 0;       // SW_HIDE
-                }
-
-                // Flags: CREATE_SUSPENDED (0x4) | CREATE_UNICODE_ENVIRONMENT (0x400) | CREATE_NO_WINDOW (0x08000000)
-                uint creationFlags = 0x00000404;
-                if (psi.CreateNoWindow) creationFlags |= 0x08000000;
-
-                var processInfo = new PROCESS_INFORMATION();
-                var workingDir = string.IsNullOrEmpty(psi.WorkingDirectory) ? null : psi.WorkingDirectory;
-
-                // Create process in suspended state
-                bool success = CreateProcess(
-                    null,
-                    new StringBuilder(commandLine),
-                    IntPtr.Zero,
-                    IntPtr.Zero,
-                    true, // Inherit handles
-                    creationFlags,
-                    IntPtr.Zero, // Environment (inherit for now)
-                    workingDir,
-                    ref startupInfo,
-                    out processInfo);
-
-                // Close write ends of pipes in parent regardless of success
-                CloseHandle(hWriteOut);
-                CloseHandle(hWriteErr);
-
-                if (!success)
-                {
-                    CloseHandle(hReadOut);
-                    CloseHandle(hReadErr);
-                    log.Report("Failed to CreateProcess (Win32).");
-                    return null;
-                }
-
-                // The Magic: Add process to Job Object while it is still suspended
-                // This guarantees the process is in the job BEFORE it executes any code
-                // or spawns any children.
-                try
-                {
-                    // We need a Process object for the tracker API, but we have a raw handle.
-                    // Process.GetProcessById creates a new Process object attached to the PID.
-                    using var p = Process.GetProcessById(processInfo.dwProcessId);
-                    tracker.AddProcess(p);
-                }
-                catch (Exception ex)
-                {
-                    log.Report($"Warning: Failed to add process {processInfo.dwProcessId} to Job Object: {ex.Message}");
-                }
-
-                // Resume the main thread to let the process run
-                ResumeThread(processInfo.hThread);
-
-                // Start async pipe readers
-                // We fire and forget these tasks but they will run until pipe closes (process exit)
-                _ = ReadPipe(hReadOut, log);
-                _ = ReadPipe(hReadErr, log, isError: true);
-
-                // Clean up raw handles (Process object will open its own)
-                CloseHandle(processInfo.hThread);
-                CloseHandle(processInfo.hProcess);
-
-                // Return a Process object representing the running process
-                // This allows the caller to WaitForExitAsync etc.
-                return Process.GetProcessById(processInfo.dwProcessId);
-            }
-            catch (Exception ex)
-            {
-                log.Report($"Failed to start process via Win32: {ex.Message}");
-                return null;
-            }
-        }
-
-        // P/Invoke Declarations
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct STARTUPINFO
-        {
-            public int cb;
-            public string lpReserved;
-            public string lpDesktop;
-            public string lpTitle;
-            public int dwX;
-            public int dwY;
-            public int dwXSize;
-            public int dwYSize;
-            public int dwXCountChars;
-            public int dwYCountChars;
-            public int dwFillAttribute;
-            public int dwFlags;
-            public short wShowWindow;
-            public short cbReserved2;
-            public IntPtr lpReserved2;
-            public IntPtr hStdInput;
-            public IntPtr hStdOutput;
-            public IntPtr hStdError;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct PROCESS_INFORMATION
-        {
-            public IntPtr hProcess;
-            public IntPtr hThread;
-            public int dwProcessId;
-            public int dwThreadId;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct SECURITY_ATTRIBUTES
-        {
-            public int nLength;
-            public IntPtr lpSecurityDescriptor;
-            public int bInheritHandle;
-        }
-
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        internal static extern bool CreateProcess(
-            string? lpApplicationName,
-            StringBuilder lpCommandLine,
-            IntPtr lpProcessAttributes,
-            IntPtr lpThreadAttributes,
-            bool bInheritHandles,
-            uint dwCreationFlags,
-            IntPtr lpEnvironment,
-            string? lpCurrentDirectory,
-            ref STARTUPINFO lpStartupInfo,
-            out PROCESS_INFORMATION lpProcessInformation);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern uint ResumeThread(IntPtr hThread);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool CloseHandle(IntPtr hObject);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool CreatePipe(out IntPtr hReadPipe, out IntPtr hWritePipe, ref SECURITY_ATTRIBUTES lpPipeAttributes, uint nSize);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool SetHandleInformation(IntPtr hObject, int dwMask, int dwFlags);
-
-        private static string BuildCommandLine(string fileName, string arguments)
-        {
-            // Minimal escaping
-            var sb = new StringBuilder();
-            var quote = fileName.Contains(' ') && !fileName.StartsWith("\"");
-            if (quote) sb.Append('"');
-            sb.Append(fileName);
-            if (quote) sb.Append('"');
-            if (!string.IsNullOrEmpty(arguments))
-            {
-                sb.Append(' ');
-                sb.Append(arguments);
-            }
-            return sb.ToString();
-        }
-
-        private async Task ReadPipe(IntPtr hPipe, IProgress<string> log, bool isError = false)
-        {
-            // Simple stream reader wrapper around the handle
-            try
-            {
-                using var stream = new FileStream(new SafeFileHandle(hPipe, true), FileAccess.Read);
-                using var reader = new StreamReader(stream, Console.OutputEncoding);
-                while (true)
-                {
-                    var line = await reader.ReadLineAsync();
-                    if (line == null) break; // End of stream
-
-                    if (isError) log.Report($"  err: {line}");
-                    else log.Report($"  {line}");
-                }
-            }
-            catch { /* Ignore pipe errors */ }
         }
 
         /// <summary>
