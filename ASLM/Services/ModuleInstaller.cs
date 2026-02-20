@@ -105,16 +105,19 @@ namespace ASLM.Services
                 log.Report($"Downloading source from: {module.Source.Repo}");
                 await DownloadFileAsync(zipUrl, tempZip, log, downloadProgress, ct);
 
-                // Extract to temp
-                Directory.CreateDirectory(tempExtractDir);
-                ZipFile.ExtractToDirectory(tempZip, tempExtractDir);
+                await Task.Run(() =>
+                {
+                    // Extract to temp
+                    Directory.CreateDirectory(tempExtractDir);
+                    ZipFile.ExtractToDirectory(tempZip, tempExtractDir);
 
-                // GitHub archives have a top-level folder like "RepoName-main/"
-                var innerDir = Directory.GetDirectories(tempExtractDir).FirstOrDefault();
-                var sourceDir = innerDir ?? tempExtractDir;
+                    // GitHub archives have a top-level folder like "RepoName-main/"
+                    var innerDir = Directory.GetDirectories(tempExtractDir).FirstOrDefault();
+                    var sourceDir = innerDir ?? tempExtractDir;
 
-                // Copy extracted files into the module directory (merge, not replace)
-                CopyDirectory(sourceDir, moduleDir);
+                    // Copy extracted files into the module directory (merge, not replace)
+                    CopyDirectory(sourceDir, moduleDir);
+                }, ct);
 
                 log.Report("✓ Source downloaded.");
                 return true;
@@ -166,10 +169,14 @@ namespace ASLM.Services
                 try 
                 {
                     log.Report("Extracting archive...");
-                    ZipFile.ExtractToDirectory(tempZip, tempExtractDir);
+
+                    var jsonFile = await Task.Run(() =>
+                    {
+                        ZipFile.ExtractToDirectory(tempZip, tempExtractDir);
+                        return Directory.EnumerateFiles(tempExtractDir, "ASLM_Module.json", SearchOption.AllDirectories).FirstOrDefault();
+                    }, ct);
 
                     // 3. Find ASLM_Module.json
-                    var jsonFile = Directory.EnumerateFiles(tempExtractDir, "ASLM_Module.json", SearchOption.AllDirectories).FirstOrDefault();
                     if (jsonFile == null)
                     {
                         throw new InvalidOperationException("Invalid module: ASLM_Module.json not found in archive.");
@@ -188,15 +195,18 @@ namespace ASLM.Services
 
                     log.Report($"Installing to: {finalDir}");
 
-                    if (Directory.Exists(finalDir))
+                    await Task.Run(() =>
                     {
-                        log.Report("Removing old version...");
-                        Directory.Delete(finalDir, true);
-                    }
-                    Directory.CreateDirectory(finalDir);
+                        if (Directory.Exists(finalDir))
+                        {
+                            log.Report("Removing old version...");
+                            Directory.Delete(finalDir, true);
+                        }
+                        Directory.CreateDirectory(finalDir);
 
-                    // Copy all files from the folder containing the JSON to the final dir
-                    CopyDirectory(moduleSourceDir, finalDir);
+                        // Copy all files from the folder containing the JSON to the final dir
+                        CopyDirectory(moduleSourceDir, finalDir);
+                    }, ct);
                     
                     config.SourcePath = Path.Combine(finalDir, "ASLM_Module.json");
                     config.Status.Installed = true;
