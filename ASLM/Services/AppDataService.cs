@@ -1,6 +1,8 @@
+using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ASLM.Models;
+using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
@@ -11,6 +13,7 @@ namespace ASLM.Services
     public class AppDataService
     {
         private readonly string _filePath;
+        private readonly ILogger<AppDataService> _logger;
 
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
@@ -32,8 +35,10 @@ namespace ASLM.Services
         /// Initializes a new instance of the <see cref="AppDataService"/> class.
         /// automatically loading data from disk.
         /// </summary>
-        public AppDataService()
+        /// <param name="logger">The logger instance.</param>
+        public AppDataService(ILogger<AppDataService> logger)
         {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             var rootDir = GetRootDirectory();
             _filePath = Path.Combine(rootDir, "Data", "App", "ASLM_Data.json");
             Load();
@@ -56,8 +61,9 @@ namespace ASLM.Services
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to load app data from {FilePath}. Corrupted file — falling back to defaults.", _filePath);
                 // Corrupted file — fall through to defaults.
                 // In a production app, we might want to backup the corrupted file.
             }
