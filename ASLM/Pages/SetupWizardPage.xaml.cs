@@ -109,7 +109,7 @@ namespace ASLM.Pages
                 {
                     Text = module.Description,
                     FontSize = 12,
-                    TextColor = Color.FromArgb("#888"),
+                    TextColor = Color.FromArgb("#8E8E93"),
                     VerticalOptions = LayoutOptions.Center
                 });
 
@@ -123,7 +123,7 @@ namespace ASLM.Pages
                 {
                     Text = "No modules found in Modules/ directory.",
                     FontSize = 14,
-                    TextColor = Color.FromArgb("#888")
+                    TextColor = Color.FromArgb("#8E8E93")
                 });
             }
         }

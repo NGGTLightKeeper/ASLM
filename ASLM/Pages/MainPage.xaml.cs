@@ -29,8 +29,8 @@ namespace ASLM.Pages
 
         // Colors
         private static readonly Color ActiveTextColor = Colors.White;
-        private static readonly Color InactiveTextColor = Color.FromArgb("#888");
-        private static readonly Color ActiveBg = Color.FromArgb("#2D2D30");
+        private static readonly Color InactiveTextColor = Color.FromArgb("#8E8E93");
+        private static readonly Color ActiveBg = Color.FromArgb("#1D1D1F");
         private static readonly Color TransparentBg = Colors.Transparent;
 
         /// <summary>
@@ -200,6 +200,7 @@ namespace ASLM.Pages
                     Text = _panelExpanded ? $"{icon}  {module.Name}" : icon,
                     AutomationId = module.Name,
                     ClassId = icon,
+                    Style = (Style)Application.Current!.Resources["SidebarButton"],
                     BackgroundColor = TransparentBg,
                     TextColor = InactiveTextColor,
                     FontSize = 12,
@@ -219,7 +220,7 @@ namespace ASLM.Pages
                 {
                     Text = _panelExpanded ? "No module pages" : "",
                     FontSize = 11,
-                    TextColor = Color.FromArgb("#444"),
+                    TextColor = Color.FromArgb("#8E8E93"),
                     Margin = new Thickness(8, 2, 0, 0)
                 });
             }
