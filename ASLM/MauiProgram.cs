@@ -43,6 +43,7 @@ namespace ASLM
             builder.Services.AddTransient<MainPage>();
             builder.Services.AddTransient<SetupWizardPage>();
             builder.Services.AddTransient<SettingsPage>();
+            builder.Services.AddTransient<LoadingPage>();
 
             return builder.Build();
         }

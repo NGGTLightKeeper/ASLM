@@ -39,18 +39,11 @@ namespace ASLM
         }
 
         /// <summary>
-        /// Creates the appropriate startup page based on whether the first-run wizard has been completed.
+        /// Creates the initial loading page.
         /// </summary>
         public Page CreateStartupPage()
         {
-            var appData = _services.GetRequiredService<AppDataService>();
-
-            if (appData.IsFirstRun)
-            {
-                return _services.GetRequiredService<SetupWizardPage>();
-            }
-
-            return _services.GetRequiredService<MainPage>();
+            return _services.GetRequiredService<LoadingPage>();
         }
 
         /// <summary>
