@@ -31,10 +31,10 @@ namespace ASLM.Services
         // --- Discovery -------------------------------------------------------
 
         /// <summary>
-        /// Scans <c>Modules/*/ASLM_Module.json</c> to find installed modules.
+        /// Scans <c>Modules/*/ASLM_Module.json</c> to find installed modules asynchronously.
         /// </summary>
         /// <returns>A list of discovered module configurations.</returns>
-        public List<ModuleConfig> DiscoverModules()
+        public async Task<List<ModuleConfig>> DiscoverModulesAsync()
         {
             var baseDir = GetRootDirectory();
             var modulesRoot = Path.Combine(baseDir, "Modules");
@@ -43,27 +43,40 @@ namespace ASLM.Services
             if (!Directory.Exists(modulesRoot))
                 return modules;
 
-            foreach (var jsonFile in Directory.EnumerateFiles(modulesRoot, "ASLM_Module.json", SearchOption.AllDirectories))
+            // Get all JSON files first (synchronously, usually fast)
+            var jsonFiles = Directory.GetFiles(modulesRoot, "ASLM_Module.json", SearchOption.AllDirectories);
+
+            // Process files in parallel
+            var tasks = jsonFiles.Select(async jsonFile =>
             {
                 try
                 {
-                    var json = File.ReadAllText(jsonFile);
-                    var config = JsonSerializer.Deserialize<ModuleConfig>(json, _jsonOptions);
+                    await using var stream = File.OpenRead(jsonFile);
+                    var config = await JsonSerializer.DeserializeAsync<ModuleConfig>(stream, _jsonOptions);
                     if (config != null)
                     {
                         config.SourcePath = jsonFile;
                         
                         // If the JSON exists, we assume it's installed.
-                        // Ideally we'd validate entryPoint exists too.
-                        config.Status.Installed = true; 
+                        config.Status.Installed = true;
                         
-                        modules.Add(config);
+                        return config;
                     }
                 }
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"Failed to parse {jsonFile}: {ex.Message}");
                 }
+                return null;
+            });
+
+            var results = await Task.WhenAll(tasks);
+
+            // Filter out failures
+            foreach (var result in results)
+            {
+                if (result != null)
+                    modules.Add(result);
             }
 
             return modules;

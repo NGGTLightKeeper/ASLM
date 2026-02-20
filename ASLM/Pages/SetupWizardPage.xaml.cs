@@ -86,12 +86,12 @@ namespace ASLM.Pages
 
         // --- Module Discovery ------------------------------------------------
 
-        private void PopulateModuleList()
+        private async void PopulateModuleList()
         {
             ModuleList.Children.Clear();
             _moduleChecks.Clear();
 
-            var modules = _moduleInstaller.DiscoverModules();
+            var modules = await _moduleInstaller.DiscoverModulesAsync();
 
             foreach (var module in modules)
             {

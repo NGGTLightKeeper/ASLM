@@ -42,7 +42,7 @@ namespace ASLM.Pages
         {
             try
             {
-                var modules = await Task.Run(() => _moduleInstaller.DiscoverModules());
+                var modules = await _moduleInstaller.DiscoverModulesAsync();
                 _pendingModules = modules
                     .Where(m => !m.Status.FirstRunCompleted)
                     .ToList();

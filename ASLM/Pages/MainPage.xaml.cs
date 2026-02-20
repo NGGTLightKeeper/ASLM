@@ -106,16 +106,16 @@ namespace ASLM.Pages
             }
         }
 
-        private void OnPageLoaded(object? sender, EventArgs e)
+        private async void OnPageLoaded(object? sender, EventArgs e)
         {
-            RefreshModules();
+            await RefreshModulesAsync();
             ShowDashboard();
             _ = StartEnabledModulesAsync();
         }
 
-        private void RefreshModules()
+        private async Task RefreshModulesAsync()
         {
-            _allModules = _moduleInstaller.DiscoverModules();
+            _allModules = await _moduleInstaller.DiscoverModulesAsync();
 
             Modules.Clear();
             foreach (var module in _allModules)
