@@ -67,19 +67,19 @@
             <!-- Module Dashboard (Home view) -->
             <CollectionView x:Name="DashboardView"
                             IsVisible="True"
-                            Margin="30"
+                            Margin="12,16"
                             ItemsSource="{Binding Modules}"
                             SelectionMode="None">
 
                 <CollectionView.ItemsLayout>
                     <GridItemsLayout Orientation="Vertical"
                                      Span="{Binding GridSpan}"
-                                     VerticalItemSpacing="10"
-                                     HorizontalItemSpacing="10" />
+                                     VerticalItemSpacing="4"
+                                     HorizontalItemSpacing="4" />
                 </CollectionView.ItemsLayout>
 
                 <CollectionView.Header>
-                    <VerticalStackLayout Spacing="16" Margin="0,0,0,20">
+                    <VerticalStackLayout Spacing="16" Margin="4,0,4,16">
                         <Label Text="Modules"
                                FontSize="24" FontAttributes="Bold"
                                TextColor="White" />
