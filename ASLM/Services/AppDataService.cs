@@ -30,25 +30,32 @@ namespace ASLM.Services
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppDataService"/> class.
-        /// automatically loading data from disk.
+        /// Does NOT load data automatically; call <see cref="InitializeAsync"/> before use.
         /// </summary>
         public AppDataService()
         {
             var rootDir = GetRootDirectory();
             _filePath = Path.Combine(rootDir, "Data", "App", "ASLM_Data.json");
-            Load();
         }
 
         /// <summary>
-        /// Loads data from disk synchronously. Creates default data if the file is missing or empty.
+        /// Initializes the service by loading data from disk asynchronously.
         /// </summary>
-        public void Load()
+        public async Task InitializeAsync()
+        {
+            await LoadAsync();
+        }
+
+        /// <summary>
+        /// Loads data from disk asynchronously. Creates default data if the file is missing or empty.
+        /// </summary>
+        public async Task LoadAsync()
         {
             try
             {
                 if (File.Exists(_filePath))
                 {
-                    var json = File.ReadAllText(_filePath);
+                    var json = await File.ReadAllTextAsync(_filePath);
                     if (!string.IsNullOrWhiteSpace(json))
                     {
                         Data = JsonSerializer.Deserialize<AppData>(json, _jsonOptions) ?? new AppData();
@@ -63,7 +70,7 @@ namespace ASLM.Services
             }
 
             Data = new AppData();
-            Save();
+            await SaveAsync();
         }
 
         /// <summary>
