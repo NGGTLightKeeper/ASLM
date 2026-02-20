@@ -60,13 +60,17 @@ namespace ASLM.Pages
                 ModuleInfoLabel.Text = $"Modules to set up: {names}";
                 AddLog($"Found {_pendingModules.Count} module(s) needing setup:");
 
+                // Prefetch installed components to avoid repeated disk scans
+                var installedModels = await _modelInstaller.DiscoverModelsAsync();
+                var installedEngines = _engineInstaller.DiscoverEngines();
+
                 foreach (var module in _pendingModules)
                 {
                     AddLog($"  • {module.Name} v{module.Version}");
                     AddLog($"    FirstRun commands: {module.Commands.FirstRun.Count}");
                     
                     // Check dependencies
-                    ValidateDependencies(module);
+                    ValidateDependencies(module, installedModels, installedEngines);
                 }
             }
             catch (Exception ex)
@@ -167,9 +171,11 @@ namespace ASLM.Pages
 
         // --- Logic -----------------------------------------------------------
 
-        private void ValidateDependencies(ModuleConfig module)
+        private void ValidateDependencies(
+            ModuleConfig module,
+            List<ModelConfig> installedModels,
+            List<EngineConfig> installedEngines)
         {
-            var installedEngines = _engineInstaller.DiscoverEngines();
             foreach (var reqEngine in module.Dependencies.Engines)
             {
                 var exists = installedEngines.Any(e => e.Id == reqEngine.Id && e.Status.Installed);
@@ -179,7 +185,6 @@ namespace ASLM.Pages
                     AddLog($"    ✓ Engine: {reqEngine.Id}");
             }
 
-            var installedModels = _modelInstaller.DiscoverModels();
             foreach (var reqCategory in module.Dependencies.Models)
             {
                 var exists = installedModels.Any(m =>
