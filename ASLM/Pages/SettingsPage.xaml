@@ -38,7 +38,7 @@
         </VerticalStackLayout>
 
         <!-- Main Content Area -->
-        <ScrollView x:Name="SettingsScroll" Grid.Column="1" Padding="30">
+        <ScrollView x:Name="SettingsScroll" Grid.Column="1" Padding="16">
             <VerticalStackLayout Spacing="24">
 
                 <!-- User Profile -->
