@@ -29,8 +29,8 @@ namespace ASLM.Pages
 
         // Colors
         private static readonly Color ActiveTextColor = Colors.White;
-        private static readonly Color InactiveTextColor = Color.FromArgb("#888");
-        private static readonly Color ActiveBg = Color.FromArgb("#2D2D30");
+        private static readonly Color InactiveTextColor = Color.FromArgb("#8E8E93");
+        private static readonly Color ActiveBg = Color.FromArgb("#1D1D1F");
         private static readonly Color TransparentBg = Colors.Transparent;
 
         /// <summary>
@@ -106,16 +106,16 @@ namespace ASLM.Pages
             }
         }
 
-        private void OnPageLoaded(object? sender, EventArgs e)
+        private async void OnPageLoaded(object? sender, EventArgs e)
         {
-            RefreshModules();
+            await RefreshModulesAsync();
             ShowDashboard();
             _ = StartEnabledModulesAsync();
         }
 
-        private void RefreshModules()
+        private async Task RefreshModulesAsync()
         {
-            _allModules = _moduleInstaller.DiscoverModules();
+            _allModules = await _moduleInstaller.DiscoverModulesAsync();
 
             Modules.Clear();
             foreach (var module in _allModules)
@@ -200,6 +200,7 @@ namespace ASLM.Pages
                     Text = _panelExpanded ? $"{icon}  {module.Name}" : icon,
                     AutomationId = module.Name,
                     ClassId = icon,
+                    Style = (Style)Application.Current!.Resources["SidebarButton"],
                     BackgroundColor = TransparentBg,
                     TextColor = InactiveTextColor,
                     FontSize = 12,
@@ -219,7 +220,7 @@ namespace ASLM.Pages
                 {
                     Text = _panelExpanded ? "No module pages" : "",
                     FontSize = 11,
-                    TextColor = Color.FromArgb("#444"),
+                    TextColor = Color.FromArgb("#8E8E93"),
                     Margin = new Thickness(8, 2, 0, 0)
                 });
             }
@@ -377,8 +378,11 @@ namespace ASLM.Pages
             }
         }
 
-        private void OnStop()
+        private async void OnStop()
         {
+            // Actually kill the running processes
+            await _runner.StopModuleAsync(_config.SourcePath);
+
             _config.Status.Enabled = false;
             _installer.SaveModuleConfig(_config);
             NotifyStateChanged();
@@ -387,6 +391,9 @@ namespace ASLM.Pages
 
         private async void OnRestart()
         {
+            // Stop existing processes first
+            await _runner.StopModuleAsync(_config.SourcePath);
+
             var logProgress = new Progress<string>(msg =>
                 Debug.WriteLine($"[Restart] {msg}"));
             await Task.Run(() =>

@@ -86,12 +86,12 @@ namespace ASLM.Pages
 
         // --- Module Discovery ------------------------------------------------
 
-        private void PopulateModuleList()
+        private async void PopulateModuleList()
         {
             ModuleList.Children.Clear();
             _moduleChecks.Clear();
 
-            var modules = _moduleInstaller.DiscoverModules();
+            var modules = await _moduleInstaller.DiscoverModulesAsync();
 
             foreach (var module in modules)
             {
@@ -109,7 +109,7 @@ namespace ASLM.Pages
                 {
                     Text = module.Description,
                     FontSize = 12,
-                    TextColor = Color.FromArgb("#888"),
+                    TextColor = Color.FromArgb("#8E8E93"),
                     VerticalOptions = LayoutOptions.Center
                 });
 
@@ -123,7 +123,7 @@ namespace ASLM.Pages
                 {
                     Text = "No modules found in Modules/ directory.",
                     FontSize = 14,
-                    TextColor = Color.FromArgb("#888")
+                    TextColor = Color.FromArgb("#8E8E93")
                 });
             }
         }

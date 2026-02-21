@@ -31,7 +31,7 @@ namespace ASLM.Pages
         {
             try
             {
-                var models = await Task.Run(() => _installer.DiscoverModels());
+                var models = await _installer.DiscoverModelsAsync();
                 _pendingModels = models.Where(m => !m.Status.Installed).ToList();
 
                 if (_pendingModels.Count == 0)
