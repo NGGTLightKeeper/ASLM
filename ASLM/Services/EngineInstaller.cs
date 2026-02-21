@@ -149,74 +149,33 @@ namespace ASLM.Services
             IProgress<DownloadProgress>? downloadProgress = null,
             CancellationToken ct = default)
         {
-            // Scoped state — safe for the singleton because only one install runs at a time.
-            var baseDir = GetRootDirectory();
-            var tempDir = Path.Combine(Path.GetTempPath(), "ASLM", config.Id);
-
-            Directory.CreateDirectory(tempDir);
-
-            log.Report($"=== Installing {config.Name} v{config.Version} ===");
-            log.Report($"Base directory: {baseDir}");
-
-            var context = new StepContext(baseDir, tempDir);
-
-            for (int i = 0; i < config.Install.Count; i++)
+            await Task.Run(async () =>
             {
-                ct.ThrowIfCancellationRequested();
+                // Scoped state — safe for the singleton because only one install runs at a time.
+                var baseDir = GetRootDirectory();
+                var tempDir = Path.Combine(Path.GetTempPath(), "ASLM", config.Id);
 
-                var step = config.Install[i];
-                log.Report($"[{i + 1}/{config.Install.Count}] Action: {step.Action}");
+                Directory.CreateDirectory(tempDir);
 
-                switch (step.Action.ToLowerInvariant())
-                {
-                    case "download":
-                        await ExecuteDownloadAsync(step, context, log, downloadProgress, ct);
-                        break;
-                    case "extract":
-                        ExecuteExtract(step, context, log);
-                        break;
-                    case "modify_file":
-                        ExecuteModifyFile(step, context, log);
-                        break;
-                    case "execute":
-                        await ExecuteCommandAsync(step, context, log, ct);
-                        break;
-                    case "move":
-                        ExecuteMove(step, context, log);
-                        break;
-                    case "cleanup":
-                        ExecuteCleanup(step, context, log);
-                        break;
-                    case "rename_file":
-                        ExecuteRenameFile(step, context, log);
-                        break;
-                    case "delete_file":
-                        ExecuteDeleteFile(step, context, log);
-                        break;
-                    default:
-                        log.Report($"  ⚠ Unknown action: {step.Action}, skipping.");
-                        break;
-                }
-            }
+                log.Report($"=== Installing {config.Name} v{config.Version} ===");
+                log.Report($"Base directory: {baseDir}");
 
-            // Execute post-install steps (engine-specific fixes)
-            if (config.PostInstall.Count > 0)
-            {
-                log.Report($"Running {config.PostInstall.Count} post-install step(s)...");
-                for (int i = 0; i < config.PostInstall.Count; i++)
+                var context = new StepContext(baseDir, tempDir);
+
+                for (int i = 0; i < config.Install.Count; i++)
                 {
                     ct.ThrowIfCancellationRequested();
-                    var step = config.PostInstall[i];
-                    var label = step.Name ?? step.Action;
-                    log.Report($"[PostInstall {i + 1}/{config.PostInstall.Count}] {label}");
+
+                    var step = config.Install[i];
+                    log.Report($"[{i + 1}/{config.Install.Count}] Action: {step.Action}");
 
                     switch (step.Action.ToLowerInvariant())
                     {
-                        case "rename_file":
-                            ExecuteRenameFile(step, context, log);
+                        case "download":
+                            await ExecuteDownloadAsync(step, context, log, downloadProgress, ct);
                             break;
-                        case "delete_file":
-                            ExecuteDeleteFile(step, context, log);
+                        case "extract":
+                            ExecuteExtract(step, context, log);
                             break;
                         case "modify_file":
                             ExecuteModifyFile(step, context, log);
@@ -224,25 +183,69 @@ namespace ASLM.Services
                         case "execute":
                             await ExecuteCommandAsync(step, context, log, ct);
                             break;
+                        case "move":
+                            ExecuteMove(step, context, log);
+                            break;
+                        case "cleanup":
+                            ExecuteCleanup(step, context, log);
+                            break;
+                        case "rename_file":
+                            ExecuteRenameFile(step, context, log);
+                            break;
+                        case "delete_file":
+                            ExecuteDeleteFile(step, context, log);
+                            break;
                         default:
-                            log.Report($"  ⚠ Unknown post-install action: {step.Action}, skipping.");
+                            log.Report($"  ⚠ Unknown action: {step.Action}, skipping.");
                             break;
                     }
                 }
-            }
 
-            // Mark engine as installed and persist to disk.
-            config.Status.Installed = true;
-            config.Status.InstalledVersion = config.Version;
-            config.Status.LastChecked = DateTime.UtcNow.ToString("o");
+                // Execute post-install steps (engine-specific fixes)
+                if (config.PostInstall.Count > 0)
+                {
+                    log.Report($"Running {config.PostInstall.Count} post-install step(s)...");
+                    for (int i = 0; i < config.PostInstall.Count; i++)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        var step = config.PostInstall[i];
+                        var label = step.Name ?? step.Action;
+                        log.Report($"[PostInstall {i + 1}/{config.PostInstall.Count}] {label}");
 
-            await SaveConfigAsync(config);
-            log.Report($"=== {config.Name} installed successfully ===");
+                        switch (step.Action.ToLowerInvariant())
+                        {
+                            case "rename_file":
+                                ExecuteRenameFile(step, context, log);
+                                break;
+                            case "delete_file":
+                                ExecuteDeleteFile(step, context, log);
+                                break;
+                            case "modify_file":
+                                ExecuteModifyFile(step, context, log);
+                                break;
+                            case "execute":
+                                await ExecuteCommandAsync(step, context, log, ct);
+                                break;
+                            default:
+                                log.Report($"  ⚠ Unknown post-install action: {step.Action}, skipping.");
+                                break;
+                        }
+                    }
+                }
 
-            lock (_cacheLock)
-            {
-                _cachedEngines = null;
-            }
+                // Mark engine as installed and persist to disk.
+                config.Status.Installed = true;
+                config.Status.InstalledVersion = config.Version;
+                config.Status.LastChecked = DateTime.UtcNow.ToString("o");
+
+                await SaveConfigAsync(config);
+                log.Report($"=== {config.Name} installed successfully ===");
+
+                lock (_cacheLock)
+                {
+                    _cachedEngines = null;
+                }
+            }, ct);
         }
 
         // --- Step Executors --------------------------------------------------
