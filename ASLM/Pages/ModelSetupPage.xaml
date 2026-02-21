@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ASLM.Pages.ModelSetupPage"
              Title="Model Setup"
-             BackgroundColor="{AppThemeBinding Light=White, Dark=Black}">
+             BackgroundColor="#000000">
 
     <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="24" RowSpacing="12">
 
@@ -12,11 +12,11 @@
             <Label Text="Model Setup"
                    FontSize="24"
                    FontAttributes="Bold"
-                   TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                   TextColor="White" />
             <Label x:Name="ModelInfoLabel"
                    Text="Checking models..."
                    FontSize="14"
-                   TextColor="{AppThemeBinding Light=Gray, Dark=LightGray}" />
+                   TextColor="#8E8E93" />
         </VerticalStackLayout>
 
         <!-- Overall Progress -->
@@ -24,13 +24,13 @@
             <ProgressBar x:Name="InstallProgress"
                          Grid.Row="0"
                          Progress="0"
-                         ProgressColor="{AppThemeBinding Light=Blue, Dark=LightBlue}"
+                         ProgressColor="#007AFF"
                          HeightRequest="6" />
             <Label x:Name="ProgressLabel"
                    Grid.Row="1"
                    Text="Ready"
                    FontSize="12"
-                   TextColor="{AppThemeBinding Light=Gray, Dark=LightGray}" />
+                   TextColor="#8E8E93" />
         </Grid>
 
         <!-- Download Progress Bar -->
@@ -42,26 +42,26 @@
             <ProgressBar x:Name="DownloadProgressBar"
                          Grid.Row="0"
                          Progress="0"
-                         ProgressColor="{AppThemeBinding Light=#4CAF50, Dark=#66BB6A}"
+                         ProgressColor="#4CD964"
                          HeightRequest="4" />
             <Label x:Name="DownloadInfoLabel"
                    Grid.Row="1"
                    Text=""
                    FontSize="11"
-                   TextColor="{AppThemeBinding Light=Gray, Dark=LightGray}" />
+                   TextColor="#8E8E93" />
         </Grid>
 
         <!-- Log Output -->
         <Border Grid.Row="3"
-                Stroke="{AppThemeBinding Light=LightGray, Dark=#333}"
+                Stroke="#3A3A3C"
                 StrokeShape="RoundRectangle 8"
-                BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#1A1A1A}"
+                BackgroundColor="#1D1D1F"
                 Padding="12">
             <Editor x:Name="LogEditor"
                     IsReadOnly="True"
                     FontFamily="Consolas"
                     FontSize="12"
-                    TextColor="{AppThemeBinding Light=#333, Dark=#CCC}"
+                    TextColor="#F5F5F7"
                     BackgroundColor="Transparent"
                     VerticalOptions="Fill" />
         </Border>
@@ -71,7 +71,7 @@
             <Button x:Name="InstallButton"
                     Text="Install"
                     Clicked="OnInstallClicked"
-                    BackgroundColor="{AppThemeBinding Light=Blue, Dark=#3478F6}"
+                    BackgroundColor="#007AFF"
                     TextColor="White"
                     CornerRadius="8"
                     HeightRequest="40"
@@ -79,8 +79,8 @@
             <Button x:Name="CancelButton"
                     Text="Cancel"
                     Clicked="OnCancelClicked"
-                    BackgroundColor="{AppThemeBinding Light=LightGray, Dark=#333}"
-                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                    BackgroundColor="#3A3A3C"
+                    TextColor="White"
                     CornerRadius="8"
                     HeightRequest="40"
                     WidthRequest="120"

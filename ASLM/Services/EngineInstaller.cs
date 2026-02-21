@@ -30,6 +30,9 @@ namespace ASLM.Services
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
+        private List<EngineConfig>? _cachedEngines;
+        private readonly object _cacheLock = new();
+
         // --- Discovery -------------------------------------------------------
 
         /// <summary>
@@ -40,53 +43,60 @@ namespace ASLM.Services
         /// <returns>A list of discovered engine configurations.</returns>
         public List<EngineConfig> DiscoverEngines()
         {
-            var baseDir = GetRootDirectory();
-            var enginesRoot = Path.Combine(baseDir, "Engines");
-            var engines = new List<EngineConfig>();
-
-            if (!Directory.Exists(enginesRoot))
-                return engines;
-
-            foreach (var jsonFile in Directory.EnumerateFiles(enginesRoot, "ASLM_Engine.json", SearchOption.AllDirectories))
+            lock (_cacheLock)
             {
-                try
+                if (_cachedEngines != null)
+                    return _cachedEngines.ToList();
+
+                var baseDir = GetRootDirectory();
+                var enginesRoot = Path.Combine(baseDir, "Engines");
+                var engines = new List<EngineConfig>();
+
+                if (Directory.Exists(enginesRoot))
                 {
-                    var json = File.ReadAllText(jsonFile);
-                    var config = JsonSerializer.Deserialize<EngineConfig>(json, _jsonOptions);
-                    if (config != null)
+                    foreach (var jsonFile in Directory.EnumerateFiles(enginesRoot, "ASLM_Engine.json", SearchOption.AllDirectories))
                     {
-                        config.SourcePath = jsonFile;
-
-                        // Validate that "installed" engines actually have their runtime on disk.
-                        // If a user manually deleted the runtime folder, reset the status.
-                        if (config.Status.Installed)
+                        try
                         {
-                            var engineDir = Path.GetDirectoryName(jsonFile)!;
-                            var runtimeDir = Path.Combine(engineDir, "runtime");
-
-                            if (!Directory.Exists(runtimeDir) ||
-                                !Directory.EnumerateFileSystemEntries(runtimeDir).Any())
+                            var json = File.ReadAllText(jsonFile);
+                            var config = JsonSerializer.Deserialize<EngineConfig>(json, _jsonOptions);
+                            if (config != null)
                             {
-                                Debug.WriteLine($"Runtime missing for {config.Name}, resetting installed status.");
-                                config.Status.Installed = false;
-                                config.Status.InstalledVersion = null;
+                                config.SourcePath = jsonFile;
 
-                                // Persist the reset status back to JSON.
-                                var updatedJson = JsonSerializer.Serialize(config, _jsonOptions);
-                                File.WriteAllText(jsonFile, updatedJson);
+                                // Validate that "installed" engines actually have their runtime on disk.
+                                // If a user manually deleted the runtime folder, reset the status.
+                                if (config.Status.Installed)
+                                {
+                                    var engineDir = Path.GetDirectoryName(jsonFile)!;
+                                    var runtimeDir = Path.Combine(engineDir, "runtime");
+
+                                    if (!Directory.Exists(runtimeDir) ||
+                                        !Directory.EnumerateFileSystemEntries(runtimeDir).Any())
+                                    {
+                                        Debug.WriteLine($"Runtime missing for {config.Name}, resetting installed status.");
+                                        config.Status.Installed = false;
+                                        config.Status.InstalledVersion = null;
+
+                                        // Persist the reset status back to JSON.
+                                        var updatedJson = JsonSerializer.Serialize(config, _jsonOptions);
+                                        File.WriteAllText(jsonFile, updatedJson);
+                                    }
+                                }
+
+                                engines.Add(config);
                             }
                         }
-
-                        engines.Add(config);
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Failed to parse {jsonFile}: {ex.Message}");
+                        }
                     }
                 }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Failed to parse {jsonFile}: {ex.Message}");
-                }
-            }
 
-            return engines;
+                _cachedEngines = engines;
+                return _cachedEngines.ToList();
+            }
         }
 
         // --- Helpers ---------------------------------------------------------
@@ -230,6 +240,11 @@ namespace ASLM.Services
 
                 await SaveConfigAsync(config);
                 log.Report($"=== {config.Name} installed successfully ===");
+
+                lock (_cacheLock)
+                {
+                    _cachedEngines = null;
+                }
             }, ct);
         }
 
@@ -317,10 +332,18 @@ namespace ASLM.Services
 
             Directory.CreateDirectory(dest);
 
+            // Ensure destination has a trailing separator for reliable prefix matching (Zip Slip prevention).
+            var destPrefix = dest;
+            if (!destPrefix.EndsWith(Path.DirectorySeparatorChar) && !destPrefix.EndsWith(Path.AltDirectorySeparatorChar))
+                destPrefix += Path.DirectorySeparatorChar;
+
             using var archive = ZipFile.OpenRead(source);
             foreach (var entry in archive.Entries)
             {
                 var targetPath = Path.GetFullPath(Path.Combine(dest, entry.FullName));
+
+                if (!targetPath.StartsWith(destPrefix, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Security violation: Zip entry '{entry.FullName}' attempts to extract to '{targetPath}' which is outside the destination directory.");
 
                 // Directory entry
                 if (string.IsNullOrEmpty(entry.Name))
@@ -561,33 +584,82 @@ namespace ASLM.Services
         /// </summary>
         /// <param name="baseDir">The application base directory.</param>
         /// <param name="tempDir">The temporary directory for this installation.</param>
-        private sealed class StepContext(string baseDir, string tempDir)
+        private sealed class StepContext
         {
-            public string BaseDir { get; } = baseDir;
-            public string TempDir { get; } = tempDir;
+            /// <summary>
+            /// Normalized absolute path to the application base directory.
+            /// </summary>
+            public string BaseDir { get; }
+
+            /// <summary>
+            /// Normalized absolute path to the temporary installation directory.
+            /// </summary>
+            public string TempDir { get; }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="StepContext"/> class.
+            /// </summary>
+            /// <param name="baseDir">The application base directory.</param>
+            /// <param name="tempDir">The temporary directory for this installation.</param>
+            public StepContext(string baseDir, string tempDir)
+            {
+                BaseDir = EnsureTrailingSeparator(Path.GetFullPath(baseDir));
+                TempDir = EnsureTrailingSeparator(Path.GetFullPath(tempDir));
+            }
+
+            /// <summary>
+            /// Ensures that a directory path ends with a directory separator.
+            /// </summary>
+            /// <param name="path">The path to normalize.</param>
+            /// <returns>The path with a trailing separator.</returns>
+            private static string EnsureTrailingSeparator(string path)
+            {
+                if (!path.EndsWith(Path.DirectorySeparatorChar) && !path.EndsWith(Path.AltDirectorySeparatorChar))
+                    return path + Path.DirectorySeparatorChar;
+                return path;
+            }
 
             /// <summary>Replaces <c>{temp}</c> placeholder with the actual temp directory.</summary>
+            /// <param name="input">The string containing variables to resolve.</param>
+            /// <returns>The string with variables replaced.</returns>
             public string ResolveVariables(string input)
-                => input.Replace("{temp}", TempDir);
+                => input.Replace("{temp}", TempDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
 
             /// <summary>
             /// Resolves <c>{temp}</c> variable and converts relative paths to absolute
-            /// (relative to <see cref="BaseDir"/>). Normalises path separators.
+            /// (relative to <see cref="BaseDir"/>). Validates that the resulting path
+            /// is within either <see cref="BaseDir"/> or <see cref="TempDir"/>.
             /// </summary>
+            /// <param name="path">The path to resolve.</param>
+            /// <returns>A validated absolute path.</returns>
+            /// <exception cref="InvalidOperationException">Thrown if a path traversal attempt is detected.</exception>
             public string ResolvePath(string path)
             {
                 path = ResolveVariables(path);
 
-                if (!Path.IsPathRooted(path))
-                    path = Path.Combine(BaseDir, path);
+                string combined = Path.IsPathRooted(path) ? path : Path.Combine(BaseDir, path);
+                var fullPath = Path.GetFullPath(combined);
 
-                return Path.GetFullPath(path);
+                // For secure comparison, ensure we're checking against directory boundaries correctly.
+                var comparePath = fullPath;
+                if (!comparePath.EndsWith(Path.DirectorySeparatorChar) && !comparePath.EndsWith(Path.AltDirectorySeparatorChar))
+                    comparePath += Path.DirectorySeparatorChar;
+
+                if (!comparePath.StartsWith(BaseDir, StringComparison.OrdinalIgnoreCase) &&
+                    !comparePath.StartsWith(TempDir, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException($"Security violation: Path '{path}' resolves to '{fullPath}' which is outside allowed boundaries.");
+                }
+
+                return fullPath;
             }
 
             /// <summary>
             /// Resolves path-like tokens inside an argument string.
-            /// Any token containing <c>/</c> or <c>\</c> is treated as a path.
+            /// Any token containing <c>/</c> or <c>\</c> is treated as a path and resolved.
             /// </summary>
+            /// <param name="args">The argument string to process.</param>
+            /// <returns>The argument string with resolved paths.</returns>
             public string ResolveArgPaths(string args)
             {
                 var tokens = args.Split(' ');

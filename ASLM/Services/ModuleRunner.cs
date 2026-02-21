@@ -1,6 +1,6 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
-using System.Text.RegularExpressions;
 using ASLM.Models;
 using Microsoft.Extensions.Logging;
 
@@ -9,20 +9,32 @@ namespace ASLM.Services
     /// <summary>
     /// Handles the execution of module commands (Run, FirstRun, Settings).
     /// Resolves engine paths via EngineInstaller and manages process execution.
+    /// Tracks running processes and supports stopping/killing them.
     /// </summary>
-    public class ModuleRunner
+    public class ModuleRunner : IDisposable
     {
         private readonly EngineInstaller _engineInstaller;
+        private readonly ProcessTracker _processTracker;
         private readonly ILogger<ModuleRunner> _logger;
+        private bool _disposed;
+
+        /// <summary>
+        /// Tracks all running processes per module.
+        /// Key = module SourcePath (unique per instance), Value = list of running processes.
+        /// </summary>
+        private readonly ConcurrentDictionary<string, List<Process>> _runningProcesses = new();
+        private readonly object _processLock = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ModuleRunner"/> class.
         /// </summary>
         /// <param name="engineInstaller">Service to resolve engine paths.</param>
+        /// <param name="processTracker">Job Object tracker for child process grouping and cleanup.</param>
         /// <param name="logger">Logger instance.</param>
-        public ModuleRunner(EngineInstaller engineInstaller, ILogger<ModuleRunner> logger)
+        public ModuleRunner(EngineInstaller engineInstaller, ProcessTracker processTracker, ILogger<ModuleRunner> logger)
         {
             _engineInstaller = engineInstaller;
+            _processTracker = processTracker;
             _logger = logger;
         }
 
@@ -56,7 +68,7 @@ namespace ASLM.Services
                 if (ct.IsCancellationRequested) return false;
                 
                 log.Report($"[Setup] {cmd.Name}: {cmd.Description}");
-                bool success = await RunCommandAsync(module, cmd, log, ct);
+                bool success = await RunCommandAsync(module, cmd, log, ct, trackProcess: false);
                 
                 if (!success)
                 {
@@ -71,7 +83,7 @@ namespace ASLM.Services
 
         /// <summary>
         /// Executes all 'Run' commands for a module (e.g. start a server).
-        /// These are typically long-running processes.
+        /// These are typically long-running processes that are tracked for lifecycle management.
         /// </summary>
         /// <param name="module">The module configuration.</param>
         /// <param name="log">Progress reporter for logging output.</param>
@@ -92,11 +104,61 @@ namespace ASLM.Services
                 if (ct.IsCancellationRequested) return false;
 
                 log.Report($"[Run] {cmd.Name}: {cmd.Description}");
-                // Run commands are long-running — we don't wait for exit
-                _ = RunCommandAsync(module, cmd, log, ct);
+                // Run commands are long-running — we don't wait for exit, but we track the process
+                _ = RunCommandAsync(module, cmd, log, ct, trackProcess: true);
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Stops all running processes for a given module.
+        /// Uses SourcePath as the unique identifier to avoid collisions
+        /// when multiple module instances share the same Id.
+        /// </summary>
+        /// <param name="moduleSourcePath">The module's SourcePath (unique per instance).</param>
+        public async Task StopModuleAsync(string moduleSourcePath)
+        {
+            List<Process> processes;
+            lock (_processLock)
+            {
+                if (!_runningProcesses.TryRemove(moduleSourcePath, out processes!))
+                    return;
+            }
+
+            _logger.LogInformation("Stopping {Count} process(es) for module '{ModulePath}'", processes.Count, moduleSourcePath);
+
+            foreach (var process in processes)
+            {
+                await KillProcessSafeAsync(process);
+            }
+        }
+
+        /// <summary>
+        /// Stops all running module processes. Called on application shutdown.
+        /// </summary>
+        public async Task StopAllModulesAsync()
+        {
+            List<KeyValuePair<string, List<Process>>> allEntries;
+            lock (_processLock)
+            {
+                allEntries = _runningProcesses.ToList();
+                _runningProcesses.Clear();
+            }
+
+            _logger.LogInformation("Stopping all module processes ({Count} modules)...", allEntries.Count);
+
+            var tasks = new List<Task>();
+            foreach (var (moduleId, processes) in allEntries)
+            {
+                foreach (var process in processes)
+                {
+                    tasks.Add(KillProcessSafeAsync(process));
+                }
+            }
+
+            await Task.WhenAll(tasks);
+            _logger.LogInformation("All module processes stopped.");
         }
 
         /// <summary>
@@ -165,6 +227,9 @@ namespace ASLM.Services
                     return false;
                 }
 
+                // Assign to Job Object — groups under ASLM in Task Manager
+                _processTracker.AddProcess(process);
+
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
                 await process.WaitForExitAsync(ct);
@@ -188,12 +253,14 @@ namespace ASLM.Services
         /// <param name="cmd">The command to execute.</param>
         /// <param name="log">Progress reporter.</param>
         /// <param name="ct">Cancellation token.</param>
+        /// <param name="trackProcess">If true, the process is tracked for lifecycle management (long-running).</param>
         /// <returns>True if the command executed successfully (exit code 0).</returns>
         public async Task<bool> RunCommandAsync(
             ModuleConfig module, 
             ModuleCommand cmd, 
             IProgress<string> log, 
-            CancellationToken ct)
+            CancellationToken ct,
+            bool trackProcess = false)
         {
             try
             {
@@ -245,7 +312,7 @@ namespace ASLM.Services
                 
                 log.Report($"Exec: {Path.GetFileName(fileName)} {arguments}");
 
-                using var process = new Process { StartInfo = psi };
+                var process = new Process { StartInfo = psi };
                 
                 // 3. Output Handling
                 process.OutputDataReceived += (s, e) => { if (e.Data != null) log.Report($"  {e.Data}"); };
@@ -255,7 +322,21 @@ namespace ASLM.Services
                 if (!process.Start())
                 {
                     log.Report("Failed to start process.");
+                    process.Dispose();
                     return false;
+                }
+
+                // Assign to Job Object — groups under ASLM in Task Manager
+                _processTracker.AddProcess(process);
+
+                // Track the process for module stop functionality
+                if (trackProcess)
+                {
+                    lock (_processLock)
+                    {
+                        var list = _runningProcesses.GetOrAdd(module.SourcePath, _ => new List<Process>());
+                        list.Add(process);
+                    }
                 }
 
                 process.BeginOutputReadLine();
@@ -263,13 +344,21 @@ namespace ASLM.Services
 
                 await process.WaitForExitAsync(ct);
 
+                // Remove from tracking after process exits naturally
+                if (trackProcess)
+                {
+                    RemoveProcess(module.SourcePath, process);
+                }
+
                 if (process.ExitCode == 0)
                 {
+                    process.Dispose();
                     return true;
                 }
                 else
                 {
                     log.Report($"Process exited with code {process.ExitCode}");
+                    process.Dispose();
                     return false;
                 }
             }
@@ -283,6 +372,94 @@ namespace ASLM.Services
                 log.Report($"Execution error: {ex.Message}");
                 _logger.LogError(ex, "Command execution failed");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Safely kills a process and its children.
+        /// </summary>
+        private async Task KillProcessSafeAsync(Process process)
+        {
+            try
+            {
+                if (process.HasExited)
+                {
+                    process.Dispose();
+                    return;
+                }
+
+                // Kill the entire process tree
+                process.Kill(entireProcessTree: true);
+                
+                // Wait a short time for the process to exit
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                try
+                {
+                    await process.WaitForExitAsync(cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogWarning("Process {PID} did not exit within timeout after Kill.", process.Id);
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Process already exited
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error killing process.");
+            }
+            finally
+            {
+                process.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Removes a specific process from the tracking dictionary.
+        /// </summary>
+        private void RemoveProcess(string moduleSourcePath, Process process)
+        {
+            lock (_processLock)
+            {
+                if (_runningProcesses.TryGetValue(moduleSourcePath, out var list))
+                {
+                    list.Remove(process);
+                    if (list.Count == 0)
+                    {
+                        _runningProcesses.TryRemove(moduleSourcePath, out _);
+                    }
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+
+            // Kill all tracked processes
+            lock (_processLock)
+            {
+                foreach (var (_, processes) in _runningProcesses)
+                {
+                    foreach (var process in processes)
+                    {
+                        try
+                        {
+                            if (!process.HasExited)
+                                process.Kill(entireProcessTree: true);
+                        }
+                        catch { /* best effort */ }
+                        finally
+                        {
+                            process.Dispose();
+                        }
+                    }
+                }
+                _runningProcesses.Clear();
             }
         }
 

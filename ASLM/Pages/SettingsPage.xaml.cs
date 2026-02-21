@@ -51,8 +51,8 @@ namespace ASLM.Pages
 
         private void HighlightCategory(Button active)
         {
-            NavUserProfile.TextColor = Color.FromArgb("#888");
-            NavPorts.TextColor = Color.FromArgb("#888");
+            NavUserProfile.TextColor = Color.FromArgb("#8E8E93");
+            NavPorts.TextColor = Color.FromArgb("#8E8E93");
             active.TextColor = Colors.White;
         }
 

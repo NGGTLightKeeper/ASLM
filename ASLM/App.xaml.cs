@@ -29,22 +29,35 @@ namespace ASLM
                 MinimumWidth = 960,
                 MinimumHeight = 540
             };
+
+            // Stop all module processes when the window is destroyed.
+            // This provides graceful shutdown; the Launcher's Job Object
+            // handles crash/forced kill scenarios.
+            window.Destroying += OnWindowDestroying;
+
             return window;
         }
 
         /// <summary>
-        /// Creates the appropriate startup page based on whether the first-run wizard has been completed.
+        /// Creates the initial loading page.
         /// </summary>
         public Page CreateStartupPage()
         {
-            var appData = _services.GetRequiredService<AppDataService>();
+            return _services.GetRequiredService<LoadingPage>();
+        }
 
-            if (appData.IsFirstRun)
-            {
-                return _services.GetRequiredService<SetupWizardPage>();
-            }
+        /// <summary>
+        /// Handles window destruction — stops all running module processes gracefully.
+        /// The Launcher's Job Object ensures cleanup even if this doesn't complete in time.
+        /// </summary>
+        private void OnWindowDestroying(object? sender, EventArgs e)
+        {
+            var runner = _services.GetRequiredService<ModuleRunner>();
+            runner.StopAllModulesAsync().GetAwaiter().GetResult();
+            runner.Dispose();
 
-            return _services.GetRequiredService<MainPage>();
+            var tracker = _services.GetRequiredService<ProcessTracker>();
+            tracker.Dispose();
         }
     }
 }

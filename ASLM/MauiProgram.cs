@@ -36,12 +36,14 @@ namespace ASLM
             builder.Services.AddSingleton<EngineInstaller>();
             builder.Services.AddSingleton<ModelInstaller>();
             builder.Services.AddSingleton<ModuleInstaller>();
+            builder.Services.AddSingleton<ProcessTracker>();
             builder.Services.AddSingleton<ModuleRunner>();
 
             // Pages
             builder.Services.AddTransient<MainPage>();
             builder.Services.AddTransient<SetupWizardPage>();
             builder.Services.AddTransient<SettingsPage>();
+            builder.Services.AddTransient<LoadingPage>();
 
             return builder.Build();
         }
