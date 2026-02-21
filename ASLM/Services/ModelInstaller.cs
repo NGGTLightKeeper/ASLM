@@ -20,23 +20,25 @@ namespace ASLM.Services
         // --- Discovery -------------------------------------------------------
 
         /// <summary>
-        /// Synchronously scans <c>Models/*/ASLM_Model.json</c> files.
+        /// Asynchronously scans <c>Models/*/ASLM_Model.json</c> files.
         /// </summary>
         /// <returns>A list of discovered model configurations.</returns>
-        public List<ModelConfig> DiscoverModels()
+        public async Task<List<ModelConfig>> DiscoverModelsAsync(CancellationToken ct = default)
         {
             var baseDir = GetRootDirectory();
             var modelsRoot = Path.Combine(baseDir, "Models");
-            var models = new List<ModelConfig>();
+            var models = new System.Collections.Concurrent.ConcurrentBag<ModelConfig>();
 
             if (!Directory.Exists(modelsRoot))
-                return models;
+                return models.ToList();
 
-            foreach (var jsonFile in Directory.EnumerateFiles(modelsRoot, "ASLM_Model.json", SearchOption.AllDirectories))
+            var files = Directory.EnumerateFiles(modelsRoot, "ASLM_Model.json", SearchOption.AllDirectories);
+
+            await Parallel.ForEachAsync(files, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount, CancellationToken = ct }, async (jsonFile, token) =>
             {
                 try
                 {
-                    var json = File.ReadAllText(jsonFile);
+                    var json = await File.ReadAllTextAsync(jsonFile, token);
                     var config = JsonSerializer.Deserialize<ModelConfig>(json, _jsonOptions);
                     if (config != null)
                     {
@@ -47,16 +49,16 @@ namespace ASLM.Services
                         {
                             var modelDir = Path.GetDirectoryName(jsonFile)!;
                             
-                            // Naive check: are there any files beside the JSON?
-                            // A stricter check would verify every file in config.Files exists.
-                            var hasFiles = Directory.EnumerateFiles(modelDir).Count() > 1; 
+                            // Check if there are any files beside the JSON.
+                            // Taking 2 files is enough to know if > 1 exists (the JSON file itself + at least one other).
+                            var hasFiles = Directory.EnumerateFiles(modelDir).Take(2).Count() > 1;
 
                             if (!hasFiles)
                             {
                                 Debug.WriteLine($"Files missing for model {config.Name}, resetting installed status.");
                                 config.Status.Installed = false;
                                 config.Status.InstalledVersion = null;
-                                SaveConfig(config);
+                                await SaveConfigAsync(config);
                             }
                         }
 
@@ -67,9 +69,9 @@ namespace ASLM.Services
                 {
                     Debug.WriteLine($"Failed to parse {jsonFile}: {ex.Message}");
                 }
-            }
+            });
 
-            return models;
+            return models.OrderBy(m => m.Name).ToList();
         }
 
         // --- Installation ----------------------------------------------------
