@@ -21,7 +21,7 @@ namespace ASLM.Pages
 
         private List<ModuleConfig> _allModules = [];
         private ModuleConfig? _activeModule;
-        private bool _panelExpanded = true;
+        private bool _panelExpanded;
 
         private const double PanelExpandedWidth = 240;
         private const double PanelCollapsedWidth = 48;
@@ -76,6 +76,10 @@ namespace ASLM.Pages
             BindingContext = this;
             Loaded += OnPageLoaded;
 
+            // Load saved sidebar state, default to collapsed
+            _panelExpanded = Preferences.Default.Get("SidebarExpanded", false);
+            SidePanel.WidthRequest = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
+
             // Set static sidebar buttons native alignment handler
             CollapseButton.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
             SettingsButton.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
@@ -84,6 +88,7 @@ namespace ASLM.Pages
             CollapseButton.ImageSource = IconMenu;
             SettingsButton.ImageSource = IconSettings;
             SettingsButton.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
+            SettingsButton.Text = _panelExpanded ? "Settings" : "";
         }
 
         /// <inheritdoc />
@@ -108,7 +113,7 @@ namespace ASLM.Pages
         /// <summary>Recalculates the module card grid span based on available width.</summary>
         private void RecalculateGridSpan()
         {
-            var sidePanelWidth = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
+            var sidePanelWidth = SidePanel.WidthRequest > 0 ? SidePanel.WidthRequest : PanelCollapsedWidth;
             var dashboardMargin = 60;
             var availableWidth = Width - sidePanelWidth - dashboardMargin;
 
@@ -150,8 +155,18 @@ namespace ASLM.Pages
         private void OnCollapseClicked(object? sender, EventArgs e)
         {
             _panelExpanded = !_panelExpanded;
+            Preferences.Default.Set("SidebarExpanded", _panelExpanded);
 
-            SidePanel.WidthRequest = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
+            double targetWidth = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
+            
+            // Animate width
+            var animation = new Animation(v => 
+            {
+                SidePanel.WidthRequest = v;
+                RecalculateGridSpan();
+            }, SidePanel.WidthRequest, targetWidth);
+            
+            animation.Commit(this, "SidebarAnimation", 16, 150, Easing.CubicOut);
             
             UpdateButtonAlignment(CollapseButton);
             UpdateButtonAlignment(SettingsButton);
@@ -173,9 +188,6 @@ namespace ASLM.Pages
             SettingsButton.ContentLayout = new Button.ButtonContentLayout(
                 Button.ButtonContentLayout.ImagePosition.Left, 14);
             SettingsButton.HorizontalOptions = LayoutOptions.Fill;
-
-            // Recalculate module card grid span for new available width
-            RecalculateGridSpan();
         }
 
         // --- Home / Dashboard ------------------------------------------------
@@ -384,6 +396,24 @@ namespace ASLM.Pages
         /// <summary>Is the module currently stopped.</summary>
         public bool IsStopped => !_config.Status.Enabled;
 
+        private bool _isRestarting;
+        /// <summary>Is the module currently restarting.</summary>
+        public bool IsRestarting
+        {
+            get => _isRestarting;
+            set
+            {
+                if (_isRestarting != value)
+                {
+                    _isRestarting = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsNotRestarting));
+                }
+            }
+        }
+        /// <summary>Is the module not currently restarting.</summary>
+        public bool IsNotRestarting => !IsRestarting;
+
         /// <summary>Command to launch the module.</summary>
         public ICommand LaunchCommand { get; }
         /// <summary>Command to stop the module.</summary>
@@ -420,13 +450,24 @@ namespace ASLM.Pages
 
         private async void OnRestart()
         {
-            // Stop existing processes first
-            await _runner.StopModuleAsync(_config.SourcePath);
+            IsRestarting = true;
+            try
+            {
+                // Stop existing processes first
+                await _runner.StopModuleAsync(_config.SourcePath);
+                
+                // Add a small delay for visual feedback
+                await Task.Delay(1000);
 
-            var logProgress = new Progress<string>(msg =>
-                Debug.WriteLine($"[Restart] {msg}"));
-            await Task.Run(() =>
-                _runner.ExecuteRunAsync(_config, logProgress, CancellationToken.None));
+                var logProgress = new Progress<string>(msg =>
+                    Debug.WriteLine($"[Restart] {msg}"));
+                _ = Task.Run(() =>
+                    _runner.ExecuteRunAsync(_config, logProgress, CancellationToken.None));
+            }
+            finally
+            {
+                IsRestarting = false;
+            }
         }
 
         private void NotifyStateChanged()

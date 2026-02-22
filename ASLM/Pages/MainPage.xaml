@@ -9,7 +9,6 @@
 
         <!-- Left Sidebar -->
         <Grid x:Name="SidePanel" Grid.Column="0"
-              WidthRequest="220"
               RowDefinitions="Auto, *, Auto"
               BackgroundColor="#1D1D1F"
               Padding="8">
@@ -56,7 +55,7 @@
                 </CollectionView.ItemsLayout>
 
                 <CollectionView.Header>
-                    <VerticalStackLayout Spacing="16" Margin="4,0,4,16">
+                    <VerticalStackLayout Spacing="8" Margin="4,0,4,8">
                         <Label Text="Modules"
                                FontSize="24" FontAttributes="Bold"
                                TextColor="White" />
@@ -109,11 +108,11 @@
                                     <!-- Text area (top) -->
                                     <VerticalStackLayout Grid.Row="0" Spacing="2">
                                         <Label Text="{Binding Name}"
-                                               FontSize="18"
+                                               FontSize="16"
                                                FontAttributes="Bold"
                                                TextColor="White" />
                                         <Label Text="{Binding VersionString}"
-                                               FontSize="14"
+                                               FontSize="13"
                                                TextColor="#8E8E93" />
                                     </VerticalStackLayout>
 
@@ -125,33 +124,67 @@
                                           ColumnSpacing="8"
                                           IsVisible="{Binding IsRunning}">
                                         <Button Grid.Column="0"
-                                                Text="⏹ Stop"
+                                                Text="Stop"
+                                                ImageSource="icon_stop.png"
+                                                ContentLayout="Left,4"
                                                 Command="{Binding StopCommand}"
-                                                BackgroundColor="#4CD964"
+                                                BackgroundColor="{StaticResource ActionRed}"
                                                 TextColor="White"
-                                                FontSize="12"
+                                                FontSize="13"
                                                 HeightRequest="24"
                                                 CornerRadius="4"
+                                                IsVisible="{Binding IsNotRestarting}"
                                                 HorizontalOptions="Fill" />
                                         <Button Grid.Column="1"
-                                                Text="🔄 Restart"
+                                                Text="Restart"
+                                                ImageSource="icon_restart.png"
+                                                ContentLayout="Left,4"
                                                 Command="{Binding RestartCommand}"
-                                                BackgroundColor="#3A3A3C"
+                                                BackgroundColor="{StaticResource ActionBlue}"
                                                 TextColor="White"
-                                                FontSize="12"
+                                                FontSize="13"
                                                 HeightRequest="24"
                                                 CornerRadius="4"
+                                                IsVisible="{Binding IsNotRestarting}"
                                                 HorizontalOptions="Fill" />
+                                        <Border Grid.Column="0" Grid.ColumnSpan="2"
+                                                BackgroundColor="#0A84FF20"
+                                                Stroke="{StaticResource ActionBlue}"
+                                                StrokeShape="RoundRectangle 4"
+                                                StrokeThickness="1"
+                                                StrokeDashArray="4,2"
+                                                Padding="0"
+                                                Margin="0"
+                                                IsVisible="{Binding IsRestarting}"
+                                                MinimumHeightRequest="44"
+                                                HorizontalOptions="Fill"
+                                                VerticalOptions="Fill">
+                                            <HorizontalStackLayout HorizontalOptions="Center"
+                                                                   VerticalOptions="Center"
+                                                                   Spacing="8">
+                                                <ActivityIndicator IsRunning="{Binding IsRestarting}"
+                                                                   Color="White"
+                                                                   WidthRequest="16"
+                                                                   HeightRequest="16"
+                                                                   VerticalOptions="Center" />
+                                                <Label Text="Restarting"
+                                                       TextColor="White"
+                                                       FontSize="13"
+                                                       VerticalOptions="Center" />
+                                            </HorizontalStackLayout>
+                                        </Border>
                                     </Grid>
 
                                     <!-- Stopped: Launch -->
                                     <Button Grid.Row="1"
-                                            Text="▶ Launch"
+                                            Text="Launch"
+                                            ImageSource="icon_play.png"
+                                            ContentLayout="Left,4"
                                             Command="{Binding LaunchCommand}"
                                             IsVisible="{Binding IsStopped}"
-                                            BackgroundColor="#007AFF"
+                                            BackgroundColor="{StaticResource ActionBlue}"
                                             TextColor="White"
-                                            FontSize="12"
+                                            FontSize="13"
                                             HeightRequest="24"
                                             CornerRadius="4"
                                             HorizontalOptions="Fill"
