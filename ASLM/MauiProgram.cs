@@ -40,10 +40,16 @@ namespace ASLM
             builder.Services.AddSingleton<ModuleRunner>();
 
             // Pages
-            builder.Services.AddTransient<MainPage>();
+            builder.Services.AddTransient<AppShellPage>();
             builder.Services.AddTransient<SetupWizardPage>();
-            builder.Services.AddTransient<SettingsPage>();
             builder.Services.AddTransient<LoadingPage>();
+
+            // Content Views (hosted inside AppShellPage)
+            builder.Services.AddTransient<HomeView>();
+            builder.Services.AddTransient<ConsolesView>();
+            builder.Services.AddTransient<ModuleManagementView>();
+            builder.Services.AddTransient<DownloadModulesView>();
+            builder.Services.AddTransient<SettingsView>();
 
             return builder.Build();
         }

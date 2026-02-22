@@ -27,7 +27,7 @@ namespace ASLM.Pages
             }
             else
             {
-                nextPage = _services.GetRequiredService<MainPage>();
+                nextPage = _services.GetRequiredService<AppShellPage>();
             }
 
             // Replace the current page in the window

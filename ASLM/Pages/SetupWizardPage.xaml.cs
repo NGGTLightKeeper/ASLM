@@ -434,7 +434,7 @@ namespace ASLM.Pages
 
                 if (Application.Current?.Windows.Count > 0)
                 {
-                    var mainPage = _services.GetRequiredService<MainPage>();
+                    var mainPage = _services.GetRequiredService<AppShellPage>();
                     Application.Current.Windows[0].Page = mainPage;
                 }
             }

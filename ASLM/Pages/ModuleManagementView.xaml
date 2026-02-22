@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ASLM.Pages.ModuleManagementView">
+
+    <CollectionView x:Name="DashboardView"
+                    Margin="12,16"
+                    ItemsSource="{Binding Modules}"
+                    SelectionMode="None">
+
+        <CollectionView.ItemsLayout>
+            <GridItemsLayout Orientation="Vertical"
+                             Span="{Binding GridSpan}"
+                             VerticalItemSpacing="4"
+                             HorizontalItemSpacing="4" />
+        </CollectionView.ItemsLayout>
+
+        <CollectionView.Header>
+            <VerticalStackLayout Spacing="8" Margin="4,0,4,8">
+                <Label Text="Modules"
+                       FontSize="24" FontAttributes="Bold"
+                       TextColor="White" />
+                <Label x:Name="DashboardSubtitle"
+                       Text="Manage your installed modules"
+                       FontSize="14" TextColor="#8E8E93"
+                       Margin="0,0,0,8" />
+            </VerticalStackLayout>
+        </CollectionView.Header>
+
+        <CollectionView.EmptyView>
+            <Label Text="No modules found. Install modules via the Setup Wizard."
+                   FontSize="14"
+                   TextColor="#8E8E93"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   Margin="0,20,0,0" />
+        </CollectionView.EmptyView>
+
+        <CollectionView.ItemTemplate>
+            <DataTemplate>
+                <Border BackgroundColor="#1D1D1F"
+                        Stroke="#3A3A3C"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 8"
+                        Padding="0">
+
+                    <Grid ColumnDefinitions="Auto, *">
+                        <!-- Icon -->
+                        <Border Grid.Column="0"
+                                IsVisible="{Binding HasIcon}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 0"
+                                BackgroundColor="#1D1D1F"
+                                WidthRequest="164"
+                                HeightRequest="164"
+                                Padding="0"
+                                Margin="8,8,0,8">
+                            <Image Source="{Binding IconFullPath}"
+                                   Aspect="AspectFit"
+                                   HorizontalOptions="Fill"
+                                   VerticalOptions="Fill" />
+                        </Border>
+
+                        <!-- Right side: Text + Buttons -->
+                        <Grid Grid.Column="1"
+                              RowDefinitions="*, Auto"
+                              Padding="8">
+
+                            <!-- Text area (top) -->
+                            <VerticalStackLayout Grid.Row="0" Spacing="2">
+                                <Label Text="{Binding Name}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="White" />
+                                <Label Text="{Binding VersionString}"
+                                       FontSize="13"
+                                       TextColor="#8E8E93" />
+                            </VerticalStackLayout>
+
+                            <!-- Action buttons (bottom) -->
+
+                            <!-- Running: Stop + Restart -->
+                            <Grid Grid.Row="1"
+                                  ColumnDefinitions="*, *"
+                                  ColumnSpacing="8"
+                                  IsVisible="{Binding IsRunning}">
+                                <Button Grid.Column="0"
+                                        Text="Stop"
+                                        ImageSource="icon_stop.png"
+                                        ContentLayout="Left,4"
+                                        Command="{Binding StopCommand}"
+                                        BackgroundColor="{StaticResource ActionRed}"
+                                        TextColor="White"
+                                        FontSize="13"
+                                        HeightRequest="24"
+                                        CornerRadius="4"
+                                        IsVisible="{Binding IsNotRestarting}"
+                                        HorizontalOptions="Fill" />
+                                <Button Grid.Column="1"
+                                        Text="Restart"
+                                        ImageSource="icon_restart.png"
+                                        ContentLayout="Left,4"
+                                        Command="{Binding RestartCommand}"
+                                        BackgroundColor="{StaticResource ActionBlue}"
+                                        TextColor="White"
+                                        FontSize="13"
+                                        HeightRequest="24"
+                                        CornerRadius="4"
+                                        IsVisible="{Binding IsNotRestarting}"
+                                        HorizontalOptions="Fill" />
+                                <Border Grid.Column="0" Grid.ColumnSpan="2"
+                                        BackgroundColor="#0A84FF20"
+                                        Stroke="{StaticResource ActionBlue}"
+                                        StrokeShape="RoundRectangle 4"
+                                        StrokeThickness="1"
+                                        StrokeDashArray="4,2"
+                                        Padding="0"
+                                        Margin="0"
+                                        IsVisible="{Binding IsRestarting}"
+                                        MinimumHeightRequest="44"
+                                        HorizontalOptions="Fill"
+                                        VerticalOptions="Fill">
+                                    <HorizontalStackLayout HorizontalOptions="Center"
+                                                           VerticalOptions="Center"
+                                                           Spacing="8">
+                                        <ActivityIndicator IsRunning="{Binding IsRestarting}"
+                                                           Color="White"
+                                                           WidthRequest="16"
+                                                           HeightRequest="16"
+                                                           VerticalOptions="Center" />
+                                        <Label Text="Restarting"
+                                               TextColor="White"
+                                               FontSize="13"
+                                               VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                </Border>
+                            </Grid>
+
+                            <!-- Stopped: Launch -->
+                            <Button Grid.Row="1"
+                                    Text="Launch"
+                                    ImageSource="icon_play.png"
+                                    ContentLayout="Left,4"
+                                    Command="{Binding LaunchCommand}"
+                                    IsVisible="{Binding IsStopped}"
+                                    BackgroundColor="{StaticResource ActionBlue}"
+                                    TextColor="White"
+                                    FontSize="13"
+                                    HeightRequest="24"
+                                    CornerRadius="4"
+                                    HorizontalOptions="Fill"
+                                    Margin="0" />
+                        </Grid>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+        </CollectionView.ItemTemplate>
+    </CollectionView>
+
+</ContentView>

@@ -6,7 +6,7 @@ namespace ASLM.Pages
 {
     /// <summary>
     /// UI page for discovering and setting up modules.
-    /// Follows the same pattern as <see cref="ModelSetupPage"/> and EngineSetupPage:
+    /// Follows the same pattern as the other setup pages:
     /// discover → show pending → install (firstRun) → continue.
     /// </summary>
     public partial class ModuleSetupPage : ContentPage

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ASLM.Pages.SettingsView">
+
+    <ScrollView x:Name="SettingsScroll" Padding="16">
+        <VerticalStackLayout Spacing="24">
+
+            <!-- Header -->
+            <Label Text="Settings"
+                   FontSize="24" FontAttributes="Bold"
+                   TextColor="White"
+                   Margin="4,0,4,8" />
+
+            <!-- User Profile -->
+            <Border x:Name="UserProfileSection"
+                    BackgroundColor="#1D1D1F"
+                    Stroke="#3A3A3C" StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="20">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="User Profile" FontSize="18" FontAttributes="Bold" TextColor="White" />
+                    <Label Text="Display Name" FontSize="12" TextColor="#8E8E93" />
+                    <Entry x:Name="UsernameEntry"
+                           FontSize="14" TextColor="White"
+                           BackgroundColor="#000000" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Port Allocation -->
+            <Border x:Name="PortsSection"
+                    BackgroundColor="#1D1D1F"
+                    Stroke="#3A3A3C" StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="20">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Port Allocation" FontSize="18" FontAttributes="Bold" TextColor="White" />
+
+                    <Label Text="Official modules start port (100 ports reserved)" FontSize="12" TextColor="#8E8E93" />
+                    <Entry x:Name="OfficialPortEntry"
+                           Keyboard="Numeric"
+                           FontSize="14" TextColor="White"
+                           BackgroundColor="#000000" />
+
+                    <Label Text="Third-party modules start port (1000 ports reserved)" FontSize="12" TextColor="#8E8E93" />
+                    <Entry x:Name="ThirdPartyPortEntry"
+                           Keyboard="Numeric"
+                           FontSize="14" TextColor="White"
+                           BackgroundColor="#000000" />
+
+                    <Label x:Name="PortErrorLabel"
+                           Text=""
+                           FontSize="12" TextColor="#FF3B30"
+                           IsVisible="False" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Save Button -->
+            <Button Text="Save"
+                    BackgroundColor="#007AFF"
+                    TextColor="White"
+                    FontSize="14"
+                    WidthRequest="120"
+                    HorizontalOptions="End"
+                    Clicked="OnSaveClicked" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentView>

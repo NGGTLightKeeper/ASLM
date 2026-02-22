@@ -6,7 +6,8 @@ namespace ASLM.Pages
     /// <summary>
     /// Displayed at startup when one or more engines need installation.
     /// Shows a real-time log, per-download progress bar, and an overall progress indicator.
-    /// After all engines are installed, offers a Continue button to navigate to <see cref="MainPage"/>.
+    /// After all engines are installed, offers a Continue button to restart the startup chain
+    /// (<see cref="LoadingPage"/> → <see cref="AppShellPage"/>).
     /// </summary>
     public partial class EngineSetupPage : ContentPage
     {
@@ -129,7 +130,7 @@ namespace ASLM.Pages
         // --- UI Helpers ------------------------------------------------------
 
         /// <summary>
-        /// Replaces the Install button with a Continue button that navigates to MainPage.
+        /// Replaces the Install button with a Continue button that restarts the startup chain.
         /// </summary>
         private void ShowContinueButton()
         {
@@ -169,17 +170,14 @@ namespace ASLM.Pages
             DownloadInfoLabel.Text = "";
         }
 
-        /// <summary>Swaps the current page to <see cref="MainPage"/>.</summary>
+        /// <summary>Restarts the startup chain via <see cref="App.CreateStartupPage"/>.</summary>
         private async Task NavigateToMainAsync()
         {
             if (Application.Current?.Windows.FirstOrDefault() is Window window)
             {
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    // Re-run the startup logic to determine the next page.
-                    // If models are missing, App.CreateWindow (or equivalent logic)
-                    // would show ModelSetupPage.
-                    
+                    // Re-run the startup chain (LoadingPage → setup pages or AppShellPage).
                     var newPage = (Application.Current as App)?.CreateStartupPage();
                     if (newPage != null)
                     {

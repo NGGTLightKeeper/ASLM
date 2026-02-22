@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ASLM.Pages.AppShellPage"
+             Title="ASLM"
+             BackgroundColor="#000000">
+
+    <Grid ColumnDefinitions="Auto, *">
+
+        <!-- Left Sidebar -->
+        <Grid x:Name="SidePanel" Grid.Column="0"
+              RowDefinitions="Auto, *, Auto, Auto"
+              BackgroundColor="#1D1D1F"
+              Padding="8">
+
+            <!-- Collapse Toggle (fixed top) -->
+            <Button x:Name="CollapseButton"
+                    Grid.Row="0"
+                    Style="{StaticResource SidebarButton}"
+                    TextColor="#8E8E93"
+                    HeightRequest="36"
+                    HorizontalOptions="Fill"
+                    Clicked="OnCollapseClicked" />
+
+            <!-- Scrollable nav list: Module Pages (top section) -->
+            <ScrollView Grid.Row="1" Margin="0,4,0,0">
+                <VerticalStackLayout x:Name="ModulePagePanel" Spacing="2" />
+            </ScrollView>
+
+            <!-- Separator -->
+            <BoxView Grid.Row="2"
+                     HeightRequest="1"
+                     Color="#3A3A3C"
+                     Margin="0,4,0,4" />
+
+            <!-- Bottom section: system pages -->
+            <VerticalStackLayout Grid.Row="3" Spacing="2">
+                <Button x:Name="HomeButton"
+                        Style="{StaticResource SidebarButton}"
+                        Text="Home"
+                        HeightRequest="36"
+                        HorizontalOptions="Fill"
+                        Clicked="OnNavClicked" />
+
+                <Button x:Name="ConsolesButton"
+                        Style="{StaticResource SidebarButton}"
+                        Text="Consoles"
+                        HeightRequest="36"
+                        HorizontalOptions="Fill"
+                        Clicked="OnNavClicked" />
+
+                <Button x:Name="ModuleManagementButton"
+                        Style="{StaticResource SidebarButton}"
+                        Text="Modules"
+                        HeightRequest="36"
+                        HorizontalOptions="Fill"
+                        Clicked="OnNavClicked" />
+
+                <Button x:Name="UploadModulesButton"
+                        Style="{StaticResource SidebarButton}"
+                        Text="Download"
+                        HeightRequest="36"
+                        HorizontalOptions="Fill"
+                        Clicked="OnNavClicked" />
+
+                <Button x:Name="SettingsButton"
+                        Style="{StaticResource SidebarButton}"
+                        Text="Settings"
+                        HeightRequest="36"
+                        HorizontalOptions="Fill"
+                        Clicked="OnNavClicked" />
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Column="1">
+            <ContentView x:Name="ContentArea" />
+
+            <!-- WebView (visible when a module page is selected) -->
+            <WebView x:Name="Browser"
+                     IsVisible="False"
+                     Navigating="Browser_Navigating" />
+        </Grid>
+
+    </Grid>
+
+</ContentPage>
