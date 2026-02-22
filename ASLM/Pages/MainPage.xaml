@@ -10,45 +10,30 @@
         <!-- Left Sidebar -->
         <Grid x:Name="SidePanel" Grid.Column="0"
               WidthRequest="220"
-              RowDefinitions="Auto, Auto, *, Auto"
+              RowDefinitions="Auto, *, Auto"
               BackgroundColor="#1D1D1F"
               Padding="8">
 
-            <!-- Collapse Toggle -->
+            <!-- Collapse Toggle (fixed top) -->
             <Button x:Name="CollapseButton"
                     Grid.Row="0"
                     Style="{StaticResource SidebarButton}"
-                    Text="◀"
                     TextColor="#8E8E93"
-                    FontSize="12"
-                    HeightRequest="28"
-                    WidthRequest="28"
-                    HorizontalOptions="End"
+                    HeightRequest="36"
+                    HorizontalOptions="Fill"
                     Clicked="OnCollapseClicked" />
 
-            <!-- Home Button -->
-            <Button x:Name="HomeButton"
-                    Grid.Row="1"
-                    Style="{StaticResource SidebarButton}"
-                    Text="🏠  Home"
-                    TextColor="White"
-                    HeightRequest="36"
-                    Clicked="OnHomeClicked" />
-
-            <!-- Module Pages -->
-            <ScrollView Grid.Row="2" Margin="0,8,0,0">
-                <VerticalStackLayout Spacing="2">
-                    <Label x:Name="PagesHeader" Text="PAGES"
-                           FontSize="10" FontAttributes="Bold"
-                           TextColor="#8E8E93" Margin="8,4,0,6" />
-                    <VerticalStackLayout x:Name="ModulePagePanel" Spacing="2" />
-                </VerticalStackLayout>
+            <!-- Scrollable nav list: Home + Module Pages -->
+            <ScrollView Grid.Row="1" Margin="0,4,0,0">
+                <VerticalStackLayout x:Name="ModulePagePanel" Spacing="2" />
             </ScrollView>
 
-            <!-- Settings Button -->
-            <Button x:Name="SettingsButton" Grid.Row="3"
+            <!-- Settings Button (fixed bottom) -->
+            <Button x:Name="SettingsButton" Grid.Row="2"
                     Style="{StaticResource SidebarButton}"
-                    Text="⚙  Settings"
+                    Text="Settings"
+                    HeightRequest="36"
+                    HorizontalOptions="Fill"
                     Margin="0,4,0,0"
                     Clicked="OnSettingsClicked" />
         </Grid>
@@ -77,7 +62,7 @@
                                TextColor="White" />
                         <Label x:Name="DashboardSubtitle"
                                Text="Manage your installed modules"
-                               FontSize="13" TextColor="#8E8E93"
+                               FontSize="14" TextColor="#8E8E93"
                                Margin="0,0,0,8" />
                     </VerticalStackLayout>
                 </CollectionView.Header>
@@ -97,12 +82,12 @@
                                 Stroke="#3A3A3C"
                                 StrokeThickness="1"
                                 StrokeShape="RoundRectangle 8"
-                                Padding="0"
-                                HeightRequest="180">
+                                Padding="0">
 
                             <Grid ColumnDefinitions="Auto, *">
                                 <!-- Icon -->
                                 <Border Grid.Column="0"
+                                        IsVisible="{Binding HasIcon}"
                                         StrokeThickness="0"
                                         StrokeShape="RoundRectangle 0"
                                         BackgroundColor="#1D1D1F"
