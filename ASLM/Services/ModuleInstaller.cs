@@ -55,6 +55,16 @@ namespace ASLM.Services
                     var config = await JsonSerializer.DeserializeAsync<ModuleConfig>(stream, _jsonOptions);
                     if (config != null)
                     {
+                        // Backward compatibility: files without fileVersion are treated as v1
+                        if (config.FileVersion == 0)
+                            config.FileVersion = 1;
+
+                        if (config.FileVersion != 1)
+                        {
+                            Debug.WriteLine($"Unsupported fileVersion {config.FileVersion} in {jsonFile}, skipping.");
+                            return null;
+                        }
+
                         config.SourcePath = jsonFile;
                         
                         // If the JSON exists, we assume it's installed.
@@ -201,6 +211,13 @@ namespace ASLM.Services
                     
                     if (config == null || string.IsNullOrWhiteSpace(config.Id))
                         throw new InvalidOperationException("Invalid module: Could not parse config or ID is missing.");
+
+                    // Backward compatibility: files without fileVersion are treated as v1
+                    if (config.FileVersion == 0)
+                        config.FileVersion = 1;
+
+                    if (config.FileVersion != 1)
+                        throw new InvalidOperationException($"Unsupported fileVersion {config.FileVersion}. This version of ASLM does not support this module format.");
 
                     // 5. Move to final destination: Modules/{ModuleId}
                     var moduleSourceDir = Path.GetDirectoryName(jsonFile)!;

@@ -8,6 +8,13 @@ namespace ASLM.Models
     public class EngineConfig
     {
         /// <summary>
+        /// Schema version of the JSON file. Current version: 1.
+        /// Used to maintain backward compatibility when the file structure changes.
+        /// </summary>
+        [JsonPropertyName("fileVersion")]
+        public int FileVersion { get; set; } = 1;
+
+        /// <summary>
         /// Unique identifier for the engine (e.g., "python-runtime").
         /// </summary>
         [JsonPropertyName("id")]

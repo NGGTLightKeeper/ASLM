@@ -8,6 +8,13 @@ namespace ASLM.Models
     public class ModuleConfig
     {
         /// <summary>
+        /// Schema version of the JSON file. Current version: 1.
+        /// Used to maintain backward compatibility when the file structure changes.
+        /// </summary>
+        [JsonPropertyName("fileVersion")]
+        public int FileVersion { get; set; } = 1;
+
+        /// <summary>
         /// Unique identifier for the module.
         /// </summary>
         [JsonPropertyName("id")]

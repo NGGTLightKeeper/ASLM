@@ -42,6 +42,16 @@ namespace ASLM.Services
                     var config = JsonSerializer.Deserialize<ModelConfig>(json, _jsonOptions);
                     if (config != null)
                     {
+                        // Backward compatibility: files without fileVersion are treated as v1
+                        if (config.FileVersion == 0)
+                            config.FileVersion = 1;
+
+                        if (config.FileVersion != 1)
+                        {
+                            Debug.WriteLine($"Unsupported fileVersion {config.FileVersion} in {jsonFile}, skipping.");
+                            return;
+                        }
+
                         config.SourcePath = jsonFile;
 
                         // Validate installed status

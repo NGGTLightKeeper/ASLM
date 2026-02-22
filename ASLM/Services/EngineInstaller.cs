@@ -62,6 +62,16 @@ namespace ASLM.Services
                             var config = JsonSerializer.Deserialize<EngineConfig>(json, _jsonOptions);
                             if (config != null)
                             {
+                                // Backward compatibility: files without fileVersion are treated as v1
+                                if (config.FileVersion == 0)
+                                    config.FileVersion = 1;
+
+                                if (config.FileVersion != 1)
+                                {
+                                    Debug.WriteLine($"Unsupported fileVersion {config.FileVersion} in {jsonFile}, skipping.");
+                                    continue;
+                                }
+
                                 config.SourcePath = jsonFile;
 
                                 // Validate that "installed" engines actually have their runtime on disk.
