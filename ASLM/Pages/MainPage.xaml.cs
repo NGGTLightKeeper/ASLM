@@ -82,10 +82,14 @@ namespace ASLM.Pages
 
             // Set static sidebar buttons native alignment handler
             CollapseButton.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
+            HomeButton.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
             SettingsButton.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
 
             // Set initial SVG icons
             CollapseButton.ImageSource = IconMenu;
+            HomeButton.ImageSource = IconHome;
+            HomeButton.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
+            HomeButton.Text = _panelExpanded ? "Home" : "";
             SettingsButton.ImageSource = IconSettings;
             SettingsButton.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
             SettingsButton.Text = _panelExpanded ? "Settings" : "";
@@ -171,7 +175,7 @@ namespace ASLM.Pages
             UpdateButtonAlignment(CollapseButton);
             UpdateButtonAlignment(SettingsButton);
 
-            // Update all buttons in the scrollable panel (Home + module pages)
+            // Update all buttons in the scrollable panel (module pages only)
             foreach (var child in ModulePagePanel.Children)
             {
                 if (child is Button btn)
@@ -183,6 +187,12 @@ namespace ASLM.Pages
                     UpdateButtonAlignment(btn);
                 }
             }
+
+            HomeButton.Text = _panelExpanded ? "Home" : "";
+            HomeButton.ContentLayout = new Button.ButtonContentLayout(
+                Button.ButtonContentLayout.ImagePosition.Left, 14);
+            HomeButton.HorizontalOptions = LayoutOptions.Fill;
+            UpdateButtonAlignment(HomeButton);
 
             SettingsButton.Text = _panelExpanded ? "Settings" : "";
             SettingsButton.ContentLayout = new Button.ButtonContentLayout(
@@ -199,15 +209,22 @@ namespace ASLM.Pages
             DashboardView.IsVisible = true;
 
             // Highlight home button, dim module page buttons
+            HomeButton.TextColor = ActiveTextColor;
+            HomeButton.BackgroundColor = ActiveBg;
+
             foreach (var child in ModulePagePanel.Children)
             {
                 if (child is Button btn)
                 {
-                    var isHome = btn.ClassId == "HOME";
-                    btn.TextColor = isHome ? ActiveTextColor : InactiveTextColor;
-                    btn.BackgroundColor = isHome ? ActiveBg : TransparentBg;
+                    btn.TextColor = InactiveTextColor;
+                    btn.BackgroundColor = TransparentBg;
                 }
             }
+        }
+
+        private void OnHomeClicked(object? sender, EventArgs e)
+        {
+            ShowDashboard();
         }
 
         // --- Module Page Buttons (Sidebar) -----------------------------------
@@ -216,38 +233,35 @@ namespace ASLM.Pages
         {
             ModulePagePanel.Children.Clear();
 
-            // Home button — first in the list
-            var homeBtn = new Button
-            {
-                Text = _panelExpanded ? "Home" : "",
-                AutomationId = "Home",
-                ClassId = "HOME",
-                ImageSource = IconHome,
-                ContentLayout = new Button.ButtonContentLayout(
-                    Button.ButtonContentLayout.ImagePosition.Left, 14),
-                Style = (Style)Application.Current!.Resources["SidebarButton"],
-                BackgroundColor = _activeModule == null ? ActiveBg : TransparentBg,
-                TextColor = _activeModule == null ? ActiveTextColor : InactiveTextColor,
-                HeightRequest = 36,
-                HorizontalOptions = LayoutOptions.Fill
-            };
-            homeBtn.Clicked += (s, e) => ShowDashboard();
-            homeBtn.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
-            ModulePagePanel.Children.Add(homeBtn);
-
-            // Module page buttons
+            // Module page buttons only (Home is now a fixed XAML element)
             var pageModules = _allModules
                 .Where(m => m.HasPage && m.Status.Enabled)
                 .ToList();
 
             foreach (var module in pageModules)
             {
+                // Use module's sidebar icon if available, otherwise default.
+                // Note: ImageSource.FromStream is needed for absolute filesystem paths;
+                // ImageSource.FromFile only resolves app-bundled resources.
+                // SVG files cannot be loaded at runtime — use PNG/JPG.
+                ImageSource sidebarIcon;
+                if (!string.IsNullOrEmpty(module.SidebarIconFullPath)
+                    && File.Exists(module.SidebarIconFullPath))
+                {
+                    var capturedPath = module.SidebarIconFullPath;
+                    sidebarIcon = ImageSource.FromStream(() => File.OpenRead(capturedPath));
+                }
+                else
+                {
+                    sidebarIcon = IconPage;
+                }
+
                 var btn = new Button
                 {
                     Text = _panelExpanded ? module.Name : "",
                     AutomationId = module.Name,
                     ClassId = "PAGE",
-                    ImageSource = IconPage,
+                    ImageSource = sidebarIcon,
                     ContentLayout = new Button.ButtonContentLayout(
                         Button.ButtonContentLayout.ImagePosition.Left, 14),
                     Style = (Style)Application.Current!.Resources["SidebarButton"],
@@ -278,7 +292,11 @@ namespace ASLM.Pages
             Browser.Source = url;
             Browser.IsVisible = true;
 
-            // Dim home, highlight active page button
+            // Dim home button
+            HomeButton.TextColor = InactiveTextColor;
+            HomeButton.BackgroundColor = TransparentBg;
+
+            // Highlight active page button in scrollable area
             foreach (var child in ModulePagePanel.Children)
             {
                 if (child is Button btn)

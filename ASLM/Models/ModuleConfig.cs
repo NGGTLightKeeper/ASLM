@@ -90,6 +90,21 @@ namespace ASLM.Models
                 ? Path.Combine(Path.GetDirectoryName(SourcePath)!, Icon)
                 : null;
 
+        /// <summary>
+        /// Relative path to the sidebar icon (e.g. "sidebar_icon.svg"). Optional.
+        /// </summary>
+        [JsonPropertyName("sidebarIcon")]
+        public string? SidebarIcon { get; set; }
+
+        /// <summary>
+        /// Absolute path to the sidebar icon file. Resolved at runtime from <see cref="SourcePath"/>.
+        /// </summary>
+        [JsonIgnore]
+        public string? SidebarIconFullPath =>
+            !string.IsNullOrEmpty(SidebarIcon) && !string.IsNullOrEmpty(SourcePath)
+                ? Path.Combine(Path.GetDirectoryName(SourcePath)!, SidebarIcon)
+                : null;
+
         // --- Settings --------------------------------------------------------
 
         /// <summary>

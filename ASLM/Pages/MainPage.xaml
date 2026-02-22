@@ -9,7 +9,7 @@
 
         <!-- Left Sidebar -->
         <Grid x:Name="SidePanel" Grid.Column="0"
-              RowDefinitions="Auto, *, Auto"
+              RowDefinitions="Auto, *, Auto, Auto"
               BackgroundColor="#1D1D1F"
               Padding="8">
 
@@ -22,13 +22,22 @@
                     HorizontalOptions="Fill"
                     Clicked="OnCollapseClicked" />
 
-            <!-- Scrollable nav list: Home + Module Pages -->
+            <!-- Scrollable nav list: Module Pages -->
             <ScrollView Grid.Row="1" Margin="0,4,0,0">
                 <VerticalStackLayout x:Name="ModulePagePanel" Spacing="2" />
             </ScrollView>
 
+            <!-- Home Button (fixed bottom) -->
+            <Button x:Name="HomeButton" Grid.Row="2"
+                    Style="{StaticResource SidebarButton}"
+                    Text="Home"
+                    HeightRequest="36"
+                    HorizontalOptions="Fill"
+                    Margin="0,4,0,0"
+                    Clicked="OnHomeClicked" />
+
             <!-- Settings Button (fixed bottom) -->
-            <Button x:Name="SettingsButton" Grid.Row="2"
+            <Button x:Name="SettingsButton" Grid.Row="3"
                     Style="{StaticResource SidebarButton}"
                     Text="Settings"
                     HeightRequest="36"
