@@ -1,4 +1,5 @@
 {
+    "fileVersion": 1,
     "id": "nodejs-runtime",
     "name": "Node.js Runtime",
     "description": "Node.js v25.6.1 JavaScript runtime for ASLM modules",

@@ -8,6 +8,13 @@ namespace ASLM.Models
     public class ModuleConfig
     {
         /// <summary>
+        /// Schema version of the JSON file. Current version: 1.
+        /// Used to maintain backward compatibility when the file structure changes.
+        /// </summary>
+        [JsonPropertyName("fileVersion")]
+        public int FileVersion { get; set; } = 1;
+
+        /// <summary>
         /// Unique identifier for the module.
         /// </summary>
         [JsonPropertyName("id")]
@@ -88,6 +95,21 @@ namespace ASLM.Models
         public string? IconFullPath =>
             !string.IsNullOrEmpty(Icon) && !string.IsNullOrEmpty(SourcePath)
                 ? Path.Combine(Path.GetDirectoryName(SourcePath)!, Icon)
+                : null;
+
+        /// <summary>
+        /// Relative path to the sidebar icon (e.g. "sidebar_icon.svg"). Optional.
+        /// </summary>
+        [JsonPropertyName("sidebarIcon")]
+        public string? SidebarIcon { get; set; }
+
+        /// <summary>
+        /// Absolute path to the sidebar icon file. Resolved at runtime from <see cref="SourcePath"/>.
+        /// </summary>
+        [JsonIgnore]
+        public string? SidebarIconFullPath =>
+            !string.IsNullOrEmpty(SidebarIcon) && !string.IsNullOrEmpty(SourcePath)
+                ? Path.Combine(Path.GetDirectoryName(SourcePath)!, SidebarIcon)
                 : null;
 
         // --- Settings --------------------------------------------------------

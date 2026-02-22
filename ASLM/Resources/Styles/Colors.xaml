@@ -25,6 +25,10 @@
     <Color x:Key="Magenta">#D600AA</Color>
     <Color x:Key="MidnightBlue">#190649</Color>
     <Color x:Key="OffBlack">#1f1f1f</Color>
+    
+    <Color x:Key="ActionRed">#FF3B30</Color>
+    <Color x:Key="ActionBlue">#007AFF</Color>
+    <Color x:Key="ActionGreen">#34C759</Color>
 
     <Color x:Key="Gray100">#E1E1E1</Color>
     <Color x:Key="Gray200">#C8C8C8</Color>

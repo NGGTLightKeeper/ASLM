@@ -21,11 +21,17 @@ namespace ASLM.Pages
 
         private List<ModuleConfig> _allModules = [];
         private ModuleConfig? _activeModule;
-        private bool _panelExpanded = true;
+        private bool _panelExpanded;
 
         private const double PanelExpandedWidth = 240;
-        private const double PanelCollapsedWidth = 60;
+        private const double PanelCollapsedWidth = 48;
         private const double MinCardWidth = 400;
+
+        // Sidebar SVG icon file names (SVGs in Resources/Images/)
+        private const string IconMenu = "icon_menu.png";
+        private const string IconHome = "icon_home.png";
+        private const string IconSettings = "icon_settings.png";
+        private const string IconPage = "icon_page.png";
 
         // Colors
         private static readonly Color ActiveTextColor = Colors.White;
@@ -70,9 +76,23 @@ namespace ASLM.Pages
             BindingContext = this;
             Loaded += OnPageLoaded;
 
-            // Left-align static sidebar buttons via native handler
-            HomeButton.HandlerChanged += AlignButtonLeft;
-            SettingsButton.HandlerChanged += AlignButtonLeft;
+            // Load saved sidebar state, default to collapsed
+            _panelExpanded = Preferences.Default.Get("SidebarExpanded", false);
+            SidePanel.WidthRequest = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
+
+            // Set static sidebar buttons native alignment handler
+            CollapseButton.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
+            HomeButton.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
+            SettingsButton.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
+
+            // Set initial SVG icons
+            CollapseButton.ImageSource = IconMenu;
+            HomeButton.ImageSource = IconHome;
+            HomeButton.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
+            HomeButton.Text = _panelExpanded ? "Home" : "";
+            SettingsButton.ImageSource = IconSettings;
+            SettingsButton.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
+            SettingsButton.Text = _panelExpanded ? "Settings" : "";
         }
 
         /// <inheritdoc />
@@ -91,13 +111,15 @@ namespace ASLM.Pages
         protected override void OnSizeAllocated(double width, double height)
         {
             base.OnSizeAllocated(width, height);
+            RecalculateGridSpan();
+        }
 
-            // Calculate available width for the dashboard
-            // We subtract the SidePanel width (approximated if not laid out yet)
-            var sidePanelWidth = SidePanel.Width > 0 ? SidePanel.Width : (_panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth);
-            // Also subtract margins (30 on left + 30 on right = 60)
+        /// <summary>Recalculates the module card grid span based on available width.</summary>
+        private void RecalculateGridSpan()
+        {
+            var sidePanelWidth = SidePanel.WidthRequest > 0 ? SidePanel.WidthRequest : PanelCollapsedWidth;
             var dashboardMargin = 60;
-            var availableWidth = width - sidePanelWidth - dashboardMargin;
+            var availableWidth = Width - sidePanelWidth - dashboardMargin;
 
             if (availableWidth > 0)
             {
@@ -137,30 +159,48 @@ namespace ASLM.Pages
         private void OnCollapseClicked(object? sender, EventArgs e)
         {
             _panelExpanded = !_panelExpanded;
+            Preferences.Default.Set("SidebarExpanded", _panelExpanded);
 
-            SidePanel.WidthRequest = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
-            CollapseButton.Text = _panelExpanded ? "◀" : "▶";
-            CollapseButton.HorizontalOptions = _panelExpanded ? LayoutOptions.End : LayoutOptions.Center;
-            PagesHeader.IsVisible = _panelExpanded;
+            double targetWidth = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
+            
+            // Animate width
+            var animation = new Animation(v => 
+            {
+                SidePanel.WidthRequest = v;
+                RecalculateGridSpan();
+            }, SidePanel.WidthRequest, targetWidth);
+            
+            animation.Commit(this, "SidebarAnimation", 16, 150, Easing.CubicOut);
+            
+            UpdateButtonAlignment(CollapseButton);
+            UpdateButtonAlignment(SettingsButton);
 
-            // Update button text for expanded/collapsed
-            HomeButton.Text = _panelExpanded ? "🏠  Home" : "🏠";
-
+            // Update all buttons in the scrollable panel (module pages only)
             foreach (var child in ModulePagePanel.Children)
             {
                 if (child is Button btn)
                 {
-                    var icon = btn.ClassId ?? "📄";
-                    btn.Text = _panelExpanded ? $"{icon}  {btn.AutomationId}" : icon;
+                    btn.Text = _panelExpanded ? btn.AutomationId : "";
+                    btn.ContentLayout = new Button.ButtonContentLayout(
+                        Button.ButtonContentLayout.ImagePosition.Left, 14);
+                    btn.HorizontalOptions = LayoutOptions.Fill;
+                    UpdateButtonAlignment(btn);
                 }
             }
 
-            SettingsButton.Text = _panelExpanded ? "⚙  Settings" : "⚙";
+            HomeButton.Text = _panelExpanded ? "Home" : "";
+            HomeButton.ContentLayout = new Button.ButtonContentLayout(
+                Button.ButtonContentLayout.ImagePosition.Left, 14);
+            HomeButton.HorizontalOptions = LayoutOptions.Fill;
+            UpdateButtonAlignment(HomeButton);
+
+            SettingsButton.Text = _panelExpanded ? "Settings" : "";
+            SettingsButton.ContentLayout = new Button.ButtonContentLayout(
+                Button.ButtonContentLayout.ImagePosition.Left, 14);
+            SettingsButton.HorizontalOptions = LayoutOptions.Fill;
         }
 
         // --- Home / Dashboard ------------------------------------------------
-
-        private void OnHomeClicked(object? sender, EventArgs e) => ShowDashboard();
 
         private void ShowDashboard()
         {
@@ -168,7 +208,7 @@ namespace ASLM.Pages
             Browser.IsVisible = false;
             DashboardView.IsVisible = true;
 
-            // Highlight home button
+            // Highlight home button, dim module page buttons
             HomeButton.TextColor = ActiveTextColor;
             HomeButton.BackgroundColor = ActiveBg;
 
@@ -182,48 +222,62 @@ namespace ASLM.Pages
             }
         }
 
+        private void OnHomeClicked(object? sender, EventArgs e)
+        {
+            ShowDashboard();
+        }
+
         // --- Module Page Buttons (Sidebar) -----------------------------------
 
         private void BuildPageButtons()
         {
             ModulePagePanel.Children.Clear();
 
+            // Module page buttons only (Home is now a fixed XAML element)
             var pageModules = _allModules
                 .Where(m => m.HasPage && m.Status.Enabled)
                 .ToList();
 
             foreach (var module in pageModules)
             {
-                var icon = "📄";
+                // Use module's sidebar icon if available, otherwise default.
+                // Note: ImageSource.FromStream is needed for absolute filesystem paths;
+                // ImageSource.FromFile only resolves app-bundled resources.
+                // SVG files cannot be loaded at runtime — use PNG/JPG.
+                ImageSource sidebarIcon;
+                if (!string.IsNullOrEmpty(module.SidebarIconFullPath)
+                    && File.Exists(module.SidebarIconFullPath))
+                {
+                    var capturedPath = module.SidebarIconFullPath;
+                    sidebarIcon = ImageSource.FromStream(() => File.OpenRead(capturedPath));
+                }
+                else
+                {
+                    sidebarIcon = IconPage;
+                }
+
                 var btn = new Button
                 {
-                    Text = _panelExpanded ? $"{icon}  {module.Name}" : icon,
+                    Text = _panelExpanded ? module.Name : "",
                     AutomationId = module.Name,
-                    ClassId = icon,
+                    ClassId = "PAGE",
+                    ImageSource = sidebarIcon,
+                    ContentLayout = new Button.ButtonContentLayout(
+                        Button.ButtonContentLayout.ImagePosition.Left, 14),
                     Style = (Style)Application.Current!.Resources["SidebarButton"],
                     BackgroundColor = TransparentBg,
                     TextColor = InactiveTextColor,
-                    FontSize = 12,
-                    HeightRequest = 24,
+                    HeightRequest = 36,
                     HorizontalOptions = LayoutOptions.Fill
                 };
 
                 var captured = module;
                 btn.Clicked += (s, e) => ActivateModulePage(captured);
-                btn.HandlerChanged += AlignButtonLeft;
+                btn.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
                 ModulePagePanel.Children.Add(btn);
             }
 
-            if (pageModules.Count == 0)
-            {
-                ModulePagePanel.Children.Add(new Label
-                {
-                    Text = _panelExpanded ? "No module pages" : "",
-                    FontSize = 11,
-                    TextColor = Color.FromArgb("#8E8E93"),
-                    Margin = new Thickness(8, 2, 0, 0)
-                });
-            }
+
         }
 
         // --- Module Page Activation ------------------------------------------
@@ -238,15 +292,16 @@ namespace ASLM.Pages
             Browser.Source = url;
             Browser.IsVisible = true;
 
-            // Dim home, highlight active page button
+            // Dim home button
             HomeButton.TextColor = InactiveTextColor;
             HomeButton.BackgroundColor = TransparentBg;
 
+            // Highlight active page button in scrollable area
             foreach (var child in ModulePagePanel.Children)
             {
                 if (child is Button btn)
                 {
-                    var isActive = btn.AutomationId == module.Name;
+                    var isActive = btn.ClassId == "PAGE" && btn.AutomationId == module.Name;
                     btn.TextColor = isActive ? ActiveTextColor : InactiveTextColor;
                     btn.BackgroundColor = isActive ? ActiveBg : TransparentBg;
                 }
@@ -303,16 +358,18 @@ namespace ASLM.Pages
             }
         }
 
-        /// <summary>Sets native WinUI button content alignment to left.</summary>
-        private static void AlignButtonLeft(object? sender, EventArgs e)
+        /// <summary>Sets native WinUI button content alignment.</summary>
+        private void UpdateButtonAlignment(Button btn)
         {
 #if WINDOWS
-            if (sender is Button btn && btn.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Button native)
+            if (btn.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Button native)
             {
                 native.HorizontalContentAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Left;
             }
 #endif
         }
+
+
     }
 
     /// <summary>
@@ -349,11 +406,31 @@ namespace ASLM.Pages
         public string VersionString => $"v{_config.Version}";
         /// <summary>Icon path.</summary>
         public string? IconFullPath => _config.IconFullPath;
+        /// <summary>Whether the module has an icon.</summary>
+        public bool HasIcon => !string.IsNullOrEmpty(_config.IconFullPath);
 
         /// <summary>Is the module currently enabled/running.</summary>
         public bool IsRunning => _config.Status.Enabled;
         /// <summary>Is the module currently stopped.</summary>
         public bool IsStopped => !_config.Status.Enabled;
+
+        private bool _isRestarting;
+        /// <summary>Is the module currently restarting.</summary>
+        public bool IsRestarting
+        {
+            get => _isRestarting;
+            set
+            {
+                if (_isRestarting != value)
+                {
+                    _isRestarting = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsNotRestarting));
+                }
+            }
+        }
+        /// <summary>Is the module not currently restarting.</summary>
+        public bool IsNotRestarting => !IsRestarting;
 
         /// <summary>Command to launch the module.</summary>
         public ICommand LaunchCommand { get; }
@@ -391,13 +468,24 @@ namespace ASLM.Pages
 
         private async void OnRestart()
         {
-            // Stop existing processes first
-            await _runner.StopModuleAsync(_config.SourcePath);
+            IsRestarting = true;
+            try
+            {
+                // Stop existing processes first
+                await _runner.StopModuleAsync(_config.SourcePath);
+                
+                // Add a small delay for visual feedback
+                await Task.Delay(1000);
 
-            var logProgress = new Progress<string>(msg =>
-                Debug.WriteLine($"[Restart] {msg}"));
-            await Task.Run(() =>
-                _runner.ExecuteRunAsync(_config, logProgress, CancellationToken.None));
+                var logProgress = new Progress<string>(msg =>
+                    Debug.WriteLine($"[Restart] {msg}"));
+                _ = Task.Run(() =>
+                    _runner.ExecuteRunAsync(_config, logProgress, CancellationToken.None));
+            }
+            finally
+            {
+                IsRestarting = false;
+            }
         }
 
         private void NotifyStateChanged()
