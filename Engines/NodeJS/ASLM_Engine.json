@@ -13,7 +13,7 @@
     "requirements": {
         "os": "windows",
         "arch": "x64",
-        "diskSpaceMb": 150
+        "diskSpaceMb": 256
     },
     "install": [
         {

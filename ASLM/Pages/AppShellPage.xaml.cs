@@ -12,6 +12,7 @@ namespace ASLM.Pages
     {
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
+        private readonly PortManager _portManager;
         private readonly IServiceProvider _services;
 
         private List<ModuleConfig> _allModules = [];
@@ -62,10 +63,12 @@ namespace ASLM.Pages
         public AppShellPage(
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
+            PortManager portManager,
             IServiceProvider services)
         {
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
+            _portManager = portManager;
             _services = services;
             InitializeComponent();
             BindingContext = this;
@@ -319,7 +322,7 @@ namespace ASLM.Pages
         private void ActivateModulePage(ModuleConfig module)
         {
             _activeModule = module;
-            var url = "http://127.0.0.1:8000/";
+            var url = _portManager.GetModuleUrl(module);
 
             ContentArea.Content = null;
             Browser.Source = url;

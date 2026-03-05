@@ -55,6 +55,11 @@
                 </VerticalStackLayout>
             </Border>
 
+            <!-- Module Settings (Dynamic) -->
+            <VerticalStackLayout x:Name="ModuleSettingsContainer" Spacing="24">
+                <!-- Dynamically populated by code-behind -->
+            </VerticalStackLayout>
+
             <!-- Save Button -->
             <Button Text="Save"
                     BackgroundColor="#007AFF"

@@ -47,38 +47,7 @@ namespace ASLM.Services
             var jsonFiles = Directory.GetFiles(modulesRoot, "ASLM_Module.json", SearchOption.AllDirectories);
 
             // Process files in parallel
-            var tasks = jsonFiles.Select(async jsonFile =>
-            {
-                try
-                {
-                    await using var stream = File.OpenRead(jsonFile);
-                    var config = await JsonSerializer.DeserializeAsync<ModuleConfig>(stream, _jsonOptions);
-                    if (config != null)
-                    {
-                        // Backward compatibility: files without fileVersion are treated as v1
-                        if (config.FileVersion == 0)
-                            config.FileVersion = 1;
-
-                        if (config.FileVersion != 1)
-                        {
-                            Debug.WriteLine($"Unsupported fileVersion {config.FileVersion} in {jsonFile}, skipping.");
-                            return null;
-                        }
-
-                        config.SourcePath = jsonFile;
-                        
-                        // If the JSON exists, we assume it's installed.
-                        config.Status.Installed = true;
-                        
-                        return config;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Failed to parse {jsonFile}: {ex.Message}");
-                }
-                return null;
-            });
+            var tasks = jsonFiles.Select(LoadModuleConfig);
 
             var results = await Task.WhenAll(tasks);
 
@@ -90,6 +59,46 @@ namespace ASLM.Services
             }
 
             return modules;
+        }
+
+        /// <summary>
+        /// Loads a single module configuration from the specified JSON file path.
+        /// </summary>
+        /// <param name="jsonFile">Path to ASLM_Module.json</param>
+        /// <returns>The deserialized ModuleConfig or null if failed.</returns>
+        public async Task<ModuleConfig?> LoadModuleConfig(string jsonFile)
+        {
+            if (!File.Exists(jsonFile)) return null;
+
+            try
+            {
+                await using var stream = File.OpenRead(jsonFile);
+                var config = await JsonSerializer.DeserializeAsync<ModuleConfig>(stream, _jsonOptions);
+                if (config != null)
+                {
+                    // Backward compatibility: files without fileVersion are treated as v1
+                    if (config.FileVersion == 0)
+                        config.FileVersion = 1;
+
+                    if (config.FileVersion != 1)
+                    {
+                        Debug.WriteLine($"Unsupported fileVersion {config.FileVersion} in {jsonFile}, skipping.");
+                        return null;
+                    }
+
+                    config.SourcePath = jsonFile;
+                    
+                    // If the JSON exists, we assume it's installed.
+                    config.Status.Installed = true;
+                    
+                    return config;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to parse {jsonFile}: {ex.Message}");
+            }
+            return null;
         }
 
         // --- Source Download --------------------------------------------------

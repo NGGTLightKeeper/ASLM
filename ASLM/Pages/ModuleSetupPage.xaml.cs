@@ -66,7 +66,8 @@ namespace ASLM.Pages
 
                 foreach (var module in _pendingModules)
                 {
-                    AddLog($"  • {module.Name} v{module.Version}");
+                    var versionLabel = module.Version.All(c => char.IsDigit(c) || c == '.') ? $"v{module.Version}" : module.Version;
+                    AddLog($"  \u2022 {module.Name} {versionLabel}");
                     AddLog($"    FirstRun commands: {module.Commands.FirstRun.Count}");
                     
                     // Check dependencies
@@ -153,9 +154,11 @@ namespace ASLM.Pages
             }
             else
             {
-                InstallButton.IsEnabled = true;
                 InstallButton.Text = "Retry";
-                ProgressLabel.Text = "Setup incomplete";
+                InstallButton.IsEnabled = true;
+                InstallButton.BackgroundColor = Color.FromArgb("#007AFF");
+                ProgressLabel.Text = "Setup incomplete \u2014 press Retry to try again";
+                ShowSkipButton();
             }
         }
 
@@ -207,6 +210,19 @@ namespace ASLM.Pages
             InstallButton.Clicked -= OnInstallClicked;
             InstallButton.Clicked += OnContinueClicked;
             CancelButton.IsVisible = false;
+        }
+
+        /// <summary>
+        /// Shows a secondary "Skip" button after a failed setup so the user
+        /// can continue to the app without being completely blocked.
+        /// </summary>
+        private void ShowSkipButton()
+        {
+            CancelButton.Text = "Skip";
+            CancelButton.IsEnabled = true;
+            CancelButton.IsVisible = true;
+            CancelButton.Clicked -= OnCancelClicked;
+            CancelButton.Clicked += OnContinueClicked;
         }
 
         private void AddLog(string message)

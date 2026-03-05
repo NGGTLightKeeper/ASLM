@@ -173,6 +173,34 @@ namespace ASLM.Pages
 
         private async void OnLaunch()
         {
+            // Reload from disk to get latest user-saved settings
+            var freshConfig = await _installer.LoadModuleConfig(_config.SourcePath);
+            if (freshConfig != null)
+            {
+                _config.Settings = freshConfig.Settings;
+                _config.Commands = freshConfig.Commands;
+            }
+
+            if (!_config.Status.FirstRunCompleted)
+            {
+                var logProgressSetup = new Progress<string>(msg =>
+                    Debug.WriteLine($"[Setup] {msg}"));
+                
+                bool setupSuccess = await Task.Run(() => 
+                    _runner.ExecuteFirstRunAsync(_config, logProgressSetup, CancellationToken.None));
+
+                if (setupSuccess)
+                {
+                    _config.Status.FirstRunCompleted = true;
+                    _installer.SaveModuleConfig(_config);
+                }
+                else
+                {
+                    Debug.WriteLine("Setup failed, cannot launch.");
+                    return;
+                }
+            }
+
             _config.Status.Enabled = true;
             _installer.SaveModuleConfig(_config);
             NotifyStateChanged();
@@ -182,7 +210,8 @@ namespace ASLM.Pages
             {
                 var logProgress = new Progress<string>(msg =>
                     Debug.WriteLine($"[Launch] {msg}"));
-                await Task.Run(() =>
+                
+                _ = Task.Run(() =>
                     _runner.ExecuteRunAsync(_config, logProgress, CancellationToken.None));
             }
         }
@@ -199,6 +228,14 @@ namespace ASLM.Pages
 
         private async void OnRestart()
         {
+            // Reload from disk to get latest user-saved settings
+            var freshConfig = await _installer.LoadModuleConfig(_config.SourcePath);
+            if (freshConfig != null)
+            {
+                _config.Settings = freshConfig.Settings;
+                _config.Commands = freshConfig.Commands;
+            }
+
             IsRestarting = true;
             try
             {

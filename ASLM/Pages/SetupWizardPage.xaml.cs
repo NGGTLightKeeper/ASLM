@@ -100,7 +100,9 @@ namespace ASLM.Pages
                 row.Children.Add(check);
                 row.Children.Add(new Label
                 {
-                    Text = $"{module.Name} v{module.Version}",
+                    Text = module.Version.All(c => char.IsDigit(c) || c == '.')
+                        ? $"{module.Name} v{module.Version}"
+                        : $"{module.Name} {module.Version}",
                     FontSize = 14,
                     TextColor = Colors.White,
                     VerticalOptions = LayoutOptions.Center
@@ -385,12 +387,38 @@ namespace ASLM.Pages
                 AddLog($"Error: {ex.Message}");
             }
 
-            // Show finish button
+            // Determine install outcome and configure buttons accordingly.
+            bool allSucceeded = completedSteps >= totalSteps;
+
             ButtonPanel.IsVisible = true;
-            BackButton.IsVisible = false;
-            NextButton.Text = "Finish";
-            NextButton.Clicked -= OnNextClicked;
-            NextButton.Clicked += async (s, e) => await FinishSetupAsync();
+
+            if (allSucceeded)
+            {
+                // Success: show Finish button.
+                BackButton.IsVisible = false;
+                NextButton.Text = "Finish";
+                NextButton.BackgroundColor = Color.FromArgb("#007AFF");
+                NextButton.Clicked -= OnNextClicked;
+                NextButton.Clicked += async (s, e) => await FinishSetupAsync();
+            }
+            else
+            {
+                // Failure: Retry (primary, blue) + Skip (secondary, grey via BackButton).
+                NextButton.Text = "Retry";
+                NextButton.BackgroundColor = Color.FromArgb("#007AFF");
+                NextButton.Clicked -= OnNextClicked;
+                NextButton.Clicked += async (s, e) =>
+                {
+                    ButtonPanel.IsVisible = false;
+                    await StartInstallAsync();
+                };
+
+                BackButton.Text = "Skip";
+                BackButton.IsVisible = true;
+                BackButton.BackgroundColor = Color.FromArgb("#3A3A3C");
+                BackButton.Clicked -= OnBackClicked;
+                BackButton.Clicked += async (s, e) => await FinishSetupAsync();
+            }
         }
 
         // --- Helpers ---------------------------------------------------------

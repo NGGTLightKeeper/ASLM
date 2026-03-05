@@ -14,6 +14,7 @@ namespace ASLM.Services
     public class ModuleRunner : IDisposable
     {
         private readonly EngineInstaller _engineInstaller;
+        private readonly PortManager _portManager;
         private readonly ProcessTracker _processTracker;
         private readonly ILogger<ModuleRunner> _logger;
         private bool _disposed;
@@ -31,9 +32,10 @@ namespace ASLM.Services
         /// <param name="engineInstaller">Service to resolve engine paths.</param>
         /// <param name="processTracker">Job Object tracker for child process grouping and cleanup.</param>
         /// <param name="logger">Logger instance.</param>
-        public ModuleRunner(EngineInstaller engineInstaller, ProcessTracker processTracker, ILogger<ModuleRunner> logger)
+        public ModuleRunner(EngineInstaller engineInstaller, PortManager portManager, ProcessTracker processTracker, ILogger<ModuleRunner> logger)
         {
             _engineInstaller = engineInstaller;
+            _portManager = portManager;
             _processTracker = processTracker;
             _logger = logger;
         }
@@ -95,6 +97,37 @@ namespace ASLM.Services
             {
                 log.Report($"No run commands for {module.Name}.");
                 return true;
+            }
+
+            // --- Enforce Setting Synchronization ---
+            if (module.Settings != null && module.Settings.Count > 0)
+            {
+                log.Report("Synchronizing module settings...");
+                foreach (var setting in module.Settings)
+                {
+                    if (ct.IsCancellationRequested) return false;
+                    if (string.IsNullOrEmpty(setting.SetExec)) continue;
+
+                    var targetValue = ResolveSettingValue(module, setting);
+                    bool needsUpdate = true;
+
+                    if (!string.IsNullOrEmpty(setting.GetExec))
+                    {
+                        var currentValue = await ExecuteSettingCommandAsync(module, setting, isSet: false, newValue: null, ct);
+                        
+                        if (currentValue != null && string.Equals(currentValue.Trim(), targetValue.Trim(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            log.Report($"[Sync] '{setting.Key}' is already up to date ({currentValue.Trim()})");
+                            needsUpdate = false;
+                        }
+                    }
+
+                    if (needsUpdate)
+                    {
+                        log.Report($"[Sync] Applying '{setting.Key}' = {targetValue}");
+                        await ExecuteSettingCommandAsync(module, setting, isSet: true, newValue: targetValue, ct);
+                    }
+                }
             }
 
             log.Report($"Starting {module.Name}...");
@@ -160,6 +193,55 @@ namespace ASLM.Services
             await Task.WhenAll(tasks);
             _logger.LogInformation("All module processes stopped.");
         }
+
+        // --- Settings Propagation --------------------------------------------
+
+        /// <summary>
+        /// Injects the resolved settings into the given ProcessStartInfo environment.
+        /// </summary>
+        private void InjectSettingsIntoEnvironment(ModuleConfig module, ProcessStartInfo psi)
+        {
+            if (module.Settings == null) return;
+
+            foreach (var setting in module.Settings)
+            {
+                var resolved = ResolveSettingValue(module, setting);
+                var envKey = $"ASLM_{setting.Key.ToUpperInvariant()}";
+                psi.Environment[envKey] = resolved;
+            }
+
+            // Also inject some useful module context
+            psi.Environment["ASLM_MODULE_ID"] = module.Id;
+            psi.Environment["ASLM_MODULE_DIR"] = Path.GetDirectoryName(module.SourcePath) ?? "";
+        }
+
+        /// <summary>
+        /// Resolves the effective string value for a single setting.
+        /// </summary>
+        private string ResolveSettingValue(ModuleConfig module, ModuleSetting setting)
+        {
+            switch (setting.Type.ToLowerInvariant())
+            {
+                case "port":
+                    // Use PortManager's assigned port for the first setting defined as type "port"
+                    var firstPortSetting = module.Settings.FirstOrDefault(s => s.Type.Equals("port", StringComparison.OrdinalIgnoreCase));
+                    if (firstPortSetting != null && setting.Key == firstPortSetting.Key)
+                        return _portManager.GetOrAssignPort(module).ToString();
+                    
+                    if (int.TryParse(setting.Value ?? setting.Default, out var p))
+                        return p.ToString();
+                    return setting.Default;
+
+                case "bool":
+                    var raw = setting.Value ?? setting.Default;
+                    return raw.Equals("true", StringComparison.OrdinalIgnoreCase) ? "true" : "false";
+
+                default:
+                    return setting.Value ?? setting.Default;
+            }
+        }
+
+        // --- Dependencies Install --------------------------------------------
 
         /// <summary>
         /// Installs required libraries for each engine dependency using the
@@ -260,7 +342,8 @@ namespace ASLM.Services
             ModuleCommand cmd, 
             IProgress<string> log, 
             CancellationToken ct,
-            bool trackProcess = false)
+            bool trackProcess = false,
+            bool injectSettings = true)
         {
             try
             {
@@ -268,9 +351,21 @@ namespace ASLM.Services
                 if (string.IsNullOrEmpty(moduleDir)) return false;
 
                 string fileName;
-                string arguments;
+                string arguments = string.Empty;
 
                 // 1. Resolve Execution Strategy
+                var execString = cmd.Exec ?? string.Empty;
+
+                // Replace {key} placeholders with setting values
+                if (module.Settings != null)
+                {
+                    foreach (var setting in module.Settings)
+                    {
+                        var resolved = ResolveSettingValue(module, setting);
+                        execString = execString.Replace($"{{{setting.Key}}}", resolved);
+                    }
+                }
+
                 if (!string.IsNullOrEmpty(cmd.Engine))
                 {
                     // Run via Engine (e.g. Python)
@@ -285,13 +380,13 @@ namespace ASLM.Services
                     // Combine engine + script/args
                     // cmd.Exec = "manage.py runserver"
                     // We need to ensure we run it in the module directory context
-                    arguments = cmd.Exec; 
+                    arguments = execString; 
                 }
                 else
                 {
                     // Run directly (e.g. valid executable on PATH)
                     // Properly parse the command string to handle quotes
-                    var parts = SplitCommand(cmd.Exec);
+                    var parts = SplitCommand(execString);
                     if (parts.Count == 0) return false;
 
                     fileName = parts[0];
@@ -309,6 +404,12 @@ namespace ASLM.Services
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+
+                // Apply settings as environment variables so the module can consume them dynamically
+                if (injectSettings)
+                {
+                    InjectSettingsIntoEnvironment(module, psi);
+                }
                 
                 log.Report($"Exec: {Path.GetFileName(fileName)} {arguments}");
 
@@ -373,6 +474,58 @@ namespace ASLM.Services
                 _logger.LogError(ex, "Command execution failed");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Executes a setting command (getExec or setExec) from the module's configuration.
+        /// </summary>
+        /// <returns>The standard output of the command if successful, otherwise null.</returns>
+        public async Task<string?> ExecuteSettingCommandAsync(ModuleConfig module, ModuleSetting setting, bool isSet, string? newValue, CancellationToken ct)
+        {
+            var execStr = isSet ? setting.SetExec : setting.GetExec;
+            if (string.IsNullOrEmpty(execStr)) return null;
+
+            // Replace {value} placeholder specifically for setExec
+            if (isSet && newValue != null)
+            {
+                execStr = execStr.Replace("{value}", newValue);
+            }
+
+            var cmd = new ModuleCommand
+            {
+                Name = isSet ? $"Set {setting.Key}" : $"Get {setting.Key}",
+                Engine = setting.Engine,
+                Exec = execStr
+            };
+
+            var outputBuilder = new StringBuilder();
+            var lockObject = new object();
+            var log = new Progress<string>(msg =>
+            {
+                if (string.IsNullOrEmpty(msg)) return;
+
+                // Capture the exact output, avoiding log prefixes and errors
+                var trimmed = msg.TrimStart();
+                if (!trimmed.StartsWith("Exec:") && !trimmed.StartsWith("err:"))
+                {
+                    lock (lockObject)
+                    {
+                        outputBuilder.AppendLine(trimmed);
+                    }
+                }
+            });
+
+            bool success = await RunCommandAsync(module, cmd, log, ct, trackProcess: false, injectSettings: isSet);
+            if (!success) return null;
+
+            // Get the last non-empty line (to ignore banners or headers)
+            var lines = outputBuilder.ToString()
+                .Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(l => l.Trim())
+                .Where(l => !string.IsNullOrEmpty(l))
+                .ToList();
+            
+            return lines.Count > 0 ? lines[^1] : null;
         }
 
         /// <summary>

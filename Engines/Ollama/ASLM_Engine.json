@@ -1,0 +1,39 @@
+{
+    "fileVersion": 1,
+    "id": "ollama-service",
+    "name": "Ollama",
+    "description": "Ollama (latest) — local LLM inference service exposing an OpenAI-compatible REST API (http://localhost:11434)",
+    "version": "latest",
+    "type": "service",
+    "executablePath": "runtime/ollama.exe",
+    "requirements": {
+        "os": "windows",
+        "arch": "x64",
+        "diskSpaceMb": 4096
+    },
+    "install": [
+        {
+            "action": "download",
+            "name": "Download Ollama Windows portable ZIP (latest release)",
+            "url": "https://github.com/ollama/ollama/releases/latest/download/ollama-windows-amd64.zip",
+            "dest": "{temp}/ollama-windows-amd64.zip"
+        },
+        {
+            "action": "extract",
+            "name": "Extract Ollama to runtime directory",
+            "source": "{temp}/ollama-windows-amd64.zip",
+            "dest": "Engines/Ollama/runtime"
+        },
+        {
+            "action": "cleanup",
+            "name": "Remove temporary files",
+            "target": "{temp}"
+        }
+    ],
+    "postInstall": [],
+    "status": {
+        "installed": false,
+        "installedVersion": null,
+        "lastChecked": null
+    }
+}

@@ -38,6 +38,7 @@ namespace ASLM
             builder.Services.AddSingleton<ModuleInstaller>();
             builder.Services.AddSingleton<ProcessTracker>();
             builder.Services.AddSingleton<ModuleRunner>();
+            builder.Services.AddSingleton<PortManager>();
 
             // Pages
             builder.Services.AddTransient<AppShellPage>();

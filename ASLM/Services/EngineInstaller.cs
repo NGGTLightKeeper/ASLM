@@ -167,7 +167,10 @@ namespace ASLM.Services
 
                 Directory.CreateDirectory(tempDir);
 
-                log.Report($"=== Installing {config.Name} v{config.Version} ===");
+                var versionLabel = config.Version.All(c => char.IsDigit(c) || c == '.')
+                    ? $"v{config.Version}"
+                    : config.Version;
+                log.Report($"=== Installing {config.Name} {versionLabel} ===");
                 log.Report($"Base directory: {baseDir}");
 
                 var context = new StepContext(baseDir, tempDir);
@@ -263,6 +266,8 @@ namespace ASLM.Services
         /// <summary>
         /// Downloads a file from <c>step.Url</c> to <c>step.Dest</c>,
         /// optionally verifying the SHA-256 checksum.
+        /// Retries up to 3 times on transport errors, resuming from the last
+        /// byte using an HTTP <c>Range</c> header so large downloads don't restart.
         /// </summary>
         /// <param name="step">The installation step configuration.</param>
         /// <param name="ctx">Context for resolving paths.</param>
@@ -282,31 +287,78 @@ namespace ASLM.Services
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
             log.Report($"  Downloading: {url}");
 
-            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-            response.EnsureSuccessStatusCode();
+            const int maxAttempts = 3;
+            const int retryDelayMs = 3000;
 
-            var totalBytes = response.Content.Headers.ContentLength ?? 0;
-            await using var contentStream = await response.Content.ReadAsStreamAsync(ct);
-            await using var fileStream = new FileStream(dest, FileMode.Create, FileAccess.Write, FileShare.None, 65536, true);
-
-            var buffer = new byte[65536];
+            long totalBytes = 0;
             long downloaded = 0;
-            int bytesRead;
-            var throttle = Stopwatch.StartNew();
 
-            downloadProgress?.Report(new DownloadProgress(0, 0, totalBytes));
-
-            while ((bytesRead = await contentStream.ReadAsync(buffer, ct)) > 0)
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
-                downloaded += bytesRead;
+                ct.ThrowIfCancellationRequested();
 
-                // Throttle UI updates to ~20 fps (every 50 ms).
-                if (totalBytes > 0 && throttle.ElapsedMilliseconds >= 50)
+                try
                 {
-                    throttle.Restart();
+                    var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+                    // Resume from where we left off (if previous attempt made progress).
+                    if (downloaded > 0)
+                    {
+                        request.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(downloaded, null);
+                        log.Report($"  Resuming from {downloaded / 1024.0 / 1024.0:F1} MB (attempt {attempt}/{maxAttempts})...");
+                    }
+
+                    using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+                    response.EnsureSuccessStatusCode();
+
+                    // On first request (or if server doesn't support Range) get total size.
+                    if (totalBytes == 0)
+                        totalBytes = response.Content.Headers.ContentLength ?? 0;
+
+                    // If server returned 200 (ignored Range) restart the file from scratch.
+                    bool fullResponse = response.StatusCode == System.Net.HttpStatusCode.OK && downloaded > 0;
+                    var fileMode = (downloaded == 0 || fullResponse) ? FileMode.Create : FileMode.Append;
+                    if (fullResponse)
+                    {
+                        downloaded = 0;
+                        log.Report("  Server does not support resume, restarting download.");
+                    }
+
+                    await using var contentStream = await response.Content.ReadAsStreamAsync(ct);
+                    await using var fileStream = new FileStream(dest, fileMode, FileAccess.Write, FileShare.None, 65536, true);
+
+                    var buffer = new byte[65536];
+                    int bytesRead;
+                    var throttle = Stopwatch.StartNew();
+
                     downloadProgress?.Report(new DownloadProgress(
-                        (double)downloaded / totalBytes, downloaded, totalBytes));
+                        totalBytes > 0 ? (double)downloaded / totalBytes : 0, downloaded, totalBytes));
+
+                    while ((bytesRead = await contentStream.ReadAsync(buffer, ct)) > 0)
+                    {
+                        await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
+                        downloaded += bytesRead;
+
+                        // Throttle UI updates to ~20 fps (every 50 ms).
+                        if (totalBytes > 0 && throttle.ElapsedMilliseconds >= 50)
+                        {
+                            throttle.Restart();
+                            downloadProgress?.Report(new DownloadProgress(
+                                (double)downloaded / totalBytes, downloaded, totalBytes));
+                        }
+                    }
+
+                    // Success — exit retry loop.
+                    break;
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    if (attempt == maxAttempts)
+                        throw;
+
+                    log.Report($"  ⚠ Download error (attempt {attempt}/{maxAttempts}): {ex.Message}");
+                    log.Report($"  Retrying in {retryDelayMs / 1000} s...");
+                    await Task.Delay(retryDelayMs, ct);
                 }
             }
 

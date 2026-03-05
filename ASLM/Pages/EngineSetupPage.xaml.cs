@@ -44,12 +44,19 @@ namespace ASLM.Pages
                     return;
                 }
 
-                var names = string.Join(", ", _pendingEngines.Select(e => $"{e.Name} v{e.Version}"));
+                var names = string.Join(", ", _pendingEngines.Select(e =>
+                {
+                    var versionLabel = e.Version.All(c => char.IsDigit(c) || c == '.') ? $"v{e.Version}" : e.Version;
+                    return $"{e.Name} {versionLabel}";
+                }));
                 EngineInfoLabel.Text = $"Engines to install: {names}";
                 AddLog($"Found {_pendingEngines.Count} engine(s) to install:");
 
                 foreach (var engine in _pendingEngines)
-                    AddLog($"  • {engine.Name} v{engine.Version} ({engine.Install.Count} steps)");
+                {
+                    var versionLabel = engine.Version.All(c => char.IsDigit(c) || c == '.') ? $"v{engine.Version}" : engine.Version;
+                    AddLog($"  • {engine.Name} {versionLabel} ({engine.Install.Count} steps)");
+                }
             }
             catch (Exception ex)
             {
@@ -111,9 +118,12 @@ namespace ASLM.Pages
             }
             else
             {
-                InstallButton.IsEnabled = true;
+                // Show Retry as the primary button; Continue as a secondary fallback.
                 InstallButton.Text = "Retry";
-                ProgressLabel.Text = "Installation incomplete";
+                InstallButton.IsEnabled = true;
+                InstallButton.BackgroundColor = Color.FromArgb("#007AFF");
+                ProgressLabel.Text = "Installation incomplete — press Retry to try again";
+                ShowSkipButton();
             }
         }
 
@@ -139,6 +149,20 @@ namespace ASLM.Pages
             InstallButton.Clicked -= OnInstallClicked;
             InstallButton.Clicked += OnContinueClicked;
             CancelButton.IsVisible = false;
+        }
+
+        /// <summary>
+        /// Shows a secondary "Skip" button after a failed installation so the user
+        /// can continue to the app without being completely blocked.
+        /// Retry (InstallButton) remains the primary action.
+        /// </summary>
+        private void ShowSkipButton()
+        {
+            CancelButton.Text = "Skip";
+            CancelButton.IsEnabled = true;
+            CancelButton.IsVisible = true;
+            CancelButton.Clicked -= OnCancelClicked;
+            CancelButton.Clicked += OnContinueClicked;
         }
 
         /// <summary>Appends a log line and auto-scrolls the editor to the bottom.</summary>
