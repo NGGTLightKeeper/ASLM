@@ -282,16 +282,17 @@ namespace ASLM.Models
         public string Type { get; set; } = "string";
 
         /// <summary>
-        /// Default value for the setting.
+        /// Default value for the setting. Can be string, boolean, numeric, or null.
         /// </summary>
         [JsonPropertyName("default")]
-        public string Default { get; set; } = string.Empty;
+        public object? Default { get; set; }
 
         /// <summary>
         /// Current value, updated at runtime. If null, <see cref="Default"/> is used.
+        /// Can be string, boolean, numeric, or null.
         /// </summary>
         [JsonPropertyName("value")]
-        public string? Value { get; set; }
+        public object? Value { get; set; }
 
         /// <summary>
         /// Valid only for type "select". Lists the allowed options.

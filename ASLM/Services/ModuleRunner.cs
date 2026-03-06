@@ -223,21 +223,49 @@ namespace ASLM.Services
             switch (setting.Type.ToLowerInvariant())
             {
                 case "port":
-                    // Use PortManager's assigned port for the first setting defined as type "port"
-                    var firstPortSetting = module.Settings.FirstOrDefault(s => s.Type.Equals("port", StringComparison.OrdinalIgnoreCase));
-                    if (firstPortSetting != null && setting.Key == firstPortSetting.Key)
-                        return _portManager.GetOrAssignPort(module).ToString();
+                    var ports = _portManager.GetOrAssignPorts(module);
+                    if (ports.TryGetValue(setting.Key, out var assigned))
+                        return assigned.ToString();
                     
-                    if (int.TryParse(setting.Value ?? setting.Default, out var p))
+                    var rawPort = (setting.Value ?? setting.Default)?.ToString();
+                    if (int.TryParse(rawPort, out var p))
                         return p.ToString();
-                    return setting.Default;
+                    return rawPort ?? string.Empty;
+
+                case "engine":
+                    // Returns true/false based on whether the engine is installed
+                    // Key can be the engine ID itself, or something like "ollama-service" from "ollama-service_path"
+                    var engineId = setting.Key;
+                    if (engineId.EndsWith("_path")) engineId = engineId[..^5];
+                    else if (engineId.EndsWith("_data")) engineId = engineId[..^5];
+                    
+                    return _engineInstaller.GetEngineConfig(engineId) != null ? "true" : "false";
+
+                case "path":
+                    // Returns the engine executable path, or empty string if not installed
+                    var pathEngineId = setting.Key;
+                    if (pathEngineId.EndsWith("_path")) pathEngineId = pathEngineId[..^5];
+                    
+                    var enginePath = _engineInstaller.GetEngineExecutablePath(pathEngineId);
+                    return !string.IsNullOrEmpty(enginePath) ? enginePath.Replace('\\', '/') : "";
+
+                case "data":
+                    // Returns the engine data path: C:\Projects\ASLM\Data\<engineId>\
+                    var dataEngineId = setting.Key;
+                    if (dataEngineId.EndsWith("_data")) dataEngineId = dataEngineId[..^5];
+                    
+                    if (_engineInstaller.GetEngineConfig(dataEngineId) == null) return "";
+                    
+                    var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+                    var rootDir = Directory.GetParent(appDir)?.FullName ?? appDir;
+                    return (Path.Combine(rootDir, "Data", dataEngineId) + Path.DirectorySeparatorChar).Replace('\\', '/');
 
                 case "bool":
-                    var raw = setting.Value ?? setting.Default;
-                    return raw.Equals("true", StringComparison.OrdinalIgnoreCase) ? "true" : "false";
+                    var rawBool = (setting.Value ?? setting.Default)?.ToString();
+                    return rawBool != null && rawBool.Equals("true", StringComparison.OrdinalIgnoreCase) ? "true" : "false";
 
                 default:
-                    return setting.Value ?? setting.Default;
+                    return (setting.Value ?? setting.Default)?.ToString() ?? string.Empty;
             }
         }
 

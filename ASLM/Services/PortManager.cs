@@ -20,8 +20,8 @@ namespace ASLM.Services
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        // moduleId → assigned port
-        private Dictionary<string, int> _portMap = [];
+        // moduleId → portName → assigned port
+        private Dictionary<string, Dictionary<string, int>> _portMap = [];
         private bool _loaded;
         private readonly object _lock = new();
 
@@ -40,41 +40,76 @@ namespace ASLM.Services
         // --- Public API -------------------------------------------------------
 
         /// <summary>
-        /// Returns the port assigned to a module, allocating one if needed.
+        /// Returns the ports assigned to a module, allocating as needed based on its settings.
         /// </summary>
         /// <param name="module">The module configuration.</param>
-        /// <returns>The assigned port number.</returns>
-        public int GetOrAssignPort(ModuleConfig module)
+        /// <returns>A dictionary of assigned port numbers.</returns>
+        public IReadOnlyDictionary<string, int> GetOrAssignPorts(ModuleConfig module)
         {
             lock (_lock)
             {
                 EnsureLoaded();
 
-                if (_portMap.TryGetValue(module.Id, out var existing))
+                var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+                var rootDir = Directory.GetParent(appDir)?.FullName ?? appDir;
+                var modulesRoot = Path.Combine(rootDir, "Modules");
+                if (Directory.Exists(modulesRoot))
                 {
-                    if (IsPortValid(module, existing))
-                        return existing;
-                    
-                    // Assigned port is no longer valid (range changed), remove it
-                    _portMap.Remove(module.Id);
+                    var activeModuleIds = Directory.GetDirectories(modulesRoot).Select(Path.GetFileName).OfType<string>();
+                    CleanupOrphanedPorts(activeModuleIds);
                 }
 
-                var port = AllocatePort(module);
-                _portMap[module.Id] = port;
-                SavePortMap();
-                return port;
+                var portSettings = module.Settings?.Where(s => s.Type.Equals("port", StringComparison.OrdinalIgnoreCase)).Select(s => s.Key).ToList() ?? [];
+                if (portSettings.Count == 0) portSettings.Add("http"); // Fallback
+
+                if (!_portMap.TryGetValue(module.Id, out var existing))
+                {
+                    existing = new Dictionary<string, int>();
+                    _portMap[module.Id] = existing;
+                }
+
+                bool changed = false;
+
+                // Remove ports no longer needed
+                var keysToRemove = existing.Keys.Except(portSettings).ToList();
+                foreach (var k in keysToRemove)
+                {
+                    existing.Remove(k);
+                    changed = true;
+                }
+
+                // Allocate missing or invalid ports
+                foreach (var k in portSettings)
+                {
+                    if (existing.TryGetValue(k, out var p) && IsPortValid(module, p))
+                        continue;
+
+                    existing[k] = AllocatePort(module);
+                    changed = true;
+                }
+
+                if (changed)
+                    SavePortMap();
+
+                return existing;
             }
         }
 
         /// <summary>
-        /// Returns the port assigned to a module, or null if none has been assigned yet.
+        /// Returns a specific port assigned to a module, or null if none has been assigned yet.
         /// </summary>
-        public int? TryGetPort(string moduleId)
+        public int? TryGetPort(string moduleId, string portKey = "port")
         {
             lock (_lock)
             {
                 EnsureLoaded();
-                return _portMap.TryGetValue(moduleId, out var port) ? port : null;
+                if (_portMap.TryGetValue(moduleId, out var ports))
+                {
+                    if (ports.TryGetValue(portKey, out var port)) return port;
+                    if (ports.ContainsKey("http")) return ports["http"];
+                    if (ports.Count > 0) return ports.Values.First();
+                }
+                return null;
             }
         }
 
@@ -82,7 +117,52 @@ namespace ASLM.Services
         /// Returns the full base URL (http://127.0.0.1:{port}/) for a module's web page.
         /// </summary>
         public string GetModuleUrl(ModuleConfig module)
-            => $"http://127.0.0.1:{GetOrAssignPort(module)}/";
+        {
+            var ports = GetOrAssignPorts(module);
+            var port = ports.ContainsKey("port") ? ports["port"] : ports.ContainsKey("http") ? ports["http"] : ports.Values.FirstOrDefault();
+            return $"http://127.0.0.1:{port}/";
+        }
+
+        /// <summary>
+        /// Removes port assignments for a specific module.
+        /// </summary>
+        /// <param name="moduleId">The ID of the module to remove.</param>
+        public void RemoveModulePorts(string moduleId)
+        {
+            lock (_lock)
+            {
+                EnsureLoaded();
+
+                if (_portMap.Remove(moduleId))
+                {
+                    SavePortMap();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Clears port assignments for any modules not present in the provided list of active module IDs.
+        /// </summary>
+        /// <param name="activeModuleIds">A collection of currently active/installed module IDs.</param>
+        public void CleanupOrphanedPorts(IEnumerable<string> activeModuleIds)
+        {
+            lock (_lock)
+            {
+                EnsureLoaded();
+
+                var activeSet = new HashSet<string>(activeModuleIds);
+                var orphanedIds = _portMap.Keys.Where(id => !activeSet.Contains(id)).ToList();
+
+                if (orphanedIds.Count > 0)
+                {
+                    foreach (var id in orphanedIds)
+                    {
+                        _portMap.Remove(id);
+                    }
+                    SavePortMap();
+                }
+            }
+        }
 
         // --- Private ----------------------------------------------------------
 
@@ -116,7 +196,7 @@ namespace ASLM.Services
             int start = isOfficial ? ports.OfficialStart : ports.ThirdPartyStart;
             int count = isOfficial ? ports.OfficialCount : ports.ThirdPartyCount;
 
-            var usedPorts = new HashSet<int>(_portMap.Values);
+            var usedPorts = new HashSet<int>(_portMap.Values.SelectMany(v => v.Values));
 
             for (int offset = 0; offset < count; offset++)
             {
@@ -140,8 +220,17 @@ namespace ASLM.Services
             try
             {
                 var json = File.ReadAllText(_portMapPath);
-                _portMap = JsonSerializer.Deserialize<Dictionary<string, int>>(json, _jsonOptions)
-                           ?? [];
+                try
+                {
+                    _portMap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, int>>>(json, _jsonOptions)
+                               ?? [];
+                }
+                catch
+                {
+                    // Migration from old schema
+                    var oldMap = JsonSerializer.Deserialize<Dictionary<string, int>>(json, _jsonOptions);
+                    _portMap = oldMap?.ToDictionary(kvp => kvp.Key, kvp => new Dictionary<string, int> { { "port", kvp.Value } }) ?? [];
+                }
             }
             catch
             {

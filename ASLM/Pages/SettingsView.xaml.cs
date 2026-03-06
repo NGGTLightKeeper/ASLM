@@ -67,7 +67,7 @@ namespace ASLM.Pages
                     
                     var entry = new Entry
                     {
-                        Text = setting.Value ?? setting.Default,
+                        Text = (setting.Value ?? setting.Default)?.ToString(),
                         FontSize = 14,
                         TextColor = Colors.White,
                         BackgroundColor = Colors.Black
@@ -119,7 +119,7 @@ namespace ASLM.Pages
             foreach (var mapping in _settingMappings)
             {
                 var newValue = mapping.Entry.Text;
-                if (mapping.Setting.Value != newValue)
+                if (mapping.Setting.Value?.ToString() != newValue)
                 {
                     mapping.Setting.Value = newValue;
                     touchedModules.Add(mapping.Module);
