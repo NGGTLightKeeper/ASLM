@@ -238,6 +238,7 @@ namespace ASLM.Services
                     var engineId = setting.Key;
                     if (engineId.EndsWith("_path")) engineId = engineId[..^5];
                     else if (engineId.EndsWith("_data")) engineId = engineId[..^5];
+                    else if (engineId.EndsWith("_models")) engineId = engineId[..^7];
                     
                     return _engineInstaller.GetEngineConfig(engineId) != null ? "true" : "false";
 
@@ -259,6 +260,17 @@ namespace ASLM.Services
                     var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
                     var rootDir = Directory.GetParent(appDir)?.FullName ?? appDir;
                     return (Path.Combine(rootDir, "Data", dataEngineId) + Path.DirectorySeparatorChar).Replace('\\', '/');
+
+                case "models":
+                    // Returns the engine models path: C:\Projects\ASLM\Models\<engineId>\
+                    var modelsEngineId = setting.Key;
+                    if (modelsEngineId.EndsWith("_models")) modelsEngineId = modelsEngineId[..^7];
+                    
+                    if (_engineInstaller.GetEngineConfig(modelsEngineId) == null) return "";
+                    
+                    var modelsAppDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+                    var modelsRootDir = Directory.GetParent(modelsAppDir)?.FullName ?? modelsAppDir;
+                    return (Path.Combine(modelsRootDir, "Models", modelsEngineId) + Path.DirectorySeparatorChar).Replace('\\', '/');
 
                 case "bool":
                     var rawBool = (setting.Value ?? setting.Default)?.ToString();
