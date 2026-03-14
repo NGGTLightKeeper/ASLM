@@ -1,7 +1,7 @@
 namespace ASLM.Pages
 {
     /// <summary>
-    /// Download modules stub — placeholder for future API store integration.
+    /// Placeholder view for browsing and downloading modules from a future catalog.
     /// </summary>
     public partial class DownloadModulesView : ContentView
     {

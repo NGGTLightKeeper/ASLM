@@ -7,13 +7,14 @@ namespace ASLM.Pages
     /// Displayed at startup when one or more engines need installation.
     /// Shows a real-time log, per-download progress bar, and an overall progress indicator.
     /// After all engines are installed, offers a Continue button to restart the startup chain
-    /// (<see cref="LoadingPage"/> → <see cref="AppShellPage"/>).
+    /// (<see cref="LoadingPage"/> -> <see cref="AppShellPage"/>).
     /// </summary>
     public partial class EngineSetupPage : ContentPage
     {
         private readonly EngineInstaller _installer;
         private List<EngineConfig> _pendingEngines = [];
         private CancellationTokenSource? _cts;
+        private bool _hasLoaded;
 
         public EngineSetupPage(EngineInstaller installer)
         {
@@ -30,6 +31,10 @@ namespace ASLM.Pages
         /// </summary>
         private async Task LoadEnginesAsync()
         {
+            if (_hasLoaded)
+                return;
+
+            _hasLoaded = true;
             try
             {
                 var engines = await Task.Run(() => _installer.DiscoverEngines());
@@ -39,7 +44,7 @@ namespace ASLM.Pages
                 {
                     EngineInfoLabel.Text = "All engines are installed.";
                     InstallButton.IsEnabled = false;
-                    AddLog("✓ No engines require installation.");
+                    AddLog("[OK] No engines require installation.");
                     ShowContinueButton();
                     return;
                 }
@@ -55,7 +60,7 @@ namespace ASLM.Pages
                 foreach (var engine in _pendingEngines)
                 {
                     var versionLabel = engine.Version.All(c => char.IsDigit(c) || c == '.') ? $"v{engine.Version}" : engine.Version;
-                    AddLog($"  • {engine.Name} {versionLabel} ({engine.Install.Count} steps)");
+                    AddLog($"  - {engine.Name} {versionLabel} ({engine.Install.Count} steps)");
                 }
             }
             catch (Exception ex)
@@ -73,7 +78,7 @@ namespace ASLM.Pages
             _cts = new CancellationTokenSource();
 
             // Progress<T> captures the SynchronizationContext, so callbacks
-            // already run on the UI thread — no need for extra dispatching.
+            // already run on the UI thread; no extra dispatching is required.
             var logProgress = new Progress<string>(AddLog);
             var downloadProgress = new Progress<DownloadProgress>(UpdateDownloadProgress);
 
@@ -102,7 +107,7 @@ namespace ASLM.Pages
                 }
                 catch (Exception ex)
                 {
-                    AddLog($"✗ Error installing {engine.Name}: {ex.Message}");
+                    AddLog($"[Error] Error installing {engine.Name}: {ex.Message}");
                 }
             }
 
@@ -122,7 +127,7 @@ namespace ASLM.Pages
                 InstallButton.Text = "Retry";
                 InstallButton.IsEnabled = true;
                 InstallButton.BackgroundColor = Color.FromArgb("#007AFF");
-                ProgressLabel.Text = "Installation incomplete — press Retry to try again";
+                ProgressLabel.Text = "Installation incomplete - press Retry to try again";
                 ShowSkipButton();
             }
         }
@@ -146,6 +151,7 @@ namespace ASLM.Pages
         {
             InstallButton.Text = "Continue";
             InstallButton.IsEnabled = true;
+            InstallButton.Clicked -= OnContinueClicked;
             InstallButton.Clicked -= OnInstallClicked;
             InstallButton.Clicked += OnContinueClicked;
             CancelButton.IsVisible = false;
@@ -161,6 +167,7 @@ namespace ASLM.Pages
             CancelButton.Text = "Skip";
             CancelButton.IsEnabled = true;
             CancelButton.IsVisible = true;
+            CancelButton.Clicked -= OnContinueClicked;
             CancelButton.Clicked -= OnCancelClicked;
             CancelButton.Clicked += OnContinueClicked;
         }
@@ -183,7 +190,7 @@ namespace ASLM.Pages
             var downloadedMb = dp.DownloadedBytes / 1024.0 / 1024.0;
             var totalMb = dp.TotalBytes / 1024.0 / 1024.0;
             var pct = (int)(dp.Fraction * 100);
-            DownloadInfoLabel.Text = $"{pct}%  —  {downloadedMb:F1} MB / {totalMb:F1} MB";
+            DownloadInfoLabel.Text = $"{pct}%  -  {downloadedMb:F1} MB / {totalMb:F1} MB";
         }
 
         /// <summary>Hides the download progress bar between downloads.</summary>
@@ -201,7 +208,7 @@ namespace ASLM.Pages
             {
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    // Re-run the startup chain (LoadingPage → setup pages or AppShellPage).
+                    // Re-run the startup chain (LoadingPage -> setup pages or AppShellPage).
                     var newPage = (Application.Current as App)?.CreateStartupPage();
                     if (newPage != null)
                     {

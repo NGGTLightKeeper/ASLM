@@ -20,7 +20,7 @@ namespace ASLM.Services
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        // moduleId → portName → assigned port
+        // moduleId -> portName -> assigned port
         private Dictionary<string, Dictionary<string, int>> _portMap = [];
         private bool _loaded;
         private readonly object _lock = new();
@@ -205,8 +205,19 @@ namespace ASLM.Services
                     return candidate;
             }
 
-            // Fallback: port range exhausted — use a high ephemeral port.
-            return 40000 + (Math.Abs(module.Id.GetHashCode()) % 10000);
+            // Fallback: range exhausted, probe the high ephemeral band deterministically.
+            const int fallbackStart = 40000;
+            const int fallbackCount = 10000;
+            var seed = (int)(uint)module.Id.GetHashCode();
+
+            for (int offset = 0; offset < fallbackCount; offset++)
+            {
+                var candidate = fallbackStart + ((seed + offset) % fallbackCount);
+                if (!usedPorts.Contains(candidate))
+                    return candidate;
+            }
+
+            throw new InvalidOperationException("No ports are available in the configured or fallback ranges.");
         }
 
         private void EnsureLoaded()

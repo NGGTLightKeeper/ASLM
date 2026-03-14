@@ -52,59 +52,59 @@
     <FontImageSource x:Key="IconDashboard"
                      Glyph="&#xe4b5;"
                      FontFamily="FluentUI"
-                     Color="{AppThemeBinding Light={StaticResource DarkOnLightBackground}, Dark={StaticResource LightOnDarkBackground}}"
+                     Color="{StaticResource LabelPrimary}"
                      Size="{StaticResource IconSize}" />
 
     <FontImageSource x:Key="IconProjects"
                      Glyph="&#xf4ee;"
                      FontFamily="FluentUI"
-                     Color="{AppThemeBinding Light={StaticResource DarkOnLightBackground}, Dark={StaticResource LightOnDarkBackground}}"
+                     Color="{StaticResource LabelPrimary}"
                      Size="{StaticResource IconSize}" />
 
     <FontImageSource x:Key="IconMeta"
                      Glyph="&#xf4a4;"
                      FontFamily="FluentUI"
-                     Color="{AppThemeBinding Light={StaticResource DarkOnLightBackground}, Dark={StaticResource LightOnDarkBackground}}"
+                     Color="{StaticResource LabelPrimary}"
                      Size="{StaticResource IconSize}" />
 
     <FontImageSource x:Key="IconRibbon"
                      Glyph="&#xea27;"
                      FontFamily="FluentUI"
-                     Color="{AppThemeBinding Light={StaticResource DarkOnLightBackground}, Dark={StaticResource LightOnDarkBackground}}"
+                     Color="{StaticResource LabelPrimary}"
                      Size="{StaticResource IconSize}" />
 
     <FontImageSource x:Key="IconAdd"
                 Glyph="&#xf58d;"
                 FontFamily="FluentUI"
-                Color="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource LightOnDarkBackground}}"
+                Color="{StaticResource LabelPrimary}"
                 Size="{StaticResource IconSize}" />
 
     <FontImageSource x:Key="IconDelete"
                 Glyph="&#xeea6;"
                 FontFamily="FluentUI"
-                Color="{AppThemeBinding Light={StaticResource DarkOnLightBackground}, Dark={StaticResource LightOnDarkBackground}}"
+                Color="{StaticResource LabelPrimary}"
                 Size="{StaticResource IconSize}" />
 
         <FontImageSource x:Key="IconClean"
                 Glyph="&#xF0429;"
                 FontFamily="FluentUI"
-                Color="{AppThemeBinding Light={StaticResource DarkOnLightBackground}, Dark={StaticResource LightOnDarkBackground}}"
+                Color="{StaticResource LabelPrimary}"
                 Size="{StaticResource size240}" />
 
         <FontImageSource x:Key="IconLight"
                 Glyph="&#xee4d;"
                 FontFamily="FluentUI"
-                Color="{AppThemeBinding Light={StaticResource DarkOnLightBackground}, Dark={StaticResource LightOnDarkBackground}}"
+                Color="{StaticResource LabelPrimary}"
                 Size="{StaticResource size240}" />
         <FontImageSource x:Key="IconDark"
                 Glyph="&#xee45;"
                 FontFamily="FluentUI"
-                Color="{AppThemeBinding Light={StaticResource DarkOnLightBackground}, Dark={StaticResource LightOnDarkBackground}}"
+                Color="{StaticResource LabelPrimary}"
                 Size="{StaticResource size240}" />
 
     <Style TargetType="Label">
         <Setter Property="TextColor"
-                Value="{AppThemeBinding Light={StaticResource DarkOnLightBackground}, Dark={StaticResource LightOnDarkBackground}}" />
+                Value="{StaticResource LabelPrimary}" />
         <Setter Property="BackgroundColor"
                 Value="Transparent" />
         <Setter Property="FontSize"
@@ -119,7 +119,7 @@
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
                             <Setter Property="TextColor"
-                                    Value="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}" />
+                                    Value="{StaticResource LabelTertiary}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -251,30 +251,30 @@
 
     <Style TargetType="Border">
         <Setter Property="StrokeShape" Value="RoundRectangle 20"/>
-        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource LightSecondaryBackground},Dark={StaticResource DarkSecondaryBackground}}"/>
+        <Setter Property="Background" Value="{StaticResource BackgroundSecondary}" />
         <Setter Property="StrokeThickness" Value="0"/>
         <Setter Property="Padding" Value="{OnIdiom 15, Desktop=20}"/>
     </Style>
 
     <Style TargetType="Border" x:Key="CardStyle">
         <Setter Property="StrokeShape" Value="RoundRectangle 20"/>
-        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource LightSecondaryBackground},Dark={StaticResource DarkSecondaryBackground}}"/>
+        <Setter Property="Background" Value="{StaticResource BackgroundSecondary}" />
         <Setter Property="StrokeThickness" Value="0"/>
         <Setter Property="Padding" Value="{OnIdiom 15, Desktop=20}"/>
     </Style>
 
-    <sf:LabelStyle x:Key="lightThemeLabelStyle" TextColor="{StaticResource DarkOnLightBackground}" FontSize="{OnIdiom 18, Desktop=24}"/> 
-    <sf:LabelStyle x:Key="darkThemeLabelStyle" TextColor="{StaticResource LightOnDarkBackground}" FontSize="{OnIdiom 18, Desktop=24}"/>
+    <sf:LabelStyle x:Key="lightThemeLabelStyle" TextColor="{StaticResource LabelSecondary}" FontSize="{OnIdiom 18, Desktop=24}"/>
+    <sf:LabelStyle x:Key="darkThemeLabelStyle" TextColor="{StaticResource LabelSecondary}" FontSize="{OnIdiom 18, Desktop=24}"/>
     <Style TargetType="sf:SfTextInputLayout"> 
         <Setter Property="ContainerType" Value="Outlined"/> 
         <Setter Property="ContainerBackground" Value="Transparent"/> 
-        <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource DarkOnLightBackground}, Dark={StaticResource LightOnDarkBackground}}"/> 
-        <Setter Property="HintLabelStyle" Value="{AppThemeBinding Light={StaticResource lightThemeLabelStyle}, Dark={StaticResource darkThemeLabelStyle}}"/> 
+        <Setter Property="Stroke" Value="{StaticResource Separator}" />
+        <Setter Property="HintLabelStyle" Value="{StaticResource darkThemeLabelStyle}" />
     </Style>
     
 
     <Style TargetType="BoxView" x:Key="ShimmerCustomViewStyle">
-        <Setter Property="BackgroundColor" Value="Gray" />
+        <Setter Property="BackgroundColor" Value="{StaticResource Separator}" />
         <Setter Property="HorizontalOptions" Value="Fill" />
         <Setter Property="VerticalOptions" Value="Center" />
     </Style>

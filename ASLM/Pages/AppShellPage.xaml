@@ -3,21 +3,21 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ASLM.Pages.AppShellPage"
              Title="ASLM"
-             BackgroundColor="#000000">
+             BackgroundColor="{StaticResource BackgroundPrimary}">
 
     <Grid ColumnDefinitions="Auto, *">
 
         <!-- Left Sidebar -->
         <Grid x:Name="SidePanel" Grid.Column="0"
               RowDefinitions="Auto, *, Auto, Auto"
-              BackgroundColor="#1D1D1F"
+              BackgroundColor="{StaticResource BackgroundSecondary}"
               Padding="8">
 
             <!-- Collapse Toggle (fixed top) -->
             <Button x:Name="CollapseButton"
                     Grid.Row="0"
                     Style="{StaticResource SidebarButton}"
-                    TextColor="#8E8E93"
+                    TextColor="{StaticResource LabelSecondary}"
                     HeightRequest="36"
                     HorizontalOptions="Fill"
                     Clicked="OnCollapseClicked" />
@@ -30,7 +30,7 @@
             <!-- Separator -->
             <BoxView Grid.Row="2"
                      HeightRequest="1"
-                     Color="#3A3A3C"
+                     Color="{StaticResource Separator}"
                      Margin="0,4,0,4" />
 
             <!-- Bottom section: system pages -->

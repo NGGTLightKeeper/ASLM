@@ -9,6 +9,7 @@ namespace ASLM
     public partial class App : Application
     {
         private readonly IServiceProvider _services;
+        private bool _isShuttingDown;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="App"/> class.
@@ -47,17 +48,29 @@ namespace ASLM
         }
 
         /// <summary>
-        /// Handles window destruction — stops all running module processes gracefully.
+        /// Handles window destruction; stops all running module processes gracefully.
         /// The Launcher's Job Object ensures cleanup even if this doesn't complete in time.
         /// </summary>
         private void OnWindowDestroying(object? sender, EventArgs e)
         {
-            var runner = _services.GetRequiredService<ModuleRunner>();
-            runner.StopAllModulesAsync().GetAwaiter().GetResult();
-            runner.Dispose();
+            if (_isShuttingDown)
+                return;
 
-            var tracker = _services.GetRequiredService<ProcessTracker>();
-            tracker.Dispose();
+            _isShuttingDown = true;
+
+            try
+            {
+                var runner = _services.GetRequiredService<ModuleRunner>();
+                runner.StopAllModulesAsync().GetAwaiter().GetResult();
+                runner.Dispose();
+
+                var tracker = _services.GetRequiredService<ProcessTracker>();
+                tracker.Dispose();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[App] Shutdown cleanup failed: {ex}");
+            }
         }
     }
 }

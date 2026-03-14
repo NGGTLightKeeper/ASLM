@@ -9,7 +9,7 @@ using ASLM.Services;
 namespace ASLM.Pages
 {
     /// <summary>
-    /// Module management view — displays module cards with launch/stop/restart controls.
+    /// Module management view that displays module cards with launch, stop, and restart controls.
     /// </summary>
     public partial class ModuleManagementView : ContentView, INotifyPropertyChanged
     {

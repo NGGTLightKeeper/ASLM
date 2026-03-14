@@ -3,9 +3,9 @@ using System.Diagnostics;
 /// <summary>
 /// Entry point for the ASLM Launcher.
 /// Attempts to launch the main ASLM application located in the 'App' subdirectory.
-/// Logs any startup errors to 'Launcher.log'.
+/// Forwards launcher arguments to the child process and logs startup errors to <c>Launcher.log</c>.
 /// </summary>
-internal class Program
+internal static class Program
 {
     private const string FolderName = "App";
     private const string ExeName = "ASLM.exe";
@@ -32,6 +32,11 @@ internal class Program
                 WorkingDirectory = Path.Combine(currentDir, FolderName),
                 UseShellExecute = false
             };
+
+            foreach (var arg in args)
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
 
             var process = Process.Start(startInfo);
 

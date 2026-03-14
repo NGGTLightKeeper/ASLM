@@ -89,6 +89,38 @@ namespace ASLM.Models
         /// </summary>
         [JsonIgnore]
         public string SourcePath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Restores non-null nested objects, collections, and strings after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            Id ??= string.Empty;
+            Name ??= string.Empty;
+            Description ??= string.Empty;
+            Version ??= string.Empty;
+            Type ??= string.Empty;
+            ExecutablePath ??= string.Empty;
+            SourcePath ??= string.Empty;
+
+            PackageManager?.Normalize();
+            Requirements?.Normalize();
+
+            Install ??= [];
+            foreach (var step in Install)
+            {
+                step?.Normalize();
+            }
+
+            PostInstall ??= [];
+            foreach (var step in PostInstall)
+            {
+                step?.Normalize();
+            }
+
+            Status ??= new();
+            Status.Normalize();
+        }
     }
 
     /// <summary>
@@ -175,6 +207,14 @@ namespace ASLM.Models
         /// </summary>
         [JsonPropertyName("target")]
         public string? Target { get; set; }
+
+        /// <summary>
+        /// Restores required non-null string values after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            Action ??= string.Empty;
+        }
     }
 
     /// <summary>
@@ -196,10 +236,19 @@ namespace ASLM.Models
         /// </summary>
         [JsonPropertyName("executable")]
         public string? Executable { get; set; }
+
+        /// <summary>
+        /// Restores required non-null string values after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            Command ??= string.Empty;
+        }
     }
 
     /// <summary>
-    /// System requirements needed to install this engine.
+    /// System requirements declared by the engine package.
+    /// Currently informational; the installer does not enforce them automatically.
     /// </summary>
     public class EngineRequirements
     {
@@ -220,6 +269,15 @@ namespace ASLM.Models
         /// </summary>
         [JsonPropertyName("diskSpaceMb")]
         public int DiskSpaceMb { get; set; }
+
+        /// <summary>
+        /// Restores required non-null string values after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            Os ??= string.Empty;
+            Arch ??= string.Empty;
+        }
     }
 
     /// <summary>
@@ -245,5 +303,14 @@ namespace ASLM.Models
         /// </summary>
         [JsonPropertyName("lastChecked")]
         public string? LastChecked { get; set; }
+
+        /// <summary>
+        /// Normalizes optional persisted values after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            InstalledVersion = string.IsNullOrWhiteSpace(InstalledVersion) ? null : InstalledVersion;
+            LastChecked = string.IsNullOrWhiteSpace(LastChecked) ? null : LastChecked;
+        }
     }
 }

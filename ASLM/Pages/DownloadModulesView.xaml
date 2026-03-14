@@ -4,16 +4,18 @@
              x:Class="ASLM.Pages.DownloadModulesView">
     <Grid>
         <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="12">
-            <Label Text="📦"
-                   FontSize="48"
+            <Image Source="{StaticResource IconRibbon}"
+                   WidthRequest="48"
+                   HeightRequest="48"
                    HorizontalOptions="Center" />
             <Label Text="Download Modules"
-                   FontSize="24" FontAttributes="Bold"
-                   TextColor="White"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource LabelPrimary}"
                    HorizontalOptions="Center" />
             <Label Text="Module store will be connected to API"
                    FontSize="14"
-                   TextColor="#8E8E93"
+                   TextColor="{StaticResource LabelSecondary}"
                    HorizontalOptions="Center" />
         </VerticalStackLayout>
     </Grid>

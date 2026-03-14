@@ -18,6 +18,7 @@ namespace ASLM.Pages
         private List<ModuleConfig> _allModules = [];
         private ModuleConfig? _activeModule;
         private bool _panelExpanded;
+        private bool _hasLoaded;
 
         private const double PanelExpandedWidth = 240;
         private const double PanelCollapsedWidth = 48;
@@ -119,6 +120,10 @@ namespace ASLM.Pages
 
         private async void OnPageLoaded(object? sender, EventArgs e)
         {
+            if (_hasLoaded)
+                return;
+
+            _hasLoaded = true;
             await RefreshModulesAsync();
             NavigateTo(ModuleManagementButton); // Default to module management
             _ = StartEnabledModulesAsync();
@@ -177,7 +182,9 @@ namespace ASLM.Pages
             {
                 if (child is Button btn)
                 {
-                    btn.Text = _panelExpanded ? btn.AutomationId : "";
+                    btn.Text = _panelExpanded && btn.BindingContext is ModuleConfig module
+                        ? module.Name
+                        : "";
                     btn.ContentLayout = new Button.ButtonContentLayout(
                         Button.ButtonContentLayout.ImagePosition.Left, 14);
                     btn.HorizontalOptions = LayoutOptions.Fill;
@@ -298,7 +305,8 @@ namespace ASLM.Pages
                 var btn = new Button
                 {
                     Text = _panelExpanded ? module.Name : "",
-                    AutomationId = module.Name,
+                    AutomationId = module.Id,
+                    BindingContext = module,
                     ClassId = "PAGE",
                     ImageSource = sidebarIcon,
                     ContentLayout = new Button.ButtonContentLayout(
@@ -341,9 +349,14 @@ namespace ASLM.Pages
             {
                 if (child is Button btn)
                 {
-                    var isActive = btn.ClassId == "PAGE" && btn.AutomationId == module.Name;
-                    btn.TextColor = isActive ? ActiveTextColor : InactiveTextColor;
-                    btn.BackgroundColor = isActive ? ActiveBg : TransparentBg;
+                    if (btn.ClassId == "PAGE" && btn.AutomationId == module.Id)
+                    {
+                        btn.TextColor = ActiveTextColor;
+                        btn.BackgroundColor = ActiveBg;
+                        continue;
+                    }
+                    btn.TextColor = InactiveTextColor;
+                    btn.BackgroundColor = TransparentBg;
                 }
             }
         }

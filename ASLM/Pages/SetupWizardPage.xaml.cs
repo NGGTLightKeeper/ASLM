@@ -27,6 +27,7 @@ namespace ASLM.Pages
         private readonly StringBuilder _logBuffer = new();
         private CancellationTokenSource? _cts;
         private bool _logVisible;
+        private bool _moduleListLoaded;
 
         // For speed calculation
         private long _lastDownloadedBytes;
@@ -59,8 +60,17 @@ namespace ASLM.Pages
             OfficialPortEntry.Text = _appData.Data.Ports.OfficialStart.ToString();
             ThirdPartyPortEntry.Text = _appData.Data.Ports.ThirdPartyStart.ToString();
 
-            // Use Loaded instead of OnAppearing — OnAppearing doesn't fire on WinUI
-            Loaded += (_, _) => PopulateModuleList();
+            // Use Loaded instead of OnAppearing; OnAppearing is unreliable on WinUI here.
+            Loaded += OnLoaded;
+        }
+
+        private void OnLoaded(object? sender, EventArgs e)
+        {
+            if (_moduleListLoaded)
+                return;
+
+            _moduleListLoaded = true;
+            PopulateModuleList();
         }
 
         // --- Welcome Screen --------------------------------------------------
@@ -174,12 +184,13 @@ namespace ASLM.Pages
             ButtonPanel.IsVisible = _currentStep > 0;
             BackButton.IsVisible = _currentStep > 1;
             NextButton.Text = _currentStep == TotalSteps ? "Install" : "Next";
+            ResetNavigationButtons();
 
             StepLabel.Text = _currentStep switch
             {
-                1 => "Step 1 of 3 — User Profile",
-                2 => "Step 2 of 3 — Port Configuration",
-                3 => "Step 3 of 3 — Module Selection",
+                1 => "Step 1 of 3 - User Profile",
+                2 => "Step 2 of 3 - Port Configuration",
+                3 => "Step 3 of 3 - Module Selection",
                 _ => ""
             };
         }
@@ -205,7 +216,7 @@ namespace ASLM.Pages
             int tpEnd = tp + 1000;
             if (op < tpEnd && tp < opEnd)
             {
-                ShowPortError($"Port ranges overlap! Official {op}–{opEnd - 1} conflicts with Third-party {tp}–{tpEnd - 1}.");
+                ShowPortError($"Port ranges overlap. Official {op}-{opEnd - 1} conflicts with Third-party {tp}-{tpEnd - 1}.");
                 return false;
             }
 
@@ -262,6 +273,7 @@ namespace ASLM.Pages
 
             var totalSteps = 0;
             var completedSteps = 0;
+            var hasFailures = false;
 
             var requiredEngineIds = selectedModules
                 .SelectMany(m => m.Dependencies.Engines)
@@ -296,7 +308,7 @@ namespace ASLM.Pages
 
                 var detail = $"{FormatBytes(dp.DownloadedBytes)} / {FormatBytes(dp.TotalBytes)}";
                 if (_lastSpeed > 0)
-                    detail += $" — {FormatBytes((long)_lastSpeed)}/s";
+                    detail += $" - {FormatBytes((long)_lastSpeed)}/s";
 
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
@@ -314,13 +326,15 @@ namespace ASLM.Pages
                     var engine = allEngines.FirstOrDefault(e => e.Id == engineId);
                     if (engine == null)
                     {
-                        AddLog($"⚠ Engine '{engineId}' not found, skipping.");
+                        AddLog($"[Missing] Engine '{engineId}' not found.");
+                        hasFailures = true;
                         completedSteps++;
+                        UpdateOverallProgress(completedSteps, totalSteps);
                         continue;
                     }
                     if (engine.Status.Installed)
                     {
-                        AddLog($"✓ Engine '{engine.Name}' already installed.");
+                        AddLog($"[OK] Engine '{engine.Name}' already installed.");
                         completedSteps++;
                         UpdateOverallProgress(completedSteps, totalSteps);
                         continue;
@@ -354,7 +368,8 @@ namespace ASLM.Pages
 
                     if (!downloaded)
                     {
-                        AddLog($"✗ Source download failed for {module.Name}");
+                        AddLog($"[Error] Source download failed for {module.Name}");
+                        hasFailures = true;
                         completedSteps++;
                         UpdateOverallProgress(completedSteps, totalSteps);
                         continue;
@@ -368,8 +383,9 @@ namespace ASLM.Pages
                     UpdateOverallProgress(completedSteps, totalSteps);
 
                     AddLog(success
-                        ? $"✓ {module.Name} installed successfully"
-                        : $"✗ Setup failed for {module.Name}");
+                        ? $"[OK] {module.Name} installed successfully"
+                        : $"[Error] Setup failed for {module.Name}");
+                    hasFailures |= !success;
                 }
 
                 UpdateInstallStatus("Setup complete!");
@@ -377,51 +393,88 @@ namespace ASLM.Pages
             }
             catch (OperationCanceledException)
             {
+                hasFailures = true;
                 UpdateInstallStatus("Installation canceled.");
                 StepLabel.Text = "Installation canceled.";
             }
             catch (Exception ex)
             {
+                hasFailures = true;
                 UpdateInstallStatus($"Error: {ex.Message}");
                 StepLabel.Text = "Installation failed.";
                 AddLog($"Error: {ex.Message}");
             }
 
             // Determine install outcome and configure buttons accordingly.
-            bool allSucceeded = completedSteps >= totalSteps;
+            bool allSucceeded = !hasFailures;
 
             ButtonPanel.IsVisible = true;
 
             if (allSucceeded)
             {
-                // Success: show Finish button.
-                BackButton.IsVisible = false;
-                NextButton.Text = "Finish";
-                NextButton.BackgroundColor = Color.FromArgb("#007AFF");
-                NextButton.Clicked -= OnNextClicked;
-                NextButton.Clicked += async (s, e) => await FinishSetupAsync();
+                ConfigureFinishButton();
             }
             else
             {
-                // Failure: Retry (primary, blue) + Skip (secondary, grey via BackButton).
-                NextButton.Text = "Retry";
-                NextButton.BackgroundColor = Color.FromArgb("#007AFF");
-                NextButton.Clicked -= OnNextClicked;
-                NextButton.Clicked += async (s, e) =>
-                {
-                    ButtonPanel.IsVisible = false;
-                    await StartInstallAsync();
-                };
-
-                BackButton.Text = "Skip";
-                BackButton.IsVisible = true;
-                BackButton.BackgroundColor = Color.FromArgb("#3A3A3C");
-                BackButton.Clicked -= OnBackClicked;
-                BackButton.Clicked += async (s, e) => await FinishSetupAsync();
+                ConfigureRetryAndSkipButtons();
             }
         }
 
         // --- Helpers ---------------------------------------------------------
+
+        private void ResetNavigationButtons()
+        {
+            NextButton.Clicked -= OnRetryInstallClicked;
+            NextButton.Clicked -= OnFinishClicked;
+            NextButton.Clicked -= OnNextClicked;
+            NextButton.Clicked += OnNextClicked;
+
+            BackButton.Clicked -= OnSkipClicked;
+            BackButton.Clicked -= OnBackClicked;
+            BackButton.Clicked += OnBackClicked;
+
+            NextButton.BackgroundColor = Color.FromArgb("#007AFF");
+            BackButton.BackgroundColor = Color.FromArgb("#3A3A3C");
+            BackButton.Text = "Back";
+        }
+
+        private void ConfigureFinishButton()
+        {
+            ResetNavigationButtons();
+            BackButton.IsVisible = false;
+            NextButton.Text = "Finish";
+            NextButton.Clicked -= OnNextClicked;
+            NextButton.Clicked += OnFinishClicked;
+        }
+
+        private void ConfigureRetryAndSkipButtons()
+        {
+            ResetNavigationButtons();
+            NextButton.Text = "Retry";
+            NextButton.Clicked -= OnNextClicked;
+            NextButton.Clicked += OnRetryInstallClicked;
+
+            BackButton.Text = "Skip";
+            BackButton.IsVisible = true;
+            BackButton.Clicked -= OnBackClicked;
+            BackButton.Clicked += OnSkipClicked;
+        }
+
+        private async void OnRetryInstallClicked(object? sender, EventArgs e)
+        {
+            ButtonPanel.IsVisible = false;
+            await StartInstallAsync();
+        }
+
+        private async void OnFinishClicked(object? sender, EventArgs e)
+        {
+            await FinishSetupAsync();
+        }
+
+        private async void OnSkipClicked(object? sender, EventArgs e)
+        {
+            await FinishSetupAsync();
+        }
 
         private void UpdateInstallStatus(string message)
         {

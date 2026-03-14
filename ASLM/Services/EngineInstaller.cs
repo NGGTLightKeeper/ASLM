@@ -16,9 +16,9 @@ namespace ASLM.Services
     public record DownloadProgress(double Fraction, long DownloadedBytes, long TotalBytes);
 
     /// <summary>
-    /// Discovers, validates and installs external engine runtimes (Python, Node.js, etc.)
+    /// Discovers, validates, and installs external engine runtimes (Python, Node.js, etc.)
     /// based on declarative <c>ASLM_Engine.json</c> configuration files.
-    /// Registered as a singleton — all mutable state is scoped to individual method calls.
+    /// Registered as a singleton; all mutable state is scoped to individual method calls.
     /// </summary>
     public class EngineInstaller
     {
@@ -62,6 +62,8 @@ namespace ASLM.Services
                             var config = JsonSerializer.Deserialize<EngineConfig>(json, _jsonOptions);
                             if (config != null)
                             {
+                                config.Normalize();
+
                                 // Backward compatibility: files without fileVersion are treated as v1
                                 if (config.FileVersion == 0)
                                     config.FileVersion = 1;
@@ -161,7 +163,7 @@ namespace ASLM.Services
         {
             await Task.Run(async () =>
             {
-                // Scoped state — safe for the singleton because only one install runs at a time.
+                // Scoped state; safe for the singleton because only one install runs at a time.
                 var baseDir = GetRootDirectory();
                 var tempDir = Path.Combine(Path.GetTempPath(), "ASLM", config.Id);
 
@@ -473,9 +475,12 @@ namespace ASLM.Services
             command = ctx.ResolveVariables(command);
 
             // Split into executable + argument string.
-            var parts = command.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+            var parts = SplitCommand(command);
+            if (parts.Count == 0)
+                throw new InvalidOperationException("Execute step contains an empty command.");
+
             var exePath = ctx.ResolvePath(parts[0]);
-            var arguments = parts.Length > 1 ? ctx.ResolveArgPaths(parts[1]) : "";
+            var arguments = parts.Count > 1 ? ctx.ResolveArgPaths(parts.Skip(1)) : string.Empty;
 
             log.Report($"  Executing: {exePath} {arguments}");
 
@@ -638,6 +643,62 @@ namespace ASLM.Services
             await File.WriteAllTextAsync(config.SourcePath, json);
         }
 
+        private static List<string> SplitCommand(string command)
+        {
+            var args = new List<string>();
+            var currentArg = new System.Text.StringBuilder();
+            var inQuotes = false;
+            var quoteChar = '\0';
+
+            foreach (var c in command)
+            {
+                if (inQuotes)
+                {
+                    if (c == quoteChar)
+                    {
+                        inQuotes = false;
+                        quoteChar = '\0';
+                    }
+                    else
+                    {
+                        currentArg.Append(c);
+                    }
+                }
+                else
+                {
+                    if (char.IsWhiteSpace(c))
+                    {
+                        if (currentArg.Length > 0)
+                        {
+                            args.Add(currentArg.ToString());
+                            currentArg.Clear();
+                        }
+                    }
+                    else if (c == '"' || c == '\'')
+                    {
+                        inQuotes = true;
+                        quoteChar = c;
+                    }
+                    else
+                    {
+                        currentArg.Append(c);
+                    }
+                }
+            }
+
+            if (currentArg.Length > 0)
+            {
+                args.Add(currentArg.ToString());
+            }
+
+            return args;
+        }
+
+        private static string JoinArguments(IEnumerable<string> args)
+        {
+            return string.Join(" ", args.Select(arg => arg.Contains(' ') ? $"\"{arg}\"" : arg));
+        }
+
         // --- StepContext (encapsulates per-install mutable state) -------------
 
         /// <summary>
@@ -717,20 +778,21 @@ namespace ASLM.Services
             }
 
             /// <summary>
-            /// Resolves path-like tokens inside an argument string.
+            /// Resolves path-like tokens inside argument values and rebuilds the argument string.
             /// Any token containing <c>/</c> or <c>\</c> is treated as a path and resolved.
             /// </summary>
-            /// <param name="args">The argument string to process.</param>
+            /// <param name="args">The argument values to process.</param>
             /// <returns>The argument string with resolved paths.</returns>
-            public string ResolveArgPaths(string args)
+            public string ResolveArgPaths(IEnumerable<string> args)
             {
-                var tokens = args.Split(' ');
+                var tokens = args.ToArray();
                 for (int i = 0; i < tokens.Length; i++)
                 {
                     if (tokens[i].Contains('/') || tokens[i].Contains('\\'))
                         tokens[i] = ResolvePath(tokens[i]);
                 }
-                return string.Join(' ', tokens);
+
+                return EngineInstaller.JoinArguments(tokens);
             }
         }
     }

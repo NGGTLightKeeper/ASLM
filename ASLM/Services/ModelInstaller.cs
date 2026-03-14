@@ -6,7 +6,7 @@ using ASLM.Models;
 namespace ASLM.Services
 {
     /// <summary>
-    /// Discovers and installs Machine Learning models from external sources (e.g. HuggingFace).
+    /// Discovers and installs machine learning models from external sources.
     /// </summary>
     public class ModelInstaller
     {
@@ -42,6 +42,8 @@ namespace ASLM.Services
                     var config = JsonSerializer.Deserialize<ModelConfig>(json, _jsonOptions);
                     if (config != null)
                     {
+                        config.Normalize();
+
                         // Backward compatibility: files without fileVersion are treated as v1
                         if (config.FileVersion == 0)
                             config.FileVersion = 1;
@@ -186,6 +188,7 @@ namespace ASLM.Services
 
         /// <summary>
         /// Downloads a single file with progress reporting and throttling.
+        /// Creates parent directories so repository entries can include nested paths.
         /// </summary>
         /// <param name="url">The download URL.</param>
         /// <param name="destPath">The local destination path.</param>
@@ -205,6 +208,12 @@ namespace ASLM.Services
                 response.EnsureSuccessStatusCode();
 
                 var totalBytes = response.Content.Headers.ContentLength ?? 0;
+                var directoryPath = Path.GetDirectoryName(destPath);
+                if (!string.IsNullOrEmpty(directoryPath))
+                {
+                    Directory.CreateDirectory(directoryPath);
+                }
+
                 await using var contentStream = await response.Content.ReadAsStreamAsync(ct);
                 await using var fileStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None, 65536, true);
 
@@ -250,17 +259,6 @@ namespace ASLM.Services
             return Directory.GetParent(appDir)?.FullName ?? appDir;
         }
 
-        /// <summary>
-        /// Saves the configuration synchronously.
-        /// </summary>
-        private void SaveConfig(ModelConfig config)
-        {
-            if (string.IsNullOrEmpty(config.SourcePath)) return;
-            var json = JsonSerializer.Serialize(config, _jsonOptions);
-            File.WriteAllText(config.SourcePath, json);
-        }
-
-        /// <summary>
         /// Saves the configuration asynchronously.
         /// </summary>
         private async Task SaveConfigAsync(ModelConfig config)

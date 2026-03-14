@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace ASLM.Services
 {
     /// <summary>
-    /// Handles the execution of module commands (Run, FirstRun, Settings).
+    /// Handles execution of module commands for setup, runtime, and settings synchronization.
     /// Resolves engine paths via EngineInstaller and manages process execution.
     /// Tracks running processes and supports stopping/killing them.
     /// </summary>
@@ -137,7 +137,7 @@ namespace ASLM.Services
                 if (ct.IsCancellationRequested) return false;
 
                 log.Report($"[Run] {cmd.Name}: {cmd.Description}");
-                // Run commands are long-running — we don't wait for exit, but we track the process
+                // Run commands are long-running; we start them in the background and track their processes.
                 _ = RunCommandAsync(module, cmd, log, ct, trackProcess: true);
             }
 
@@ -233,43 +233,30 @@ namespace ASLM.Services
                     return rawPort ?? string.Empty;
 
                 case "engine":
-                    // Returns true/false based on whether the engine is installed
-                    // Key can be the engine ID itself, or something like "ollama-service" from "ollama-service_path"
-                    var engineId = setting.Key;
-                    if (engineId.EndsWith("_path")) engineId = engineId[..^5];
-                    else if (engineId.EndsWith("_data")) engineId = engineId[..^5];
-                    else if (engineId.EndsWith("_models")) engineId = engineId[..^7];
-                    
+                    // Returns true/false based on whether the target engine is installed.
+                    var engineId = TrimEngineSettingSuffix(setting.Key);
                     return _engineInstaller.GetEngineConfig(engineId) != null ? "true" : "false";
 
                 case "path":
-                    // Returns the engine executable path, or empty string if not installed
-                    var pathEngineId = setting.Key;
-                    if (pathEngineId.EndsWith("_path")) pathEngineId = pathEngineId[..^5];
-                    
+                    // Returns the engine executable path, or empty string if not installed.
+                    var pathEngineId = TrimEngineSettingSuffix(setting.Key);
                     var enginePath = _engineInstaller.GetEngineExecutablePath(pathEngineId);
                     return !string.IsNullOrEmpty(enginePath) ? enginePath.Replace('\\', '/') : "";
 
                 case "data":
-                    // Returns the engine data path: C:\Projects\ASLM\Data\<engineId>\
-                    var dataEngineId = setting.Key;
-                    if (dataEngineId.EndsWith("_data")) dataEngineId = dataEngineId[..^5];
-                    
+                    // Returns the engine data path: <root>/Data/<engineId>/.
+                    var dataEngineId = TrimEngineSettingSuffix(setting.Key);
                     if (_engineInstaller.GetEngineConfig(dataEngineId) == null) return "";
-                    
-                    var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
-                    var rootDir = Directory.GetParent(appDir)?.FullName ?? appDir;
+
+                    var rootDir = GetRootDirectory();
                     return (Path.Combine(rootDir, "Data", dataEngineId) + Path.DirectorySeparatorChar).Replace('\\', '/');
 
                 case "models":
-                    // Returns the engine models path: C:\Projects\ASLM\Models\<engineId>\
-                    var modelsEngineId = setting.Key;
-                    if (modelsEngineId.EndsWith("_models")) modelsEngineId = modelsEngineId[..^7];
-                    
+                    // Returns the engine models path: <root>/Models/<engineId>/.
+                    var modelsEngineId = TrimEngineSettingSuffix(setting.Key);
                     if (_engineInstaller.GetEngineConfig(modelsEngineId) == null) return "";
-                    
-                    var modelsAppDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
-                    var modelsRootDir = Directory.GetParent(modelsAppDir)?.FullName ?? modelsAppDir;
+
+                    var modelsRootDir = GetRootDirectory();
                     return (Path.Combine(modelsRootDir, "Models", modelsEngineId) + Path.DirectorySeparatorChar).Replace('\\', '/');
 
                 case "bool":
@@ -349,7 +336,7 @@ namespace ASLM.Services
                     return false;
                 }
 
-                // Assign to Job Object — groups under ASLM in Task Manager
+                // Assign to the job object so dependency installs stay grouped under ASLM.
                 _processTracker.AddProcess(process);
 
                 process.BeginOutputReadLine();
@@ -467,7 +454,7 @@ namespace ASLM.Services
                     return false;
                 }
 
-                // Assign to Job Object — groups under ASLM in Task Manager
+                // Assign to the job object so launched processes stay grouped under ASLM.
                 _processTracker.AddProcess(process);
 
                 // Track the process for module stop functionality
@@ -720,18 +707,29 @@ namespace ASLM.Services
         /// <returns>A single command-line argument string.</returns>
         private static string ParseArguments(IEnumerable<string> args)
         {
-            // Simple reconstruction: join with spaces.
-            // If an argument contains spaces, it should ideally be quoted,
-            // but since we split it ourselves, we assume the user provided it correctly.
-            // However, for passing to ProcessStartInfo.Arguments, we might want to ensure quotes.
-            // But usually ProcessStartInfo handles raw strings if passed as a single string.
-            // Here we just join them back because we split them to find the executable (first part).
-
-            // Note: Since we are passing the rest as 'arguments' to ProcessStartInfo,
-            // usually we can just take the substring after the executable.
-            // But reconstruction is safer if we want to support complex parsing later.
-
             return string.Join(" ", args.Select(a => a.Contains(' ') ? $"\"{a}\"" : a));
+        }
+
+        private static string TrimEngineSettingSuffix(string settingKey)
+        {
+            if (settingKey.EndsWith("_path", StringComparison.OrdinalIgnoreCase) ||
+                settingKey.EndsWith("_data", StringComparison.OrdinalIgnoreCase))
+            {
+                return settingKey[..^5];
+            }
+
+            if (settingKey.EndsWith("_models", StringComparison.OrdinalIgnoreCase))
+            {
+                return settingKey[..^7];
+            }
+
+            return settingKey;
+        }
+
+        private static string GetRootDirectory()
+        {
+            var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+            return Directory.GetParent(appDir)?.FullName ?? appDir;
         }
     }
 }

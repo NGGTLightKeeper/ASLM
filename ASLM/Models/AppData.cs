@@ -25,6 +25,17 @@ namespace ASLM.Models
         /// </summary>
         [JsonPropertyName("ports")]
         public AppPortConfig Ports { get; set; } = new();
+
+        /// <summary>
+        /// Restores non-null nested objects after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            User ??= new();
+            User.Normalize();
+
+            Ports ??= new();
+        }
     }
 
     /// <summary>
@@ -37,6 +48,14 @@ namespace ASLM.Models
         /// </summary>
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Restores non-null string values after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            Name ??= string.Empty;
+        }
     }
 
     /// <summary>

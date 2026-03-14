@@ -1,7 +1,7 @@
 namespace ASLM.Pages
 {
     /// <summary>
-    /// Home page stub — placeholder for future dashboard.
+    /// Placeholder view for the future application dashboard.
     /// </summary>
     public partial class HomeView : ContentView
     {

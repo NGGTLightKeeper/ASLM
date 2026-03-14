@@ -14,6 +14,7 @@ namespace ASLM.Pages
         private readonly StringBuilder _logBuffer = new();
         private List<ModelConfig> _pendingModels = [];
         private CancellationTokenSource? _cts;
+        private bool _hasLoaded;
 
         public ModelSetupPage(ModelInstaller installer)
         {
@@ -29,6 +30,10 @@ namespace ASLM.Pages
         /// </summary>
         private async Task LoadModelsAsync()
         {
+            if (_hasLoaded)
+                return;
+
+            _hasLoaded = true;
             try
             {
                 var models = await _installer.DiscoverModelsAsync();
@@ -38,7 +43,7 @@ namespace ASLM.Pages
                 {
                     ModelInfoLabel.Text = "All models are installed.";
                     InstallButton.IsEnabled = false;
-                    AddLog("✓ No models require installation.");
+                    AddLog("[OK] No models require installation.");
                     ShowContinueButton();
                     return;
                 }
@@ -49,7 +54,7 @@ namespace ASLM.Pages
 
                 foreach (var model in _pendingModels)
                 {
-                    AddLog($"  • {model.Name} ({model.Source.RepoId})");
+                    AddLog($"  - {model.Name} ({model.Source.RepoId})");
                     AddLog($"    {model.Files.Count} files to download");
                 }
             }
@@ -95,7 +100,7 @@ namespace ASLM.Pages
                 }
                 catch (Exception ex)
                 {
-                    AddLog($"✗ Error installing {model.Name}: {ex.Message}");
+                    AddLog($"[Error] Error installing {model.Name}: {ex.Message}");
                 }
             }
 
@@ -133,6 +138,7 @@ namespace ASLM.Pages
         {
             InstallButton.Text = "Continue";
             InstallButton.IsEnabled = true;
+            InstallButton.Clicked -= OnContinueClicked;
             InstallButton.Clicked -= OnInstallClicked;
             InstallButton.Clicked += OnContinueClicked;
             CancelButton.IsVisible = false;
@@ -153,7 +159,7 @@ namespace ASLM.Pages
             var downloadedMb = dp.DownloadedBytes / 1024.0 / 1024.0;
             var totalMb = dp.TotalBytes / 1024.0 / 1024.0;
             var pct = (int)(dp.Fraction * 100);
-            DownloadInfoLabel.Text = $"{pct}%  —  {downloadedMb:F1} MB / {totalMb:F1} MB";
+            DownloadInfoLabel.Text = $"{pct}%  -  {downloadedMb:F1} MB / {totalMb:F1} MB";
         }
 
         private void HideDownloadProgress()

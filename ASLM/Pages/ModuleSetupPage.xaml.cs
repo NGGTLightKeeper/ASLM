@@ -7,7 +7,7 @@ namespace ASLM.Pages
     /// <summary>
     /// UI page for discovering and setting up modules.
     /// Follows the same pattern as the other setup pages:
-    /// discover → show pending → install (firstRun) → continue.
+    /// discover -> show pending -> install (firstRun) -> continue.
     /// </summary>
     public partial class ModuleSetupPage : ContentPage
     {
@@ -19,6 +19,7 @@ namespace ASLM.Pages
         private readonly StringBuilder _logBuffer = new();
         private List<ModuleConfig> _pendingModules = [];
         private CancellationTokenSource? _cts;
+        private bool _hasLoaded;
 
         public ModuleSetupPage(
             ModuleInstaller moduleInstaller,
@@ -40,6 +41,10 @@ namespace ASLM.Pages
         /// </summary>
         private async Task LoadModulesAsync()
         {
+            if (_hasLoaded)
+                return;
+
+            _hasLoaded = true;
             try
             {
                 var modules = await _moduleInstaller.DiscoverModulesAsync();
@@ -51,7 +56,7 @@ namespace ASLM.Pages
                 {
                     ModuleInfoLabel.Text = "All modules are set up.";
                     InstallButton.IsEnabled = false;
-                    AddLog("✓ No modules require setup.");
+                    AddLog("[OK] No modules require setup.");
                     ShowContinueButton();
                     return;
                 }
@@ -109,7 +114,7 @@ namespace ASLM.Pages
 
                     if (!downloaded)
                     {
-                        AddLog($"✗ Source download failed for {module.Name}");
+                        AddLog($"[Error] Source download failed for {module.Name}");
                         continue;
                     }
 
@@ -128,7 +133,7 @@ namespace ASLM.Pages
                     }
                     else
                     {
-                        AddLog($"✗ Setup failed for {module.Name}");
+                        AddLog($"[Error] Setup failed for {module.Name}");
                     }
                 }
                 catch (OperationCanceledException)
@@ -138,7 +143,7 @@ namespace ASLM.Pages
                 }
                 catch (Exception ex)
                 {
-                    AddLog($"✗ Error setting up {module.Name}: {ex.Message}");
+                    AddLog($"[Error] Error setting up {module.Name}: {ex.Message}");
                 }
             }
 
@@ -183,9 +188,9 @@ namespace ASLM.Pages
             {
                 var exists = installedEngines.Any(e => e.Id == reqEngine.Id && e.Status.Installed);
                 if (!exists)
-                    AddLog($"    ⚠ Missing Engine: {reqEngine.Id}");
+                    AddLog($"    [Missing] Engine: {reqEngine.Id}");
                 else
-                    AddLog($"    ✓ Engine: {reqEngine.Id}");
+                    AddLog($"    [OK] Engine: {reqEngine.Id}");
             }
 
             foreach (var reqCategory in module.Dependencies.Models)
@@ -195,9 +200,9 @@ namespace ASLM.Pages
                     m.Status.Installed);
 
                 if (!exists)
-                    AddLog($"    ⚠ Missing Model: {reqCategory}");
+                    AddLog($"    [Missing] Model: {reqCategory}");
                 else
-                    AddLog($"    ✓ Model: {reqCategory}");
+                    AddLog($"    [OK] Model: {reqCategory}");
             }
         }
 
@@ -207,6 +212,7 @@ namespace ASLM.Pages
         {
             InstallButton.Text = "Continue";
             InstallButton.IsEnabled = true;
+            InstallButton.Clicked -= OnContinueClicked;
             InstallButton.Clicked -= OnInstallClicked;
             InstallButton.Clicked += OnContinueClicked;
             CancelButton.IsVisible = false;
@@ -221,6 +227,7 @@ namespace ASLM.Pages
             CancelButton.Text = "Skip";
             CancelButton.IsEnabled = true;
             CancelButton.IsVisible = true;
+            CancelButton.Clicked -= OnContinueClicked;
             CancelButton.Clicked -= OnCancelClicked;
             CancelButton.Clicked += OnContinueClicked;
         }
@@ -240,7 +247,7 @@ namespace ASLM.Pages
             var downloadedMb = dp.DownloadedBytes / 1024.0 / 1024.0;
             var totalMb = dp.TotalBytes / 1024.0 / 1024.0;
             var pct = (int)(dp.Fraction * 100);
-            DownloadInfoLabel.Text = $"{pct}%  —  {downloadedMb:F1} MB / {totalMb:F1} MB";
+            DownloadInfoLabel.Text = $"{pct}%  -  {downloadedMb:F1} MB / {totalMb:F1} MB";
         }
 
         private void HideDownloadProgress()

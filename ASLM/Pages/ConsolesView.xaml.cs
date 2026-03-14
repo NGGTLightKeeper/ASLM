@@ -1,7 +1,7 @@
 namespace ASLM.Pages
 {
     /// <summary>
-    /// Module consoles stub — placeholder for future console output.
+    /// Placeholder view for module consoles and future aggregated log output.
     /// </summary>
     public partial class ConsolesView : ContentView
     {

@@ -7,10 +7,8 @@ namespace ASLM.Services
 {
     /// <summary>
     /// Manages a Win32 Job Object that groups the current ASLM process with all
-    /// its child processes (modules). This achieves two goals:
-    /// 1. All module processes appear as subprocesses of ASLM in Task Manager.
-    /// 2. All child processes are killed automatically when ASLM exits or crashes
-    ///    (via JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE).
+    /// its child processes (modules). This keeps module processes grouped under ASLM
+    /// in Task Manager and ensures they are terminated when ASLM exits or crashes.
     /// </summary>
     public sealed class ProcessTracker : IDisposable
     {
@@ -75,7 +73,7 @@ namespace ASLM.Services
             }
             else
             {
-                _logger.LogInformation("ProcessTracker initialized — ASLM and child processes are grouped.");
+                _logger.LogInformation("ProcessTracker initialized - ASLM and child processes are grouped.");
             }
         }
 
@@ -115,7 +113,7 @@ namespace ASLM.Services
             _jobHandle?.Dispose();
         }
 
-        // ─── Win32 P/Invoke ──────────────────────────────────────────
+        // --- Win32 P/Invoke -------------------------------------------------
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern SafeFileHandle CreateJobObject(IntPtr lpJobAttributes, string lpName);

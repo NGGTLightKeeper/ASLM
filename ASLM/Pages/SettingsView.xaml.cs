@@ -5,14 +5,15 @@ using Microsoft.Maui.Controls.Shapes;
 namespace ASLM.Pages
 {
     /// <summary>
-    /// Settings content view — displays user profile and port allocation settings.
-    /// No separate sidebar needed; hosted inside AppShellPage.
+    /// Settings content view that displays user profile, port allocation, and module settings.
+    /// Hosted inside <see cref="AppShellPage"/> without its own sidebar.
     /// </summary>
     public partial class SettingsView : ContentView
     {
         private readonly AppDataService _appData;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly List<SettingControlMapping> _settingMappings = [];
+        private bool _hasLoaded;
 
         private record SettingControlMapping(ModuleConfig Module, ModuleSetting Setting, Entry Entry);
 
@@ -24,7 +25,7 @@ namespace ASLM.Pages
             _appData = appData;
             _moduleInstaller = moduleInstaller;
             InitializeComponent();
-            LoadSettings();
+            Loaded += OnLoaded;
         }
 
         /// <summary>Populates the UI fields with current persisted values.</summary>
@@ -35,6 +36,15 @@ namespace ASLM.Pages
             ThirdPartyPortEntry.Text = _appData.Data.Ports.ThirdPartyStart.ToString();
 
             await PopulateModuleSettingsAsync();
+        }
+
+        private void OnLoaded(object? sender, EventArgs e)
+        {
+            if (_hasLoaded)
+                return;
+
+            _hasLoaded = true;
+            LoadSettings();
         }
 
         private async Task PopulateModuleSettingsAsync()
@@ -102,7 +112,7 @@ namespace ASLM.Pages
             int tpEnd = tp + 1000;
             if (op < tpEnd && tp < opEnd)
             {
-                ShowPortError($"Port ranges overlap! Official {op}–{opEnd - 1} conflicts with Third-party {tp}–{tpEnd - 1}.");
+                ShowPortError($"Port ranges overlap. Official {op}-{opEnd - 1} conflicts with Third-party {tp}-{tpEnd - 1}.");
                 return;
             }
 
@@ -121,7 +131,7 @@ namespace ASLM.Pages
                 var newValue = mapping.Entry.Text;
                 if (mapping.Setting.Value?.ToString() != newValue)
                 {
-                    mapping.Setting.Value = newValue;
+                    mapping.Setting.Value = mapping.Setting.ParseUserInput(newValue);
                     touchedModules.Add(mapping.Module);
                 }
             }

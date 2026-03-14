@@ -7,7 +7,7 @@ using ASLM.Models;
 namespace ASLM.Services
 {
     /// <summary>
-    /// Manages the discovery and installation of Modules from GitHub ZIP archives.
+    /// Manages module discovery, installation, and source refresh operations.
     /// </summary>
     public class ModuleInstaller
     {
@@ -43,8 +43,8 @@ namespace ASLM.Services
             if (!Directory.Exists(modulesRoot))
                 return modules;
 
-            // Get all JSON files first (synchronously, usually fast)
-            var jsonFiles = Directory.GetFiles(modulesRoot, "ASLM_Module.json", SearchOption.AllDirectories);
+            // Collect JSON files first; enumeration is cheap compared to deserialization work.
+            var jsonFiles = Directory.EnumerateFiles(modulesRoot, "ASLM_Module.json", SearchOption.AllDirectories).ToList();
 
             // Process files in parallel
             var tasks = jsonFiles.Select(LoadModuleConfig);
@@ -58,7 +58,9 @@ namespace ASLM.Services
                     modules.Add(result);
             }
 
-            return modules;
+            return modules
+                .OrderBy(module => module.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         /// <summary>
@@ -76,6 +78,8 @@ namespace ASLM.Services
                 var config = await JsonSerializer.DeserializeAsync<ModuleConfig>(stream, _jsonOptions);
                 if (config != null)
                 {
+                    config.Normalize();
+
                     // Backward compatibility: files without fileVersion are treated as v1
                     if (config.FileVersion == 0)
                         config.FileVersion = 1;
@@ -161,15 +165,15 @@ namespace ASLM.Services
             }
             finally
             {
-                if (File.Exists(tempZip)) File.Delete(tempZip);
-                if (Directory.Exists(tempExtractDir)) Directory.Delete(tempExtractDir, true);
+                TryDeleteFile(tempZip);
+                TryDeleteDirectory(tempExtractDir);
             }
         }
 
         // --- Installation ----------------------------------------------------
 
         /// <summary>
-        /// Downloads a ZIP from a URL (e.g. GitHub archive), extracts it to <c>Modules/{ModuleName}</c>,
+        /// Downloads a ZIP from a URL (e.g. GitHub archive), extracts it to <c>Modules/{ModuleId}</c>,
         /// and discovers the contained <c>ASLM_Module.json</c>.
         /// </summary>
         /// <param name="zipUrl">Direct link to a ZIP file.</param>
@@ -221,6 +225,8 @@ namespace ASLM.Services
                     if (config == null || string.IsNullOrWhiteSpace(config.Id))
                         throw new InvalidOperationException("Invalid module: Could not parse config or ID is missing.");
 
+                    config.Normalize();
+
                     // Backward compatibility: files without fileVersion are treated as v1
                     if (config.FileVersion == 0)
                         config.FileVersion = 1;
@@ -270,14 +276,12 @@ namespace ASLM.Services
                 }
                 finally
                 {
-                    if (Directory.Exists(tempExtractDir))
-                        Directory.Delete(tempExtractDir, true);
+                    TryDeleteDirectory(tempExtractDir);
                 }
             }
             finally
             {
-                if (File.Exists(tempZip))
-                    File.Delete(tempZip);
+                TryDeleteFile(tempZip);
             }
         }
 
@@ -289,12 +293,12 @@ namespace ASLM.Services
         private static void CopyDirectory(string sourceDir, string destDir)
         {
             Directory.CreateDirectory(destDir);
-            foreach (var file in Directory.GetFiles(sourceDir))
+            foreach (var file in Directory.EnumerateFiles(sourceDir))
             {
                 var destFile = Path.Combine(destDir, Path.GetFileName(file));
                 File.Copy(file, destFile, true);
             }
-            foreach (var subdir in Directory.GetDirectories(sourceDir))
+            foreach (var subdir in Directory.EnumerateDirectories(sourceDir))
             {
                 var destSubdir = Path.Combine(destDir, Path.GetFileName(subdir));
                 CopyDirectory(subdir, destSubdir);
@@ -377,6 +381,36 @@ namespace ASLM.Services
             if (string.IsNullOrEmpty(config.SourcePath)) return;
             var json = JsonSerializer.Serialize(config, _jsonOptions);
             await File.WriteAllTextAsync(config.SourcePath, json);
+        }
+
+        private static void TryDeleteFile(string filePath)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+            }
+            catch
+            {
+                // Best effort cleanup for temporary files.
+            }
+        }
+
+        private static void TryDeleteDirectory(string directoryPath)
+        {
+            try
+            {
+                if (Directory.Exists(directoryPath))
+                {
+                    Directory.Delete(directoryPath, true);
+                }
+            }
+            catch
+            {
+                // Best effort cleanup for temporary directories.
+            }
         }
     }
 }

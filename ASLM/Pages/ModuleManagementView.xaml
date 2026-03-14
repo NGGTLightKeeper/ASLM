@@ -19,10 +19,10 @@
             <VerticalStackLayout Spacing="8" Margin="4,0,4,8">
                 <Label Text="Modules"
                        FontSize="24" FontAttributes="Bold"
-                       TextColor="White" />
+                       TextColor="{StaticResource LabelPrimary}" />
                 <Label x:Name="DashboardSubtitle"
                        Text="Manage your installed modules"
-                       FontSize="14" TextColor="#8E8E93"
+                       FontSize="14" TextColor="{StaticResource LabelSecondary}"
                        Margin="0,0,0,8" />
             </VerticalStackLayout>
         </CollectionView.Header>
@@ -30,7 +30,7 @@
         <CollectionView.EmptyView>
             <Label Text="No modules found. Install modules via the Setup Wizard."
                    FontSize="14"
-                   TextColor="#8E8E93"
+                   TextColor="{StaticResource LabelSecondary}"
                    HorizontalOptions="Center"
                    VerticalOptions="Center"
                    Margin="0,20,0,0" />
@@ -38,8 +38,8 @@
 
         <CollectionView.ItemTemplate>
             <DataTemplate>
-                <Border BackgroundColor="#1D1D1F"
-                        Stroke="#3A3A3C"
+                <Border BackgroundColor="{StaticResource BackgroundSecondary}"
+                        Stroke="{StaticResource Separator}"
                         StrokeThickness="1"
                         StrokeShape="RoundRectangle 8"
                         Padding="0">
@@ -50,7 +50,7 @@
                                 IsVisible="{Binding HasIcon}"
                                 StrokeThickness="0"
                                 StrokeShape="RoundRectangle 0"
-                                BackgroundColor="#1D1D1F"
+                                BackgroundColor="{StaticResource BackgroundSecondary}"
                                 WidthRequest="164"
                                 HeightRequest="164"
                                 Padding="0"
@@ -71,10 +71,10 @@
                                 <Label Text="{Binding Name}"
                                        FontSize="16"
                                        FontAttributes="Bold"
-                                       TextColor="White" />
+                                       TextColor="{StaticResource LabelPrimary}" />
                                 <Label Text="{Binding VersionString}"
                                        FontSize="13"
-                                       TextColor="#8E8E93" />
+                                       TextColor="{StaticResource LabelSecondary}" />
                             </VerticalStackLayout>
 
                             <!-- Action buttons (bottom) -->
@@ -90,7 +90,7 @@
                                         ContentLayout="Left,4"
                                         Command="{Binding StopCommand}"
                                         BackgroundColor="{StaticResource ActionRed}"
-                                        TextColor="White"
+                                        TextColor="{StaticResource LabelPrimary}"
                                         FontSize="13"
                                         HeightRequest="24"
                                         CornerRadius="4"
@@ -102,14 +102,14 @@
                                         ContentLayout="Left,4"
                                         Command="{Binding RestartCommand}"
                                         BackgroundColor="{StaticResource ActionBlue}"
-                                        TextColor="White"
+                                        TextColor="{StaticResource LabelPrimary}"
                                         FontSize="13"
                                         HeightRequest="24"
                                         CornerRadius="4"
                                         IsVisible="{Binding IsNotRestarting}"
                                         HorizontalOptions="Fill" />
                                 <Border Grid.Column="0" Grid.ColumnSpan="2"
-                                        BackgroundColor="#0A84FF20"
+                                        BackgroundColor="{StaticResource SystemBlueOverlay}"
                                         Stroke="{StaticResource ActionBlue}"
                                         StrokeShape="RoundRectangle 4"
                                         StrokeThickness="1"
@@ -124,12 +124,12 @@
                                                            VerticalOptions="Center"
                                                            Spacing="8">
                                         <ActivityIndicator IsRunning="{Binding IsRestarting}"
-                                                           Color="White"
+                                                           Color="{StaticResource LabelPrimary}"
                                                            WidthRequest="16"
                                                            HeightRequest="16"
                                                            VerticalOptions="Center" />
                                         <Label Text="Restarting"
-                                               TextColor="White"
+                                               TextColor="{StaticResource LabelPrimary}"
                                                FontSize="13"
                                                VerticalOptions="Center" />
                                     </HorizontalStackLayout>
@@ -144,7 +144,7 @@
                                     Command="{Binding LaunchCommand}"
                                     IsVisible="{Binding IsStopped}"
                                     BackgroundColor="{StaticResource ActionBlue}"
-                                    TextColor="White"
+                                    TextColor="{StaticResource LabelPrimary}"
                                     FontSize="13"
                                     HeightRequest="24"
                                     CornerRadius="4"

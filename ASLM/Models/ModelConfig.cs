@@ -59,8 +59,8 @@ namespace ASLM.Models
         public ModelSource Source { get; set; } = new();
 
         /// <summary>
-        /// List of filenames to download. If empty, the installer will automatically 
-        /// fetch the file list from the provider (e.g. HuggingFace).
+        /// List of filenames to download. If empty, the current installer fetches
+        /// the file list from the HuggingFace API.
         /// </summary>
         [JsonPropertyName("files")]
         public List<string> Files { get; set; } = [];
@@ -79,15 +79,41 @@ namespace ASLM.Models
         /// </summary>
         [JsonIgnore]
         public string SourcePath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Restores non-null nested objects, collections, and strings after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            Id ??= string.Empty;
+            Name ??= string.Empty;
+            Description ??= string.Empty;
+            Version ??= string.Empty;
+            Type = string.IsNullOrWhiteSpace(Type) ? "model" : Type;
+            Category ??= string.Empty;
+            SourcePath ??= string.Empty;
+
+            Source ??= new();
+            Source.Normalize();
+
+            Files ??= [];
+            Files = Files
+                .Where(static file => !string.IsNullOrWhiteSpace(file))
+                .ToList();
+
+            Status ??= new();
+            Status.Normalize();
+        }
     }
 
     /// <summary>
-    /// Defines where the model is hosted.
+    /// Defines where the model package is hosted.
     /// </summary>
     public class ModelSource
     {
         /// <summary>
-        /// The type of source provider (default "huggingface").
+        /// The source provider identifier.
+        /// The current installer expects <c>"huggingface"</c>.
         /// </summary>
         [JsonPropertyName("type")]
         public string Type { get; set; } = "huggingface";
@@ -97,6 +123,15 @@ namespace ASLM.Models
         /// </summary>
         [JsonPropertyName("repoId")]
         public string RepoId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Restores required non-null string values after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            Type = string.IsNullOrWhiteSpace(Type) ? "huggingface" : Type;
+            RepoId ??= string.Empty;
+        }
     }
 
     /// <summary>
@@ -121,5 +156,14 @@ namespace ASLM.Models
         /// </summary>
         [JsonPropertyName("lastChecked")]
         public string? LastChecked { get; set; }
+
+        /// <summary>
+        /// Normalizes optional persisted values after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            InstalledVersion = string.IsNullOrWhiteSpace(InstalledVersion) ? null : InstalledVersion;
+            LastChecked = string.IsNullOrWhiteSpace(LastChecked) ? null : LastChecked;
+        }
     }
 }

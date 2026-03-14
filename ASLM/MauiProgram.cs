@@ -5,7 +5,7 @@ using ASLM.Services;
 namespace ASLM
 {
     /// <summary>
-    /// Static class responsible for creating and configuring the MAUI application.
+    /// Creates and configures the MAUI application host, including DI registrations.
     /// </summary>
     public static class MauiProgram
     {

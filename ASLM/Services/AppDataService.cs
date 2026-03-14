@@ -8,7 +8,7 @@ namespace ASLM.Services
 {
     /// <summary>
     /// Manages the persistent application data stored in <c>Data/App/ASLM_Data.json</c>.
-    /// Registered as a singleton — loads once at startup, saves on demand.
+    /// Registered as a singleton; loads once at startup and saves on demand.
     /// </summary>
     public class AppDataService
     {
@@ -64,18 +64,20 @@ namespace ASLM.Services
                     if (!string.IsNullOrWhiteSpace(json))
                     {
                         Data = JsonSerializer.Deserialize<AppData>(json, _jsonOptions) ?? new AppData();
+                        Data.Normalize();
                         return;
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to load app data from {FilePath}. Corrupted file — falling back to defaults.", _filePath);
-                // Corrupted file — fall through to defaults.
+                _logger.LogError(ex, "Failed to load app data from {FilePath}. Corrupted file; falling back to defaults.", _filePath);
+                // Corrupted file; fall through to defaults.
                 // In a production app, we might want to backup the corrupted file.
             }
 
             Data = new AppData();
+            Data.Normalize();
             await SaveAsync();
         }
 
