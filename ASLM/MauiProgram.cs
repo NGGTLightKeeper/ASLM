@@ -1,21 +1,28 @@
-using Microsoft.Extensions.Logging;
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using ASLM.Pages;
 using ASLM.Services;
+using Microsoft.Extensions.Logging;
 
 namespace ASLM
 {
+    // MAUI bootstrap
+
     /// <summary>
-    /// Creates and configures the MAUI application host, including DI registrations.
+    /// Configures the MAUI host, services, and page registrations.
     /// </summary>
     public static class MauiProgram
     {
+        // App builder
+
         /// <summary>
-        /// Creates and configures the MauiApp.
+        /// Creates the configured MAUI application instance.
         /// </summary>
-        /// <returns>The configured MauiApp.</returns>
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();
+
+            // Configure the shared application host and bundled fonts.
             builder
                 .UseMauiApp<App>()
                 .ConfigureFonts(fonts =>
@@ -27,11 +34,12 @@ namespace ASLM
                 });
 
 #if DEBUG
-    		builder.Logging.AddDebug();
-    		builder.Services.AddLogging(configure => configure.AddDebug());
+            // Keep debug logging enabled in development builds.
+            builder.Logging.AddDebug();
+            builder.Services.AddLogging(configure => configure.AddDebug());
 #endif
 
-            // Services
+            // Service registrations
             builder.Services.AddSingleton<AppDataService>();
             builder.Services.AddSingleton<EngineInstaller>();
             builder.Services.AddSingleton<ModelInstaller>();
@@ -40,12 +48,12 @@ namespace ASLM
             builder.Services.AddSingleton<ModuleRunner>();
             builder.Services.AddSingleton<PortManager>();
 
-            // Pages
+            // Page registrations
             builder.Services.AddTransient<AppShellPage>();
             builder.Services.AddTransient<SetupWizardPage>();
             builder.Services.AddTransient<LoadingPage>();
 
-            // Content Views (hosted inside AppShellPage)
+            // Content view registrations
             builder.Services.AddTransient<HomeView>();
             builder.Services.AddTransient<ConsolesView>();
             builder.Services.AddTransient<ModuleManagementView>();
