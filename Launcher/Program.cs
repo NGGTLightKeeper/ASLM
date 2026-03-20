@@ -1,9 +1,11 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Diagnostics;
 
+// Launcher entry point.
+
 /// <summary>
-/// Entry point for the ASLM Launcher.
-/// Attempts to launch the main ASLM application located in the 'App' subdirectory.
-/// Forwards launcher arguments to the child process and logs startup errors to <c>Launcher.log</c>.
+/// Launches the main ASLM application and logs startup errors.
 /// </summary>
 internal static class Program
 {
@@ -11,14 +13,21 @@ internal static class Program
     private const string ExeName = "ASLM.exe";
     private const string LogFileName = "Launcher.log";
 
+    // Process startup.
+
+    /// <summary>
+    /// Resolves the target path, forwards arguments and starts the main process.
+    /// </summary>
     private static void Main(string[] args)
     {
+        // Resolve the launcher paths.
         var currentDir = AppDomain.CurrentDomain.BaseDirectory;
         var logPath = Path.Combine(currentDir, LogFileName);
         var targetPath = Path.Combine(currentDir, FolderName, ExeName);
 
         try
         {
+            // Ensure the target executable exists.
             if (!File.Exists(targetPath))
             {
                 Log("Error: Target executable not found at " + targetPath, logPath);
@@ -26,6 +35,7 @@ internal static class Program
                 return;
             }
 
+            // Build the child process settings.
             var startInfo = new ProcessStartInfo
             {
                 FileName = targetPath,
@@ -38,6 +48,7 @@ internal static class Program
                 startInfo.ArgumentList.Add(arg);
             }
 
+            // Start the process and validate the result.
             var process = Process.Start(startInfo);
 
             if (process == null)
@@ -53,11 +64,12 @@ internal static class Program
         }
     }
 
+
+    // Log output.
+
     /// <summary>
-    /// Appends a message to the log file with a timestamp.
+    /// Appends a timestamped message to the launcher log.
     /// </summary>
-    /// <param name="message">The message to log.</param>
-    /// <param name="logPath">The full path to the log file.</param>
     private static void Log(string message, string logPath)
     {
         try
@@ -67,8 +79,7 @@ internal static class Program
         }
         catch
         {
-            // If logging fails (e.g., permissions), we can't do much.
-            // Failing silently is acceptable for a launcher to avoid crash loops.
+            // Ignore logging failures to avoid blocking the launcher.
         }
     }
 }
