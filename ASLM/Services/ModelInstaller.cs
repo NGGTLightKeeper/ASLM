@@ -1,3 +1,5 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -5,24 +7,26 @@ using ASLM.Models;
 
 namespace ASLM.Services
 {
+    // Model installer
+
     /// <summary>
-    /// Discovers and installs machine learning models from external sources.
+    /// Discovers model manifests and downloads model files from external sources.
     /// </summary>
     public class ModelInstaller
     {
         private readonly HttpClient _httpClient = new();
+
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
             WriteIndented = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        // --- Discovery -------------------------------------------------------
+        // Discovery
 
         /// <summary>
-        /// Asynchronously scans <c>Models/*/ASLM_Model.json</c> files.
+        /// Scans <c>Models/*/ASLM_Model.json</c> files asynchronously.
         /// </summary>
-        /// <returns>A list of discovered model configurations.</returns>
         public async Task<List<ModelConfig>> DiscoverModelsAsync(CancellationToken ct = default)
         {
             var baseDir = GetRootDirectory();
@@ -30,23 +34,36 @@ namespace ASLM.Services
             var models = new System.Collections.Concurrent.ConcurrentBag<ModelConfig>();
 
             if (!Directory.Exists(modelsRoot))
+            {
                 return models.ToList();
+            }
 
             var files = Directory.EnumerateFiles(modelsRoot, "ASLM_Model.json", SearchOption.AllDirectories);
-
-            await Parallel.ForEachAsync(files, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount, CancellationToken = ct }, async (jsonFile, token) =>
-            {
-                try
+            await Parallel.ForEachAsync(
+                files,
+                new ParallelOptions
                 {
-                    var json = await File.ReadAllTextAsync(jsonFile, token);
-                    var config = JsonSerializer.Deserialize<ModelConfig>(json, _jsonOptions);
-                    if (config != null)
+                    MaxDegreeOfParallelism = Environment.ProcessorCount,
+                    CancellationToken = ct
+                },
+                async (jsonFile, token) =>
+                {
+                    try
                     {
+                        var json = await File.ReadAllTextAsync(jsonFile, token);
+                        var config = JsonSerializer.Deserialize<ModelConfig>(json, _jsonOptions);
+                        if (config == null)
+                        {
+                            return;
+                        }
+
                         config.Normalize();
 
-                        // Backward compatibility: files without fileVersion are treated as v1
+                        // Treat manifests without an explicit version as the initial schema.
                         if (config.FileVersion == 0)
+                        {
                             config.FileVersion = 1;
+                        }
 
                         if (config.FileVersion != 1)
                         {
@@ -56,13 +73,10 @@ namespace ASLM.Services
 
                         config.SourcePath = jsonFile;
 
-                        // Validate installed status
+                        // Reset the installed flag when the manifest exists but the payload files are gone.
                         if (config.Status.Installed)
                         {
                             var modelDir = Path.GetDirectoryName(jsonFile)!;
-                            
-                            // Check if there are any files beside the JSON.
-                            // Taking 2 files is enough to know if > 1 exists (the JSON file itself + at least one other).
                             var hasFiles = Directory.EnumerateFiles(modelDir).Take(2).Count() > 1;
 
                             if (!hasFiles)
@@ -76,27 +90,23 @@ namespace ASLM.Services
 
                         models.Add(config);
                     }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Failed to parse {jsonFile}: {ex.Message}");
-                }
-            });
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to parse {jsonFile}: {ex.Message}");
+                    }
+                });
 
-            return models.OrderBy(m => m.Name).ToList();
+            return models
+                .OrderBy(model => model.Name)
+                .ToList();
         }
 
-        // --- Installation ----------------------------------------------------
+
+        // Installation
 
         /// <summary>
-        /// Downloads model files from HuggingFace. If no files are listed in config,
-        /// fetches the file list from the API first.
+        /// Downloads all files required by one model configuration.
         /// </summary>
-        /// <param name="config">The model configuration.</param>
-        /// <param name="log">Progress logger.</param>
-        /// <param name="downloadProgress">Download progress reporter.</param>
-        /// <param name="ct">Cancellation token.</param>
-        /// <returns>A task representing the installation process.</returns>
         public async Task InstallAsync(
             ModelConfig config,
             IProgress<string> log,
@@ -104,15 +114,16 @@ namespace ASLM.Services
             CancellationToken ct = default)
         {
             var modelDir = Path.GetDirectoryName(config.SourcePath)!;
-            
+
             log.Report($"=== Installing Model: {config.Name} ===");
             log.Report($"Source: HuggingFace ({config.Source.RepoId})");
             log.Report($"Destination: {modelDir}");
 
-            // If no files specified, fetch the list from HuggingFace API
+            // Fetch the remote file list when the manifest does not pin one locally.
             if (config.Files == null || config.Files.Count == 0)
             {
                 log.Report("No files specified in config. Fetching file list from HuggingFace...");
+
                 try
                 {
                     config.Files = await FetchFileListAsync(config.Source.RepoId, ct);
@@ -120,13 +131,13 @@ namespace ASLM.Services
                 }
                 catch (Exception ex)
                 {
-                    log.Report($"✗ Failed to fetch file list: {ex.Message}");
+                    log.Report($"Failed to fetch file list: {ex.Message}");
                     throw;
                 }
             }
 
-            int totalFiles = config.Files.Count;
-            int currentFile = 0;
+            var totalFiles = config.Files.Count;
+            var currentFile = 0;
 
             foreach (var fileName in config.Files)
             {
@@ -137,11 +148,10 @@ namespace ASLM.Services
                 var destPath = Path.Combine(modelDir, fileName);
 
                 log.Report($"[{currentFile}/{totalFiles}] Downloading {fileName}...");
-                
                 await DownloadFileAsync(url, destPath, log, downloadProgress, ct);
             }
 
-            // Update status
+            // Persist the installed state only after every file completes successfully.
             config.Status.Installed = true;
             config.Status.InstalledVersion = config.Version;
             config.Status.LastChecked = DateTime.UtcNow.ToString("o");
@@ -150,51 +160,49 @@ namespace ASLM.Services
             log.Report($"=== {config.Name} installed successfully ===");
         }
 
+        // Remote file list
+
         /// <summary>
-        /// Queries the HuggingFace API definition for a model and extracts the list
-        /// of files (siblings), excluding .git* and README.md.
+        /// Loads the downloadable file list for a HuggingFace repository.
         /// </summary>
-        /// <param name="repoId">The HuggingFace repository ID (e.g. 'openai/whisper-tiny').</param>
-        /// <param name="ct">Cancellation token.</param>
-        /// <returns>A list of filenames.</returns>
         private async Task<List<string>> FetchFileListAsync(string repoId, CancellationToken ct)
         {
             var url = $"https://huggingface.co/api/models/{repoId}";
+
             using var response = await _httpClient.GetAsync(url, ct);
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync(ct);
             using var doc = JsonDocument.Parse(json);
-            
+
             var files = new List<string>();
             if (doc.RootElement.TryGetProperty("siblings", out var siblings))
             {
                 foreach (var sibling in siblings.EnumerateArray())
                 {
-                    if (sibling.TryGetProperty("rfilename", out var rfilename))
+                    if (!sibling.TryGetProperty("rfilename", out var rfilename))
                     {
-                        var name = rfilename.GetString();
-                        if (!string.IsNullOrEmpty(name) && 
-                            !name.StartsWith(".git") && 
-                            !name.Equals("README.md", StringComparison.OrdinalIgnoreCase))
-                        {
-                            files.Add(name);
-                        }
+                        continue;
+                    }
+
+                    var name = rfilename.GetString();
+                    if (!string.IsNullOrEmpty(name) &&
+                        !name.StartsWith(".git") &&
+                        !name.Equals("README.md", StringComparison.OrdinalIgnoreCase))
+                    {
+                        files.Add(name);
                     }
                 }
             }
+
             return files;
         }
 
+        // File download
+
         /// <summary>
-        /// Downloads a single file with progress reporting and throttling.
-        /// Creates parent directories so repository entries can include nested paths.
+        /// Downloads one model file and reports throttled progress updates.
         /// </summary>
-        /// <param name="url">The download URL.</param>
-        /// <param name="destPath">The local destination path.</param>
-        /// <param name="log">Progress logger.</param>
-        /// <param name="downloadProgress">Download progress reporter.</param>
-        /// <param name="ct">Cancellation token.</param>
         private async Task DownloadFileAsync(
             string url,
             string destPath,
@@ -202,7 +210,7 @@ namespace ASLM.Services
             IProgress<DownloadProgress>? downloadProgress,
             CancellationToken ct)
         {
-            try 
+            try
             {
                 using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
                 response.EnsureSuccessStatusCode();
@@ -222,7 +230,7 @@ namespace ASLM.Services
                 int bytesRead;
                 var throttle = Stopwatch.StartNew();
 
-                // Reset progress for this file
+                // Reset the per-file progress bar before the first bytes arrive.
                 downloadProgress?.Report(new DownloadProgress(0, 0, totalBytes));
 
                 while ((bytesRead = await contentStream.ReadAsync(buffer, ct)) > 0)
@@ -234,21 +242,27 @@ namespace ASLM.Services
                     {
                         throttle.Restart();
                         downloadProgress?.Report(new DownloadProgress(
-                            (double)downloaded / totalBytes, downloaded, totalBytes));
+                            (double)downloaded / totalBytes,
+                            downloaded,
+                            totalBytes));
                     }
                 }
 
-                downloadProgress?.Report(new DownloadProgress(1.0, downloaded, totalBytes > 0 ? totalBytes : downloaded));
-                log.Report("  ✓ Download complete.");
+                downloadProgress?.Report(new DownloadProgress(
+                    1.0,
+                    downloaded,
+                    totalBytes > 0 ? totalBytes : downloaded));
+                log.Report("  Download complete.");
             }
             catch (Exception ex)
             {
-                log.Report($"  ✗ Download failed: {ex.Message}");
+                log.Report($"  Download failed: {ex.Message}");
                 throw;
             }
         }
 
-        // --- Helpers ---------------------------------------------------------
+
+        // Persistence helpers
 
         /// <summary>
         /// Returns the application root directory.
@@ -259,11 +273,18 @@ namespace ASLM.Services
             return Directory.GetParent(appDir)?.FullName ?? appDir;
         }
 
-        /// Saves the configuration asynchronously.
+        // Config save
+
+        /// <summary>
+        /// Saves one model manifest back to disk.
         /// </summary>
         private async Task SaveConfigAsync(ModelConfig config)
         {
-            if (string.IsNullOrEmpty(config.SourcePath)) return;
+            if (string.IsNullOrEmpty(config.SourcePath))
+            {
+                return;
+            }
+
             var json = JsonSerializer.Serialize(config, _jsonOptions);
             await File.WriteAllTextAsync(config.SourcePath, json);
         }

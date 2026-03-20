@@ -1,3 +1,5 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
@@ -5,10 +7,10 @@ using Microsoft.Win32.SafeHandles;
 
 namespace ASLM.Services
 {
+    // Process tracker
+
     /// <summary>
-    /// Manages a Win32 Job Object that groups the current ASLM process with all
-    /// its child processes (modules). This keeps module processes grouped under ASLM
-    /// in Task Manager and ensures they are terminated when ASLM exits or crashes.
+    /// Groups ASLM and its child processes into one Windows Job Object.
     /// </summary>
     public sealed class ProcessTracker : IDisposable
     {
@@ -16,10 +18,10 @@ namespace ASLM.Services
         private readonly ILogger<ProcessTracker> _logger;
         private bool _disposed;
 
+        // Initialization
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="ProcessTracker"/> class.
-        /// Creates a Job Object, configures KILL_ON_JOB_CLOSE, and assigns the
-        /// current process to it so that child processes inherit the same group.
+        /// Creates the Windows Job Object and assigns the current process to it.
         /// </summary>
         public ProcessTracker(ILogger<ProcessTracker> logger)
         {
@@ -38,7 +40,7 @@ namespace ASLM.Services
                 return;
             }
 
-            // Configure: kill all processes in the job when the handle is closed
+            // Configure the job so all attached processes die when ASLM closes.
             var info = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION
             {
                 BasicLimitInformation = new JOBOBJECT_BASIC_LIMIT_INFORMATION
@@ -47,8 +49,9 @@ namespace ASLM.Services
                 }
             };
 
-            int length = Marshal.SizeOf(typeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
-            IntPtr infoPtr = Marshal.AllocHGlobal(length);
+            var length = Marshal.SizeOf(typeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
+            var infoPtr = Marshal.AllocHGlobal(length);
+
             try
             {
                 Marshal.StructureToPtr(info, infoPtr, false);
@@ -63,10 +66,7 @@ namespace ASLM.Services
                 Marshal.FreeHGlobal(infoPtr);
             }
 
-            // Assign the CURRENT process (ASLM) to the Job Object.
-            // This is essential: when child processes are also assigned to this job,
-            // Task Manager groups them all under the ASLM entry because they share
-            // the same Job Object as the main application process.
+            // Attach the main ASLM process so child processes can stay grouped under it.
             if (!AssignProcessToJobObject(_jobHandle, Process.GetCurrentProcess().Handle))
             {
                 _logger.LogWarning("Failed to assign current process to Job Object. Error: {Error}", Marshal.GetLastWin32Error());
@@ -77,25 +77,30 @@ namespace ASLM.Services
             }
         }
 
+
+        // Process assignment
+
         /// <summary>
-        /// Assigns a child process to the Job Object so it appears as a subprocess
-        /// of ASLM in Task Manager and is killed when ASLM exits.
+        /// Adds one child process to the shared Job Object.
         /// </summary>
-        /// <param name="process">The child process to track.</param>
-        /// <returns>True if the process was successfully assigned.</returns>
         public bool AddProcess(Process process)
         {
             if (_disposed || _jobHandle == null || _jobHandle.IsInvalid)
+            {
                 return false;
+            }
 
             try
             {
-                bool result = AssignProcessToJobObject(_jobHandle, process.Handle);
+                var result = AssignProcessToJobObject(_jobHandle, process.Handle);
                 if (!result)
                 {
-                    _logger.LogWarning("Failed to assign process {PID} to Job Object. Error: {Error}",
-                        process.Id, Marshal.GetLastWin32Error());
+                    _logger.LogWarning(
+                        "Failed to assign process {PID} to Job Object. Error: {Error}",
+                        process.Id,
+                        Marshal.GetLastWin32Error());
                 }
+
                 return result;
             }
             catch (Exception ex)
@@ -105,36 +110,53 @@ namespace ASLM.Services
             }
         }
 
+
+        // Disposal
+
         /// <inheritdoc />
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
             _disposed = true;
             _jobHandle?.Dispose();
         }
 
-        // --- Win32 P/Invoke -------------------------------------------------
+
+        // Win32 interop
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern SafeFileHandle CreateJobObject(IntPtr lpJobAttributes, string lpName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool SetInformationJobObject(SafeFileHandle hJob, JobObjectInfoType infoType,
-            IntPtr lpJobObjectInfo, uint cbJobObjectInfoLength);
+        private static extern bool SetInformationJobObject(
+            SafeFileHandle hJob,
+            JobObjectInfoType infoType,
+            IntPtr lpJobObjectInfo,
+            uint cbJobObjectInfoLength);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool AssignProcessToJobObject(SafeFileHandle hJob, IntPtr hProcess);
+
+        // Job info types
 
         private enum JobObjectInfoType
         {
             ExtendedLimitInformation = 9
         }
 
+        // Job limits
+
         [Flags]
         private enum JOBOBJECTLIMIT : uint
         {
             JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000
         }
+
+        // Basic limit info
 
         [StructLayout(LayoutKind.Sequential)]
         private struct JOBOBJECT_BASIC_LIMIT_INFORMATION
@@ -150,6 +172,8 @@ namespace ASLM.Services
             public uint SchedulingClass;
         }
 
+        // I/O counters
+
         [StructLayout(LayoutKind.Sequential)]
         private struct IO_COUNTERS
         {
@@ -160,6 +184,8 @@ namespace ASLM.Services
             public ulong WriteTransferCount;
             public ulong OtherTransferCount;
         }
+
+        // Extended limit info
 
         [StructLayout(LayoutKind.Sequential)]
         private struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION

@@ -1,3 +1,5 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
@@ -6,10 +8,10 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
+    // Module runner
+
     /// <summary>
-    /// Handles execution of module commands for setup, runtime, and settings synchronization.
-    /// Resolves engine paths via EngineInstaller and manages process execution.
-    /// Tracks running processes and supports stopping/killing them.
+    /// Executes module setup, runtime, and settings commands and tracks their processes.
     /// </summary>
     public class ModuleRunner : IDisposable
     {
@@ -19,18 +21,21 @@ namespace ASLM.Services
         private readonly ILogger<ModuleRunner> _logger;
         private bool _disposed;
 
+        // Running processes
+
         /// <summary>
-        /// Tracks all running processes per module.
-        /// Key = module SourcePath (unique per instance), Value = list of running processes.
+        /// Tracks running processes by module source path.
         /// </summary>
         private readonly ConcurrentDictionary<string, List<Process>> _runningProcesses = new();
         private readonly object _processLock = new();
 
+        // Initialization
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="ModuleRunner"/> class.
+        /// Creates the module runner.
         /// </summary>
         /// <param name="engineInstaller">Service to resolve engine paths.</param>
-        /// <param name="processTracker">Job Object tracker for child process grouping and cleanup.</param>
+        /// <param name="processTracker">Service that groups child processes under ASLM.</param>
         /// <param name="logger">Logger instance.</param>
         public ModuleRunner(EngineInstaller engineInstaller, PortManager portManager, ProcessTracker processTracker, ILogger<ModuleRunner> logger)
         {
@@ -40,10 +45,10 @@ namespace ASLM.Services
             _logger = logger;
         }
 
+        // Setup execution
+
         /// <summary>
-        /// Executes all 'FirstRun' commands for a module.
-        /// First installs required engine libraries, then runs firstRun commands.
-        /// Updates the module's status upon success.
+        /// Executes first-run setup for a module.
         /// </summary>
         /// <param name="module">The module configuration.</param>
         /// <param name="log">Progress reporter for logging output.</param>
@@ -83,9 +88,10 @@ namespace ASLM.Services
             return true;
         }
 
+        // Run execution
+
         /// <summary>
-        /// Executes all 'Run' commands for a module (e.g. start a server).
-        /// These are typically long-running processes that are tracked for lifecycle management.
+        /// Executes the long-running run commands for a module.
         /// </summary>
         /// <param name="module">The module configuration.</param>
         /// <param name="log">Progress reporter for logging output.</param>
@@ -99,7 +105,7 @@ namespace ASLM.Services
                 return true;
             }
 
-            // --- Enforce Setting Synchronization ---
+            // Synchronize settings
             if (module.Settings != null && module.Settings.Count > 0)
             {
                 log.Report("Synchronizing module settings...");
@@ -144,10 +150,10 @@ namespace ASLM.Services
             return true;
         }
 
+        // Module stop
+
         /// <summary>
-        /// Stops all running processes for a given module.
-        /// Uses SourcePath as the unique identifier to avoid collisions
-        /// when multiple module instances share the same Id.
+        /// Stops all tracked processes for one module.
         /// </summary>
         /// <param name="moduleSourcePath">The module's SourcePath (unique per instance).</param>
         public async Task StopModuleAsync(string moduleSourcePath)
@@ -167,8 +173,10 @@ namespace ASLM.Services
             }
         }
 
+        // Global stop
+
         /// <summary>
-        /// Stops all running module processes. Called on application shutdown.
+        /// Stops every tracked module process.
         /// </summary>
         public async Task StopAllModulesAsync()
         {
@@ -194,10 +202,10 @@ namespace ASLM.Services
             _logger.LogInformation("All module processes stopped.");
         }
 
-        // --- Settings Propagation --------------------------------------------
+        // Settings propagation
 
         /// <summary>
-        /// Injects the resolved settings into the given ProcessStartInfo environment.
+        /// Injects resolved module settings into the process environment.
         /// </summary>
         private void InjectSettingsIntoEnvironment(ModuleConfig module, ProcessStartInfo psi)
         {
@@ -210,13 +218,13 @@ namespace ASLM.Services
                 psi.Environment[envKey] = resolved;
             }
 
-            // Also inject some useful module context
+            // Also expose some useful module context values to child processes.
             psi.Environment["ASLM_MODULE_ID"] = module.Id;
             psi.Environment["ASLM_MODULE_DIR"] = Path.GetDirectoryName(module.SourcePath) ?? "";
         }
 
         /// <summary>
-        /// Resolves the effective string value for a single setting.
+        /// Resolves the effective string value for one module setting.
         /// </summary>
         private string ResolveSettingValue(ModuleConfig module, ModuleSetting setting)
         {
@@ -268,11 +276,10 @@ namespace ASLM.Services
             }
         }
 
-        // --- Dependencies Install --------------------------------------------
+        // Dependency install
 
         /// <summary>
-        /// Installs required libraries for each engine dependency using the
-        /// engine's <see cref="EnginePackageManager"/> configuration.
+        /// Installs engine-specific libraries required by a module.
         /// </summary>
         /// <param name="module">The module configuration.</param>
         /// <param name="log">Progress reporter.</param>
@@ -355,8 +362,10 @@ namespace ASLM.Services
             return true;
         }
 
+        // Command execution
+
         /// <summary>
-        /// Executes a single module command.
+        /// Executes one module command.
         /// </summary>
         /// <param name="module">The module configuration.</param>
         /// <param name="cmd">The command to execute.</param>
@@ -503,8 +512,10 @@ namespace ASLM.Services
             }
         }
 
+        // Setting commands
+
         /// <summary>
-        /// Executes a setting command (getExec or setExec) from the module's configuration.
+        /// Executes a get or set command declared by one module setting.
         /// </summary>
         /// <returns>The standard output of the command if successful, otherwise null.</returns>
         public async Task<string?> ExecuteSettingCommandAsync(ModuleConfig module, ModuleSetting setting, bool isSet, string? newValue, CancellationToken ct)
@@ -555,8 +566,10 @@ namespace ASLM.Services
             return lines.Count > 0 ? lines[^1] : null;
         }
 
+        // Process shutdown
+
         /// <summary>
-        /// Safely kills a process and its children.
+        /// Safely kills a process and its child tree.
         /// </summary>
         private async Task KillProcessSafeAsync(Process process)
         {
@@ -596,8 +609,10 @@ namespace ASLM.Services
             }
         }
 
+        // Tracking cleanup
+
         /// <summary>
-        /// Removes a specific process from the tracking dictionary.
+        /// Removes one process from the tracking dictionary.
         /// </summary>
         private void RemoveProcess(string moduleSourcePath, Process process)
         {
@@ -614,13 +629,15 @@ namespace ASLM.Services
             }
         }
 
+        // Disposal
+
         /// <inheritdoc />
         public void Dispose()
         {
             if (_disposed) return;
             _disposed = true;
 
-            // Kill all tracked processes
+            // Kill all tracked processes before the runner is disposed.
             lock (_processLock)
             {
                 foreach (var (_, processes) in _runningProcesses)
@@ -643,9 +660,10 @@ namespace ASLM.Services
             }
         }
 
+        // Command parsing
+
         /// <summary>
-        /// Splits a command string into arguments, respecting quoted strings.
-        /// Supports single (') and double (") quotes.
+        /// Splits a command string into arguments while respecting quotes.
         /// </summary>
         /// <param name="command">The command string to split.</param>
         /// <returns>A list of argument strings.</returns>
@@ -700,8 +718,10 @@ namespace ASLM.Services
             return args;
         }
 
+        // Argument join
+
         /// <summary>
-        /// Reconstructs an argument string from a list of arguments, quoting if necessary.
+        /// Rebuilds an argument string from parsed arguments.
         /// </summary>
         /// <param name="args">The list of arguments.</param>
         /// <returns>A single command-line argument string.</returns>
@@ -710,6 +730,11 @@ namespace ASLM.Services
             return string.Join(" ", args.Select(a => a.Contains(' ') ? $"\"{a}\"" : a));
         }
 
+        // Engine key parsing
+
+        /// <summary>
+        /// Removes known engine setting suffixes from a setting key.
+        /// </summary>
         private static string TrimEngineSettingSuffix(string settingKey)
         {
             if (settingKey.EndsWith("_path", StringComparison.OrdinalIgnoreCase) ||
@@ -726,6 +751,11 @@ namespace ASLM.Services
             return settingKey;
         }
 
+        // Root path
+
+        /// <summary>
+        /// Returns the application root directory.
+        /// </summary>
         private static string GetRootDirectory()
         {
             var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
