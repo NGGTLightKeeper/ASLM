@@ -1,3 +1,5 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using ASLM.Models;
@@ -5,11 +7,35 @@ using ASLM.Services;
 
 namespace ASLM.Pages
 {
+    // Application shell
+
     /// <summary>
-    /// Main application shell. Contains the shared sidebar and hosts content views.
+    /// Hosts the shared sidebar, system views, and module pages.
     /// </summary>
     public partial class AppShellPage : ContentPage, INotifyPropertyChanged
     {
+        private const double PanelExpandedWidth = 240;
+        private const double PanelCollapsedWidth = 48;
+
+        private const string IconMenu = "icon_menu.png";
+        private const string IconHome = "icon_home.png";
+        private const string IconConsole = "icon_console.png";
+        private const string IconModules = "icon_modules.png";
+        private const string IconDownload = "icon_download.png";
+        private const string IconSettings = "icon_settings.png";
+        private const string IconPage = "icon_page.png";
+
+        private const string LabelHome = "Home";
+        private const string LabelConsoles = "Consoles";
+        private const string LabelModules = "Modules";
+        private const string LabelDownload = "Download";
+        private const string LabelSettings = "Settings";
+
+        private static readonly Color ActiveTextColor = Colors.White;
+        private static readonly Color InactiveTextColor = Color.FromArgb("#8E8E93");
+        private static readonly Color ActiveBackground = Color.FromArgb("#2C2C2E");
+        private static readonly Color TransparentBackground = Colors.Transparent;
+
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly PortManager _portManager;
@@ -20,46 +46,19 @@ namespace ASLM.Pages
         private bool _panelExpanded;
         private bool _hasLoaded;
 
-        private const double PanelExpandedWidth = 240;
-        private const double PanelCollapsedWidth = 48;
-
-        // Sidebar SVG icon file names (SVGs in Resources/Images/)
-        private const string IconMenu = "icon_menu.png";
-        private const string IconHome = "icon_home.png";
-        private const string IconConsole = "icon_console.png";
-        private const string IconModules = "icon_modules.png";
-        private const string IconDownload = "icon_download.png";
-        private const string IconSettings = "icon_settings.png";
-        private const string IconPage = "icon_page.png";
-
-        // Colors
-        private static readonly Color ActiveTextColor = Colors.White;
-        private static readonly Color InactiveTextColor = Color.FromArgb("#8E8E93");
-        private static readonly Color ActiveBg = Color.FromArgb("#2C2C2E");
-        private static readonly Color TransparentBg = Colors.Transparent;
-
-        // Named labels for buttons (used when sidebar is expanded)
-        private const string LabelHome = "Home";
-        private const string LabelConsoles = "Consoles";
-        private const string LabelModules = "Modules";
-        private const string LabelDownload = "Download";
-        private const string LabelSettings = "Settings";
-
-        // Cached content views
         private View? _homeView;
         private View? _consolesView;
         private View? _moduleManagementView;
         private View? _downloadModulesView;
         private View? _settingsView;
 
-        // Currently active nav button
         private Button? _activeNavButton;
-
-        // All bottom nav buttons for easy iteration
         private Button[] _navButtons = [];
 
+        // Initialization
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="AppShellPage"/> class.
+        /// Creates the application shell and restores the saved sidebar state.
         /// </summary>
         public AppShellPage(
             ModuleInstaller moduleInstaller,
@@ -71,25 +70,25 @@ namespace ASLM.Pages
             _moduleRunner = moduleRunner;
             _portManager = portManager;
             _services = services;
+
             InitializeComponent();
             BindingContext = this;
             Loaded += OnPageLoaded;
 
-            // Load saved sidebar state, default to collapsed
+            // Restore the sidebar width before the first render so the shell opens in the saved state.
             _panelExpanded = Preferences.Default.Get("SidebarExpanded", false);
             SidePanel.WidthRequest = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
 
-            // Collect all nav buttons for easy iteration
             _navButtons = [HomeButton, ConsolesButton, ModuleManagementButton, UploadModulesButton, SettingsButton];
 
-            // Set static sidebar buttons native alignment handler
-            CollapseButton.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
-            foreach (var btn in _navButtons)
+            // Hook alignment updates once so WinUI buttons keep the same content layout.
+            CollapseButton.HandlerChanged += (sender, _) => UpdateButtonAlignment((Button)sender!);
+            foreach (var button in _navButtons)
             {
-                btn.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
+                button.HandlerChanged += (sender, _) => UpdateButtonAlignment((Button)sender!);
             }
 
-            // Set SVG icons for all buttons
+            // Assign all static sidebar icons up front.
             CollapseButton.ImageSource = IconMenu;
             HomeButton.ImageSource = IconHome;
             ConsolesButton.ImageSource = IconConsole;
@@ -97,202 +96,267 @@ namespace ASLM.Pages
             UploadModulesButton.ImageSource = IconDownload;
             SettingsButton.ImageSource = IconSettings;
 
-            // Set content layout for all nav buttons
-            foreach (var btn in _navButtons)
+            // Initialize button labels and image layout based on the current sidebar width.
+            foreach (var button in _navButtons)
             {
-                btn.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
-                btn.Text = _panelExpanded ? GetButtonLabel(btn) : "";
+                button.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
+                button.Text = _panelExpanded ? GetButtonLabel(button) : string.Empty;
             }
         }
+
+
+        // Notifications
 
         /// <inheritdoc />
         public new event PropertyChangedEventHandler? PropertyChanged;
 
+        // Property change
+
         /// <summary>
-        /// Invokes the PropertyChanged event.
+        /// Raises the shell-level property changed event.
         /// </summary>
         protected new void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        // --- Page Loaded ---
 
+        // Startup
+
+        /// <summary>
+        /// Loads module state once and opens the default shell view.
+        /// </summary>
         private async void OnPageLoaded(object? sender, EventArgs e)
         {
             if (_hasLoaded)
+            {
                 return;
+            }
 
             _hasLoaded = true;
             await RefreshModulesAsync();
-            NavigateTo(ModuleManagementButton); // Default to module management
+            NavigateTo(ModuleManagementButton);
             _ = StartEnabledModulesAsync();
         }
 
+        // Module refresh
+
+        /// <summary>
+        /// Reloads modules, rebuilds page buttons, and refreshes the dashboard if needed.
+        /// </summary>
         private async Task RefreshModulesAsync()
         {
             _allModules = await _moduleInstaller.DiscoverModulesAsync();
             BuildPageButtons();
 
-            // If module management view is active, refresh it
-            if (_moduleManagementView is ModuleManagementView mmv)
+            if (_moduleManagementView is ModuleManagementView moduleManagementView)
             {
-                mmv.RefreshModules(_allModules, _moduleInstaller, _moduleRunner);
+                moduleManagementView.RefreshModules(_allModules, _moduleInstaller, _moduleRunner);
             }
         }
 
+        // Module state callback
+
         /// <summary>
-        /// Called by ModuleManagementView when module state changes (enable/disable).
+        /// Refreshes module page buttons after a module changes state.
         /// </summary>
         internal void OnModuleStateChanged()
         {
             BuildPageButtons();
         }
 
-        // --- Panel Collapse/Expand ---
 
+        // Sidebar
+
+        /// <summary>
+        /// Expands or collapses the sidebar and updates every visible button.
+        /// </summary>
         private void OnCollapseClicked(object? sender, EventArgs e)
         {
             _panelExpanded = !_panelExpanded;
             Preferences.Default.Set("SidebarExpanded", _panelExpanded);
 
-            double targetWidth = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
-
-            var animation = new Animation(v =>
-            {
-                SidePanel.WidthRequest = v;
-            }, SidePanel.WidthRequest, targetWidth);
+            var targetWidth = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
+            var animation = new Animation(
+                value => SidePanel.WidthRequest = value,
+                SidePanel.WidthRequest,
+                targetWidth);
 
             animation.Commit(this, "SidebarAnimation", 16, 150, Easing.CubicOut);
-
             UpdateButtonAlignment(CollapseButton);
 
-            // Update all nav buttons
-            foreach (var btn in _navButtons)
+            // Update the fixed shell navigation buttons first.
+            foreach (var button in _navButtons)
             {
-                btn.Text = _panelExpanded ? GetButtonLabel(btn) : "";
-                btn.ContentLayout = new Button.ButtonContentLayout(
-                    Button.ButtonContentLayout.ImagePosition.Left, 14);
-                btn.HorizontalOptions = LayoutOptions.Fill;
-                UpdateButtonAlignment(btn);
+                button.Text = _panelExpanded ? GetButtonLabel(button) : string.Empty;
+                button.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
+                button.HorizontalOptions = LayoutOptions.Fill;
+                UpdateButtonAlignment(button);
             }
 
-            // Update module page buttons in scroll area
+            // Apply the same visual rules to dynamically created module page buttons.
             foreach (var child in ModulePagePanel.Children)
             {
-                if (child is Button btn)
+                if (child is not Button button)
                 {
-                    btn.Text = _panelExpanded && btn.BindingContext is ModuleConfig module
-                        ? module.Name
-                        : "";
-                    btn.ContentLayout = new Button.ButtonContentLayout(
-                        Button.ButtonContentLayout.ImagePosition.Left, 14);
-                    btn.HorizontalOptions = LayoutOptions.Fill;
-                    UpdateButtonAlignment(btn);
+                    continue;
                 }
+
+                button.Text = _panelExpanded && button.BindingContext is ModuleConfig module
+                    ? module.Name
+                    : string.Empty;
+                button.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
+                button.HorizontalOptions = LayoutOptions.Fill;
+                UpdateButtonAlignment(button);
             }
         }
 
-        // --- Navigation ---
 
+        // Shell navigation
+
+        /// <summary>
+        /// Routes button clicks to the shared navigation handler.
+        /// </summary>
         private void OnNavClicked(object? sender, EventArgs e)
         {
-            if (sender is Button btn)
+            if (sender is Button button)
             {
-                NavigateTo(btn);
+                NavigateTo(button);
             }
         }
 
+        // View activation
+
+        /// <summary>
+        /// Activates one shell view and updates button highlighting.
+        /// </summary>
         private void NavigateTo(Button navButton)
         {
             _activeModule = null;
             Browser.IsVisible = false;
 
-            // Dim all nav buttons
-            foreach (var btn in _navButtons)
+            // Clear active styling from both fixed shell buttons and dynamic module buttons.
+            foreach (var button in _navButtons)
             {
-                btn.TextColor = InactiveTextColor;
-                btn.BackgroundColor = TransparentBg;
+                button.TextColor = InactiveTextColor;
+                button.BackgroundColor = TransparentBackground;
             }
-            // Dim all module page buttons
+
             foreach (var child in ModulePagePanel.Children)
             {
-                if (child is Button btn)
+                if (child is Button button)
                 {
-                    btn.TextColor = InactiveTextColor;
-                    btn.BackgroundColor = TransparentBg;
+                    button.TextColor = InactiveTextColor;
+                    button.BackgroundColor = TransparentBackground;
                 }
             }
 
-            // Highlight active
             navButton.TextColor = ActiveTextColor;
-            navButton.BackgroundColor = ActiveBg;
+            navButton.BackgroundColor = ActiveBackground;
             _activeNavButton = navButton;
 
-            // Set content
             ContentArea.Content = GetViewForButton(navButton);
         }
 
-        private View GetViewForButton(Button btn)
+        // View resolution
+
+        /// <summary>
+        /// Returns the cached shell view for the selected navigation button.
+        /// </summary>
+        private View GetViewForButton(Button button)
         {
-            if (btn == HomeButton)
+            if (button == HomeButton)
             {
                 _homeView ??= _services.GetRequiredService<HomeView>();
                 return _homeView;
             }
-            if (btn == ConsolesButton)
+
+            if (button == ConsolesButton)
             {
                 _consolesView ??= _services.GetRequiredService<ConsolesView>();
                 return _consolesView;
             }
-            if (btn == ModuleManagementButton)
+
+            if (button == ModuleManagementButton)
             {
                 if (_moduleManagementView == null)
                 {
-                    var mmv = _services.GetRequiredService<ModuleManagementView>();
-                    mmv.Initialize(this, _allModules, _moduleInstaller, _moduleRunner);
-                    _moduleManagementView = mmv;
+                    var moduleManagementView = _services.GetRequiredService<ModuleManagementView>();
+                    moduleManagementView.Initialize(this, _allModules, _moduleInstaller, _moduleRunner);
+                    _moduleManagementView = moduleManagementView;
                 }
+
                 return _moduleManagementView;
             }
-            if (btn == UploadModulesButton)
+
+            if (button == UploadModulesButton)
             {
                 _downloadModulesView ??= _services.GetRequiredService<DownloadModulesView>();
                 return _downloadModulesView;
             }
-            if (btn == SettingsButton)
+
+            if (button == SettingsButton)
             {
                 _settingsView ??= _services.GetRequiredService<SettingsView>();
                 return _settingsView;
             }
+
             return new Label { Text = "Unknown page", TextColor = Colors.White };
         }
 
-        private string GetButtonLabel(Button btn)
+        // Button labels
+
+        /// <summary>
+        /// Returns the display label for one static shell button.
+        /// </summary>
+        private string GetButtonLabel(Button button)
         {
-            if (btn == HomeButton) return LabelHome;
-            if (btn == ConsolesButton) return LabelConsoles;
-            if (btn == ModuleManagementButton) return LabelModules;
-            if (btn == UploadModulesButton) return LabelDownload;
-            if (btn == SettingsButton) return LabelSettings;
-            return "";
+            if (button == HomeButton)
+            {
+                return LabelHome;
+            }
+
+            if (button == ConsolesButton)
+            {
+                return LabelConsoles;
+            }
+
+            if (button == ModuleManagementButton)
+            {
+                return LabelModules;
+            }
+
+            if (button == UploadModulesButton)
+            {
+                return LabelDownload;
+            }
+
+            if (button == SettingsButton)
+            {
+                return LabelSettings;
+            }
+
+            return string.Empty;
         }
 
-        // --- Module Page Buttons (Sidebar top section) ---
 
+        // Module page buttons
+
+        /// <summary>
+        /// Rebuilds sidebar buttons for enabled modules that expose a page.
+        /// </summary>
         private void BuildPageButtons()
         {
             ModulePagePanel.Children.Clear();
 
             var pageModules = _allModules
-                .Where(m => m.HasPage && m.Status.Enabled)
+                .Where(module => module.HasPage && module.Status.Enabled)
                 .ToList();
 
             foreach (var module in pageModules)
             {
                 ImageSource sidebarIcon;
-                if (!string.IsNullOrEmpty(module.SidebarIconFullPath)
-                    && File.Exists(module.SidebarIconFullPath))
+                if (!string.IsNullOrEmpty(module.SidebarIconFullPath) && File.Exists(module.SidebarIconFullPath))
                 {
                     var capturedPath = module.SidebarIconFullPath;
                     sidebarIcon = ImageSource.FromStream(() => File.OpenRead(capturedPath));
@@ -302,31 +366,33 @@ namespace ASLM.Pages
                     sidebarIcon = IconPage;
                 }
 
-                var btn = new Button
+                var button = new Button
                 {
-                    Text = _panelExpanded ? module.Name : "",
+                    Text = _panelExpanded ? module.Name : string.Empty,
                     AutomationId = module.Id,
                     BindingContext = module,
                     ClassId = "PAGE",
                     ImageSource = sidebarIcon,
-                    ContentLayout = new Button.ButtonContentLayout(
-                        Button.ButtonContentLayout.ImagePosition.Left, 14),
+                    ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14),
                     Style = (Style)Application.Current!.Resources["SidebarButton"],
-                    BackgroundColor = TransparentBg,
+                    BackgroundColor = TransparentBackground,
                     TextColor = InactiveTextColor,
                     HeightRequest = 36,
                     HorizontalOptions = LayoutOptions.Fill
                 };
 
-                var captured = module;
-                btn.Clicked += (s, e) => ActivateModulePage(captured);
-                btn.HandlerChanged += (s, e) => UpdateButtonAlignment((Button)s!);
-                ModulePagePanel.Children.Add(btn);
+                var capturedModule = module;
+                button.Clicked += (_, _) => ActivateModulePage(capturedModule);
+                button.HandlerChanged += (sender, _) => UpdateButtonAlignment((Button)sender!);
+                ModulePagePanel.Children.Add(button);
             }
         }
 
-        // --- Module Page Activation ---
+        // Module page activation
 
+        /// <summary>
+        /// Opens one module page inside the embedded browser and updates highlighting.
+        /// </summary>
         private void ActivateModulePage(ModuleConfig module)
         {
             _activeModule = module;
@@ -336,64 +402,87 @@ namespace ASLM.Pages
             Browser.Source = url;
             Browser.IsVisible = true;
 
-            // Dim all nav buttons
-            foreach (var btn in _navButtons)
+            // Clear active styling from shell buttons before highlighting the module page button.
+            foreach (var button in _navButtons)
             {
-                btn.TextColor = InactiveTextColor;
-                btn.BackgroundColor = TransparentBg;
+                button.TextColor = InactiveTextColor;
+                button.BackgroundColor = TransparentBackground;
             }
+
             _activeNavButton = null;
 
-            // Highlight active module page button
             foreach (var child in ModulePagePanel.Children)
             {
-                if (child is Button btn)
+                if (child is not Button button)
                 {
-                    if (btn.ClassId == "PAGE" && btn.AutomationId == module.Id)
-                    {
-                        btn.TextColor = ActiveTextColor;
-                        btn.BackgroundColor = ActiveBg;
-                        continue;
-                    }
-                    btn.TextColor = InactiveTextColor;
-                    btn.BackgroundColor = TransparentBg;
+                    continue;
                 }
+
+                if (button.ClassId == "PAGE" && button.AutomationId == module.Id)
+                {
+                    button.TextColor = ActiveTextColor;
+                    button.BackgroundColor = ActiveBackground;
+                    continue;
+                }
+
+                button.TextColor = InactiveTextColor;
+                button.BackgroundColor = TransparentBackground;
             }
         }
 
-        // --- Module Startup ---
 
+        // Module startup
+
+        /// <summary>
+        /// Starts enabled modules that expose run commands when the shell opens.
+        /// </summary>
         private async Task StartEnabledModulesAsync()
         {
             var enabledModules = _allModules
-                .Where(m => m.Status.Enabled && m.Commands.Run.Count > 0)
+                .Where(module => module.Status.Enabled && module.Commands.Run.Count > 0)
                 .ToList();
 
-            if (enabledModules.Count == 0) return;
+            if (enabledModules.Count == 0)
+            {
+                return;
+            }
 
-            var logProgress = new Progress<string>(msg =>
-                System.Diagnostics.Debug.WriteLine($"[ModuleStart] {msg}"));
+            var logProgress = new Progress<string>(message =>
+                System.Diagnostics.Debug.WriteLine($"[ModuleStart] {message}"));
 
             foreach (var module in enabledModules)
             {
-                _ = Task.Run(() =>
-                    _moduleRunner.ExecuteRunAsync(module, logProgress, CancellationToken.None));
+                _ = Task.Run(() => _moduleRunner.ExecuteRunAsync(module, logProgress, CancellationToken.None));
                 await Task.Delay(500);
             }
         }
 
-        // --- Browser Navigation ---
 
+        // Browser safety
+
+        /// <summary>
+        /// Keeps the embedded browser on local module pages and opens external links outside the app.
+        /// </summary>
         private void Browser_Navigating(object? sender, WebNavigatingEventArgs e)
         {
-            if (string.IsNullOrEmpty(e.Url)) return;
+            if (string.IsNullOrEmpty(e.Url))
+            {
+                return;
+            }
 
             Uri uri;
-            try { uri = new Uri(e.Url); }
-            catch { return; }
+            try
+            {
+                uri = new Uri(e.Url);
+            }
+            catch
+            {
+                return;
+            }
 
-            bool isInternal = (uri.Scheme == "http" || uri.Scheme == "https") &&
-                              (uri.Host == "127.0.0.1" || uri.Host == "localhost");
+            var isInternal =
+                (uri.Scheme == "http" || uri.Scheme == "https") &&
+                (uri.Host == "127.0.0.1" || uri.Host == "localhost");
 
             if (!isInternal)
             {
@@ -402,13 +491,18 @@ namespace ASLM.Pages
             }
         }
 
-        /// <summary>Sets native WinUI button content alignment.</summary>
-        private void UpdateButtonAlignment(Button btn)
+
+        // Native alignment
+
+        /// <summary>
+        /// Aligns WinUI button content to the left to match the sidebar layout.
+        /// </summary>
+        private void UpdateButtonAlignment(Button button)
         {
 #if WINDOWS
-            if (btn.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Button native)
+            if (button.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Button nativeButton)
             {
-                native.HorizontalContentAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Left;
+                nativeButton.HorizontalContentAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Left;
             }
 #endif
         }

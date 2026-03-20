@@ -1,10 +1,19 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 namespace ASLM.Pages
 {
+    // Home view
+
     /// <summary>
-    /// Placeholder view for the future application dashboard.
+    /// Displays the placeholder view for the future dashboard.
     /// </summary>
     public partial class HomeView : ContentView
     {
+        // Initialization
+
+        /// <summary>
+        /// Creates the home placeholder view.
+        /// </summary>
         public HomeView()
         {
             InitializeComponent();
