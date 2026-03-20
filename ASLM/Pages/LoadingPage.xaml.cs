@@ -1,13 +1,26 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using ASLM.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ASLM.Pages
 {
+    // Loading page
+
+    /// <summary>
+    /// Initializes persisted app data and routes startup to the next page.
+    /// </summary>
     public partial class LoadingPage : ContentPage
     {
         private readonly AppDataService _appData;
         private readonly IServiceProvider _services;
+        private bool _initialized;
 
+        // Initialization
+
+        /// <summary>
+        /// Creates the startup loading page.
+        /// </summary>
         public LoadingPage(AppDataService appData, IServiceProvider services)
         {
             InitializeComponent();
@@ -15,22 +28,28 @@ namespace ASLM.Pages
             _services = services;
         }
 
+
+        // Lifecycle
+
+        /// <summary>
+        /// Runs the startup initialization once and replaces the current page.
+        /// </summary>
         protected override async void OnAppearing()
         {
             base.OnAppearing();
+            if (_initialized)
+            {
+                return;
+            }
+
+            _initialized = true;
             await _appData.InitializeAsync();
 
-            Page nextPage;
-            if (_appData.IsFirstRun)
-            {
-                nextPage = _services.GetRequiredService<SetupWizardPage>();
-            }
-            else
-            {
-                nextPage = _services.GetRequiredService<MainPage>();
-            }
+            Page nextPage = _appData.IsFirstRun
+                ? _services.GetRequiredService<SetupWizardPage>()
+                : _services.GetRequiredService<AppShellPage>();
 
-            // Replace the current page in the window
+            // Replace the startup page only when the window is already available.
             if (Window != null)
             {
                 Window.Page = nextPage;

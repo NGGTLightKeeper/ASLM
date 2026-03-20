@@ -1,4 +1,5 @@
-using System;
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ASLM.Models;
@@ -6,9 +7,10 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
+    // Application data service
+
     /// <summary>
-    /// Manages the persistent application data stored in <c>Data/App/ASLM_Data.json</c>.
-    /// Registered as a singleton — loads once at startup, saves on demand.
+    /// Loads and saves the persisted application data stored in <c>Data/App/ASLM_Data.json</c>.
     /// </summary>
     public class AppDataService
     {
@@ -21,38 +23,48 @@ namespace ASLM.Services
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
+        // State access
+
         /// <summary>
-        /// Gets the current application data. This property is never null after construction.
+        /// Gets the current application data instance.
         /// </summary>
         public AppData Data { get; private set; } = new();
 
+        // First-run flag
+
         /// <summary>
-        /// Gets a value indicating whether the first-run wizard has been completed.
+        /// Gets whether the first-run flow still needs to run.
         /// </summary>
         public bool IsFirstRun => !Data.FirstRunCompleted;
 
+        // Initialization
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="AppDataService"/> class.
-        /// Does NOT load data automatically; call <see cref="InitializeAsync"/> before use.
+        /// Creates the application data service.
         /// </summary>
-        /// <param name="logger">The logger instance.</param>
         public AppDataService(ILogger<AppDataService> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
             var rootDir = GetRootDirectory();
             _filePath = Path.Combine(rootDir, "Data", "App", "ASLM_Data.json");
         }
 
+
+        // Loading
+
         /// <summary>
-        /// Initializes the service by loading data from disk asynchronously.
+        /// Initializes the service by loading the persisted data once.
         /// </summary>
         public async Task InitializeAsync()
         {
             await LoadAsync();
         }
 
+        // Data load
+
         /// <summary>
-        /// Loads data from disk asynchronously. Creates default data if the file is missing or empty.
+        /// Loads the persisted application data or recreates defaults when needed.
         /// </summary>
         public async Task LoadAsync()
         {
@@ -64,58 +76,69 @@ namespace ASLM.Services
                     if (!string.IsNullOrWhiteSpace(json))
                     {
                         Data = JsonSerializer.Deserialize<AppData>(json, _jsonOptions) ?? new AppData();
+                        Data.Normalize();
                         return;
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to load app data from {FilePath}. Corrupted file — falling back to defaults.", _filePath);
-                // Corrupted file — fall through to defaults.
-                // In a production app, we might want to backup the corrupted file.
+                // Fall back to defaults when the persisted file cannot be read or parsed.
+                _logger.LogError(ex, "Failed to load app data from {FilePath}. Falling back to defaults.", _filePath);
             }
 
             Data = new AppData();
+            Data.Normalize();
             await SaveAsync();
         }
 
+
+        // Saving
+
         /// <summary>
-        /// Persists the current <see cref="Data"/> to disk synchronously.
+        /// Saves the current application data synchronously.
         /// </summary>
         public void Save()
         {
             EnsureDirectoryExists();
+
             var json = JsonSerializer.Serialize(Data, _jsonOptions);
             File.WriteAllText(_filePath, json);
         }
 
+        // Async save
+
         /// <summary>
-        /// Persists the current <see cref="Data"/> to disk asynchronously.
+        /// Saves the current application data asynchronously.
         /// </summary>
-        /// <returns>A task representing the asynchronous save operation.</returns>
         public async Task SaveAsync()
         {
             EnsureDirectoryExists();
+
             var json = JsonSerializer.Serialize(Data, _jsonOptions);
             await File.WriteAllTextAsync(_filePath, json);
         }
 
+
+        // File system helpers
+
         /// <summary>
-        /// Ensures the directory for the data file exists.
+        /// Ensures the parent directory for the data file exists.
         /// </summary>
         private void EnsureDirectoryExists()
         {
-            var dir = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrEmpty(dir))
+            var directory = Path.GetDirectoryName(_filePath);
+            if (!string.IsNullOrEmpty(directory))
             {
-                Directory.CreateDirectory(dir);
+                Directory.CreateDirectory(directory);
             }
         }
 
+        // Root path
+
         /// <summary>
-        /// Returns the application root directory (one level above the App/ directory).
+        /// Returns the application root directory above the deployed app folder.
         /// </summary>
-        /// <returns>The full path to the root directory.</returns>
         private static string GetRootDirectory()
         {
             var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);

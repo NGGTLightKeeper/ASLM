@@ -1,3 +1,5 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Text.Json;
@@ -6,34 +8,38 @@ using ASLM.Models;
 
 namespace ASLM.Services
 {
+    // Module installer
+
     /// <summary>
-    /// Manages the discovery and installation of Modules from GitHub ZIP archives.
+    /// Discovers module manifests and installs or refreshes module source files.
     /// </summary>
     public class ModuleInstaller
     {
         private readonly HttpClient _httpClient = new();
         private readonly ModuleRunner _moduleRunner;
+
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
             WriteIndented = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
+        // Initialization
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="ModuleInstaller"/> class.
+        /// Creates the module installer.
         /// </summary>
-        /// <param name="moduleRunner">The module runner service used for first-run execution.</param>
         public ModuleInstaller(ModuleRunner moduleRunner)
         {
             _moduleRunner = moduleRunner;
         }
 
-        // --- Discovery -------------------------------------------------------
+
+        // Discovery
 
         /// <summary>
-        /// Scans <c>Modules/*/ASLM_Module.json</c> to find installed modules asynchronously.
+        /// Scans <c>Modules/*/ASLM_Module.json</c> files asynchronously.
         /// </summary>
-        /// <returns>A list of discovered module configurations.</returns>
         public async Task<List<ModuleConfig>> DiscoverModulesAsync()
         {
             var baseDir = GetRootDirectory();
@@ -41,68 +47,85 @@ namespace ASLM.Services
             var modules = new List<ModuleConfig>();
 
             if (!Directory.Exists(modulesRoot))
-                return modules;
-
-            // Get all JSON files first (synchronously, usually fast)
-            var jsonFiles = Directory.GetFiles(modulesRoot, "ASLM_Module.json", SearchOption.AllDirectories);
-
-            // Process files in parallel
-            var tasks = jsonFiles.Select(async jsonFile =>
             {
-                try
-                {
-                    await using var stream = File.OpenRead(jsonFile);
-                    var config = await JsonSerializer.DeserializeAsync<ModuleConfig>(stream, _jsonOptions);
-                    if (config != null)
-                    {
-                        // Backward compatibility: files without fileVersion are treated as v1
-                        if (config.FileVersion == 0)
-                            config.FileVersion = 1;
+                return modules;
+            }
 
-                        if (config.FileVersion != 1)
-                        {
-                            Debug.WriteLine($"Unsupported fileVersion {config.FileVersion} in {jsonFile}, skipping.");
-                            return null;
-                        }
+            // Materialize the manifest list once before fan-out deserialization.
+            var jsonFiles = Directory
+                .EnumerateFiles(modulesRoot, "ASLM_Module.json", SearchOption.AllDirectories)
+                .ToList();
 
-                        config.SourcePath = jsonFile;
-                        
-                        // If the JSON exists, we assume it's installed.
-                        config.Status.Installed = true;
-                        
-                        return config;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Failed to parse {jsonFile}: {ex.Message}");
-                }
-                return null;
-            });
-
+            var tasks = jsonFiles.Select(LoadModuleConfig);
             var results = await Task.WhenAll(tasks);
 
-            // Filter out failures
             foreach (var result in results)
             {
                 if (result != null)
+                {
                     modules.Add(result);
+                }
             }
 
-            return modules;
+            return modules
+                .OrderBy(module => module.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
-        // --- Source Download --------------------------------------------------
+        // Single manifest
 
         /// <summary>
-        /// Downloads module source code from <see cref="ModuleSource"/> (e.g. GitHub)
-        /// into the module's directory.
+        /// Loads one module configuration from disk.
         /// </summary>
-        /// <param name="module">The module configuration.</param>
-        /// <param name="log">Progress logger.</param>
-        /// <param name="downloadProgress">Download progress reporter.</param>
-        /// <param name="ct">Cancellation token.</param>
-        /// <returns>True if source was downloaded successfully (or skipped appropriately).</returns>
+        public async Task<ModuleConfig?> LoadModuleConfig(string jsonFile)
+        {
+            if (!File.Exists(jsonFile))
+            {
+                return null;
+            }
+
+            try
+            {
+                await using var stream = File.OpenRead(jsonFile);
+                var config = await JsonSerializer.DeserializeAsync<ModuleConfig>(stream, _jsonOptions);
+                if (config == null)
+                {
+                    return null;
+                }
+
+                config.Normalize();
+
+                // Treat manifests without an explicit version as the initial schema.
+                if (config.FileVersion == 0)
+                {
+                    config.FileVersion = 1;
+                }
+
+                if (config.FileVersion != 1)
+                {
+                    Debug.WriteLine($"Unsupported fileVersion {config.FileVersion} in {jsonFile}, skipping.");
+                    return null;
+                }
+
+                config.SourcePath = jsonFile;
+
+                // The presence of the manifest means the module is installed on disk.
+                config.Status.Installed = true;
+                return config;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to parse {jsonFile}: {ex.Message}");
+                return null;
+            }
+        }
+
+
+        // Source download
+
+        /// <summary>
+        /// Downloads the module source archive from GitHub and merges it into the module folder.
+        /// </summary>
         public async Task<bool> DownloadSourceAsync(
             ModuleConfig module,
             IProgress<string> log,
@@ -116,9 +139,12 @@ namespace ASLM.Services
             }
 
             var moduleDir = Path.GetDirectoryName(module.SourcePath);
-            if (string.IsNullOrEmpty(moduleDir)) return false;
+            if (string.IsNullOrEmpty(moduleDir))
+            {
+                return false;
+            }
 
-            // Note: This assumes the default branch is 'main'.
+            // This currently assumes the repository publishes its installable branch as main.
             var zipUrl = $"https://github.com/{module.Source.Repo}/archive/refs/heads/main.zip";
             var tempZip = Path.GetTempFileName();
             var tempExtractDir = Path.Combine(Path.GetTempPath(), "ASLM_ModuleSrc_" + Guid.NewGuid());
@@ -130,44 +156,39 @@ namespace ASLM.Services
 
                 await Task.Run(() =>
                 {
-                    // Extract to temp
+                    // Extract into a temporary folder first so the final module folder is only merged once.
                     Directory.CreateDirectory(tempExtractDir);
                     ZipFile.ExtractToDirectory(tempZip, tempExtractDir);
 
-                    // GitHub archives have a top-level folder like "RepoName-main/"
+                    // GitHub archives wrap the repository inside one top-level folder.
                     var innerDir = Directory.GetDirectories(tempExtractDir).FirstOrDefault();
                     var sourceDir = innerDir ?? tempExtractDir;
 
-                    // Copy extracted files into the module directory (merge, not replace)
+                    // Merge the extracted content into the existing module directory.
                     CopyDirectory(sourceDir, moduleDir);
                 }, ct);
 
-                log.Report("✓ Source downloaded.");
+                log.Report("Source downloaded.");
                 return true;
             }
             catch (Exception ex)
             {
-                log.Report($"✗ Source download failed: {ex.Message}");
+                log.Report($"Source download failed: {ex.Message}");
                 return false;
             }
             finally
             {
-                if (File.Exists(tempZip)) File.Delete(tempZip);
-                if (Directory.Exists(tempExtractDir)) Directory.Delete(tempExtractDir, true);
+                TryDeleteFile(tempZip);
+                TryDeleteDirectory(tempExtractDir);
             }
         }
 
-        // --- Installation ----------------------------------------------------
+
+        // Archive install
 
         /// <summary>
-        /// Downloads a ZIP from a URL (e.g. GitHub archive), extracts it to <c>Modules/{ModuleName}</c>,
-        /// and discovers the contained <c>ASLM_Module.json</c>.
+        /// Downloads a module archive, installs it into <c>Modules/{id}</c>, and runs first-run setup.
         /// </summary>
-        /// <param name="zipUrl">Direct link to a ZIP file.</param>
-        /// <param name="log">Progress logger.</param>
-        /// <param name="downloadProgress">Download progress reporter.</param>
-        /// <param name="ct">Cancellation token.</param>
-        /// <returns>The installed module configuration.</returns>
         public async Task<ModuleConfig> InstallFromUrlAsync(
             string zipUrl,
             IProgress<string> log,
@@ -178,48 +199,53 @@ namespace ASLM.Services
             var modulesRoot = Path.Combine(baseDir, "Modules");
             var tempZip = Path.GetTempFileName();
             var tempExtractDir = Path.Combine(Path.GetTempPath(), "ASLM_Module_Install_" + Guid.NewGuid());
-            
+
             try
             {
                 log.Report($"Downloading module from: {zipUrl}");
-
-                // 1. Download ZIP
                 await DownloadFileAsync(zipUrl, tempZip, log, downloadProgress, ct);
 
-                // 2. Extract to temp folder to inspect contents
                 Directory.CreateDirectory(tempExtractDir);
-                
-                try 
+
+                try
                 {
                     log.Report("Extracting archive...");
 
                     var jsonFile = await Task.Run(() =>
                     {
                         ZipFile.ExtractToDirectory(tempZip, tempExtractDir);
-                        return Directory.EnumerateFiles(tempExtractDir, "ASLM_Module.json", SearchOption.AllDirectories).FirstOrDefault();
+                        return Directory
+                            .EnumerateFiles(tempExtractDir, "ASLM_Module.json", SearchOption.AllDirectories)
+                            .FirstOrDefault();
                     }, ct);
 
-                    // 3. Find ASLM_Module.json
                     if (jsonFile == null)
                     {
                         throw new InvalidOperationException("Invalid module: ASLM_Module.json not found in archive.");
                     }
 
-                    // 4. Parse Config to get ID/Name
+                    // Load the manifest first so the final install location can be derived from the module id.
                     var json = await File.ReadAllTextAsync(jsonFile, ct);
                     var config = JsonSerializer.Deserialize<ModuleConfig>(json, _jsonOptions);
-                    
-                    if (config == null || string.IsNullOrWhiteSpace(config.Id))
-                        throw new InvalidOperationException("Invalid module: Could not parse config or ID is missing.");
 
-                    // Backward compatibility: files without fileVersion are treated as v1
+                    if (config == null || string.IsNullOrWhiteSpace(config.Id))
+                    {
+                        throw new InvalidOperationException("Invalid module: Could not parse config or ID is missing.");
+                    }
+
+                    config.Normalize();
+
                     if (config.FileVersion == 0)
+                    {
                         config.FileVersion = 1;
+                    }
 
                     if (config.FileVersion != 1)
-                        throw new InvalidOperationException($"Unsupported fileVersion {config.FileVersion}. This version of ASLM does not support this module format.");
+                    {
+                        throw new InvalidOperationException(
+                            $"Unsupported fileVersion {config.FileVersion}. This version of ASLM does not support this module format.");
+                    }
 
-                    // 5. Move to final destination: Modules/{ModuleId}
                     var moduleSourceDir = Path.GetDirectoryName(jsonFile)!;
                     var finalDir = Path.Combine(modulesRoot, config.Id);
 
@@ -232,24 +258,25 @@ namespace ASLM.Services
                             log.Report("Removing old version...");
                             Directory.Delete(finalDir, true);
                         }
+
                         Directory.CreateDirectory(finalDir);
 
-                        // Copy all files from the folder containing the JSON to the final dir
+                        // Copy the folder that owns the manifest so extra archive content stays outside the final install.
                         CopyDirectory(moduleSourceDir, finalDir);
                     }, ct);
-                    
+
                     config.SourcePath = Path.Combine(finalDir, "ASLM_Module.json");
                     config.Status.Installed = true;
                     config.Status.InstalledVersion = config.Version;
                     config.Status.LastUpdated = DateTime.UtcNow.ToString("o");
-                    
+
                     await SaveConfigAsync(config);
-                    
-                    // 6. Execute First Run logic
+
+                    // Run module first-run setup after the files are in their final location.
                     var success = await _moduleRunner.ExecuteFirstRunAsync(config, log, ct);
                     if (success)
                     {
-                        await SaveConfigAsync(config); // Save updated status
+                        await SaveConfigAsync(config);
                         log.Report($"Module '{config.Name}' installed successfully!");
                     }
                     else
@@ -261,41 +288,43 @@ namespace ASLM.Services
                 }
                 finally
                 {
-                    if (Directory.Exists(tempExtractDir))
-                        Directory.Delete(tempExtractDir, true);
+                    TryDeleteDirectory(tempExtractDir);
                 }
             }
             finally
             {
-                if (File.Exists(tempZip))
-                    File.Delete(tempZip);
+                TryDeleteFile(tempZip);
             }
         }
 
+
+        // File copy
+
         /// <summary>
-        /// Recursively copies a directory to a destination.
+        /// Recursively copies one directory into another.
         /// </summary>
-        /// <param name="sourceDir">Source directory path.</param>
-        /// <param name="destDir">Destination directory path.</param>
         private static void CopyDirectory(string sourceDir, string destDir)
         {
             Directory.CreateDirectory(destDir);
-            foreach (var file in Directory.GetFiles(sourceDir))
+
+            foreach (var file in Directory.EnumerateFiles(sourceDir))
             {
                 var destFile = Path.Combine(destDir, Path.GetFileName(file));
                 File.Copy(file, destFile, true);
             }
-            foreach (var subdir in Directory.GetDirectories(sourceDir))
+
+            foreach (var subdir in Directory.EnumerateDirectories(sourceDir))
             {
                 var destSubdir = Path.Combine(destDir, Path.GetFileName(subdir));
                 CopyDirectory(subdir, destSubdir);
             }
         }
 
-        // --- Download --------------------------------------------------------
+
+        // Download helper
 
         /// <summary>
-        /// Helper to download a file with progress tracking.
+        /// Downloads one file and reports throttled progress updates.
         /// </summary>
         private async Task DownloadFileAsync(
             string url,
@@ -331,15 +360,22 @@ namespace ASLM.Services
                 {
                     throttle.Restart();
                     downloadProgress?.Report(new DownloadProgress(
-                        (double)downloaded / totalBytes, downloaded, totalBytes));
+                        (double)downloaded / totalBytes,
+                        downloaded,
+                        totalBytes));
                 }
             }
 
             downloadProgress?.Report(new DownloadProgress(
-                1.0, downloaded, totalBytes > 0 ? totalBytes : downloaded));
+                1.0,
+                downloaded,
+                totalBytes > 0 ? totalBytes : downloaded));
 
             log.Report("  Download complete.");
         }
+
+
+        // Persistence helpers
 
         /// <summary>
         /// Returns the application root directory.
@@ -350,24 +386,76 @@ namespace ASLM.Services
             return Directory.GetParent(appDir)?.FullName ?? appDir;
         }
 
+        // Sync save
+
         /// <summary>
-        /// Saves the module configuration synchronously.
+        /// Saves a module manifest synchronously.
         /// </summary>
         public void SaveModuleConfig(ModuleConfig config)
         {
-            if (string.IsNullOrEmpty(config.SourcePath)) return;
+            if (string.IsNullOrEmpty(config.SourcePath))
+            {
+                return;
+            }
+
             var json = JsonSerializer.Serialize(config, _jsonOptions);
             File.WriteAllText(config.SourcePath, json);
         }
 
+        // Async save
+
         /// <summary>
-        /// Saves the module configuration asynchronously.
+        /// Saves a module manifest asynchronously.
         /// </summary>
         public async Task SaveConfigAsync(ModuleConfig config)
         {
-            if (string.IsNullOrEmpty(config.SourcePath)) return;
+            if (string.IsNullOrEmpty(config.SourcePath))
+            {
+                return;
+            }
+
             var json = JsonSerializer.Serialize(config, _jsonOptions);
             await File.WriteAllTextAsync(config.SourcePath, json);
+        }
+
+        // Temp file cleanup
+
+        /// <summary>
+        /// Deletes a temporary file on a best-effort basis.
+        /// </summary>
+        private static void TryDeleteFile(string filePath)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+            }
+            catch
+            {
+                // Ignore cleanup failures for temporary files.
+            }
+        }
+
+        // Temp directory cleanup
+
+        /// <summary>
+        /// Deletes a temporary directory on a best-effort basis.
+        /// </summary>
+        private static void TryDeleteDirectory(string directoryPath)
+        {
+            try
+            {
+                if (Directory.Exists(directoryPath))
+                {
+                    Directory.Delete(directoryPath, true);
+                }
+            }
+            catch
+            {
+                // Ignore cleanup failures for temporary directories.
+            }
         }
     }
 }

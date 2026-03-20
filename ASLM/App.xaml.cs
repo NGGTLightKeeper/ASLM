@@ -1,17 +1,24 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using ASLM.Pages;
 using ASLM.Services;
 
 namespace ASLM
 {
+    // Application host
+
     /// <summary>
-    /// Represents the main application entry point.
+    /// Creates the main window and coordinates application shutdown.
     /// </summary>
     public partial class App : Application
     {
         private readonly IServiceProvider _services;
+        private bool _isShuttingDown;
+
+        // Initialization
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="App"/> class.
+        /// Creates the application instance.
         /// </summary>
         public App(IServiceProvider services)
         {
@@ -19,7 +26,12 @@ namespace ASLM
             _services = services;
         }
 
-        /// <inheritdoc />
+
+        // Window creation
+
+        /// <summary>
+        /// Creates the main application window.
+        /// </summary>
         protected override Window CreateWindow(IActivationState? activationState)
         {
             var page = CreateStartupPage();
@@ -30,34 +42,51 @@ namespace ASLM
                 MinimumHeight = 540
             };
 
-            // Stop all module processes when the window is destroyed.
-            // This provides graceful shutdown; the Launcher's Job Object
-            // handles crash/forced kill scenarios.
+            // Trigger graceful shutdown cleanup when the main window is destroyed.
             window.Destroying += OnWindowDestroying;
 
             return window;
         }
 
+        // Startup page
+
         /// <summary>
-        /// Creates the initial loading page.
+        /// Creates the first page in the startup chain.
         /// </summary>
         public Page CreateStartupPage()
         {
             return _services.GetRequiredService<LoadingPage>();
         }
 
+
+        // Shutdown
+
         /// <summary>
-        /// Handles window destruction — stops all running module processes gracefully.
-        /// The Launcher's Job Object ensures cleanup even if this doesn't complete in time.
+        /// Stops tracked module processes during application shutdown.
         /// </summary>
         private void OnWindowDestroying(object? sender, EventArgs e)
         {
-            var runner = _services.GetRequiredService<ModuleRunner>();
-            runner.StopAllModulesAsync().GetAwaiter().GetResult();
-            runner.Dispose();
+            if (_isShuttingDown)
+            {
+                return;
+            }
 
-            var tracker = _services.GetRequiredService<ProcessTracker>();
-            tracker.Dispose();
+            _isShuttingDown = true;
+
+            try
+            {
+                // Stop module processes first so the tracker can dispose after active work ends.
+                var runner = _services.GetRequiredService<ModuleRunner>();
+                runner.StopAllModulesAsync().GetAwaiter().GetResult();
+                runner.Dispose();
+
+                var tracker = _services.GetRequiredService<ProcessTracker>();
+                tracker.Dispose();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[App] Shutdown cleanup failed: {ex}");
+            }
         }
     }
 }

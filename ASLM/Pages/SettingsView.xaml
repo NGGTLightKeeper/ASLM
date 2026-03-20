@@ -1,0 +1,76 @@
+<!-- Copyright NGGT.LightKeeper. All Rights Reserved. -->
+
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ASLM.Pages.SettingsView">
+
+    <ScrollView x:Name="SettingsScroll" Padding="16">
+        <VerticalStackLayout Spacing="24">
+
+            <!-- Header -->
+            <Label Text="Settings"
+                   FontSize="24" FontAttributes="Bold"
+                   TextColor="{StaticResource LabelPrimary}"
+                   Margin="4,0,4,8" />
+
+            <!-- User Profile -->
+            <Border x:Name="UserProfileSection"
+                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                    Stroke="{StaticResource Separator}" StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="20">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="User Profile" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource LabelPrimary}" />
+                    <Label Text="Display Name" FontSize="12" TextColor="{StaticResource LabelSecondary}" />
+                    <Entry x:Name="UsernameEntry"
+                           FontSize="14" TextColor="{StaticResource LabelPrimary}"
+                           BackgroundColor="{StaticResource BackgroundPrimary}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Port Allocation -->
+            <Border x:Name="PortsSection"
+                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                    Stroke="{StaticResource Separator}" StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="20">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Port Allocation" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource LabelPrimary}" />
+
+                    <Label Text="Official modules start port (100 ports reserved)" FontSize="12" TextColor="{StaticResource LabelSecondary}" />
+                    <Entry x:Name="OfficialPortEntry"
+                           Keyboard="Numeric"
+                           FontSize="14" TextColor="{StaticResource LabelPrimary}"
+                           BackgroundColor="{StaticResource BackgroundPrimary}" />
+
+                    <Label Text="Third-party modules start port (1000 ports reserved)" FontSize="12" TextColor="{StaticResource LabelSecondary}" />
+                    <Entry x:Name="ThirdPartyPortEntry"
+                           Keyboard="Numeric"
+                           FontSize="14" TextColor="{StaticResource LabelPrimary}"
+                           BackgroundColor="{StaticResource BackgroundPrimary}" />
+
+                    <Label x:Name="PortErrorLabel"
+                           Text=""
+                           FontSize="12" TextColor="{StaticResource ActionRed}"
+                           IsVisible="False" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Module Settings (Dynamic) -->
+            <VerticalStackLayout x:Name="ModuleSettingsContainer" Spacing="24">
+                <!-- Dynamically populated by code-behind -->
+            </VerticalStackLayout>
+
+            <!-- Save Button -->
+            <Button Text="Save"
+                    BackgroundColor="{StaticResource ActionBlue}"
+                    TextColor="{StaticResource LabelPrimary}"
+                    FontSize="14"
+                    WidthRequest="120"
+                    HorizontalOptions="End"
+                    Clicked="OnSaveClicked" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentView>

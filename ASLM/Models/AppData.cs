@@ -1,75 +1,85 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Text.Json.Serialization;
 
 namespace ASLM.Models
 {
+    // Application data
+
     /// <summary>
-    /// Represents the persistent application data structure,
-    /// deserialized from <c>Data/App/ASLM_Data.json</c>.
+    /// Stores the persisted application data loaded from <c>Data/App/ASLM_Data.json</c>.
     /// </summary>
     public class AppData
     {
-        /// <summary>
-        /// Gets or sets a value indicating whether the first-run wizard has been completed.
-        /// </summary>
+        // Tracks whether the initial setup flow has already finished.
         [JsonPropertyName("firstRunCompleted")]
         public bool FirstRunCompleted { get; set; }
 
-        /// <summary>
-        /// Gets or sets the user profile data.
-        /// </summary>
+        // Stores user-facing profile information.
         [JsonPropertyName("user")]
         public AppUserData User { get; set; } = new();
 
-        /// <summary>
-        /// Gets or sets the port allocation configuration.
-        /// </summary>
+        // Stores the reserved application port ranges.
         [JsonPropertyName("ports")]
         public AppPortConfig Ports { get; set; } = new();
+
+        /// <summary>
+        /// Restores nested objects after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            // Recreate the user section when it is missing from the persisted file.
+            User ??= new();
+            User.Normalize();
+
+            // Recreate the ports section when it is missing from the persisted file.
+            Ports ??= new();
+        }
     }
 
+
+    // User data
+
     /// <summary>
-    /// Represents user profile information.
+    /// Stores the user profile values saved by the application.
     /// </summary>
     public class AppUserData
     {
-        /// <summary>
-        /// Gets or sets the user's display name.
-        /// </summary>
+        // Stores the display name shown in the UI.
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Restores string fields after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            // Keep string properties safe for UI binding and serialization.
+            Name ??= string.Empty;
+        }
     }
 
+
+    // Port allocation
+
     /// <summary>
-    /// Configuration for port allocation ranges used by modules.
-    /// Official modules get a compact range; third-party modules get a larger one.
+    /// Defines the port ranges reserved for official and third-party modules.
     /// </summary>
     public class AppPortConfig
     {
-        /// <summary>
-        /// Gets or sets the start port for the official module range.
-        /// Default: 8000.
-        /// </summary>
+        // First port in the range reserved for official modules.
         [JsonPropertyName("officialStart")]
         public int OfficialStart { get; set; } = 8000;
 
-        /// <summary>
-        /// Gets or sets the number of ports reserved for official modules.
-        /// Default: 100.
-        /// </summary>
+        // Number of ports reserved for official modules.
         [JsonPropertyName("officialCount")]
         public int OfficialCount { get; set; } = 100;
 
-        /// <summary>
-        /// Gets or sets the start port for the third-party module range.
-        /// Default: 9000.
-        /// </summary>
+        // First port in the range reserved for third-party modules.
         [JsonPropertyName("thirdPartyStart")]
         public int ThirdPartyStart { get; set; } = 9000;
 
-        /// <summary>
-        /// Gets or sets the number of ports reserved for third-party modules.
-        /// Default: 1000.
-        /// </summary>
+        // Number of ports reserved for third-party modules.
         [JsonPropertyName("thirdPartyCount")]
         public int ThirdPartyCount { get; set; } = 1000;
     }

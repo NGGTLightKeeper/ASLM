@@ -1,125 +1,145 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Text.Json.Serialization;
 
 namespace ASLM.Models
 {
+    // Model manifest
+
     /// <summary>
-    /// Configuration for a machine learning model, deserialized from <c>ASLM_Model.json</c>.
+    /// Describes a model package loaded from <c>ASLM_Model.json</c>.
     /// </summary>
     public class ModelConfig
     {
-        /// <summary>
-        /// Schema version of the JSON file. Current version: 1.
-        /// Used to maintain backward compatibility when the file structure changes.
-        /// </summary>
+        // Version of the manifest schema used for compatibility checks.
         [JsonPropertyName("fileVersion")]
         public int FileVersion { get; set; } = 1;
 
-        /// <summary>
-        /// Unique identifier for the model.
-        /// </summary>
+        // Stable model identifier used throughout the application.
         [JsonPropertyName("id")]
         public string Id { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Human-readable name of the model.
-        /// </summary>
+        // Human-readable model name shown in the UI.
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Description of the model's capabilities.
-        /// </summary>
+        // Short description of the model's purpose or capabilities.
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Model version string.
-        /// </summary>
+        // Version string of the packaged model.
         [JsonPropertyName("version")]
         public string Version { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Type of the resource (default "model").
-        /// </summary>
+        // Resource type stored in the manifest. Defaults to "model".
         [JsonPropertyName("type")]
         public string Type { get; set; } = "model";
 
-        /// <summary>
-        /// Category of the model (e.g., "ASR", "LLM").
-        /// </summary>
+        // Functional category used for dependency matching.
         [JsonPropertyName("category")]
         public string Category { get; set; } = string.Empty;
 
-        // --- Source & Files --------------------------------------------------
-
-        /// <summary>
-        /// Information about where the model files are hosted.
-        /// </summary>
+        // Location of the remote model repository.
         [JsonPropertyName("source")]
         public ModelSource Source { get; set; } = new();
 
-        /// <summary>
-        /// List of filenames to download. If empty, the installer will automatically 
-        /// fetch the file list from the provider (e.g. HuggingFace).
-        /// </summary>
+        // Optional explicit file list. When empty, the installer discovers files remotely.
         [JsonPropertyName("files")]
         public List<string> Files { get; set; } = [];
 
-        // --- Status ----------------------------------------------------------
-
-        /// <summary>
-        /// Current installation status of the model.
-        /// </summary>
+        // Persisted installation state of the model.
         [JsonPropertyName("status")]
         public ModelStatus Status { get; set; } = new();
 
-        /// <summary>
-        /// Absolute path to the JSON file this config was loaded from.
-        /// Set at runtime after deserialization; not serialized to disk.
-        /// </summary>
+        // Absolute path to the source manifest file resolved at runtime.
         [JsonIgnore]
         public string SourcePath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Restores nested objects, collections, and strings after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            // Keep scalar string fields safe for downstream code and UI bindings.
+            Id ??= string.Empty;
+            Name ??= string.Empty;
+            Description ??= string.Empty;
+            Version ??= string.Empty;
+            Type = string.IsNullOrWhiteSpace(Type) ? "model" : Type;
+            Category ??= string.Empty;
+            SourcePath ??= string.Empty;
+
+            // Recreate and normalize the remote source definition.
+            Source ??= new();
+            Source.Normalize();
+
+            // Remove empty file names while preserving explicit manifest entries.
+            Files ??= [];
+            Files = Files
+                .Where(static file => !string.IsNullOrWhiteSpace(file))
+                .ToList();
+
+            // Ensure persisted runtime status is always available.
+            Status ??= new();
+            Status.Normalize();
+        }
     }
 
+
+    // Model source
+
     /// <summary>
-    /// Defines where the model is hosted.
+    /// Describes where the model package is hosted.
     /// </summary>
     public class ModelSource
     {
-        /// <summary>
-        /// The type of source provider (default "huggingface").
-        /// </summary>
+        // Source provider identifier. The current installer expects "huggingface".
         [JsonPropertyName("type")]
         public string Type { get; set; } = "huggingface";
 
-        /// <summary>
-        /// The repository ID (e.g., "openai/whisper-large-v3").
-        /// </summary>
+        // Remote repository identifier, for example "openai/whisper-large-v3".
         [JsonPropertyName("repoId")]
         public string RepoId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Restores required string values after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            // Keep source values non-null and preserve the expected default provider.
+            Type = string.IsNullOrWhiteSpace(Type) ? "huggingface" : Type;
+            RepoId ??= string.Empty;
+        }
     }
 
+
+    // Model status
+
     /// <summary>
-    /// Tracks the installation state of the model.
+    /// Tracks the persisted installation state of a model package.
     /// </summary>
     public class ModelStatus
     {
-        /// <summary>
-        /// Gets or sets whether the model is fully installed.
-        /// </summary>
+        // Indicates whether the model is currently installed.
         [JsonPropertyName("installed")]
         public bool Installed { get; set; }
 
-        /// <summary>
-        /// The version of the model currently installed.
-        /// </summary>
+        // Version string of the installed model, if known.
         [JsonPropertyName("installedVersion")]
         public string? InstalledVersion { get; set; }
 
-        /// <summary>
-        /// Timestamp of the last check or installation.
-        /// </summary>
+        // Timestamp of the latest installation check or update.
         [JsonPropertyName("lastChecked")]
         public string? LastChecked { get; set; }
+
+        /// <summary>
+        /// Normalizes optional persisted values after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            // Empty text values are treated as missing persisted state.
+            InstalledVersion = string.IsNullOrWhiteSpace(InstalledVersion) ? null : InstalledVersion;
+            LastChecked = string.IsNullOrWhiteSpace(LastChecked) ? null : LastChecked;
+        }
     }
 }

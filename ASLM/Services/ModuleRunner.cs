@@ -1,3 +1,5 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
@@ -6,42 +8,47 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
+    // Module runner
+
     /// <summary>
-    /// Handles the execution of module commands (Run, FirstRun, Settings).
-    /// Resolves engine paths via EngineInstaller and manages process execution.
-    /// Tracks running processes and supports stopping/killing them.
+    /// Executes module setup, runtime, and settings commands and tracks their processes.
     /// </summary>
     public class ModuleRunner : IDisposable
     {
         private readonly EngineInstaller _engineInstaller;
+        private readonly PortManager _portManager;
         private readonly ProcessTracker _processTracker;
         private readonly ILogger<ModuleRunner> _logger;
         private bool _disposed;
 
+        // Running processes
+
         /// <summary>
-        /// Tracks all running processes per module.
-        /// Key = module SourcePath (unique per instance), Value = list of running processes.
+        /// Tracks running processes by module source path.
         /// </summary>
         private readonly ConcurrentDictionary<string, List<Process>> _runningProcesses = new();
         private readonly object _processLock = new();
 
+        // Initialization
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="ModuleRunner"/> class.
+        /// Creates the module runner.
         /// </summary>
         /// <param name="engineInstaller">Service to resolve engine paths.</param>
-        /// <param name="processTracker">Job Object tracker for child process grouping and cleanup.</param>
+        /// <param name="processTracker">Service that groups child processes under ASLM.</param>
         /// <param name="logger">Logger instance.</param>
-        public ModuleRunner(EngineInstaller engineInstaller, ProcessTracker processTracker, ILogger<ModuleRunner> logger)
+        public ModuleRunner(EngineInstaller engineInstaller, PortManager portManager, ProcessTracker processTracker, ILogger<ModuleRunner> logger)
         {
             _engineInstaller = engineInstaller;
+            _portManager = portManager;
             _processTracker = processTracker;
             _logger = logger;
         }
 
+        // Setup execution
+
         /// <summary>
-        /// Executes all 'FirstRun' commands for a module.
-        /// First installs required engine libraries, then runs firstRun commands.
-        /// Updates the module's status upon success.
+        /// Executes first-run setup for a module.
         /// </summary>
         /// <param name="module">The module configuration.</param>
         /// <param name="log">Progress reporter for logging output.</param>
@@ -81,9 +88,10 @@ namespace ASLM.Services
             return true;
         }
 
+        // Run execution
+
         /// <summary>
-        /// Executes all 'Run' commands for a module (e.g. start a server).
-        /// These are typically long-running processes that are tracked for lifecycle management.
+        /// Executes the long-running run commands for a module.
         /// </summary>
         /// <param name="module">The module configuration.</param>
         /// <param name="log">Progress reporter for logging output.</param>
@@ -97,6 +105,37 @@ namespace ASLM.Services
                 return true;
             }
 
+            // Synchronize settings
+            if (module.Settings != null && module.Settings.Count > 0)
+            {
+                log.Report("Synchronizing module settings...");
+                foreach (var setting in module.Settings)
+                {
+                    if (ct.IsCancellationRequested) return false;
+                    if (string.IsNullOrEmpty(setting.SetExec)) continue;
+
+                    var targetValue = ResolveSettingValue(module, setting);
+                    bool needsUpdate = true;
+
+                    if (!string.IsNullOrEmpty(setting.GetExec))
+                    {
+                        var currentValue = await ExecuteSettingCommandAsync(module, setting, isSet: false, newValue: null, ct);
+                        
+                        if (currentValue != null && string.Equals(currentValue.Trim(), targetValue.Trim(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            log.Report($"[Sync] '{setting.Key}' is already up to date ({currentValue.Trim()})");
+                            needsUpdate = false;
+                        }
+                    }
+
+                    if (needsUpdate)
+                    {
+                        log.Report($"[Sync] Applying '{setting.Key}' = {targetValue}");
+                        await ExecuteSettingCommandAsync(module, setting, isSet: true, newValue: targetValue, ct);
+                    }
+                }
+            }
+
             log.Report($"Starting {module.Name}...");
 
             foreach (var cmd in module.Commands.Run)
@@ -104,17 +143,17 @@ namespace ASLM.Services
                 if (ct.IsCancellationRequested) return false;
 
                 log.Report($"[Run] {cmd.Name}: {cmd.Description}");
-                // Run commands are long-running — we don't wait for exit, but we track the process
+                // Run commands are long-running; we start them in the background and track their processes.
                 _ = RunCommandAsync(module, cmd, log, ct, trackProcess: true);
             }
 
             return true;
         }
 
+        // Module stop
+
         /// <summary>
-        /// Stops all running processes for a given module.
-        /// Uses SourcePath as the unique identifier to avoid collisions
-        /// when multiple module instances share the same Id.
+        /// Stops all tracked processes for one module.
         /// </summary>
         /// <param name="moduleSourcePath">The module's SourcePath (unique per instance).</param>
         public async Task StopModuleAsync(string moduleSourcePath)
@@ -134,8 +173,10 @@ namespace ASLM.Services
             }
         }
 
+        // Global stop
+
         /// <summary>
-        /// Stops all running module processes. Called on application shutdown.
+        /// Stops every tracked module process.
         /// </summary>
         public async Task StopAllModulesAsync()
         {
@@ -161,9 +202,84 @@ namespace ASLM.Services
             _logger.LogInformation("All module processes stopped.");
         }
 
+        // Settings propagation
+
         /// <summary>
-        /// Installs required libraries for each engine dependency using the
-        /// engine's <see cref="EnginePackageManager"/> configuration.
+        /// Injects resolved module settings into the process environment.
+        /// </summary>
+        private void InjectSettingsIntoEnvironment(ModuleConfig module, ProcessStartInfo psi)
+        {
+            if (module.Settings == null) return;
+
+            foreach (var setting in module.Settings)
+            {
+                var resolved = ResolveSettingValue(module, setting);
+                var envKey = $"ASLM_{setting.Key.ToUpperInvariant()}";
+                psi.Environment[envKey] = resolved;
+            }
+
+            // Also expose some useful module context values to child processes.
+            psi.Environment["ASLM_MODULE_ID"] = module.Id;
+            psi.Environment["ASLM_MODULE_DIR"] = Path.GetDirectoryName(module.SourcePath) ?? "";
+        }
+
+        /// <summary>
+        /// Resolves the effective string value for one module setting.
+        /// </summary>
+        private string ResolveSettingValue(ModuleConfig module, ModuleSetting setting)
+        {
+            switch (setting.Type.ToLowerInvariant())
+            {
+                case "port":
+                    var ports = _portManager.GetOrAssignPorts(module);
+                    if (ports.TryGetValue(setting.Key, out var assigned))
+                        return assigned.ToString();
+                    
+                    var rawPort = (setting.Value ?? setting.Default)?.ToString();
+                    if (int.TryParse(rawPort, out var p))
+                        return p.ToString();
+                    return rawPort ?? string.Empty;
+
+                case "engine":
+                    // Returns true/false based on whether the target engine is installed.
+                    var engineId = TrimEngineSettingSuffix(setting.Key);
+                    return _engineInstaller.GetEngineConfig(engineId) != null ? "true" : "false";
+
+                case "path":
+                    // Returns the engine executable path, or empty string if not installed.
+                    var pathEngineId = TrimEngineSettingSuffix(setting.Key);
+                    var enginePath = _engineInstaller.GetEngineExecutablePath(pathEngineId);
+                    return !string.IsNullOrEmpty(enginePath) ? enginePath.Replace('\\', '/') : "";
+
+                case "data":
+                    // Returns the engine data path: <root>/Data/<engineId>/.
+                    var dataEngineId = TrimEngineSettingSuffix(setting.Key);
+                    if (_engineInstaller.GetEngineConfig(dataEngineId) == null) return "";
+
+                    var rootDir = GetRootDirectory();
+                    return (Path.Combine(rootDir, "Data", dataEngineId) + Path.DirectorySeparatorChar).Replace('\\', '/');
+
+                case "models":
+                    // Returns the engine models path: <root>/Models/<engineId>/.
+                    var modelsEngineId = TrimEngineSettingSuffix(setting.Key);
+                    if (_engineInstaller.GetEngineConfig(modelsEngineId) == null) return "";
+
+                    var modelsRootDir = GetRootDirectory();
+                    return (Path.Combine(modelsRootDir, "Models", modelsEngineId) + Path.DirectorySeparatorChar).Replace('\\', '/');
+
+                case "bool":
+                    var rawBool = (setting.Value ?? setting.Default)?.ToString();
+                    return rawBool != null && rawBool.Equals("true", StringComparison.OrdinalIgnoreCase) ? "true" : "false";
+
+                default:
+                    return (setting.Value ?? setting.Default)?.ToString() ?? string.Empty;
+            }
+        }
+
+        // Dependency install
+
+        /// <summary>
+        /// Installs engine-specific libraries required by a module.
         /// </summary>
         /// <param name="module">The module configuration.</param>
         /// <param name="log">Progress reporter.</param>
@@ -227,7 +343,7 @@ namespace ASLM.Services
                     return false;
                 }
 
-                // Assign to Job Object — groups under ASLM in Task Manager
+                // Assign to the job object so dependency installs stay grouped under ASLM.
                 _processTracker.AddProcess(process);
 
                 process.BeginOutputReadLine();
@@ -246,8 +362,10 @@ namespace ASLM.Services
             return true;
         }
 
+        // Command execution
+
         /// <summary>
-        /// Executes a single module command.
+        /// Executes one module command.
         /// </summary>
         /// <param name="module">The module configuration.</param>
         /// <param name="cmd">The command to execute.</param>
@@ -260,7 +378,8 @@ namespace ASLM.Services
             ModuleCommand cmd, 
             IProgress<string> log, 
             CancellationToken ct,
-            bool trackProcess = false)
+            bool trackProcess = false,
+            bool injectSettings = true)
         {
             try
             {
@@ -268,9 +387,21 @@ namespace ASLM.Services
                 if (string.IsNullOrEmpty(moduleDir)) return false;
 
                 string fileName;
-                string arguments;
+                string arguments = string.Empty;
 
                 // 1. Resolve Execution Strategy
+                var execString = cmd.Exec ?? string.Empty;
+
+                // Replace {key} placeholders with setting values
+                if (module.Settings != null)
+                {
+                    foreach (var setting in module.Settings)
+                    {
+                        var resolved = ResolveSettingValue(module, setting);
+                        execString = execString.Replace($"{{{setting.Key}}}", resolved);
+                    }
+                }
+
                 if (!string.IsNullOrEmpty(cmd.Engine))
                 {
                     // Run via Engine (e.g. Python)
@@ -285,13 +416,13 @@ namespace ASLM.Services
                     // Combine engine + script/args
                     // cmd.Exec = "manage.py runserver"
                     // We need to ensure we run it in the module directory context
-                    arguments = cmd.Exec; 
+                    arguments = execString; 
                 }
                 else
                 {
                     // Run directly (e.g. valid executable on PATH)
                     // Properly parse the command string to handle quotes
-                    var parts = SplitCommand(cmd.Exec);
+                    var parts = SplitCommand(execString);
                     if (parts.Count == 0) return false;
 
                     fileName = parts[0];
@@ -309,6 +440,12 @@ namespace ASLM.Services
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+
+                // Apply settings as environment variables so the module can consume them dynamically
+                if (injectSettings)
+                {
+                    InjectSettingsIntoEnvironment(module, psi);
+                }
                 
                 log.Report($"Exec: {Path.GetFileName(fileName)} {arguments}");
 
@@ -326,7 +463,7 @@ namespace ASLM.Services
                     return false;
                 }
 
-                // Assign to Job Object — groups under ASLM in Task Manager
+                // Assign to the job object so launched processes stay grouped under ASLM.
                 _processTracker.AddProcess(process);
 
                 // Track the process for module stop functionality
@@ -375,8 +512,64 @@ namespace ASLM.Services
             }
         }
 
+        // Setting commands
+
         /// <summary>
-        /// Safely kills a process and its children.
+        /// Executes a get or set command declared by one module setting.
+        /// </summary>
+        /// <returns>The standard output of the command if successful, otherwise null.</returns>
+        public async Task<string?> ExecuteSettingCommandAsync(ModuleConfig module, ModuleSetting setting, bool isSet, string? newValue, CancellationToken ct)
+        {
+            var execStr = isSet ? setting.SetExec : setting.GetExec;
+            if (string.IsNullOrEmpty(execStr)) return null;
+
+            // Replace {value} placeholder specifically for setExec
+            if (isSet && newValue != null)
+            {
+                execStr = execStr.Replace("{value}", newValue);
+            }
+
+            var cmd = new ModuleCommand
+            {
+                Name = isSet ? $"Set {setting.Key}" : $"Get {setting.Key}",
+                Engine = setting.Engine,
+                Exec = execStr
+            };
+
+            var outputBuilder = new StringBuilder();
+            var lockObject = new object();
+            var log = new Progress<string>(msg =>
+            {
+                if (string.IsNullOrEmpty(msg)) return;
+
+                // Capture the exact output, avoiding log prefixes and errors
+                var trimmed = msg.TrimStart();
+                if (!trimmed.StartsWith("Exec:") && !trimmed.StartsWith("err:"))
+                {
+                    lock (lockObject)
+                    {
+                        outputBuilder.AppendLine(trimmed);
+                    }
+                }
+            });
+
+            bool success = await RunCommandAsync(module, cmd, log, ct, trackProcess: false, injectSettings: isSet);
+            if (!success) return null;
+
+            // Get the last non-empty line (to ignore banners or headers)
+            var lines = outputBuilder.ToString()
+                .Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(l => l.Trim())
+                .Where(l => !string.IsNullOrEmpty(l))
+                .ToList();
+            
+            return lines.Count > 0 ? lines[^1] : null;
+        }
+
+        // Process shutdown
+
+        /// <summary>
+        /// Safely kills a process and its child tree.
         /// </summary>
         private async Task KillProcessSafeAsync(Process process)
         {
@@ -416,8 +609,10 @@ namespace ASLM.Services
             }
         }
 
+        // Tracking cleanup
+
         /// <summary>
-        /// Removes a specific process from the tracking dictionary.
+        /// Removes one process from the tracking dictionary.
         /// </summary>
         private void RemoveProcess(string moduleSourcePath, Process process)
         {
@@ -434,13 +629,15 @@ namespace ASLM.Services
             }
         }
 
+        // Disposal
+
         /// <inheritdoc />
         public void Dispose()
         {
             if (_disposed) return;
             _disposed = true;
 
-            // Kill all tracked processes
+            // Kill all tracked processes before the runner is disposed.
             lock (_processLock)
             {
                 foreach (var (_, processes) in _runningProcesses)
@@ -463,9 +660,10 @@ namespace ASLM.Services
             }
         }
 
+        // Command parsing
+
         /// <summary>
-        /// Splits a command string into arguments, respecting quoted strings.
-        /// Supports single (') and double (") quotes.
+        /// Splits a command string into arguments while respecting quotes.
         /// </summary>
         /// <param name="command">The command string to split.</param>
         /// <returns>A list of argument strings.</returns>
@@ -520,25 +718,48 @@ namespace ASLM.Services
             return args;
         }
 
+        // Argument join
+
         /// <summary>
-        /// Reconstructs an argument string from a list of arguments, quoting if necessary.
+        /// Rebuilds an argument string from parsed arguments.
         /// </summary>
         /// <param name="args">The list of arguments.</param>
         /// <returns>A single command-line argument string.</returns>
         private static string ParseArguments(IEnumerable<string> args)
         {
-            // Simple reconstruction: join with spaces.
-            // If an argument contains spaces, it should ideally be quoted,
-            // but since we split it ourselves, we assume the user provided it correctly.
-            // However, for passing to ProcessStartInfo.Arguments, we might want to ensure quotes.
-            // But usually ProcessStartInfo handles raw strings if passed as a single string.
-            // Here we just join them back because we split them to find the executable (first part).
-
-            // Note: Since we are passing the rest as 'arguments' to ProcessStartInfo,
-            // usually we can just take the substring after the executable.
-            // But reconstruction is safer if we want to support complex parsing later.
-
             return string.Join(" ", args.Select(a => a.Contains(' ') ? $"\"{a}\"" : a));
+        }
+
+        // Engine key parsing
+
+        /// <summary>
+        /// Removes known engine setting suffixes from a setting key.
+        /// </summary>
+        private static string TrimEngineSettingSuffix(string settingKey)
+        {
+            if (settingKey.EndsWith("_path", StringComparison.OrdinalIgnoreCase) ||
+                settingKey.EndsWith("_data", StringComparison.OrdinalIgnoreCase))
+            {
+                return settingKey[..^5];
+            }
+
+            if (settingKey.EndsWith("_models", StringComparison.OrdinalIgnoreCase))
+            {
+                return settingKey[..^7];
+            }
+
+            return settingKey;
+        }
+
+        // Root path
+
+        /// <summary>
+        /// Returns the application root directory.
+        /// </summary>
+        private static string GetRootDirectory()
+        {
+            var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+            return Directory.GetParent(appDir)?.FullName ?? appDir;
         }
     }
 }

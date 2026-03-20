@@ -1,12 +1,15 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Text;
 using ASLM.Models;
 using ASLM.Services;
 
 namespace ASLM.Pages
 {
+    // Model setup page
+
     /// <summary>
-    /// UI page for discovering and installing machine learning models.
-    /// Handles the installation workflow, progress tracking, and log display.
+    /// Installs missing models during startup and shows progress and logs.
     /// </summary>
     public partial class ModelSetupPage : ContentPage
     {
@@ -14,42 +17,56 @@ namespace ASLM.Pages
         private readonly StringBuilder _logBuffer = new();
         private List<ModelConfig> _pendingModels = [];
         private CancellationTokenSource? _cts;
+        private bool _hasLoaded;
 
+        // Initialization
+
+        /// <summary>
+        /// Creates the model setup page and starts discovery after the page loads.
+        /// </summary>
         public ModelSetupPage(ModelInstaller installer)
         {
             InitializeComponent();
             _installer = installer;
-
-            // Automatically load models when the page appears
             Loaded += async (_, _) => await LoadModelsAsync();
         }
 
+
+        // Discovery
+
         /// <summary>
-        /// Discovers models asynchronously and updates the UI.
+        /// Discovers models and prepares the pending installation list.
         /// </summary>
         private async Task LoadModelsAsync()
         {
+            if (_hasLoaded)
+            {
+                return;
+            }
+
+            _hasLoaded = true;
+
             try
             {
                 var models = await _installer.DiscoverModelsAsync();
-                _pendingModels = models.Where(m => !m.Status.Installed).ToList();
+                _pendingModels = models.Where(model => !model.Status.Installed).ToList();
 
                 if (_pendingModels.Count == 0)
                 {
                     ModelInfoLabel.Text = "All models are installed.";
                     InstallButton.IsEnabled = false;
-                    AddLog("✓ No models require installation.");
+                    AddLog("[OK] No models require installation.");
                     ShowContinueButton();
                     return;
                 }
 
-                var names = string.Join(", ", _pendingModels.Select(m => m.Name));
+                var names = string.Join(", ", _pendingModels.Select(model => model.Name));
                 ModelInfoLabel.Text = $"Models to install: {names}";
                 AddLog($"Found {_pendingModels.Count} model(s) to install:");
 
                 foreach (var model in _pendingModels)
                 {
-                    AddLog($"  • {model.Name} ({model.Source.RepoId})");
+                    AddLog($"  - {model.Name} ({model.Source.RepoId})");
                     AddLog($"    {model.Files.Count} files to download");
                 }
             }
@@ -59,8 +76,12 @@ namespace ASLM.Pages
             }
         }
 
-        // --- Event Handlers --------------------------------------------------
 
+        // Install actions
+
+        /// <summary>
+        /// Starts the model installation loop.
+        /// </summary>
         private async void OnInstallClicked(object? sender, EventArgs e)
         {
             InstallButton.IsEnabled = false;
@@ -70,18 +91,21 @@ namespace ASLM.Pages
             var logProgress = new Progress<string>(AddLog);
             var downloadProgress = new Progress<DownloadProgress>(UpdateDownloadProgress);
 
-            int completed = 0;
-            int total = _pendingModels.Count;
+            var completed = 0;
+            var total = _pendingModels.Count;
 
             foreach (var model in _pendingModels)
             {
                 if (_cts.Token.IsCancellationRequested)
+                {
                     break;
+                }
 
                 try
                 {
-                    await Task.Run(() => _installer.InstallAsync(
-                        model, logProgress, downloadProgress, _cts.Token), _cts.Token);
+                    await Task.Run(
+                        () => _installer.InstallAsync(model, logProgress, downloadProgress, _cts.Token),
+                        _cts.Token);
 
                     completed++;
                     HideDownloadProgress();
@@ -95,7 +119,7 @@ namespace ASLM.Pages
                 }
                 catch (Exception ex)
                 {
-                    AddLog($"✗ Error installing {model.Name}: {ex.Message}");
+                    AddLog($"[Error] Error installing {model.Name}: {ex.Message}");
                 }
             }
 
@@ -117,27 +141,48 @@ namespace ASLM.Pages
             }
         }
 
+        // Cancel action
+
+        /// <summary>
+        /// Requests cancellation for the current installation run.
+        /// </summary>
         private void OnCancelClicked(object? sender, EventArgs e)
         {
             _cts?.Cancel();
         }
 
+        // Continue action
+
+        /// <summary>
+        /// Continues the startup chain after installation finishes.
+        /// </summary>
         private async void OnContinueClicked(object? sender, EventArgs e)
         {
             await NavigateToMainAsync();
         }
 
-        // --- UI Helpers ------------------------------------------------------
 
+        // Button states
+
+        /// <summary>
+        /// Converts the main action button into the continue action.
+        /// </summary>
         private void ShowContinueButton()
         {
             InstallButton.Text = "Continue";
             InstallButton.IsEnabled = true;
+            InstallButton.Clicked -= OnContinueClicked;
             InstallButton.Clicked -= OnInstallClicked;
             InstallButton.Clicked += OnContinueClicked;
             CancelButton.IsVisible = false;
         }
 
+
+        // Log UI
+
+        /// <summary>
+        /// Appends one log line and refreshes the log editor.
+        /// </summary>
         private void AddLog(string message)
         {
             _logBuffer.AppendLine(message);
@@ -145,40 +190,55 @@ namespace ASLM.Pages
             LogEditor.CursorPosition = LogEditor.Text.Length;
         }
 
-        private void UpdateDownloadProgress(DownloadProgress dp)
+        // Download UI
+
+        /// <summary>
+        /// Updates the per-download progress panel.
+        /// </summary>
+        private void UpdateDownloadProgress(DownloadProgress progress)
         {
             DownloadProgressPanel.IsVisible = true;
-            DownloadProgressBar.Progress = dp.Fraction;
+            DownloadProgressBar.Progress = progress.Fraction;
 
-            var downloadedMb = dp.DownloadedBytes / 1024.0 / 1024.0;
-            var totalMb = dp.TotalBytes / 1024.0 / 1024.0;
-            var pct = (int)(dp.Fraction * 100);
-            DownloadInfoLabel.Text = $"{pct}%  —  {downloadedMb:F1} MB / {totalMb:F1} MB";
+            var downloadedMb = progress.DownloadedBytes / 1024.0 / 1024.0;
+            var totalMb = progress.TotalBytes / 1024.0 / 1024.0;
+            var percent = (int)(progress.Fraction * 100);
+            DownloadInfoLabel.Text = $"{percent}%  -  {downloadedMb:F1} MB / {totalMb:F1} MB";
         }
 
+        // Download reset
+
+        /// <summary>
+        /// Hides the per-download progress panel between downloads.
+        /// </summary>
         private void HideDownloadProgress()
         {
             DownloadProgressPanel.IsVisible = false;
             DownloadProgressBar.Progress = 0;
-            DownloadInfoLabel.Text = "";
+            DownloadInfoLabel.Text = string.Empty;
         }
 
+
+        // Navigation
+
         /// <summary>
-        /// Navigates to the main application page or the next setup page in the chain.
+        /// Restarts the startup chain after the current step completes.
         /// </summary>
         private async Task NavigateToMainAsync()
         {
-            if (Application.Current?.Windows.FirstOrDefault() is Window window)
+            if (Application.Current?.Windows.FirstOrDefault() is not Window window)
             {
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    var newPage = (Application.Current as App)?.CreateStartupPage();
-                    if (newPage != null)
-                    {
-                        window.Page = newPage;
-                    }
-                });
+                return;
             }
+
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                var newPage = (Application.Current as App)?.CreateStartupPage();
+                if (newPage != null)
+                {
+                    window.Page = newPage;
+                }
+            });
         }
     }
 }

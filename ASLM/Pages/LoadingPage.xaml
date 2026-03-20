@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright NGGT.LightKeeper. All Rights Reserved. -->
+
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ASLM.Pages.LoadingPage"
-             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+             BackgroundColor="{StaticResource BackgroundPrimary}">
     <Grid>
         <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="20">
             <ActivityIndicator IsRunning="True" Color="{StaticResource Primary}" />

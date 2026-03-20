@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright NGGT.LightKeeper. All Rights Reserved. -->
+
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ASLM.Pages.ModelSetupPage"
              Title="Model Setup"
-             BackgroundColor="#000000">
+             BackgroundColor="{StaticResource BackgroundPrimary}">
 
     <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="24" RowSpacing="12">
 
@@ -12,11 +13,11 @@
             <Label Text="Model Setup"
                    FontSize="24"
                    FontAttributes="Bold"
-                   TextColor="White" />
+                   TextColor="{StaticResource LabelPrimary}" />
             <Label x:Name="ModelInfoLabel"
                    Text="Checking models..."
                    FontSize="14"
-                   TextColor="#8E8E93" />
+                   TextColor="{StaticResource LabelSecondary}" />
         </VerticalStackLayout>
 
         <!-- Overall Progress -->
@@ -24,13 +25,13 @@
             <ProgressBar x:Name="InstallProgress"
                          Grid.Row="0"
                          Progress="0"
-                         ProgressColor="#007AFF"
+                         ProgressColor="{StaticResource ActionBlue}"
                          HeightRequest="6" />
             <Label x:Name="ProgressLabel"
                    Grid.Row="1"
                    Text="Ready"
                    FontSize="12"
-                   TextColor="#8E8E93" />
+                   TextColor="{StaticResource LabelSecondary}" />
         </Grid>
 
         <!-- Download Progress Bar -->
@@ -42,26 +43,26 @@
             <ProgressBar x:Name="DownloadProgressBar"
                          Grid.Row="0"
                          Progress="0"
-                         ProgressColor="#4CD964"
+                         ProgressColor="{StaticResource ActionGreen}"
                          HeightRequest="4" />
             <Label x:Name="DownloadInfoLabel"
                    Grid.Row="1"
                    Text=""
                    FontSize="11"
-                   TextColor="#8E8E93" />
+                   TextColor="{StaticResource LabelSecondary}" />
         </Grid>
 
         <!-- Log Output -->
         <Border Grid.Row="3"
-                Stroke="#3A3A3C"
+                Stroke="{StaticResource Separator}"
                 StrokeShape="RoundRectangle 8"
-                BackgroundColor="#1D1D1F"
+                BackgroundColor="{StaticResource BackgroundSecondary}"
                 Padding="12">
             <Editor x:Name="LogEditor"
                     IsReadOnly="True"
                     FontFamily="Consolas"
                     FontSize="12"
-                    TextColor="#F5F5F7"
+                    TextColor="{StaticResource LabelPrimary}"
                     BackgroundColor="Transparent"
                     VerticalOptions="Fill" />
         </Border>
@@ -71,16 +72,16 @@
             <Button x:Name="InstallButton"
                     Text="Install"
                     Clicked="OnInstallClicked"
-                    BackgroundColor="#007AFF"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource ActionBlue}"
+                    TextColor="{StaticResource LabelPrimary}"
                     CornerRadius="8"
                     HeightRequest="40"
                     WidthRequest="120" />
             <Button x:Name="CancelButton"
                     Text="Cancel"
                     Clicked="OnCancelClicked"
-                    BackgroundColor="#3A3A3C"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource SystemGray4}"
+                    TextColor="{StaticResource LabelPrimary}"
                     CornerRadius="8"
                     HeightRequest="40"
                     WidthRequest="120"

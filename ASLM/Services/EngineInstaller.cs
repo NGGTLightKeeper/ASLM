@@ -1,3 +1,5 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Cryptography;
@@ -7,18 +9,21 @@ using ASLM.Models;
 
 namespace ASLM.Services
 {
+    // Download progress
+
     /// <summary>
-    /// Reports download progress to drive a UI progress bar.
+    /// Carries download progress values for UI updates.
     /// </summary>
     /// <param name="Fraction">Download completion from 0.0 to 1.0.</param>
     /// <param name="DownloadedBytes">Total bytes downloaded so far.</param>
     /// <param name="TotalBytes">Expected total file size in bytes.</param>
     public record DownloadProgress(double Fraction, long DownloadedBytes, long TotalBytes);
 
+
+    // Engine installer
+
     /// <summary>
-    /// Discovers, validates and installs external engine runtimes (Python, Node.js, etc.)
-    /// based on declarative <c>ASLM_Engine.json</c> configuration files.
-    /// Registered as a singleton — all mutable state is scoped to individual method calls.
+    /// Discovers, validates, and installs engine runtimes from <c>ASLM_Engine.json</c> manifests.
     /// </summary>
     public class EngineInstaller
     {
@@ -33,12 +38,10 @@ namespace ASLM.Services
         private List<EngineConfig>? _cachedEngines;
         private readonly object _cacheLock = new();
 
-        // --- Discovery -------------------------------------------------------
+        // Discovery
 
         /// <summary>
-        /// Synchronously scans <c>Engines/*/ASLM_Engine.json</c> files and returns their configs.
-        /// This method is intentionally synchronous because it is called from
-        /// <see cref="App.CreateWindow"/> which runs on the UI thread and cannot safely await.
+        /// Scans <c>Engines/*/ASLM_Engine.json</c> files and returns the discovered configs.
         /// </summary>
         /// <returns>A list of discovered engine configurations.</returns>
         public List<EngineConfig> DiscoverEngines()
@@ -62,6 +65,8 @@ namespace ASLM.Services
                             var config = JsonSerializer.Deserialize<EngineConfig>(json, _jsonOptions);
                             if (config != null)
                             {
+                                config.Normalize();
+
                                 // Backward compatibility: files without fileVersion are treated as v1
                                 if (config.FileVersion == 0)
                                     config.FileVersion = 1;
@@ -109,11 +114,10 @@ namespace ASLM.Services
             }
         }
 
-        // --- Helpers ---------------------------------------------------------
+        // Engine lookup
 
         /// <summary>
-        /// Resolves the absolute path to the engine's executable.
-        /// Returns null if engine not found or not installed.
+        /// Resolves the absolute path to an installed engine executable.
         /// </summary>
         /// <param name="engineId">The unique ID of the engine.</param>
         /// <returns>The full path to the executable, or null.</returns>
@@ -132,8 +136,7 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Returns the full <see cref="EngineConfig"/> for the given engine ID,
-        /// or null if not found / not installed.
+        /// Returns the installed engine config for one engine id.
         /// </summary>
         /// <param name="engineId">The unique ID of the engine.</param>
         /// <returns>The engine configuration, or null.</returns>
@@ -143,10 +146,10 @@ namespace ASLM.Services
             return engines.FirstOrDefault(e => e.Id == engineId && e.Status.Installed);
         }
 
-        // --- Installation ----------------------------------------------------
+        // Installation
 
         /// <summary>
-        /// Executes all installation steps declared in the engine config.
+        /// Executes all declared install and post-install steps for one engine.
         /// </summary>
         /// <param name="config">Engine configuration with install steps.</param>
         /// <param name="log">Receives human-readable log messages for the UI console.</param>
@@ -161,13 +164,16 @@ namespace ASLM.Services
         {
             await Task.Run(async () =>
             {
-                // Scoped state — safe for the singleton because only one install runs at a time.
+                // Scoped state; safe for the singleton because only one install runs at a time.
                 var baseDir = GetRootDirectory();
                 var tempDir = Path.Combine(Path.GetTempPath(), "ASLM", config.Id);
 
                 Directory.CreateDirectory(tempDir);
 
-                log.Report($"=== Installing {config.Name} v{config.Version} ===");
+                var versionLabel = config.Version.All(c => char.IsDigit(c) || c == '.')
+                    ? $"v{config.Version}"
+                    : config.Version;
+                log.Report($"=== Installing {config.Name} {versionLabel} ===");
                 log.Report($"Base directory: {baseDir}");
 
                 var context = new StepContext(baseDir, tempDir);
@@ -258,11 +264,13 @@ namespace ASLM.Services
             }, ct);
         }
 
-        // --- Step Executors --------------------------------------------------
+        // Step execution
 
         /// <summary>
         /// Downloads a file from <c>step.Url</c> to <c>step.Dest</c>,
         /// optionally verifying the SHA-256 checksum.
+        /// Retries up to 3 times on transport errors, resuming from the last
+        /// byte using an HTTP <c>Range</c> header so large downloads don't restart.
         /// </summary>
         /// <param name="step">The installation step configuration.</param>
         /// <param name="ctx">Context for resolving paths.</param>
@@ -282,31 +290,78 @@ namespace ASLM.Services
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
             log.Report($"  Downloading: {url}");
 
-            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-            response.EnsureSuccessStatusCode();
+            const int maxAttempts = 3;
+            const int retryDelayMs = 3000;
 
-            var totalBytes = response.Content.Headers.ContentLength ?? 0;
-            await using var contentStream = await response.Content.ReadAsStreamAsync(ct);
-            await using var fileStream = new FileStream(dest, FileMode.Create, FileAccess.Write, FileShare.None, 65536, true);
-
-            var buffer = new byte[65536];
+            long totalBytes = 0;
             long downloaded = 0;
-            int bytesRead;
-            var throttle = Stopwatch.StartNew();
 
-            downloadProgress?.Report(new DownloadProgress(0, 0, totalBytes));
-
-            while ((bytesRead = await contentStream.ReadAsync(buffer, ct)) > 0)
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
-                downloaded += bytesRead;
+                ct.ThrowIfCancellationRequested();
 
-                // Throttle UI updates to ~20 fps (every 50 ms).
-                if (totalBytes > 0 && throttle.ElapsedMilliseconds >= 50)
+                try
                 {
-                    throttle.Restart();
+                    var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+                    // Resume from where we left off (if previous attempt made progress).
+                    if (downloaded > 0)
+                    {
+                        request.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(downloaded, null);
+                        log.Report($"  Resuming from {downloaded / 1024.0 / 1024.0:F1} MB (attempt {attempt}/{maxAttempts})...");
+                    }
+
+                    using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+                    response.EnsureSuccessStatusCode();
+
+                    // On first request (or if server doesn't support Range) get total size.
+                    if (totalBytes == 0)
+                        totalBytes = response.Content.Headers.ContentLength ?? 0;
+
+                    // If server returned 200 (ignored Range) restart the file from scratch.
+                    bool fullResponse = response.StatusCode == System.Net.HttpStatusCode.OK && downloaded > 0;
+                    var fileMode = (downloaded == 0 || fullResponse) ? FileMode.Create : FileMode.Append;
+                    if (fullResponse)
+                    {
+                        downloaded = 0;
+                        log.Report("  Server does not support resume, restarting download.");
+                    }
+
+                    await using var contentStream = await response.Content.ReadAsStreamAsync(ct);
+                    await using var fileStream = new FileStream(dest, fileMode, FileAccess.Write, FileShare.None, 65536, true);
+
+                    var buffer = new byte[65536];
+                    int bytesRead;
+                    var throttle = Stopwatch.StartNew();
+
                     downloadProgress?.Report(new DownloadProgress(
-                        (double)downloaded / totalBytes, downloaded, totalBytes));
+                        totalBytes > 0 ? (double)downloaded / totalBytes : 0, downloaded, totalBytes));
+
+                    while ((bytesRead = await contentStream.ReadAsync(buffer, ct)) > 0)
+                    {
+                        await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
+                        downloaded += bytesRead;
+
+                        // Throttle UI updates to ~20 fps (every 50 ms).
+                        if (totalBytes > 0 && throttle.ElapsedMilliseconds >= 50)
+                        {
+                            throttle.Restart();
+                            downloadProgress?.Report(new DownloadProgress(
+                                (double)downloaded / totalBytes, downloaded, totalBytes));
+                        }
+                    }
+
+                    // Success — exit retry loop.
+                    break;
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    if (attempt == maxAttempts)
+                        throw;
+
+                    log.Report($"  ⚠ Download error (attempt {attempt}/{maxAttempts}): {ex.Message}");
+                    log.Report($"  Retrying in {retryDelayMs / 1000} s...");
+                    await Task.Delay(retryDelayMs, ct);
                 }
             }
 
@@ -328,7 +383,9 @@ namespace ASLM.Services
             log.Report("  ✓ Download complete.");
         }
 
-        /// <summary>Extracts a zip archive from <c>step.Source</c> to <c>step.Dest</c>.</summary>
+        /// <summary>
+        /// Extracts a zip archive from <c>step.Source</c> to <c>step.Dest</c>.
+        /// </summary>
         /// <param name="step">The installation step configuration.</param>
         /// <param name="ctx">Context for resolving paths.</param>
         /// <param name="log">Progress logger.</param>
@@ -379,7 +436,9 @@ namespace ASLM.Services
             log.Report("  ✓ Extraction complete.");
         }
 
-        /// <summary>Performs a find-and-replace inside <c>step.Path</c>.</summary>
+        /// <summary>
+        /// Performs a text replacement inside <c>step.Path</c>.
+        /// </summary>
         /// <param name="step">The installation step configuration.</param>
         /// <param name="ctx">Context for resolving paths.</param>
         /// <param name="log">Progress logger.</param>
@@ -421,9 +480,12 @@ namespace ASLM.Services
             command = ctx.ResolveVariables(command);
 
             // Split into executable + argument string.
-            var parts = command.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+            var parts = SplitCommand(command);
+            if (parts.Count == 0)
+                throw new InvalidOperationException("Execute step contains an empty command.");
+
             var exePath = ctx.ResolvePath(parts[0]);
-            var arguments = parts.Length > 1 ? ctx.ResolveArgPaths(parts[1]) : "";
+            var arguments = parts.Count > 1 ? ctx.ResolveArgPaths(parts.Skip(1)) : string.Empty;
 
             log.Report($"  Executing: {exePath} {arguments}");
 
@@ -469,7 +531,9 @@ namespace ASLM.Services
                 log.Report("  ✓ Command complete.");
         }
 
-        /// <summary>Moves (renames) a directory from <c>step.Source</c> to <c>step.Dest</c>.</summary>
+        /// <summary>
+        /// Moves a directory from <c>step.Source</c> to <c>step.Dest</c>.
+        /// </summary>
         /// <param name="step">The installation step configuration.</param>
         /// <param name="ctx">Context for resolving paths.</param>
         /// <param name="log">Progress logger.</param>
@@ -489,7 +553,9 @@ namespace ASLM.Services
             log.Report("  ✓ Move complete.");
         }
 
-        /// <summary>Recursively deletes <c>step.Target</c> directory (defaults to temp dir).</summary>
+        /// <summary>
+        /// Deletes <c>step.Target</c> recursively, defaulting to the temp directory.
+        /// </summary>
         /// <param name="step">The installation step configuration.</param>
         /// <param name="ctx">Context for resolving paths.</param>
         /// <param name="log">Progress logger.</param>
@@ -510,7 +576,9 @@ namespace ASLM.Services
             }
         }
 
-        /// <summary>Renames a file from <c>step.Source</c> to <c>step.Dest</c>.</summary>
+        /// <summary>
+        /// Renames a file from <c>step.Source</c> to <c>step.Dest</c>.
+        /// </summary>
         /// <param name="step">The installation step configuration.</param>
         /// <param name="ctx">Context for resolving paths.</param>
         /// <param name="log">Progress logger.</param>
@@ -532,7 +600,9 @@ namespace ASLM.Services
             log.Report($"  ✓ Renamed: {Path.GetFileName(source)} → {Path.GetFileName(dest)}");
         }
 
-        /// <summary>Deletes a file at <c>step.Target</c>.</summary>
+        /// <summary>
+        /// Deletes the file at <c>step.Target</c>.
+        /// </summary>
         /// <param name="step">The installation step configuration.</param>
         /// <param name="ctx">Context for resolving paths.</param>
         /// <param name="log">Progress logger.</param>
@@ -550,7 +620,7 @@ namespace ASLM.Services
             log.Report($"  ✓ Deleted: {Path.GetFileName(target)}");
         }
 
-        // --- Helpers ---------------------------------------------------------
+        // Path helpers
 
         /// <summary>
         /// Returns the application root directory (parent of the <c>App/</c> folder).
@@ -564,7 +634,9 @@ namespace ASLM.Services
             return Directory.GetParent(appDir)?.FullName ?? appDir;
         }
 
-        /// <summary>Computes a lowercase hex SHA-256 hash for the given file.</summary>
+        /// <summary>
+        /// Computes a lowercase SHA-256 hash for one file.
+        /// </summary>
         /// <param name="filePath">Path to the file to hash.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Lowercase hex string of the SHA256 hash.</returns>
@@ -575,7 +647,9 @@ namespace ASLM.Services
             return Convert.ToHexStringLower(hashBytes);
         }
 
-        /// <summary>Serializes the engine config back to its source JSON file.</summary>
+        /// <summary>
+        /// Saves one engine manifest back to disk.
+        /// </summary>
         /// <param name="config">The config to save.</param>
         private async Task SaveConfigAsync(EngineConfig config)
         {
@@ -586,7 +660,73 @@ namespace ASLM.Services
             await File.WriteAllTextAsync(config.SourcePath, json);
         }
 
-        // --- StepContext (encapsulates per-install mutable state) -------------
+        // Command parsing
+
+        /// <summary>
+        /// Splits a command string into tokens while respecting quotes.
+        /// </summary>
+        private static List<string> SplitCommand(string command)
+        {
+            var args = new List<string>();
+            var currentArg = new System.Text.StringBuilder();
+            var inQuotes = false;
+            var quoteChar = '\0';
+
+            foreach (var c in command)
+            {
+                if (inQuotes)
+                {
+                    if (c == quoteChar)
+                    {
+                        inQuotes = false;
+                        quoteChar = '\0';
+                    }
+                    else
+                    {
+                        currentArg.Append(c);
+                    }
+                }
+                else
+                {
+                    if (char.IsWhiteSpace(c))
+                    {
+                        if (currentArg.Length > 0)
+                        {
+                            args.Add(currentArg.ToString());
+                            currentArg.Clear();
+                        }
+                    }
+                    else if (c == '"' || c == '\'')
+                    {
+                        inQuotes = true;
+                        quoteChar = c;
+                    }
+                    else
+                    {
+                        currentArg.Append(c);
+                    }
+                }
+            }
+
+            if (currentArg.Length > 0)
+            {
+                args.Add(currentArg.ToString());
+            }
+
+            return args;
+        }
+
+        // Command join
+
+        /// <summary>
+        /// Rebuilds an argument string from parsed tokens.
+        /// </summary>
+        private static string JoinArguments(IEnumerable<string> args)
+        {
+            return string.Join(" ", args.Select(arg => arg.Contains(' ') ? $"\"{arg}\"" : arg));
+        }
+
+        // Install context
 
         /// <summary>
         /// Holds directory paths for a single installation run.
@@ -665,20 +805,21 @@ namespace ASLM.Services
             }
 
             /// <summary>
-            /// Resolves path-like tokens inside an argument string.
+            /// Resolves path-like tokens inside argument values and rebuilds the argument string.
             /// Any token containing <c>/</c> or <c>\</c> is treated as a path and resolved.
             /// </summary>
-            /// <param name="args">The argument string to process.</param>
+            /// <param name="args">The argument values to process.</param>
             /// <returns>The argument string with resolved paths.</returns>
-            public string ResolveArgPaths(string args)
+            public string ResolveArgPaths(IEnumerable<string> args)
             {
-                var tokens = args.Split(' ');
+                var tokens = args.ToArray();
                 for (int i = 0; i < tokens.Length; i++)
                 {
                     if (tokens[i].Contains('/') || tokens[i].Contains('\\'))
                         tokens[i] = ResolvePath(tokens[i]);
                 }
-                return string.Join(' ', tokens);
+
+                return EngineInstaller.JoinArguments(tokens);
             }
         }
     }
