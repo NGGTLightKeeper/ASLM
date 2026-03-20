@@ -1,25 +1,35 @@
-﻿using Microsoft.UI.Xaml;
+// Copyright NGGT.LightKeeper. All Rights Reserved.
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using Microsoft.UI.Xaml;
 
 namespace ASLM.WinUI
 {
+    // Windows application entry point
+
     /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
+    /// Hosts the WinUI application wrapper for the MAUI app.
     /// </summary>
     public partial class App : MauiWinUIApplication
     {
+        // Initialization
+
         /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
+        /// Creates the WinUI application instance.
         /// </summary>
         public App()
         {
-            this.InitializeComponent();
+            InitializeComponent();
         }
 
-        protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
-    }
 
+        // MAUI bootstrap
+
+        /// <summary>
+        /// Builds the shared MAUI application instance for the Windows host.
+        /// </summary>
+        protected override MauiApp CreateMauiApp()
+        {
+            return MauiProgram.CreateMauiApp();
+        }
+    }
 }
