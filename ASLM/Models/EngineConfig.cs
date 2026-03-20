@@ -1,100 +1,74 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Text.Json.Serialization;
 
 namespace ASLM.Models
 {
+    // Engine manifest
+
     /// <summary>
-    /// Top-level configuration for an engine runtime, deserialized from <c>ASLM_Engine.json</c>.
+    /// Describes an engine package loaded from <c>ASLM_Engine.json</c>.
     /// </summary>
     public class EngineConfig
     {
-        /// <summary>
-        /// Schema version of the JSON file. Current version: 1.
-        /// Used to maintain backward compatibility when the file structure changes.
-        /// </summary>
+        // Version of the manifest schema used for compatibility checks.
         [JsonPropertyName("fileVersion")]
         public int FileVersion { get; set; } = 1;
 
-        /// <summary>
-        /// Unique identifier for the engine (e.g., "python-runtime").
-        /// </summary>
+        // Stable engine identifier used throughout the application.
         [JsonPropertyName("id")]
         public string Id { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Human-readable name of the engine.
-        /// </summary>
+        // Human-readable engine name shown in the UI.
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Description of the engine's purpose.
-        /// </summary>
+        // Short engine description displayed in setup and management screens.
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Version string of the engine (e.g., "3.12.8").
-        /// </summary>
+        // Version string of the packaged engine runtime.
         [JsonPropertyName("version")]
         public string Version { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Type of the engine (e.g., "runtime").
-        /// </summary>
+        // Resource type stored in the manifest, for example "runtime".
         [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Relative path to the main executable (e.g. "runtime/python.exe").
-        /// </summary>
+        // Relative path to the primary executable inside the engine folder.
         [JsonPropertyName("executablePath")]
         public string ExecutablePath { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Describes how to install libraries for this engine.
-        /// E.g. Python uses <c>"-m pip install"</c>, Node.js uses <c>"install"</c> with <c>npm.cmd</c>.
-        /// </summary>
+        // Package manager configuration used to install engine-specific libraries.
         [JsonPropertyName("packageManager")]
         public EnginePackageManager? PackageManager { get; set; }
 
-        /// <summary>
-        /// System requirements needed to install this engine.
-        /// </summary>
+        // Informational system requirements declared by the engine package.
         [JsonPropertyName("requirements")]
         public EngineRequirements? Requirements { get; set; }
 
-        /// <summary>
-        /// List of steps to install the engine.
-        /// </summary>
+        // Installation steps executed in the declared order.
         [JsonPropertyName("install")]
         public List<InstallStep> Install { get; set; } = [];
 
-        /// <summary>
-        /// Steps executed after all <see cref="Install"/> steps complete successfully.
-        /// Used for engine-specific fixes (e.g. renaming restrictive config files).
-        /// Supports the same actions as <see cref="Install"/>.
-        /// </summary>
+        // Additional steps executed after the main installation pipeline completes.
         [JsonPropertyName("postInstall")]
         public List<InstallStep> PostInstall { get; set; } = [];
 
-        /// <summary>
-        /// Current installation status of the engine.
-        /// </summary>
+        // Persisted installation state of the engine.
         [JsonPropertyName("status")]
         public EngineStatus Status { get; set; } = new();
 
-        /// <summary>
-        /// Absolute path to the JSON file this config was loaded from.
-        /// Set at runtime after deserialization; not serialized to disk.
-        /// </summary>
+        // Absolute path to the source manifest file resolved at runtime.
         [JsonIgnore]
         public string SourcePath { get; set; } = string.Empty;
 
         /// <summary>
-        /// Restores non-null nested objects, collections, and strings after JSON deserialization.
+        /// Restores nested objects, collections, and strings after JSON deserialization.
         /// </summary>
         public void Normalize()
         {
+            // Keep scalar string fields safe for downstream code and UI bindings.
             Id ??= string.Empty;
             Name ??= string.Empty;
             Description ??= string.Empty;
@@ -103,204 +77,166 @@ namespace ASLM.Models
             ExecutablePath ??= string.Empty;
             SourcePath ??= string.Empty;
 
+            // Normalize optional nested configuration blocks when they are present.
             PackageManager?.Normalize();
             Requirements?.Normalize();
 
+            // Recreate and normalize the main installation pipeline.
             Install ??= [];
             foreach (var step in Install)
             {
                 step?.Normalize();
             }
 
+            // Recreate and normalize the post-install pipeline.
             PostInstall ??= [];
             foreach (var step in PostInstall)
             {
                 step?.Normalize();
             }
 
+            // Ensure persisted runtime status is always available.
             Status ??= new();
             Status.Normalize();
         }
     }
 
+
+    // Installation steps
+
     /// <summary>
-    /// A single declarative installation step (download, extract, execute, etc.).
-    /// Only the fields relevant to the <see cref="Action"/> type are populated;
-    /// the rest remain <c>null</c> and are omitted during serialization.
+    /// Describes one declarative installation action in the engine manifest.
     /// </summary>
     public class InstallStep
     {
-        /// <summary>
-        /// The action to perform (e.g., "download", "extract", "execute").
-        /// </summary>
+        // Action name that determines which fields are meaningful for this step.
         [JsonPropertyName("action")]
         public string Action { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Human-readable name for logging purposes.
-        /// </summary>
+        // Optional human-readable label used in logs and progress UI.
         [JsonPropertyName("name")]
         public string? Name { get; set; }
 
-        // --- download --------------------------------------------------------
-
-        /// <summary>
-        /// URL for download actions.
-        /// </summary>
+        // Download source URL.
         [JsonPropertyName("url")]
         public string? Url { get; set; }
 
-        /// <summary>
-        /// Expected SHA-256 checksum for verification.
-        /// </summary>
+        // Expected SHA-256 checksum for downloaded content.
         [JsonPropertyName("sha256")]
         public string? Sha256 { get; set; }
 
-        // --- download, extract, move -----------------------------------------
-
-        /// <summary>
-        /// Destination path for the action.
-        /// </summary>
+        // Destination path used by download, extract, or move actions.
         [JsonPropertyName("dest")]
         public string? Dest { get; set; }
 
-        // --- extract, move ---------------------------------------------------
-
-        /// <summary>
-        /// Source path for extraction or move actions.
-        /// </summary>
+        // Source path used by extract or move actions.
         [JsonPropertyName("source")]
         public string? Source { get; set; }
 
-        // --- modify_file -----------------------------------------------------
-
-        /// <summary>
-        /// Path to the file to modify.
-        /// </summary>
+        // File path targeted by modify-file actions.
         [JsonPropertyName("path")]
         public string? Path { get; set; }
 
-        /// <summary>
-        /// String pattern to find in the file.
-        /// </summary>
+        // Text fragment to locate inside a file modification action.
         [JsonPropertyName("find")]
         public string? Find { get; set; }
 
-        /// <summary>
-        /// String to replace the found pattern with.
-        /// </summary>
+        // Replacement text for a file modification action.
         [JsonPropertyName("replace")]
         public string? Replace { get; set; }
 
-        // --- execute ---------------------------------------------------------
-
-        /// <summary>
-        /// Command line string to execute.
-        /// </summary>
+        // Command line used by execute actions.
         [JsonPropertyName("command")]
         public string? Command { get; set; }
 
-        // --- cleanup ---------------------------------------------------------
-
-        /// <summary>
-        /// Target directory or file to clean up (delete).
-        /// </summary>
+        // File or directory removed by cleanup actions.
         [JsonPropertyName("target")]
         public string? Target { get; set; }
 
         /// <summary>
-        /// Restores required non-null string values after JSON deserialization.
+        /// Restores the required action name after JSON deserialization.
         /// </summary>
         public void Normalize()
         {
+            // Keep the action field non-null because step dispatch depends on it.
             Action ??= string.Empty;
         }
     }
 
+
+    // Package management
+
     /// <summary>
-    /// Describes how to install third-party libraries for this engine.
+    /// Describes how the engine installs third-party libraries.
     /// </summary>
     public class EnginePackageManager
     {
-        /// <summary>
-        /// Arguments prepended before library names.
-        /// E.g. <c>"-m pip install"</c> for Python.
-        /// </summary>
+        // Arguments passed before package names, for example "-m pip install".
         [JsonPropertyName("command")]
         public string Command { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Relative path to the package manager executable.
-        /// If null, the engine's own executable (<see cref="EngineConfig.ExecutablePath"/>) is used.
-        /// E.g. <c>"runtime/npm.cmd"</c> for Node.js.
-        /// </summary>
+        // Optional executable path used instead of the engine's main executable.
         [JsonPropertyName("executable")]
         public string? Executable { get; set; }
 
         /// <summary>
-        /// Restores required non-null string values after JSON deserialization.
+        /// Restores required string values after JSON deserialization.
         /// </summary>
         public void Normalize()
         {
+            // Keep package installation commands safe for command construction.
             Command ??= string.Empty;
         }
     }
 
+
+    // Requirements
+
     /// <summary>
-    /// System requirements declared by the engine package.
-    /// Currently informational; the installer does not enforce them automatically.
+    /// Stores the system requirements declared by an engine package.
     /// </summary>
     public class EngineRequirements
     {
-        /// <summary>
-        /// Required Operating System (e.g., "windows").
-        /// </summary>
+        // Required operating system identifier.
         [JsonPropertyName("os")]
         public string Os { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Required Architecture (e.g., "x64").
-        /// </summary>
+        // Required processor architecture identifier.
         [JsonPropertyName("arch")]
         public string Arch { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Required disk space in Megabytes.
-        /// </summary>
+        // Required free disk space in megabytes.
         [JsonPropertyName("diskSpaceMb")]
         public int DiskSpaceMb { get; set; }
 
         /// <summary>
-        /// Restores required non-null string values after JSON deserialization.
+        /// Restores required string values after JSON deserialization.
         /// </summary>
         public void Normalize()
         {
+            // Keep requirement values non-null for validation and display logic.
             Os ??= string.Empty;
             Arch ??= string.Empty;
         }
     }
 
+
+    // Status tracking
+
     /// <summary>
-    /// Tracks whether the engine has been installed and when it was last checked.
-    /// Persisted inside the <c>ASLM_Engine.json</c> file.
+    /// Tracks the persisted installation state of an engine package.
     /// </summary>
     public class EngineStatus
     {
-        /// <summary>
-        /// Gets or sets whether the engine is currently installed.
-        /// </summary>
+        // Indicates whether the engine is currently installed.
         [JsonPropertyName("installed")]
         public bool Installed { get; set; }
 
-        /// <summary>
-        /// Gets or sets the version currently installed.
-        /// </summary>
+        // Version string of the installed engine, if known.
         [JsonPropertyName("installedVersion")]
         public string? InstalledVersion { get; set; }
 
-        /// <summary>
-        /// Timestamp of the last check/update.
-        /// </summary>
+        // Timestamp of the latest installation check or update.
         [JsonPropertyName("lastChecked")]
         public string? LastChecked { get; set; }
 
@@ -309,6 +245,7 @@ namespace ASLM.Models
         /// </summary>
         public void Normalize()
         {
+            // Empty text values are treated as missing persisted state.
             InstalledVersion = string.IsNullOrWhiteSpace(InstalledVersion) ? null : InstalledVersion;
             LastChecked = string.IsNullOrWhiteSpace(LastChecked) ? null : LastChecked;
         }

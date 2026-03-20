@@ -1,144 +1,95 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ASLM.Models
 {
+    // Module manifest
+
     /// <summary>
-    /// Configuration for an installable module, deserialized from <c>ASLM_Module.json</c>.
+    /// Describes an installable module loaded from <c>ASLM_Module.json</c>.
     /// </summary>
     public class ModuleConfig
     {
-        /// <summary>
-        /// Schema version of the JSON file. Current version: 1.
-        /// Used to maintain backward compatibility when the file structure changes.
-        /// </summary>
+        // Version of the manifest schema used for compatibility checks.
         [JsonPropertyName("fileVersion")]
         public int FileVersion { get; set; } = 1;
 
-        /// <summary>
-        /// Unique identifier for the module.
-        /// </summary>
+        // Stable module identifier used throughout the application.
         [JsonPropertyName("id")]
         public string Id { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Human-readable name of the module.
-        /// </summary>
+        // Human-readable module name shown in the UI.
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Description of the module.
-        /// </summary>
+        // Short description of the module's purpose.
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Module version string.
-        /// </summary>
+        // Version string of the packaged module.
         [JsonPropertyName("version")]
         public string Version { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Author of the module.
-        /// </summary>
+        // Module author displayed to the user.
         [JsonPropertyName("author")]
         public string Author { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Type of module (e.g., "service", "ui").
-        /// </summary>
+        // Module type used by the application to interpret the package.
         [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
 
-        // --- Source ----------------------------------------------------------
-
-        /// <summary>
-        /// Information about the module's source code repository.
-        /// </summary>
+        // Remote source definition for the module package.
         [JsonPropertyName("source")]
         public ModuleSource Source { get; set; } = new();
 
-        // --- Dependencies ----------------------------------------------------
-
-        /// <summary>
-        /// Dependencies required by the module (engines, models).
-        /// </summary>
+        // Engine and model dependencies required by the module.
         [JsonPropertyName("dependencies")]
         public ModuleDependencies Dependencies { get; set; } = new();
 
-        // --- Commands --------------------------------------------------------
-
-        /// <summary>
-        /// Commands for setup and execution.
-        /// </summary>
+        // Commands used to prepare and launch the module.
         [JsonPropertyName("commands")]
         public ModuleCommands Commands { get; set; } = new();
 
-        // --- UI --------------------------------------------------------------
-
-        /// <summary>
-        /// Whether this module provides a web page accessible from the main panel.
-        /// </summary>
+        // Indicates whether the module contributes a page to the shell UI.
         [JsonPropertyName("hasPage")]
         public bool HasPage { get; set; }
 
-        /// <summary>
-        /// Relative path to the module icon (e.g. "icon.png"). Optional.
-        /// </summary>
+        // Optional relative path to the main module icon.
         [JsonPropertyName("icon")]
         public string? Icon { get; set; }
 
-        /// <summary>
-        /// Absolute path to the icon file. Resolved at runtime from <see cref="SourcePath"/>
-        /// only when the target stays inside the module directory.
-        /// </summary>
+        // Resolved absolute path to the main module icon inside the module directory.
         [JsonIgnore]
-        public string? IconFullPath =>
-            ResolveModuleAssetPath(Icon);
+        public string? IconFullPath => ResolveModuleAssetPath(Icon);
 
-        /// <summary>
-        /// Relative path to the sidebar icon (e.g. "sidebar_icon.svg"). Optional.
-        /// </summary>
+        // Optional relative path to the sidebar icon.
         [JsonPropertyName("sidebarIcon")]
         public string? SidebarIcon { get; set; }
 
-        /// <summary>
-        /// Absolute path to the sidebar icon file. Resolved at runtime from <see cref="SourcePath"/>
-        /// only when the target stays inside the module directory.
-        /// </summary>
+        // Resolved absolute path to the sidebar icon inside the module directory.
         [JsonIgnore]
-        public string? SidebarIconFullPath =>
-            ResolveModuleAssetPath(SidebarIcon);
+        public string? SidebarIconFullPath => ResolveModuleAssetPath(SidebarIcon);
 
-        // --- Settings --------------------------------------------------------
-
-        /// <summary>
-        /// List of user-configurable settings exposed by the module.
-        /// </summary>
+        // User-configurable settings exposed by the module.
         [JsonPropertyName("settings")]
         public List<ModuleSetting> Settings { get; set; } = [];
 
-        // --- Status ----------------------------------------------------------
-
-        /// <summary>
-        /// Current installation and runtime status of the module.
-        /// </summary>
+        // Persisted installation and runtime state of the module.
         [JsonPropertyName("status")]
         public ModuleStatus Status { get; set; } = new();
 
-        /// <summary>
-        /// Absolute path to the JSON file this config was loaded from.
-        /// Set at runtime; not serialized to disk.
-        /// </summary>
+        // Absolute path to the source manifest file resolved at runtime.
         [JsonIgnore]
         public string SourcePath { get; set; } = string.Empty;
 
         /// <summary>
-        /// Restores non-null nested objects, collections, and strings after JSON deserialization.
+        /// Restores nested objects, collections, and strings after JSON deserialization.
         /// </summary>
         public void Normalize()
         {
+            // Keep scalar string fields safe for downstream code and UI bindings.
             Id ??= string.Empty;
             Name ??= string.Empty;
             Description ??= string.Empty;
@@ -149,6 +100,7 @@ namespace ASLM.Models
             SidebarIcon = string.IsNullOrWhiteSpace(SidebarIcon) ? null : SidebarIcon;
             SourcePath ??= string.Empty;
 
+            // Recreate and normalize nested configuration blocks.
             Source ??= new();
             Source.Normalize();
 
@@ -158,25 +110,40 @@ namespace ASLM.Models
             Commands ??= new();
             Commands.Normalize();
 
+            // Normalize every persisted module setting.
             Settings ??= [];
             foreach (var setting in Settings)
             {
                 setting?.Normalize();
             }
 
+            // Ensure persisted runtime status is always available.
             Status ??= new();
             Status.Normalize();
         }
 
+
+        // Asset resolution
+
+        /// <summary>
+        /// Resolves a module asset path and rejects paths that escape the module directory.
+        /// </summary>
         private string? ResolveModuleAssetPath(string? relativePath)
         {
+            // Asset resolution is only possible when both the relative asset path and manifest path exist.
             if (string.IsNullOrWhiteSpace(relativePath) || string.IsNullOrWhiteSpace(SourcePath))
+            {
                 return null;
+            }
 
+            // Resolve the module directory from the manifest location.
             var moduleDir = Path.GetDirectoryName(SourcePath);
             if (string.IsNullOrWhiteSpace(moduleDir))
+            {
                 return null;
+            }
 
+            // Normalize both paths before comparing them to prevent directory traversal.
             var fullModuleDir = Path.GetFullPath(moduleDir);
             var fullPath = Path.GetFullPath(Path.Combine(fullModuleDir, relativePath));
             var moduleDirPrefix = fullModuleDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
@@ -188,65 +155,62 @@ namespace ASLM.Models
         }
     }
 
-    // --- Source ---------------------------------------------------------------
+
+    // Module source
 
     /// <summary>
-    /// Defines where the module is hosted (e.g. GitHub).
+    /// Describes where a module package is hosted.
     /// </summary>
     public class ModuleSource
     {
-        /// <summary>
-        /// Type of source control (default "github").
-        /// </summary>
+        // Source provider identifier. The default provider is GitHub.
         [JsonPropertyName("type")]
         public string Type { get; set; } = "github";
 
-        /// <summary>
-        /// Repository path (e.g. "User/Repo").
-        /// </summary>
+        // Repository path in provider-specific format, for example "User/Repo".
         [JsonPropertyName("repo")]
         public string Repo { get; set; } = string.Empty;
 
         /// <summary>
-        /// Restores required non-null string values after JSON deserialization.
+        /// Restores required string values after JSON deserialization.
         /// </summary>
         public void Normalize()
         {
+            // Keep source values non-null and preserve the expected default provider.
             Type = string.IsNullOrWhiteSpace(Type) ? "github" : Type;
             Repo ??= string.Empty;
         }
     }
 
-    // --- Dependencies --------------------------------------------------------
+
+    // Module dependencies
 
     /// <summary>
-    /// Declares what this module needs to run.
+    /// Declares the engines and model categories required by a module.
     /// </summary>
     public class ModuleDependencies
     {
-        /// <summary>
-        /// List of required engine runtimes (e.g. Python, Node).
-        /// </summary>
+        // Required engine runtimes and their package dependencies.
         [JsonPropertyName("engines")]
         public List<ModuleEngineDependency> Engines { get; set; } = [];
 
-        /// <summary>
-        /// Required model categories (e.g. "ASR", "LLM").
-        /// </summary>
+        // Required model categories matched against installed models.
         [JsonPropertyName("models")]
         public List<string> Models { get; set; } = [];
 
         /// <summary>
-        /// Restores non-null collections after JSON deserialization.
+        /// Restores dependency collections after JSON deserialization.
         /// </summary>
         public void Normalize()
         {
+            // Recreate and normalize engine dependencies when needed.
             Engines ??= [];
             foreach (var engine in Engines)
             {
                 engine?.Normalize();
             }
 
+            // Remove empty model category entries while preserving valid ones.
             Models ??= [];
             Models = Models
                 .Where(static model => !string.IsNullOrWhiteSpace(model))
@@ -254,30 +218,31 @@ namespace ASLM.Models
         }
     }
 
+
+    // Engine dependencies
+
     /// <summary>
-    /// Describes a dependency on a specific engine runtime.
+    /// Describes the dependency on a specific engine runtime.
     /// </summary>
     public class ModuleEngineDependency
     {
-        /// <summary>
-        /// The engine ID (e.g. "python-runtime").
-        /// </summary>
+        // Identifier of the required engine runtime.
         [JsonPropertyName("id")]
         public string Id { get; set; } = string.Empty;
 
-        /// <summary>
-        /// List of libraries/packages to install for this engine.
-        /// </summary>
+        // Additional libraries that must be installed for this engine.
         [JsonPropertyName("libraries")]
         public List<string> Libraries { get; set; } = [];
 
         /// <summary>
-        /// Restores required non-null strings and collections after JSON deserialization.
+        /// Restores engine dependency values after JSON deserialization.
         /// </summary>
         public void Normalize()
         {
+            // Keep the dependency identifier safe for lookup logic.
             Id ??= string.Empty;
 
+            // Remove empty library entries while preserving valid ones.
             Libraries ??= [];
             Libraries = Libraries
                 .Where(static library => !string.IsNullOrWhiteSpace(library))
@@ -285,36 +250,35 @@ namespace ASLM.Models
         }
     }
 
-    // --- Commands ------------------------------------------------------------
+
+    // Module commands
 
     /// <summary>
-    /// Groups commands by their purpose (setup vs run).
+    /// Groups the commands used during module setup and normal execution.
     /// </summary>
     public class ModuleCommands
     {
-        /// <summary>
-        /// Commands executed once on first setup (e.g. migrations, pip install).
-        /// </summary>
+        // Commands executed once during the initial module setup.
         [JsonPropertyName("firstRun")]
         public List<ModuleCommand> FirstRun { get; set; } = [];
 
-        /// <summary>
-        /// Commands executed on normal launch.
-        /// </summary>
+        // Commands executed during the normal module launch flow.
         [JsonPropertyName("run")]
         public List<ModuleCommand> Run { get; set; } = [];
 
         /// <summary>
-        /// Restores non-null command collections after JSON deserialization.
+        /// Restores command collections after JSON deserialization.
         /// </summary>
         public void Normalize()
         {
+            // Recreate and normalize first-run commands when needed.
             FirstRun ??= [];
             foreach (var command in FirstRun)
             {
                 command?.Normalize();
             }
 
+            // Recreate and normalize launch commands when needed.
             Run ??= [];
             foreach (var command in Run)
             {
@@ -323,44 +287,36 @@ namespace ASLM.Models
         }
     }
 
+
+    // Individual commands
+
     /// <summary>
-    /// A single executable command.
-    /// <c>exec</c> format: <c>"file.py subcommand --arg1 val1 --arg2 val2"</c>.
-    /// The engine is specified separately via <see cref="Engine"/>.
+    /// Describes one executable module command.
     /// </summary>
     public class ModuleCommand
     {
-        /// <summary>
-        /// Display name of the command.
-        /// </summary>
+        // Human-readable command name shown in the UI.
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Description of what the command does.
-        /// </summary>
+        // Short explanation of what the command does.
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Engine ID to use for execution (e.g. "python-runtime").
-        /// If empty, the file is executed directly.
-        /// </summary>
+        // Engine identifier used to execute the command, if required.
         [JsonPropertyName("engine")]
         public string Engine { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Execution string relative to the module directory.
-        /// Examples: <c>"main.py"</c>, <c>"manage.py runserver --port 8000"</c>.
-        /// </summary>
+        // Execution string relative to the module directory.
         [JsonPropertyName("exec")]
         public string Exec { get; set; } = string.Empty;
 
         /// <summary>
-        /// Restores required non-null string values after JSON deserialization.
+        /// Restores command values after JSON deserialization.
         /// </summary>
         public void Normalize()
         {
+            // Keep command fields non-null for process construction.
             Name ??= string.Empty;
             Description ??= string.Empty;
             Engine ??= string.Empty;
@@ -368,88 +324,60 @@ namespace ASLM.Models
         }
     }
 
-    // --- Settings ------------------------------------------------------------
+
+    // Module settings
 
     /// <summary>
-    /// A configurable setting exposed by the module.
-    /// Type determines how the UI renders and validates its value.
+    /// Describes one user-configurable module setting.
     /// </summary>
     public class ModuleSetting
     {
-        /// <summary>
-        /// Unique key for the setting.
-        /// </summary>
+        // Stable key used to read and persist the setting value.
         [JsonPropertyName("key")]
         public string Key { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Display name for the setting.
-        /// </summary>
+        // Human-readable setting name shown in the UI.
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Help text describing the setting.
-        /// </summary>
+        // Help text that explains the setting to the user.
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Data type for the setting value.
-        /// Current runtime recognizes <c>select</c>, <c>string</c>, <c>int</c>,
-        /// <c>bool</c>, <c>port</c>, <c>engine</c>, <c>path</c>, <c>data</c>,
-        /// and <c>models</c>. The <c>port</c> type is managed by the application itself.
-        /// </summary>
+        // Setting type that controls validation and rendering behavior.
         [JsonPropertyName("type")]
         public string Type { get; set; } = "string";
 
-        /// <summary>
-        /// Default value for the setting. Can be string, boolean, numeric, or null.
-        /// </summary>
+        // Default persisted value used when the current value is absent.
         [JsonPropertyName("default")]
         public object? Default { get; set; }
 
-        /// <summary>
-        /// Current value, updated at runtime. If null, <see cref="Default"/> is used.
-        /// Can be string, boolean, numeric, or null.
-        /// </summary>
+        // Current persisted value for the setting.
         [JsonPropertyName("value")]
         public object? Value { get; set; }
 
-        /// <summary>
-        /// Allowed options for <c>select</c> settings.
-        /// The current settings UI still renders these values as plain text input.
-        /// </summary>
+        // Allowed values for choice-based settings.
         [JsonPropertyName("allowedValues")]
         public List<string>? AllowedValues { get; set; }
 
-        // --- Commands for this setting ---------------------------------------
-
-        /// <summary>
-        /// Engine used to execute get/set commands. Can be empty if not required.
-        /// </summary>
+        // Engine identifier used to execute the get and set commands, if required.
         [JsonPropertyName("engine")]
         public string Engine { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Command to retrieve the current value of this setting.
-        /// Example: <c>"config.py get --key port"</c>
-        /// </summary>
+        // Command that reads the current value of the setting.
         [JsonPropertyName("getExec")]
         public string GetExec { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Command to apply a new value. Use <c>{value}</c> as a placeholder.
-        /// Example: <c>"config.py set --key port --value {value}"</c>
-        /// </summary>
+        // Command that applies a new value to the setting.
         [JsonPropertyName("setExec")]
         public string SetExec { get; set; } = string.Empty;
 
         /// <summary>
-        /// Restores non-null strings and converts JSON scalar values to CLR values.
+        /// Restores string fields and normalizes persisted scalar values after JSON deserialization.
         /// </summary>
         public void Normalize()
         {
+            // Keep scalar string fields safe for UI binding and command generation.
             Key ??= string.Empty;
             Name ??= string.Empty;
             Description ??= string.Empty;
@@ -458,9 +386,11 @@ namespace ASLM.Models
             GetExec ??= string.Empty;
             SetExec ??= string.Empty;
 
+            // Convert JSON scalar wrappers into CLR values expected by the rest of the codebase.
             Default = NormalizeScalarValue(Default);
             Value = NormalizeScalarValue(Value);
 
+            // Remove empty allowed values while preserving valid entries.
             if (AllowedValues != null)
             {
                 AllowedValues = AllowedValues
@@ -469,16 +399,23 @@ namespace ASLM.Models
             }
         }
 
+
+        // Input parsing
+
         /// <summary>
-        /// Converts raw text input from the settings UI into the most suitable persisted value.
+        /// Converts raw settings UI input into the most suitable persisted scalar value.
         /// </summary>
         /// <param name="rawValue">The text entered by the user.</param>
         /// <returns>A scalar value suitable for JSON serialization.</returns>
         public object? ParseUserInput(string? rawValue)
         {
+            // A missing text value should remain missing in the persisted payload.
             if (rawValue is null)
+            {
                 return null;
+            }
 
+            // Parse well-known scalar types and fall back to the original text when parsing fails.
             return Type.Trim().ToLowerInvariant() switch
             {
                 "bool" => bool.TryParse(rawValue, out var boolValue) ? boolValue : rawValue,
@@ -487,11 +424,21 @@ namespace ASLM.Models
             };
         }
 
+
+        // Scalar conversion
+
+        /// <summary>
+        /// Converts JSON scalar wrappers into CLR values used by the settings runtime.
+        /// </summary>
         private static object? NormalizeScalarValue(object? value)
         {
+            // Non-JSON values are already in their final CLR representation.
             if (value is not JsonElement jsonElement)
+            {
                 return value;
+            }
 
+            // Convert scalar JSON values while preserving unsupported payloads as raw text.
             return jsonElement.ValueKind switch
             {
                 JsonValueKind.String => jsonElement.GetString(),
@@ -505,46 +452,35 @@ namespace ASLM.Models
         }
     }
 
-    // --- Status --------------------------------------------------------------
+
+    // Module status
 
     /// <summary>
-    /// Tracks the persisted lifecycle state of the module manifest.
+    /// Tracks the persisted lifecycle state of a module package.
     /// </summary>
     public class ModuleStatus
     {
-        /// <summary>
-        /// Gets or sets whether the module manifest has been discovered in the installed modules directory.
-        /// </summary>
+        // Indicates whether the module manifest is present in the installed modules directory.
         [JsonPropertyName("installed")]
         public bool Installed { get; set; }
 
-        /// <summary>
-        /// Gets or sets whether the module is enabled (running).
-        /// </summary>
+        // Indicates whether the module is currently enabled.
         [JsonPropertyName("enabled")]
         public bool Enabled { get; set; }
 
-        /// <summary>
-        /// Gets or sets whether the first-run setup has completed.
-        /// </summary>
+        // Indicates whether the module completed its first-run setup.
         [JsonPropertyName("firstRunCompleted")]
         public bool FirstRunCompleted { get; set; }
 
-        /// <summary>
-        /// Gets or sets the currently installed version.
-        /// </summary>
+        // Version string of the installed module, if known.
         [JsonPropertyName("installedVersion")]
         public string? InstalledVersion { get; set; }
 
-        /// <summary>
-        /// Timestamp of the last update check.
-        /// </summary>
+        // Timestamp of the latest update check.
         [JsonPropertyName("lastChecked")]
         public string? LastChecked { get; set; }
 
-        /// <summary>
-        /// Timestamp of the last successful update.
-        /// </summary>
+        // Timestamp of the latest successful update.
         [JsonPropertyName("lastUpdated")]
         public string? LastUpdated { get; set; }
 
@@ -553,6 +489,7 @@ namespace ASLM.Models
         /// </summary>
         public void Normalize()
         {
+            // Empty text values are treated as missing persisted state.
             InstalledVersion = string.IsNullOrWhiteSpace(InstalledVersion) ? null : InstalledVersion;
             LastChecked = string.IsNullOrWhiteSpace(LastChecked) ? null : LastChecked;
             LastUpdated = string.IsNullOrWhiteSpace(LastUpdated) ? null : LastUpdated;
