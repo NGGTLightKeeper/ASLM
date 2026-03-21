@@ -185,11 +185,13 @@ namespace ASLM.Pages
             animation.Commit(this, "SidebarAnimation", 16, 150, Easing.CubicOut);
             UpdateButtonAlignment(CollapseButton);
 
+            var spacing = _panelExpanded ? 14 : 0;
+
             // Update the fixed shell navigation buttons first.
             foreach (var button in _navButtons)
             {
                 button.Text = _panelExpanded ? GetButtonLabel(button) : string.Empty;
-                button.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
+                button.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, spacing);
                 button.HorizontalOptions = LayoutOptions.Fill;
                 UpdateButtonAlignment(button);
             }
@@ -205,7 +207,7 @@ namespace ASLM.Pages
                 button.Text = _panelExpanded && button.BindingContext is ModuleConfig module
                     ? module.Name
                     : string.Empty;
-                button.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
+                button.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, spacing);
                 button.HorizontalOptions = LayoutOptions.Fill;
                 UpdateButtonAlignment(button);
             }
@@ -358,8 +360,7 @@ namespace ASLM.Pages
                 ImageSource sidebarIcon;
                 if (!string.IsNullOrEmpty(module.SidebarIconFullPath) && File.Exists(module.SidebarIconFullPath))
                 {
-                    var capturedPath = module.SidebarIconFullPath;
-                    sidebarIcon = ImageSource.FromStream(() => File.OpenRead(capturedPath));
+                    sidebarIcon = ImageSource.FromFile(module.SidebarIconFullPath);
                 }
                 else
                 {
@@ -373,7 +374,7 @@ namespace ASLM.Pages
                     BindingContext = module,
                     ClassId = "PAGE",
                     ImageSource = sidebarIcon,
-                    ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14),
+                    ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 0),
                     Style = (Style)Application.Current!.Resources["SidebarButton"],
                     BackgroundColor = TransparentBackground,
                     TextColor = InactiveTextColor,
@@ -386,6 +387,29 @@ namespace ASLM.Pages
                 button.HandlerChanged += (sender, _) => UpdateButtonAlignment((Button)sender!);
                 ModulePagePanel.Children.Add(button);
             }
+
+            // Re-apply ContentLayout in a retry loop until images from disk are fully loaded.
+            // At restart the first iteration is usually enough; at cold start it may take longer.
+            _ = Task.Run(async () =>
+            {
+                for (var i = 0; i < 20; i++)
+                {
+                    await Task.Delay(50);
+                    Dispatcher.Dispatch(() =>
+                    {
+                        var spacing = _panelExpanded ? 14 : 0;
+                        foreach (var child in ModulePagePanel.Children)
+                        {
+                            if (child is Button btn)
+                            {
+                                btn.ContentLayout = new Button.ButtonContentLayout(
+                                    Button.ButtonContentLayout.ImagePosition.Left, spacing);
+                                UpdateButtonAlignment(btn);
+                            }
+                        }
+                    });
+                }
+            });
         }
 
         // Module page activation
@@ -436,7 +460,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Starts enabled modules that expose run commands when the shell opens.
         /// </summary>
-        private async Task StartEnabledModulesAsync()
+        private Task StartEnabledModulesAsync()
         {
             var enabledModules = _allModules
                 .Where(module => module.Status.Enabled && module.Commands.Run.Count > 0)
@@ -444,17 +468,19 @@ namespace ASLM.Pages
 
             if (enabledModules.Count == 0)
             {
-                return;
+                return Task.CompletedTask;
             }
 
-            var logProgress = new Progress<string>(message =>
-                System.Diagnostics.Debug.WriteLine($"[ModuleStart] {message}"));
-
+            // Start all enabled modules in parallel — no artificial delay between them.
             foreach (var module in enabledModules)
             {
+                var logProgress = new Progress<string>(message =>
+                    System.Diagnostics.Debug.WriteLine($"[ModuleStart:{module.Name}] {message}"));
+
                 _ = Task.Run(() => _moduleRunner.ExecuteRunAsync(module, logProgress, CancellationToken.None));
-                await Task.Delay(500);
             }
+
+            return Task.CompletedTask;
         }
 
 

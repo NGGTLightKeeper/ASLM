@@ -105,33 +105,56 @@ namespace ASLM.Services
                 return true;
             }
 
-            // Synchronize settings
+            // Synchronize settings: resolve target values, check current values in parallel,
+            // then apply only the settings that actually need updating.
             if (module.Settings != null && module.Settings.Count > 0)
             {
                 log.Report("Synchronizing module settings...");
-                foreach (var setting in module.Settings)
+
+                // Collect only settings that have a SetExec defined.
+                var settingsToSync = module.Settings
+                    .Where(s => !string.IsNullOrEmpty(s.SetExec))
+                    .ToList();
+
+                if (settingsToSync.Count > 0)
                 {
-                    if (ct.IsCancellationRequested) return false;
-                    if (string.IsNullOrEmpty(setting.SetExec)) continue;
+                    // Resolve all target values up front (no I/O, very fast).
+                    var targets = settingsToSync
+                        .Select(s => (Setting: s, Target: ResolveSettingValue(module, s)))
+                        .ToList();
 
-                    var targetValue = ResolveSettingValue(module, setting);
-                    bool needsUpdate = true;
-
-                    if (!string.IsNullOrEmpty(setting.GetExec))
+                    // Fire all GetExec checks in parallel to avoid N sequential process spawns.
+                    var checkTasks = targets.Select(async t =>
                     {
-                        var currentValue = await ExecuteSettingCommandAsync(module, setting, isSet: false, newValue: null, ct);
-                        
-                        if (currentValue != null && string.Equals(currentValue.Trim(), targetValue.Trim(), StringComparison.OrdinalIgnoreCase))
+                        if (string.IsNullOrEmpty(t.Setting.GetExec))
                         {
-                            log.Report($"[Sync] '{setting.Key}' is already up to date ({currentValue.Trim()})");
-                            needsUpdate = false;
+                            return (t.Setting, t.Target, NeedsUpdate: true);
                         }
-                    }
 
-                    if (needsUpdate)
+                        var current = await ExecuteSettingCommandAsync(module, t.Setting, isSet: false, newValue: null, ct);
+                        var upToDate = current != null &&
+                                       string.Equals(current.Trim(), t.Target.Trim(), StringComparison.OrdinalIgnoreCase);
+
+                        if (upToDate)
+                        {
+                            log.Report($"[Sync] '{t.Setting.Key}' is already up to date ({current!.Trim()})");
+                        }
+
+                        return (t.Setting, t.Target, NeedsUpdate: !upToDate);
+                    });
+
+                    var results = await Task.WhenAll(checkTasks);
+
+                    // Apply Set commands sequentially for those that need updating.
+                    foreach (var (setting, target, needsUpdate) in results)
                     {
-                        log.Report($"[Sync] Applying '{setting.Key}' = {targetValue}");
-                        await ExecuteSettingCommandAsync(module, setting, isSet: true, newValue: targetValue, ct);
+                        if (ct.IsCancellationRequested) return false;
+
+                        if (needsUpdate)
+                        {
+                            log.Report($"[Sync] Applying '{setting.Key}' = {target}");
+                            await ExecuteSettingCommandAsync(module, setting, isSet: true, newValue: target, ct);
+                        }
                     }
                 }
             }
