@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/dimap/Projects/ASLM-Chat/Apps/UI/static/js/main/**)",
+      "Read(//c/Users/dimap/Projects/ASLM-Chat/Apps/UI/static/css/main/**)",
+      "Read(//c/Users/dimap/Projects/ASLM-Chat/Apps/UI/**)"
+    ]
+  }
+}
