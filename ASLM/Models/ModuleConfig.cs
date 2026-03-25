@@ -2,6 +2,7 @@
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Globalization;
 
 namespace ASLM.Models
 {
@@ -356,6 +357,10 @@ namespace ASLM.Models
         [JsonPropertyName("value")]
         public object? Value { get; set; }
 
+        // Indicates whether a system-managed setting should use a user-provided custom value.
+        [JsonPropertyName("useCustomValue")]
+        public bool UseCustomValue { get; set; }
+
         // Allowed values for choice-based settings.
         [JsonPropertyName("allowedValues")]
         public List<string>? AllowedValues { get; set; }
@@ -371,6 +376,18 @@ namespace ASLM.Models
         // Command that applies a new value to the setting.
         [JsonPropertyName("setExec")]
         public string SetExec { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the normalized setting type used by parsing and rendering logic.
+        /// </summary>
+        [JsonIgnore]
+        public string NormalizedType => Type.Trim().ToLowerInvariant();
+
+        /// <summary>
+        /// Gets whether the setting is normally managed by ASLM unless a custom override is enabled.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsAutomaticallyManaged => NormalizedType is "path" or "data" or "models";
 
         /// <summary>
         /// Restores string fields and normalizes persisted scalar values after JSON deserialization.
@@ -415,13 +432,93 @@ namespace ASLM.Models
                 return null;
             }
 
-            // Parse well-known scalar types and fall back to the original text when parsing fails.
-            return Type.Trim().ToLowerInvariant() switch
+            if (string.IsNullOrWhiteSpace(rawValue))
             {
-                "bool" => bool.TryParse(rawValue, out var boolValue) ? boolValue : rawValue,
-                "int" or "port" => int.TryParse(rawValue, out var intValue) ? intValue : rawValue,
+                return NormalizedType switch
+                {
+                    "bool" or "engine" or "int" or "integer" or "long" or "float" or "double" or "number" or "port"
+                        or "json" or "object" or "array" => null,
+                    _ => rawValue
+                };
+            }
+
+            // Parse well-known scalar types and fall back to the original text when parsing fails.
+            return ParseSerializedValue(rawValue);
+        }
+
+        /// <summary>
+        /// Normalizes values returned by controls before they are persisted.
+        /// </summary>
+        public object? NormalizeUserValue(object? rawValue)
+        {
+            return rawValue switch
+            {
+                null => null,
+                string text => ParseUserInput(text),
+                JsonElement jsonElement => NormalizeScalarValue(jsonElement),
                 _ => rawValue
             };
+        }
+
+        /// <summary>
+        /// Parses a textual setting value according to the declared setting type.
+        /// </summary>
+        public object? ParseSerializedValue(string? rawValue)
+        {
+            if (rawValue is null)
+            {
+                return null;
+            }
+
+            return NormalizedType switch
+            {
+                "bool" or "engine" => bool.TryParse(rawValue, out var boolValue) ? boolValue : rawValue,
+                "int" or "integer" or "port" => int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var intValue)
+                    ? intValue
+                    : rawValue,
+                "long" => long.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var longValue)
+                    ? longValue
+                    : rawValue,
+                "float" or "double" or "number" => double.TryParse(rawValue, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var doubleValue)
+                    ? doubleValue
+                    : rawValue,
+                "json" or "object" or "array" => TryParseJsonValue(rawValue),
+                _ => TryParseJsonValue(rawValue)
+            };
+        }
+
+        /// <summary>
+        /// Formats a persisted value for UI display and command arguments.
+        /// </summary>
+        public string FormatValueForDisplay(object? value)
+        {
+            value = NormalizeScalarValue(value);
+            if (value is null)
+            {
+                return string.Empty;
+            }
+
+            if (value is string text)
+            {
+                return text;
+            }
+
+            if (value is JsonElement jsonElement)
+            {
+                return jsonElement.GetRawText();
+            }
+
+            if (value is bool boolValue)
+            {
+                return boolValue ? "true" : "false";
+            }
+
+            if (value is sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal)
+            {
+                return Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+            }
+
+            return JsonSerializer.Serialize(value);
         }
 
 
@@ -449,6 +546,28 @@ namespace ASLM.Models
                 JsonValueKind.Null or JsonValueKind.Undefined => null,
                 _ => jsonElement.GetRawText()
             };
+        }
+
+        /// <summary>
+        /// Parses JSON objects and arrays while keeping plain text unchanged.
+        /// </summary>
+        private static object? TryParseJsonValue(string rawValue)
+        {
+            var trimmed = rawValue.Trim();
+            if (!trimmed.StartsWith('{') && !trimmed.StartsWith('['))
+            {
+                return rawValue;
+            }
+
+            try
+            {
+                using var jsonDocument = JsonDocument.Parse(trimmed);
+                return jsonDocument.RootElement.Clone();
+            }
+            catch
+            {
+                return rawValue;
+            }
         }
     }
 

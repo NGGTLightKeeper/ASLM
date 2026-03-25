@@ -300,6 +300,11 @@ namespace ASLM.Pages
             if (button == SettingsButton)
             {
                 _settingsView ??= _services.GetRequiredService<SettingsView>();
+                if (_settingsView is SettingsView settingsView)
+                {
+                    _ = settingsView.RefreshAsync();
+                }
+
                 return _settingsView;
             }
 

@@ -247,11 +247,20 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Returns the effective setting value that ASLM resolves for a module.
+        /// </summary>
+        public object? GetResolvedSettingValue(ModuleConfig module, ModuleSetting setting)
+        {
+            var resolved = ResolveSettingValue(module, setting);
+            return setting.ParseSerializedValue(resolved);
+        }
+
+        /// <summary>
         /// Resolves the effective string value for one module setting.
         /// </summary>
         private string ResolveSettingValue(ModuleConfig module, ModuleSetting setting)
         {
-            switch (setting.Type.ToLowerInvariant())
+            switch (setting.NormalizedType)
             {
                 case "port":
                     var ports = _portManager.GetOrAssignPorts(module);
@@ -264,17 +273,32 @@ namespace ASLM.Services
                     return rawPort ?? string.Empty;
 
                 case "engine":
-                    // Returns true/false based on whether the target engine is installed.
-                    var engineId = TrimEngineSettingSuffix(setting.Key);
-                    return _engineInstaller.GetEngineConfig(engineId) != null ? "true" : "false";
+                    if (_engineInstaller.DiscoverEngines().Any(engine =>
+                        engine.Id.Equals(setting.Key, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return _engineInstaller.GetEngineConfig(setting.Key) != null ? "true" : "false";
+                    }
+
+                    var rawEngine = (setting.Value ?? setting.Default)?.ToString();
+                    return rawEngine != null && rawEngine.Equals("true", StringComparison.OrdinalIgnoreCase) ? "true" : "false";
 
                 case "path":
+                    if (setting.UseCustomValue)
+                    {
+                        return (setting.Value ?? setting.Default)?.ToString() ?? string.Empty;
+                    }
+
                     // Returns the engine executable path, or empty string if not installed.
                     var pathEngineId = TrimEngineSettingSuffix(setting.Key);
                     var enginePath = _engineInstaller.GetEngineExecutablePath(pathEngineId);
                     return !string.IsNullOrEmpty(enginePath) ? enginePath.Replace('\\', '/') : "";
 
                 case "data":
+                    if (setting.UseCustomValue)
+                    {
+                        return (setting.Value ?? setting.Default)?.ToString() ?? string.Empty;
+                    }
+
                     // Returns the engine data path: <root>/Data/<engineId>/.
                     var dataEngineId = TrimEngineSettingSuffix(setting.Key);
                     if (_engineInstaller.GetEngineConfig(dataEngineId) == null) return "";
@@ -283,6 +307,11 @@ namespace ASLM.Services
                     return (Path.Combine(rootDir, "Data", dataEngineId) + Path.DirectorySeparatorChar).Replace('\\', '/');
 
                 case "models":
+                    if (setting.UseCustomValue)
+                    {
+                        return (setting.Value ?? setting.Default)?.ToString() ?? string.Empty;
+                    }
+
                     // Returns the engine models path: <root>/Models/<engineId>/.
                     var modelsEngineId = TrimEngineSettingSuffix(setting.Key);
                     if (_engineInstaller.GetEngineConfig(modelsEngineId) == null) return "";
@@ -586,7 +615,7 @@ namespace ASLM.Services
                 .Where(l => !string.IsNullOrEmpty(l))
                 .ToList();
             
-            return lines.Count > 0 ? lines[^1] : null;
+            return lines.Count > 0 ? lines[^1] : string.Empty;
         }
 
         // Process shutdown
