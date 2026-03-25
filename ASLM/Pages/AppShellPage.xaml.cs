@@ -223,8 +223,33 @@ namespace ASLM.Pages
         {
             if (sender is Button button)
             {
+                if (button == SettingsButton)
+                {
+                    OpenSettingsOverlay();
+                    return;
+                }
+
                 NavigateTo(button);
             }
+        }
+
+        private void OpenSettingsOverlay()
+        {
+            _settingsView ??= _services.GetRequiredService<SettingsView>();
+            if (_settingsView is SettingsView settingsView)
+            {
+                settingsView.CloseRequested -= OnSettingsCloseRequested;
+                settingsView.CloseRequested += OnSettingsCloseRequested;
+                _ = settingsView.RefreshAsync();
+            }
+
+            OverlayContainer.Content = _settingsView;
+            OverlayContainer.IsVisible = true;
+        }
+
+        private void OnSettingsCloseRequested(object? sender, EventArgs e)
+        {
+            OverlayContainer.IsVisible = false;
         }
 
         // View activation
@@ -295,17 +320,6 @@ namespace ASLM.Pages
             {
                 _downloadModulesView ??= _services.GetRequiredService<DownloadModulesView>();
                 return _downloadModulesView;
-            }
-
-            if (button == SettingsButton)
-            {
-                _settingsView ??= _services.GetRequiredService<SettingsView>();
-                if (_settingsView is SettingsView settingsView)
-                {
-                    _ = settingsView.RefreshAsync();
-                }
-
-                return _settingsView;
             }
 
             return new Label { Text = "Unknown page", TextColor = Colors.White };

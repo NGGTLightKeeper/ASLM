@@ -38,8 +38,8 @@ namespace ASLM
             var window = new Window(page)
             {
                 Title = "ASLM",
-                MinimumWidth = 960,
-                MinimumHeight = 540
+                MinimumWidth = 1280,
+                MinimumHeight = 720
             };
 
             // Trigger graceful shutdown cleanup when the main window is destroyed.

@@ -17,11 +17,18 @@ namespace ASLM.Pages
     {
         private const string PasswordIconHidden = "icon_password_off.png";
         private const string PasswordIconVisible = "icon_password_on.png";
+        private const double DialogWidthFactor = 0.8;
+        private const double DialogHeightFactor = 0.8;
+        private const double MinDialogWidth = 960;
+        private const double MinDialogHeight = 540;
+        private const double MaxDialogWidth = 1280;
+        private const double MaxDialogHeight = 720;
 
         private static readonly Color ActiveCategoryTextColor = Colors.White;
-        private static readonly Color InactiveCategoryTextColor = Color.FromArgb("#8E8E93");
-        private static readonly Color ActiveCategoryBackgroundColor = Color.FromArgb("#2C2C2E");
+        private static readonly Color InactiveCategoryTextColor = Color.FromArgb("#99EBEBF5");
+        private static readonly Color ActiveCategoryBackgroundColor = Color.FromArgb("#2F7BF6");
         private static readonly Color InactiveCategoryBackgroundColor = Colors.Transparent;
+        private static readonly Color ActiveCategoryAccentColor = Color.FromArgb("#0A84FF");
         private static readonly Color PassiveActionBackgroundColor = Color.FromArgb("#2C2C2E");
         private static readonly Color PassiveActionTextColor = Color.FromArgb("#99EBEBF5");
 
@@ -31,8 +38,7 @@ namespace ASLM.Pages
         private readonly ModuleRunner _moduleRunner;
         private readonly List<SettingControlMapping> _settingMappings = [];
         private readonly Dictionary<string, SettingBaseline> _settingBaselines = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, Button> _groupButtons = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, Button> _categoryButtons = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, Border> _categoryButtons = new(StringComparer.OrdinalIgnoreCase);
         private List<ModuleConfig> _loadedModules = [];
         private List<SettingsCategory> _categories = [];
         private SettingsCategory? _activeCategory;
@@ -45,6 +51,11 @@ namespace ASLM.Pages
         private bool _isRefreshingVisibility;
         private bool _isSwitchingCategory;
         private bool _isSaving;
+
+        /// <summary>
+        /// Raised when the user asks to close the settings overlay.
+        /// </summary>
+        public event EventHandler? CloseRequested;
 
         /// <summary>
         /// Distinguishes the supported top-level settings groups.
@@ -86,7 +97,7 @@ namespace ASLM.Pages
         /// </summary>
         private sealed class CompactToggle
         {
-            private static readonly Color ToggleOnColor = Color.FromArgb("#32D74B");
+            private static readonly Color ToggleOnColor = Color.FromArgb("#0A84FF");
             private static readonly Color ToggleOffColor = Color.FromArgb("#3A3A3C");
             private static readonly Color ToggleThumbColor = Colors.White;
             private const double TrackWidth = 36;
@@ -230,13 +241,15 @@ namespace ASLM.Pages
                         break;
                     case GestureStatus.Running:
                         _suppressTap = true;
-                        SetThumbOffset(ClampOffset(_dragStartOffset + e.TotalX));
+                        MainThread.BeginInvokeOnMainThread(() => SetThumbOffset(ClampOffset(_dragStartOffset + e.TotalX)));
                         break;
                     case GestureStatus.Canceled:
                     case GestureStatus.Completed:
                         var nextState = CurrentThumbOffset >= MaxThumbOffset / 2;
-                        SetThumbOffset(nextState ? MaxThumbOffset : 0);
-                        IsToggled = nextState;
+                        MainThread.BeginInvokeOnMainThread(() => {
+                            SetThumbOffset(nextState ? MaxThumbOffset : 0);
+                            IsToggled = nextState;
+                        });
                         break;
                 }
             }
@@ -321,9 +334,15 @@ namespace ASLM.Pages
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             InitializeComponent();
+            ApplyFlatEntryStyle(UsernameEntry);
+            ApplyFlatEntryStyle(OfficialPortEntry);
+            ApplyFlatEntryStyle(ThirdPartyPortEntry);
+            ApplyScrollViewChrome(CategoryScroll, isSidebar: true);
+            ApplyScrollViewChrome(SettingsScroll, isSidebar: false);
             UsernameEntry.TextChanged += (_, _) => UpdateActionButtons();
             OfficialPortEntry.TextChanged += (_, _) => UpdateActionButtons();
             ThirdPartyPortEntry.TextChanged += (_, _) => UpdateActionButtons();
+            SizeChanged += OnViewSizeChanged;
             Loaded += OnLoaded;
         }
 
@@ -347,6 +366,33 @@ namespace ASLM.Pages
             {
                 Debug.WriteLine($"Failed to refresh settings view: {ex.Message}");
             }
+        }
+
+        // Overlay Events
+
+        private void OnBackgroundTapped(object? sender, EventArgs e)
+        {
+            RequestClose();
+        }
+
+        private void OnBorderTapped(object? sender, EventArgs e)
+        {
+            // Do nothing. Swallows the tap so it doesn't propagate to the background.
+        }
+
+        private void OnCloseClicked(object? sender, EventArgs e)
+        {
+            RequestClose();
+        }
+
+        private async void RequestClose()
+        {
+            if (!await ConfirmDiscardChangesIfNeededAsync())
+            {
+                return;
+            }
+
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
         // Loading
@@ -388,6 +434,7 @@ namespace ASLM.Pages
             }
 
             _hasLoaded = true;
+            UpdateDialogSize();
 
             try
             {
@@ -398,6 +445,34 @@ namespace ASLM.Pages
                 Debug.WriteLine($"Failed to load settings view: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Keeps the dialog within the requested min/max bounds while scaling to the host size.
+        /// </summary>
+        private void OnViewSizeChanged(object? sender, EventArgs e)
+        {
+            UpdateDialogSize();
+        }
+
+        /// <summary>
+        /// Applies the responsive dialog size using 80 percent of the available overlay area.
+        /// </summary>
+        private void UpdateDialogSize()
+        {
+            if (Width <= 0 || Height <= 0)
+            {
+                return;
+            }
+
+            SettingsDialog.WidthRequest = ClampDialogSize(Math.Floor(Width * DialogWidthFactor), MinDialogWidth, MaxDialogWidth);
+            SettingsDialog.HeightRequest = ClampDialogSize(Math.Floor(Height * DialogHeightFactor), MinDialogHeight, MaxDialogHeight);
+        }
+
+        /// <summary>
+        /// Restricts one calculated dialog dimension to its supported bounds.
+        /// </summary>
+        private static double ClampDialogSize(double value, double min, double max) =>
+            Math.Max(min, Math.Min(max, value));
 
         // Loading helpers
 
@@ -498,124 +573,90 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Rebuilds the top-level group selector and the item selector.
+        /// Rebuilds the unified category selector sidebar.
         /// </summary>
         private void BuildCategorySelectors()
         {
-            _groupButtons.Clear();
             _categoryButtons.Clear();
+            CategoryPanel.Children.Clear();
 
-            BuildGroupSelector();
-            BuildCategorySelector();
+            // ASLM Group
+            CategoryPanel.Children.Add(CreateSelectorHeader("ASLM"));
+            foreach (var category in _categories.Where(c => GetGroupForCategory(c) == SettingsCategoryGroup.Aslm))
+            {
+                var button = CreateSelectorButton(category.Title);
+                button.BindingContext = category;
+                var tapGesture = new TapGestureRecognizer();
+                tapGesture.Tapped += OnCategorySelectorClicked;
+                button.GestureRecognizers.Add(tapGesture);
+                CategoryPanel.Children.Add(button);
+                _categoryButtons[category.Id] = button;
+            }
+
+            // Modules Group
+            var modCategories = _categories.Where(c => GetGroupForCategory(c) == SettingsCategoryGroup.Modules).ToList();
+            if (modCategories.Count > 0)
+            {
+                CategoryPanel.Children.Add(new BoxView { HeightRequest = 12, Color = Colors.Transparent }); // spacing
+                CategoryPanel.Children.Add(CreateSelectorHeader("MODULES"));
+                foreach (var category in modCategories)
+                {
+                    var button = CreateSelectorButton(category.Title);
+                    button.BindingContext = category;
+                    var tapGesture = new TapGestureRecognizer();
+                    tapGesture.Tapped += OnCategorySelectorClicked;
+                    button.GestureRecognizers.Add(tapGesture);
+                    CategoryPanel.Children.Add(button);
+                    _categoryButtons[category.Id] = button;
+                }
+            }
 
             UpdateSelectorButtonStates();
         }
 
         /// <summary>
-        /// Rebuilds the top-level selector row.
+        /// Creates a category group header label for the sidebar.
         /// </summary>
-        private void BuildGroupSelector()
-        {
-            CategoryGroupPanel.Children.Clear();
-
-            var groups = new List<SettingsCategoryGroup>();
-            if (_categories.Any(category => GetGroupForCategory(category) == SettingsCategoryGroup.Aslm))
-            {
-                groups.Add(SettingsCategoryGroup.Aslm);
-            }
-
-            if (_categories.Any(category => GetGroupForCategory(category) == SettingsCategoryGroup.Modules))
-            {
-                groups.Add(SettingsCategoryGroup.Modules);
-            }
-
-            for (var index = 0; index < groups.Count; index++)
-            {
-                var group = groups[index];
-                var button = CreateSelectorButton(group == SettingsCategoryGroup.Aslm ? "ASLM" : "Modules");
-                button.BindingContext = group;
-                button.Clicked += OnGroupSelectorClicked;
-                CategoryGroupPanel.Children.Add(button);
-                _groupButtons[group.ToString()] = button;
-
-                if (index < groups.Count - 1)
-                {
-                    CategoryGroupPanel.Children.Add(CreateSelectorSeparator());
-                }
-            }
-        }
-
-        /// <summary>
-        /// Rebuilds the category selector row for the active group.
-        /// </summary>
-        private void BuildCategorySelector()
-        {
-            CategoryItemPanel.Children.Clear();
-            _categoryButtons.Clear();
-
-            var categories = _categories
-                .Where(category => GetGroupForCategory(category) == _activeGroup)
-                .ToList();
-
-            for (var index = 0; index < categories.Count; index++)
-            {
-                var category = categories[index];
-                var button = CreateSelectorButton(category.Title);
-                button.BindingContext = category;
-                button.Clicked += OnCategorySelectorClicked;
-                CategoryItemPanel.Children.Add(button);
-                _categoryButtons[category.Id] = button;
-
-                if (index < categories.Count - 1)
-                {
-                    CategoryItemPanel.Children.Add(CreateSelectorSeparator());
-                }
-            }
-        }
-
-        /// <summary>
-        /// Creates one compact selector button used by the settings tabs.
-        /// </summary>
-        private static Button CreateSelectorButton(string text) =>
+        private static Label CreateSelectorHeader(string text) =>
             new()
             {
                 Text = text,
-                FontSize = 13,
-                Padding = new Thickness(2, 0),
-                CornerRadius = 0,
-                MinimumHeightRequest = 24,
-                MinimumWidthRequest = 24,
-                HeightRequest = 24,
+                FontSize = 11,
+                FontAttributes = FontAttributes.Bold,
+                TextColor = Color.FromArgb("#8E8E93"),
+                Margin = new Thickness(6, 12, 6, 8)
+            };
+
+        /// <summary>
+        /// Creates one sidebar selector button for a specific settings category.
+        /// </summary>
+        private static Border CreateSelectorButton(string text)
+        {
+            var border = new Border
+            {
+                Padding = new Thickness(12, 0),
+                StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = new CornerRadius(10) },
+                MinimumHeightRequest = 32,
+                HeightRequest = 32,
                 BackgroundColor = Colors.Transparent,
-                BorderWidth = 0
+                StrokeThickness = 0,
+                Margin = new Thickness(0, 0, 0, 4),
+                HorizontalOptions = LayoutOptions.Fill
             };
 
-        /// <summary>
-        /// Creates the visual separator used between selector items.
-        /// </summary>
-        private static BoxView CreateSelectorSeparator()
-        {
-            var separator = new BoxView
+            var label = new Label
             {
-                WidthRequest = 1,
-                HeightRequest = 12,
+                Text = text,
+                FontSize = 14,
                 VerticalOptions = LayoutOptions.Center,
-                Opacity = 0.6
+                HorizontalOptions = LayoutOptions.Start,
+                VerticalTextAlignment = TextAlignment.Center,
+                LineBreakMode = LineBreakMode.TailTruncation
             };
 
-            separator.SetDynamicResource(BoxView.ColorProperty, "Separator");
-            return separator;
-        }
+            border.Content = label;
 
-        /// <summary>
-        /// Handles clicks on the top-level settings group selector.
-        /// </summary>
-        private async void OnGroupSelectorClicked(object? sender, EventArgs e)
-        {
-            if (sender is Button { BindingContext: SettingsCategoryGroup group })
-            {
-                await TrySelectGroupAsync(group);
-            }
+            return border;
         }
 
         /// <summary>
@@ -623,54 +664,13 @@ namespace ASLM.Pages
         /// </summary>
         private async void OnCategorySelectorClicked(object? sender, EventArgs e)
         {
-            if (sender is Button { BindingContext: SettingsCategory category })
+            if (sender is Border { BindingContext: SettingsCategory category })
             {
                 await TrySelectCategoryAsync(category);
             }
         }
 
-        /// <summary>
-        /// Attempts to switch the active top-level group after resolving unsaved changes.
-        /// </summary>
-        private async Task TrySelectGroupAsync(SettingsCategoryGroup group)
-        {
-            if (_isSaving || _isSwitchingCategory || _activeGroup == group)
-            {
-                return;
-            }
-
-            try
-            {
-                _isSwitchingCategory = true;
-
-                if (!await ConfirmDiscardChangesIfNeededAsync())
-                {
-                    return;
-                }
-
-                _activeGroup = group;
-                BuildCategorySelector();
-
-                var targetCategory = _categories.FirstOrDefault(category => GetGroupForCategory(category) == group);
-                if (targetCategory == null)
-                {
-                    UpdateSelectorButtonStates();
-                    UpdateActionButtons();
-                    return;
-                }
-
-                ActivateCategory(targetCategory);
-            }
-            finally
-            {
-                _isSwitchingCategory = false;
-            }
-        }
-
-        /// <summary>
-        /// Attempts to switch the active settings category after resolving unsaved changes.
-        /// </summary>
-        private async Task TrySelectCategoryAsync(SettingsCategory category)
+                private async Task TrySelectCategoryAsync(SettingsCategory category)
         {
             if (_isSaving || _isSwitchingCategory)
             {
@@ -698,12 +698,7 @@ namespace ASLM.Pages
                     return;
                 }
 
-                var targetGroup = GetGroupForCategory(resolvedCategory);
-                if (targetGroup != _activeGroup)
-                {
-                    _activeGroup = targetGroup;
-                    BuildCategorySelector();
-                }
+                _activeGroup = GetGroupForCategory(resolvedCategory);
 
                 ActivateCategory(resolvedCategory);
             }
@@ -720,7 +715,6 @@ namespace ASLM.Pages
         {
             _activeCategory = category;
             ActiveCategoryTitleLabel.Text = category.Title;
-            ActiveCategoryDescriptionLabel.Text = category.Description;
 
             switch (category.Kind)
             {
@@ -760,13 +754,6 @@ namespace ASLM.Pages
         /// </summary>
         private void UpdateSelectorButtonStates()
         {
-            foreach (var pair in _groupButtons)
-            {
-                var isActive = pair.Key.Equals(_activeGroup.ToString(), StringComparison.OrdinalIgnoreCase);
-                ApplySelectorButtonState(pair.Value, isActive);
-                pair.Value.IsEnabled = !_isSaving;
-            }
-
             foreach (var pair in _categoryButtons)
             {
                 ApplySelectorButtonState(pair.Value, _activeCategory != null && pair.Key.Equals(_activeCategory.Id, StringComparison.OrdinalIgnoreCase));
@@ -777,12 +764,16 @@ namespace ASLM.Pages
         /// <summary>
         /// Applies the selected visual state to one selector button.
         /// </summary>
-        private static void ApplySelectorButtonState(Button button, bool isActive)
+        private static void ApplySelectorButtonState(Border button, bool isActive)
         {
-            button.TextColor = isActive ? ActiveCategoryTextColor : InactiveCategoryTextColor;
-            button.BackgroundColor = Colors.Transparent;
-            button.BorderWidth = 0;
-            button.Opacity = isActive ? 1.0 : 0.88;
+            if (button.Content is Label label)
+            {
+                label.TextColor = isActive ? ActiveCategoryTextColor : InactiveCategoryTextColor;
+                label.FontAttributes = FontAttributes.None;
+            }
+
+            button.BackgroundColor = isActive ? ActiveCategoryBackgroundColor : InactiveCategoryBackgroundColor;
+            button.Opacity = isActive ? 1.0 : 0.92;
         }
 
         /// <summary>
@@ -890,8 +881,7 @@ namespace ASLM.Pages
             EmptyCategoryState.IsVisible = false;
 
             var section = CreateModuleSectionBorder();
-            var content = new VerticalStackLayout { Spacing = 14 };
-            content.Children.Add(CreateSectionHeader("Module Settings"));
+            var content = new VerticalStackLayout { Spacing = 12 };
 
             foreach (var item in visibleSettings)
             {
@@ -1742,7 +1732,7 @@ namespace ASLM.Pages
                 row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
                 row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
 
-                var text = new VerticalStackLayout { Spacing = 4 };
+                var text = new VerticalStackLayout { Spacing = 5 };
                 text.Children.Add(CreateCardTitle(setting.Name));
                 if (!string.IsNullOrWhiteSpace(description))
                 {
@@ -1767,7 +1757,7 @@ namespace ASLM.Pages
                 row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
                 row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
 
-                var text = new VerticalStackLayout { Spacing = 4 };
+                var text = new VerticalStackLayout { Spacing = 5 };
                 text.Children.Add(CreateCardTitle(setting.Name));
                 if (!string.IsNullOrWhiteSpace(description))
                 {
@@ -1783,7 +1773,7 @@ namespace ASLM.Pages
                 return (card, mapping);
             }
 
-            var content = new VerticalStackLayout { Spacing = 10 };
+            var content = new VerticalStackLayout { Spacing = 9 };
             content.Children.Add(CreateCardTitle(setting.Name));
             if (!string.IsNullOrWhiteSpace(description))
             {
@@ -1939,11 +1929,11 @@ namespace ASLM.Pages
         private (View Control, SettingControlMapping? Mapping) CreateNumericEditor(ModuleConfig module, ModuleSetting setting, object? value)
         {
             var baseline = GetSettingBaseline(module, setting, value);
-            var entry = CreateTextEntry(setting.FormatValueForDisplay(value));
+            var (field, entry) = CreateTextField(setting.FormatValueForDisplay(value));
             entry.Keyboard = Keyboard.Numeric;
             entry.TextChanged += (_, _) => UpdateActionButtons();
 
-            return (entry, new SettingControlMapping(module, setting, () => entry.Text, null, baseline.DisplayValue, baseline.UseCustomValue));
+            return (field, new SettingControlMapping(module, setting, () => entry.Text, null, baseline.DisplayValue, baseline.UseCustomValue));
         }
 
         /// <summary>
@@ -1952,9 +1942,9 @@ namespace ASLM.Pages
         private (View Control, SettingControlMapping? Mapping) CreateTextEditor(ModuleConfig module, ModuleSetting setting, object? value)
         {
             var baseline = GetSettingBaseline(module, setting, value);
-            var entry = CreateTextEntry(setting.FormatValueForDisplay(value));
+            var (field, entry) = CreateTextField(setting.FormatValueForDisplay(value));
             entry.TextChanged += (_, _) => UpdateActionButtons();
-            return (entry, new SettingControlMapping(module, setting, () => entry.Text, null, baseline.DisplayValue, baseline.UseCustomValue));
+            return (field, new SettingControlMapping(module, setting, () => entry.Text, null, baseline.DisplayValue, baseline.UseCustomValue));
         }
 
         /// <summary>
@@ -1981,9 +1971,9 @@ namespace ASLM.Pages
             var isPasswordSetting = string.Equals(setting.NormalizedType, "password", StringComparison.OrdinalIgnoreCase);
             var entryView = isPasswordSetting
                 ? CreatePasswordField(initialDisplayValue)
-                : (Control: (View)CreateTextEntry(initialDisplayValue), Entry: (Entry?)null);
+                : CreateTextField(initialDisplayValue);
             var baseline = GetSettingBaseline(module, setting, initialDisplayValue);
-            var entry = entryView.Entry ?? (Entry)entryView.Control;
+            var entry = entryView.Entry;
             var lastCustomValue = setting.FormatValueForDisplay(setting.Value ?? value);
 
             var customToggle = CreateInlineToggle();
@@ -2034,11 +2024,11 @@ namespace ASLM.Pages
             var border = new Border
             {
                 StrokeThickness = 0,
-                StrokeShape = new RoundRectangle { CornerRadius = 8 },
-                Padding = 16
+                StrokeShape = new RoundRectangle { CornerRadius = 0 },
+                Padding = 0
             };
 
-            border.SetDynamicResource(VisualElement.BackgroundColorProperty, "BackgroundSecondary");
+            border.BackgroundColor = Colors.Transparent;
             return border;
         }
 
@@ -2050,11 +2040,11 @@ namespace ASLM.Pages
             var border = new Border
             {
                 StrokeThickness = 0,
-                StrokeShape = new RoundRectangle { CornerRadius = 8 },
-                Padding = new Thickness(12, 10)
+                StrokeShape = new RoundRectangle { CornerRadius = 0 },
+                Padding = 0
             };
 
-            border.SetDynamicResource(VisualElement.BackgroundColorProperty, "BackgroundPrimary");
+            border.BackgroundColor = Colors.Transparent;
             return border;
         }
 
@@ -2073,7 +2063,7 @@ namespace ASLM.Pages
         /// </summary>
         private static Label CreateCardTitle(string text)
         {
-            var label = new Label { Text = text, FontSize = 15 };
+            var label = new Label { Text = text, FontSize = 15, FontAttributes = FontAttributes.Bold };
             label.SetDynamicResource(Label.TextColorProperty, "LabelPrimary");
             return label;
         }
@@ -2083,7 +2073,7 @@ namespace ASLM.Pages
         /// </summary>
         private static Label CreateCardDescription(string text)
         {
-            var label = new Label { Text = text, FontSize = 13, LineBreakMode = LineBreakMode.WordWrap };
+            var label = new Label { Text = text, FontSize = 12, LineBreakMode = LineBreakMode.WordWrap, MaxLines = 3 };
             label.SetDynamicResource(Label.TextColorProperty, "LabelSecondary");
             return label;
         }
@@ -2093,7 +2083,7 @@ namespace ASLM.Pages
         /// </summary>
         private static Label CreateSecondaryLabel(string text)
         {
-            var label = new Label { Text = text, FontSize = 13 };
+            var label = new Label { Text = text, FontSize = 12 };
             label.SetDynamicResource(Label.TextColorProperty, "LabelSecondary");
             return label;
         }
@@ -2115,17 +2105,22 @@ namespace ASLM.Pages
 
             var row = new Grid
             {
-                ColumnSpacing = 18,
+                ColumnSpacing = 10,
                 VerticalOptions = LayoutOptions.Center,
-                HorizontalOptions = LayoutOptions.Start,
-                MinimumHeightRequest = 22
+                HorizontalOptions = LayoutOptions.Fill,
+                MinimumHeightRequest = 22,
+                Margin = new Thickness(0, 4, 0, 2)
             };
-            row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(toggle.View.WidthRequest)));
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
             row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
-            row.Children.Add(toggle.View);
-            Grid.SetColumn(toggle.View, 0);
+
             row.Children.Add(label);
-            Grid.SetColumn(label, 1);
+            Grid.SetColumn(label, 0);
+
+            toggle.View.HorizontalOptions = LayoutOptions.End;
+            row.Children.Add(toggle.View);
+            Grid.SetColumn(toggle.View, 1);
+
             return row;
         }
 
@@ -2138,8 +2133,8 @@ namespace ASLM.Pages
             {
                 Title = title,
                 FontSize = fontSize,
-                HeightRequest = 44,
-                MinimumHeightRequest = 44,
+                HeightRequest = 46,
+                MinimumHeightRequest = 46,
                 HorizontalOptions = LayoutOptions.Fill
             };
 
@@ -2158,13 +2153,32 @@ namespace ASLM.Pages
             var border = new Border
             {
                 StrokeThickness = 1,
-                StrokeShape = new RoundRectangle { CornerRadius = 6 },
-                Padding = new Thickness(10, 2),
-                MinimumHeightRequest = 44,
+                StrokeShape = new RoundRectangle { CornerRadius = 8 },
+                Padding = new Thickness(12, 0),
+                MinimumHeightRequest = 46,
                 Content = picker
             };
 
-            border.SetDynamicResource(VisualElement.BackgroundColorProperty, "BackgroundPrimary");
+            border.BackgroundColor = Color.FromArgb("#19191C");
+            border.SetDynamicResource(Border.StrokeProperty, "Separator");
+            return border;
+        }
+
+        /// <summary>
+        /// Creates a bordered field shell shared by text inputs and password editors.
+        /// </summary>
+        private static Border CreateFieldContainer(View content, Thickness? padding = null)
+        {
+            var border = new Border
+            {
+                StrokeThickness = 1,
+                StrokeShape = new RoundRectangle { CornerRadius = 8 },
+                Padding = padding ?? new Thickness(12, 0),
+                MinimumHeightRequest = 46,
+                Content = content
+            };
+
+            border.BackgroundColor = Color.FromArgb("#19191C");
             border.SetDynamicResource(Border.StrokeProperty, "Separator");
             return border;
         }
@@ -2200,6 +2214,127 @@ namespace ASLM.Pages
             ApplyPlatformStyle();
         }
 
+        /// <summary>
+        /// Applies a quieter WinUI scrollbar treatment so the overlay keeps its minimalist look.
+        /// </summary>
+        private static void ApplyScrollViewChrome(ScrollView scrollView, bool isSidebar)
+        {
+            void ApplyPlatformStyle()
+            {
+#if WINDOWS
+                if (scrollView.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.ScrollViewer viewer)
+                {
+                    var transparentBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                    viewer.Background = transparentBrush;
+                    viewer.BorderBrush = transparentBrush;
+                    viewer.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
+                    viewer.Padding = new Microsoft.UI.Xaml.Thickness(0);
+
+                    void Restyle()
+                    {
+                        StyleScrollBars(viewer, isSidebar);
+                    }
+
+                    viewer.Loaded -= OnViewerLoaded;
+                    viewer.Loaded += OnViewerLoaded;
+                    viewer.SizeChanged -= OnViewerSizeChanged;
+                    viewer.SizeChanged += OnViewerSizeChanged;
+                    viewer.DispatcherQueue.TryEnqueue(Restyle);
+
+                    void OnViewerLoaded(object? sender, Microsoft.UI.Xaml.RoutedEventArgs e) => Restyle();
+                    void OnViewerSizeChanged(object? sender, Microsoft.UI.Xaml.SizeChangedEventArgs e) => Restyle();
+                }
+#endif
+            }
+
+            scrollView.HandlerChanged += (_, _) => ApplyPlatformStyle();
+            ApplyPlatformStyle();
+        }
+
+#if WINDOWS
+        /// <summary>
+        /// Restyles WinUI scrollbars to sit tighter to the edge with lower visual weight.
+        /// </summary>
+        private static void StyleScrollBars(Microsoft.UI.Xaml.Controls.ScrollViewer viewer, bool isSidebar)
+        {
+            var thumbBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                Microsoft.UI.ColorHelper.FromArgb(isSidebar ? (byte)54 : (byte)92, 255, 255, 255));
+            var transparentBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+
+            foreach (var scrollBar in FindDescendants<Microsoft.UI.Xaml.Controls.Primitives.ScrollBar>(viewer))
+            {
+                if (scrollBar.Orientation == Microsoft.UI.Xaml.Controls.Orientation.Vertical)
+                {
+                    scrollBar.HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Right;
+                    scrollBar.Margin = new Microsoft.UI.Xaml.Thickness(0, 4, 0, 4);
+                    scrollBar.Padding = new Microsoft.UI.Xaml.Thickness(0);
+                    scrollBar.Background = transparentBrush;
+                    scrollBar.Foreground = thumbBrush;
+                    scrollBar.Opacity = isSidebar ? 0.18 : 0.34;
+                }
+                else
+                {
+                    scrollBar.Height = 3;
+                    scrollBar.MinHeight = 3;
+                    scrollBar.Background = transparentBrush;
+                    scrollBar.Opacity = 0.2;
+                }
+
+                foreach (var repeatButton in FindDescendants<Microsoft.UI.Xaml.Controls.Primitives.RepeatButton>(scrollBar))
+                {
+                    repeatButton.Background = transparentBrush;
+                    repeatButton.BorderBrush = transparentBrush;
+                    repeatButton.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
+                    repeatButton.Opacity = 0;
+                }
+
+                foreach (var border in FindDescendants<Microsoft.UI.Xaml.Controls.Border>(scrollBar))
+                {
+                    border.Background = transparentBrush;
+                    border.BorderBrush = transparentBrush;
+                    border.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
+                }
+
+                foreach (var thumb in FindDescendants<Microsoft.UI.Xaml.Controls.Primitives.Thumb>(scrollBar))
+                {
+                    thumb.Background = thumbBrush;
+                    thumb.BorderBrush = transparentBrush;
+                    thumb.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
+                    thumb.MinWidth = isSidebar ? 6 : 6;
+                    thumb.Width = isSidebar ? 6 : 6;
+                    thumb.MinHeight = 18;
+                    thumb.Opacity = isSidebar ? 0.38 : 0.55;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Enumerates descendants of the requested WinUI type.
+        /// </summary>
+        private static IEnumerable<T> FindDescendants<T>(Microsoft.UI.Xaml.DependencyObject root) where T : Microsoft.UI.Xaml.DependencyObject
+        {
+            var queue = new Queue<Microsoft.UI.Xaml.DependencyObject>();
+            queue.Enqueue(root);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                var childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(current);
+
+                for (var index = 0; index < childCount; index++)
+                {
+                    var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(current, index);
+                    if (child is T typed)
+                    {
+                        yield return typed;
+                    }
+
+                    queue.Enqueue(child);
+                }
+            }
+        }
+#endif
+
 
         /// <summary>
         /// Creates a password editor that keeps the entry styling consistent with regular text fields.
@@ -2207,6 +2342,7 @@ namespace ASLM.Pages
         private static (View Control, Entry Entry) CreatePasswordField(string? text)
         {
             var entry = CreateTextEntry(text, isPassword: true, clearButtonVisibility: ClearButtonVisibility.Never);
+            entry.Margin = new Thickness(12, 0, 44, 0);
             var toggleButton = new ImageButton
             {
                 Source = PasswordIconHidden,
@@ -2214,8 +2350,8 @@ namespace ASLM.Pages
                 HeightRequest = 36,
                 MinimumWidthRequest = 36,
                 MinimumHeightRequest = 36,
-                Padding = 9,
-                Margin = new Thickness(0, 0, 8, 0),
+                Padding = 10,
+                Margin = new Thickness(0, 0, 4, 0),
                 HorizontalOptions = LayoutOptions.End,
                 VerticalOptions = LayoutOptions.Center,
                 BackgroundColor = Colors.Transparent,
@@ -2231,11 +2367,11 @@ namespace ASLM.Pages
                 UpdatePasswordToggleIcon(toggleButton, entry.IsPassword);
             };
 
-            var grid = new Grid { MinimumHeightRequest = 44 };
+            var grid = new Grid { MinimumHeightRequest = 46 };
             grid.Children.Add(entry);
             grid.Children.Add(toggleButton);
             toggleButton.ZIndex = 1;
-            return (grid, entry);
+            return (CreateFieldContainer(grid, new Thickness(0)), entry);
         }
 
         /// <summary>
@@ -2251,20 +2387,70 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates a standard text entry configured for the requested text behavior.
         /// </summary>
+        private static (View Control, Entry Entry) CreateTextField(string? text, bool isPassword = false, ClearButtonVisibility clearButtonVisibility = ClearButtonVisibility.WhileEditing)
+        {
+            var entry = CreateTextEntry(text, isPassword, clearButtonVisibility);
+            return (CreateFieldContainer(entry), entry);
+        }
+
+        /// <summary>
+        /// Creates a standard text entry configured for the requested text behavior.
+        /// </summary>
         private static Entry CreateTextEntry(string? text, bool isPassword = false, ClearButtonVisibility clearButtonVisibility = ClearButtonVisibility.WhileEditing)
         {
             var entry = new Entry
             {
                 Text = text,
                 FontSize = 13,
+                HeightRequest = 46,
+                MinimumHeightRequest = 46,
                 HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Center,
+                VerticalTextAlignment = TextAlignment.Center,
                 ClearButtonVisibility = clearButtonVisibility,
-                IsPassword = isPassword
+                IsPassword = isPassword,
+                BackgroundColor = Colors.Transparent
             };
 
             entry.SetDynamicResource(Entry.TextColorProperty, "LabelPrimary");
-            entry.SetDynamicResource(VisualElement.BackgroundColorProperty, "BackgroundPrimary");
+            ApplyFlatEntryStyle(entry);
             return entry;
+        }
+
+        /// <summary>
+        /// Removes native WinUI chrome so entries match the shared field borders.
+        /// </summary>
+        private static void ApplyFlatEntryStyle(Entry entry)
+        {
+            void ApplyPlatformStyle()
+            {
+#if WINDOWS
+                var transparentBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+
+                switch (entry.Handler?.PlatformView)
+                {
+                    case Microsoft.UI.Xaml.Controls.TextBox textBox:
+                        textBox.Background = transparentBrush;
+                        textBox.BorderBrush = transparentBrush;
+                        textBox.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
+                        textBox.Padding = new Microsoft.UI.Xaml.Thickness(0);
+                        textBox.CornerRadius = new Microsoft.UI.Xaml.CornerRadius(0);
+                        textBox.UseSystemFocusVisuals = false;
+                        break;
+                    case Microsoft.UI.Xaml.Controls.PasswordBox passwordBox:
+                        passwordBox.Background = transparentBrush;
+                        passwordBox.BorderBrush = transparentBrush;
+                        passwordBox.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
+                        passwordBox.Padding = new Microsoft.UI.Xaml.Thickness(0);
+                        passwordBox.CornerRadius = new Microsoft.UI.Xaml.CornerRadius(0);
+                        passwordBox.UseSystemFocusVisuals = false;
+                        break;
+                }
+#endif
+            }
+
+            entry.HandlerChanged += (_, _) => ApplyPlatformStyle();
+            ApplyPlatformStyle();
         }
 
         /// <summary>
@@ -2283,27 +2469,28 @@ namespace ASLM.Pages
         /// </summary>
         private Border CreateStatusBadge(string text, bool isPositive)
         {
-            var border = new Border
-            {
-                StrokeThickness = 0,
-                StrokeShape = new RoundRectangle { CornerRadius = 4 },
-                Padding = new Thickness(8, 4),
-                HorizontalOptions = LayoutOptions.End,
-                VerticalOptions = LayoutOptions.Center
-            };
-
-            border.SetDynamicResource(VisualElement.BackgroundColorProperty, isPositive ? "SystemBlueOverlay" : "BackgroundPrimary");
-
             var label = new Label
             {
                 Text = text,
                 FontSize = 13,
+                FontAttributes = FontAttributes.Bold,
                 VerticalTextAlignment = TextAlignment.Center
             };
 
-            label.SetDynamicResource(Label.TextColorProperty, isPositive ? "LabelPrimary" : "LabelSecondary");
-            border.Content = label;
-            return border;
+            label.TextColor = isPositive
+                ? Color.FromArgb("#D8E8FF")
+                : Color.FromArgb("#99EBEBF5");
+
+            return new Border
+            {
+                StrokeThickness = 0,
+                StrokeShape = new RoundRectangle { CornerRadius = 0 },
+                Padding = 0,
+                BackgroundColor = Colors.Transparent,
+                HorizontalOptions = LayoutOptions.End,
+                VerticalOptions = LayoutOptions.Center,
+                Content = label
+            };
         }
 
         /// <summary>
