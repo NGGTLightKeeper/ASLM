@@ -2,75 +2,182 @@
 
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="ASLM.Pages.SettingsView">
+             x:Class="ASLM.Pages.SettingsView"
+             BackgroundColor="{StaticResource BackgroundPrimary}">
 
-    <ScrollView x:Name="SettingsScroll" Padding="16">
-        <VerticalStackLayout Spacing="24">
+    <Grid RowDefinitions="Auto,*,Auto"
+          RowSpacing="0"
+          Padding="12,16,12,12">
 
-            <!-- Header -->
+        <VerticalStackLayout Spacing="8"
+                             Margin="4,0,4,8">
             <Label Text="Settings"
-                   FontSize="24" FontAttributes="Bold"
-                   TextColor="{StaticResource LabelPrimary}"
-                   Margin="4,0,4,8" />
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource LabelPrimary}" />
 
-            <!-- User Profile -->
-            <Border x:Name="UserProfileSection"
-                    BackgroundColor="{StaticResource BackgroundSecondary}"
-                    Stroke="{StaticResource Separator}" StrokeThickness="1"
-                    StrokeShape="RoundRectangle 8"
-                    Padding="20">
-                <VerticalStackLayout Spacing="12">
-                    <Label Text="User Profile" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource LabelPrimary}" />
-                    <Label Text="Display Name" FontSize="12" TextColor="{StaticResource LabelSecondary}" />
-                    <Entry x:Name="UsernameEntry"
-                           FontSize="14" TextColor="{StaticResource LabelPrimary}"
-                           BackgroundColor="{StaticResource BackgroundPrimary}" />
-                </VerticalStackLayout>
-            </Border>
+            <VerticalStackLayout Spacing="6">
+                <ScrollView Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never">
+                    <HorizontalStackLayout x:Name="CategoryGroupPanel"
+                                           Spacing="6" />
+                </ScrollView>
 
-            <!-- Port Allocation -->
-            <Border x:Name="PortsSection"
-                    BackgroundColor="{StaticResource BackgroundSecondary}"
-                    Stroke="{StaticResource Separator}" StrokeThickness="1"
-                    StrokeShape="RoundRectangle 8"
-                    Padding="20">
-                <VerticalStackLayout Spacing="12">
-                    <Label Text="Port Allocation" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource LabelPrimary}" />
-
-                    <Label Text="Official modules start port (100 ports reserved)" FontSize="12" TextColor="{StaticResource LabelSecondary}" />
-                    <Entry x:Name="OfficialPortEntry"
-                           Keyboard="Numeric"
-                           FontSize="14" TextColor="{StaticResource LabelPrimary}"
-                           BackgroundColor="{StaticResource BackgroundPrimary}" />
-
-                    <Label Text="Third-party modules start port (1000 ports reserved)" FontSize="12" TextColor="{StaticResource LabelSecondary}" />
-                    <Entry x:Name="ThirdPartyPortEntry"
-                           Keyboard="Numeric"
-                           FontSize="14" TextColor="{StaticResource LabelPrimary}"
-                           BackgroundColor="{StaticResource BackgroundPrimary}" />
-
-                    <Label x:Name="PortErrorLabel"
-                           Text=""
-                           FontSize="12" TextColor="{StaticResource ActionRed}"
-                           IsVisible="False" />
-                </VerticalStackLayout>
-            </Border>
-
-            <!-- Module Settings (Dynamic) -->
-            <VerticalStackLayout x:Name="ModuleSettingsContainer" Spacing="24">
-                <!-- Dynamically populated by code-behind -->
+                <ScrollView Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never">
+                    <HorizontalStackLayout x:Name="CategoryItemPanel"
+                                           Spacing="6" />
+                </ScrollView>
             </VerticalStackLayout>
 
-            <!-- Save Button -->
-            <Button Text="Save"
-                    BackgroundColor="{StaticResource ActionBlue}"
-                    TextColor="{StaticResource LabelPrimary}"
-                    FontSize="14"
-                    WidthRequest="120"
-                    HorizontalOptions="End"
-                    Clicked="OnSaveClicked" />
+            <VerticalStackLayout Spacing="3">
+                <Label x:Name="ActiveCategoryTitleLabel"
+                       Text="ASLM Settings"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource LabelPrimary}" />
 
+                <Label x:Name="ActiveCategoryDescriptionLabel"
+                       Text="Core application settings and reserved port ranges."
+                       FontSize="12"
+                       TextColor="{StaticResource LabelSecondary}" />
+            </VerticalStackLayout>
         </VerticalStackLayout>
-    </ScrollView>
+
+        <ScrollView Grid.Row="1"
+                    x:Name="SettingsScroll"
+                    Margin="0,8,0,0">
+            <VerticalStackLayout x:Name="SettingsContentContainer"
+                                 Spacing="16">
+
+                <VerticalStackLayout x:Name="AslmSettingsContainer"
+                                     Spacing="16">
+
+                    <Border x:Name="UserProfileSection"
+                            BackgroundColor="{StaticResource BackgroundSecondary}"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="16">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="User Profile"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource LabelPrimary}" />
+
+                            <Label Text="Display Name"
+                                   FontSize="12"
+                                   TextColor="{StaticResource LabelSecondary}" />
+
+                            <Entry x:Name="UsernameEntry"
+                                   FontSize="14"
+                                   TextColor="{StaticResource LabelPrimary}"
+                                   BackgroundColor="{StaticResource BackgroundPrimary}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border x:Name="PortsSection"
+                            BackgroundColor="{StaticResource BackgroundSecondary}"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="16">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="Port Allocation"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource LabelPrimary}" />
+
+                            <Label Text="Official modules start port (100 ports reserved)"
+                                   FontSize="12"
+                                   TextColor="{StaticResource LabelSecondary}" />
+
+                            <Entry x:Name="OfficialPortEntry"
+                                   Keyboard="Numeric"
+                                   FontSize="14"
+                                   TextColor="{StaticResource LabelPrimary}"
+                                   BackgroundColor="{StaticResource BackgroundPrimary}" />
+
+                            <Label Text="Third-party modules start port (1000 ports reserved)"
+                                   FontSize="12"
+                                   TextColor="{StaticResource LabelSecondary}" />
+
+                            <Entry x:Name="ThirdPartyPortEntry"
+                                   Keyboard="Numeric"
+                                   FontSize="14"
+                                   TextColor="{StaticResource LabelPrimary}"
+                                   BackgroundColor="{StaticResource BackgroundPrimary}" />
+
+                            <Label x:Name="PortErrorLabel"
+                                   Text=""
+                                   FontSize="12"
+                                   TextColor="{StaticResource ActionRed}"
+                                   IsVisible="False" />
+                        </VerticalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="ModuleSettingsContainer"
+                                     Spacing="16"
+                                     IsVisible="False" />
+
+                <Border x:Name="EmptyCategoryState"
+                        IsVisible="False"
+                        BackgroundColor="{StaticResource BackgroundSecondary}"
+                        StrokeThickness="0"
+                        StrokeShape="RoundRectangle 8"
+                        Padding="16">
+                    <Label x:Name="EmptyCategoryLabel"
+                           Text="This category has no settings."
+                           FontSize="14"
+                           TextColor="{StaticResource LabelSecondary}" />
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Border Grid.Row="2"
+                Margin="0,12,0,0"
+                BackgroundColor="{StaticResource BackgroundSecondary}"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 10"
+                Padding="8">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto"
+                  ColumnSpacing="8">
+                <Button x:Name="DefaultButton"
+                        Text="Load default"
+                        WidthRequest="92"
+                        FontSize="13"
+                        HeightRequest="30"
+                        MinimumHeightRequest="30"
+                        CornerRadius="4"
+                        Padding="8,4"
+                        Clicked="OnDefaultClicked" />
+
+                <Button x:Name="SaveButton"
+                        Grid.Column="2"
+                        Text="Save"
+                        WidthRequest="92"
+                        FontSize="13"
+                        HeightRequest="30"
+                        MinimumHeightRequest="30"
+                        CornerRadius="4"
+                        Padding="8,4"
+                        BackgroundColor="{StaticResource BackgroundSecondary}"
+                        TextColor="{StaticResource LabelSecondary}"
+                        Clicked="OnSaveClicked" />
+
+                <Button x:Name="SaveAndRestartButton"
+                        Grid.Column="3"
+                        Text="Save and restart"
+                        WidthRequest="148"
+                        FontSize="13"
+                        HeightRequest="30"
+                        MinimumHeightRequest="30"
+                        CornerRadius="4"
+                        Padding="8,4"
+                        BackgroundColor="{StaticResource BackgroundSecondary}"
+                        TextColor="{StaticResource LabelSecondary}"
+                        Clicked="OnSaveAndRestartClicked" />
+            </Grid>
+        </Border>
+    </Grid>
 
 </ContentView>
