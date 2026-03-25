@@ -173,9 +173,6 @@ namespace ASLM.Pages
         private readonly ModuleRunner _runner;
         private readonly Action _onStateChanged;
         private bool _isRestarting;
-        private bool _isLaunching;
-        private bool _isLogVisible;
-        private string _launchLog = string.Empty;
 
         // Notifications
 
@@ -201,7 +198,6 @@ namespace ASLM.Pages
             LaunchCommand = new Command(OnLaunch);
             StopCommand = new Command(OnStop);
             RestartCommand = new Command(OnRestart);
-            ToggleLogCommand = new Command(() => IsLogVisible = !IsLogVisible);
         }
 
         // Static card data
@@ -245,81 +241,6 @@ namespace ASLM.Pages
         /// Gets whether the module is currently stopped.
         /// </summary>
         public bool IsStopped => !_config.Status.Enabled;
-
-        // Launching state
-
-        /// <summary>
-        /// Gets or sets whether the module is currently being launched (first-run setup or startup).
-        /// </summary>
-        public bool IsLaunching
-        {
-            get => _isLaunching;
-            set
-            {
-                if (_isLaunching == value)
-                {
-                    return;
-                }
-
-                _isLaunching = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsReadyToLaunch));
-            }
-        }
-
-        // Launch-ready state
-
-        /// <summary>
-        /// Gets whether the launch button should be shown and clickable.
-        /// </summary>
-        public bool IsReadyToLaunch => IsStopped && !IsLaunching;
-
-        // Log visibility
-
-        /// <summary>
-        /// Gets or sets whether the launch log panel is expanded.
-        /// </summary>
-        public bool IsLogVisible
-        {
-            get => _isLogVisible;
-            set
-            {
-                if (_isLogVisible == value) return;
-                _isLogVisible = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(ToggleLogLabel));
-            }
-        }
-
-        // Toggle log label
-
-        /// <summary>
-        /// Gets the label for the toggle log button.
-        /// </summary>
-        public string ToggleLogLabel => _isLogVisible ? "Hide log" : "Show log";
-
-        // Has log
-
-        /// <summary>
-        /// Gets whether there is any log output to show.
-        /// </summary>
-        public bool HasLog => !string.IsNullOrEmpty(_launchLog);
-
-        // Launch log
-
-        /// <summary>
-        /// Gets the accumulated launch log text.
-        /// </summary>
-        public string LaunchLog
-        {
-            get => _launchLog;
-            private set
-            {
-                _launchLog = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(HasLog));
-            }
-        }
 
         // Restart state
 
@@ -370,13 +291,6 @@ namespace ASLM.Pages
         /// </summary>
         public ICommand RestartCommand { get; }
 
-        // Toggle log command
-
-        /// <summary>
-        /// Gets the command that shows or hides the launch log panel.
-        /// </summary>
-        public ICommand ToggleLogCommand { get; }
-
 
         // Launch flow
 
@@ -385,59 +299,43 @@ namespace ASLM.Pages
         /// </summary>
         private async void OnLaunch()
         {
-            IsLaunching = true;
-            LaunchLog = string.Empty;
-
-            void AppendLog(string message)
+            // Reload the config so launch uses the latest user-edited settings.
+            var freshConfig = await _installer.LoadModuleConfig(_config.SourcePath);
+            if (freshConfig != null)
             {
-                Debug.WriteLine($"[Launch] {message}");
-                LaunchLog += message + "\n";
+                _config.Settings = freshConfig.Settings;
+                _config.Commands = freshConfig.Commands;
             }
 
-            try
+            // First-run setup must complete before the normal run commands can start.
+            if (!_config.Status.FirstRunCompleted)
             {
-                // Reload the config so launch uses the latest user-edited settings.
-                var freshConfig = await _installer.LoadModuleConfig(_config.SourcePath);
-                if (freshConfig != null)
+                var setupLog = new Progress<string>(message => Debug.WriteLine($"[Setup] {message}"));
+                var setupSuccess = await Task.Run(() =>
+                    _runner.ExecuteFirstRunAsync(_config, setupLog, CancellationToken.None));
+
+                if (setupSuccess)
                 {
-                    _config.Settings = freshConfig.Settings;
-                    _config.Commands = freshConfig.Commands;
+                    _config.Status.FirstRunCompleted = true;
+                    _installer.SaveModuleConfig(_config);
                 }
-
-                // First-run setup must complete before the normal run commands can start.
-                if (!_config.Status.FirstRunCompleted)
+                else
                 {
-                    var setupLog = new Progress<string>(message => AppendLog(message));
-                    var setupSuccess = await Task.Run(() =>
-                        _runner.ExecuteFirstRunAsync(_config, setupLog, CancellationToken.None));
-
-                    if (setupSuccess)
-                    {
-                        _config.Status.FirstRunCompleted = true;
-                        _installer.SaveModuleConfig(_config);
-                    }
-                    else
-                    {
-                        AppendLog("Setup failed, cannot launch.");
-                        return;
-                    }
-                }
-
-                _config.Status.Enabled = true;
-                _installer.SaveModuleConfig(_config);
-                NotifyStateChanged();
-                _onStateChanged?.Invoke();
-
-                // Start background run commands only when the module exposes them.
-                if (_config.Commands.Run.Count > 0)
-                {
-                    var runLog = new Progress<string>(message => AppendLog(message));
-                    _ = Task.Run(() => _runner.ExecuteRunAsync(_config, runLog, CancellationToken.None));
+                    Debug.WriteLine("Setup failed, cannot launch.");
+                    return;
                 }
             }
-            finally
+
+            _config.Status.Enabled = true;
+            _installer.SaveModuleConfig(_config);
+            NotifyStateChanged();
+            _onStateChanged?.Invoke();
+
+            // Start background run commands only when the module exposes them.
+            if (_config.Commands.Run.Count > 0)
             {
-                IsLaunching = false;
+                var launchLog = new Progress<string>(message => Debug.WriteLine($"[Launch] {message}"));
+                _ = Task.Run(() => _runner.ExecuteRunAsync(_config, launchLog, CancellationToken.None));
             }
         }
 
@@ -497,7 +395,6 @@ namespace ASLM.Pages
         {
             OnPropertyChanged(nameof(IsRunning));
             OnPropertyChanged(nameof(IsStopped));
-            OnPropertyChanged(nameof(IsReadyToLaunch));
         }
 
         // Property change

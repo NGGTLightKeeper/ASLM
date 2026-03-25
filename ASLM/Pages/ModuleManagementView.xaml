@@ -45,132 +45,71 @@
                         StrokeShape="RoundRectangle 8"
                         Padding="0">
 
-                    <Grid RowDefinitions="Auto, Auto">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <!-- Icon -->
+                        <Border Grid.Column="0"
+                                IsVisible="{Binding HasIcon}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 0"
+                                BackgroundColor="{StaticResource BackgroundSecondary}"
+                                WidthRequest="164"
+                                HeightRequest="164"
+                                Padding="0"
+                                Margin="8,8,0,8">
+                            <Image Source="{Binding IconFullPath}"
+                                   Aspect="AspectFit"
+                                   HorizontalOptions="Fill"
+                                   VerticalOptions="Fill" />
+                        </Border>
 
-                        <!-- Top row: Icon + Text + Buttons -->
-                        <Grid Grid.Row="0" ColumnDefinitions="Auto, *">
+                        <!-- Right side: Text + Buttons -->
+                        <Grid Grid.Column="1"
+                              RowDefinitions="*, Auto"
+                              Padding="8">
 
-                            <!-- Icon -->
-                            <Border Grid.Column="0"
-                                    IsVisible="{Binding HasIcon}"
-                                    StrokeThickness="0"
-                                    StrokeShape="RoundRectangle 0"
-                                    BackgroundColor="{StaticResource BackgroundSecondary}"
-                                    WidthRequest="164"
-                                    HeightRequest="164"
-                                    Padding="0"
-                                    Margin="8,8,0,8">
-                                <Image Source="{Binding IconFullPath}"
-                                       Aspect="AspectFit"
-                                       HorizontalOptions="Fill"
-                                       VerticalOptions="Fill" />
-                            </Border>
+                            <!-- Text area (top) -->
+                            <VerticalStackLayout Grid.Row="0" Spacing="2">
+                                <Label Text="{Binding Name}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource LabelPrimary}" />
+                                <Label Text="{Binding VersionString}"
+                                       FontSize="13"
+                                       TextColor="{StaticResource LabelSecondary}" />
+                            </VerticalStackLayout>
 
-                            <!-- Right side: Text + Buttons -->
-                            <Grid Grid.Column="1"
-                                  RowDefinitions="*, Auto"
-                                  Padding="8">
+                            <!-- Action buttons (bottom) -->
 
-                                <!-- Text area (top) -->
-                                <Grid Grid.Row="0">
-                                    <VerticalStackLayout Spacing="2">
-                                        <Label Text="{Binding Name}"
-                                               FontSize="16"
-                                               FontAttributes="Bold"
-                                               TextColor="{StaticResource LabelPrimary}" />
-                                        <Label Text="{Binding VersionString}"
-                                               FontSize="13"
-                                               TextColor="{StaticResource LabelSecondary}" />
-                                    </VerticalStackLayout>
-                                    <Button Text="{Binding ToggleLogLabel}"
-                                            Command="{Binding ToggleLogCommand}"
-                                            IsVisible="{Binding HasLog}"
-                                            BackgroundColor="Transparent"
-                                            TextColor="{StaticResource LabelSecondary}"
-                                            FontSize="12"
-                                            HeightRequest="24"
-                                            CornerRadius="4"
-                                            Padding="8,0"
-                                            HorizontalOptions="End"
-                                            VerticalOptions="Start" />
-                                </Grid>
-
-                                <!-- Action buttons (bottom) -->
-
-                                <!-- Running: Stop + Restart -->
-                                <Grid Grid.Row="1"
-                                      ColumnDefinitions="*, *"
-                                      ColumnSpacing="8"
-                                      IsVisible="{Binding IsRunning}">
-                                    <Button Grid.Column="0"
-                                            Text="Stop"
-                                            ImageSource="icon_stop.png"
-                                            ContentLayout="Left,4"
-                                            Command="{Binding StopCommand}"
-                                            BackgroundColor="{StaticResource ActionRed}"
-                                            TextColor="{StaticResource LabelPrimary}"
-                                            FontSize="13"
-                                            HeightRequest="24"
-                                            CornerRadius="4"
-                                            IsVisible="{Binding IsNotRestarting}"
-                                            HorizontalOptions="Fill" />
-                                    <Button Grid.Column="1"
-                                            Text="Restart"
-                                            ImageSource="icon_restart.png"
-                                            ContentLayout="Left,4"
-                                            Command="{Binding RestartCommand}"
-                                            BackgroundColor="{StaticResource ActionBlue}"
-                                            TextColor="{StaticResource LabelPrimary}"
-                                            FontSize="13"
-                                            HeightRequest="24"
-                                            CornerRadius="4"
-                                            IsVisible="{Binding IsNotRestarting}"
-                                            HorizontalOptions="Fill" />
-                                    <Border Grid.Column="0" Grid.ColumnSpan="2"
-                                            BackgroundColor="{StaticResource SystemBlueOverlay}"
-                                            Stroke="{StaticResource ActionBlue}"
-                                            StrokeShape="RoundRectangle 4"
-                                            StrokeThickness="1"
-                                            StrokeDashArray="4,2"
-                                            Padding="0"
-                                            Margin="0"
-                                            IsVisible="{Binding IsRestarting}"
-                                            MinimumHeightRequest="44"
-                                            HorizontalOptions="Fill"
-                                            VerticalOptions="Fill">
-                                        <HorizontalStackLayout HorizontalOptions="Center"
-                                                               VerticalOptions="Center"
-                                                               Spacing="8">
-                                            <ActivityIndicator IsRunning="{Binding IsRestarting}"
-                                                               Color="{StaticResource LabelPrimary}"
-                                                               WidthRequest="16"
-                                                               HeightRequest="16"
-                                                               VerticalOptions="Center" />
-                                            <Label Text="Restarting"
-                                                   TextColor="{StaticResource LabelPrimary}"
-                                                   FontSize="13"
-                                                   VerticalOptions="Center" />
-                                        </HorizontalStackLayout>
-                                    </Border>
-                                </Grid>
-
-                                <!-- Stopped: Launch (idle) -->
-                                <Button Grid.Row="1"
-                                        Text="Launch"
-                                        ImageSource="icon_play.png"
+                            <!-- Running: Stop + Restart -->
+                            <Grid Grid.Row="1"
+                                  ColumnDefinitions="*, *"
+                                  ColumnSpacing="8"
+                                  IsVisible="{Binding IsRunning}">
+                                <Button Grid.Column="0"
+                                        Text="Stop"
+                                        ImageSource="icon_stop.png"
                                         ContentLayout="Left,4"
-                                        Command="{Binding LaunchCommand}"
-                                        IsVisible="{Binding IsReadyToLaunch}"
+                                        Command="{Binding StopCommand}"
+                                        BackgroundColor="{StaticResource ActionRed}"
+                                        TextColor="{StaticResource LabelPrimary}"
+                                        FontSize="13"
+                                        HeightRequest="24"
+                                        CornerRadius="4"
+                                        IsVisible="{Binding IsNotRestarting}"
+                                        HorizontalOptions="Fill" />
+                                <Button Grid.Column="1"
+                                        Text="Restart"
+                                        ImageSource="icon_restart.png"
+                                        ContentLayout="Left,4"
+                                        Command="{Binding RestartCommand}"
                                         BackgroundColor="{StaticResource ActionBlue}"
                                         TextColor="{StaticResource LabelPrimary}"
                                         FontSize="13"
                                         HeightRequest="24"
                                         CornerRadius="4"
-                                        HorizontalOptions="Fill"
-                                        Margin="0" />
-
-                                <!-- Stopped: Launch (launching) -->
-                                <Border Grid.Row="1"
+                                        IsVisible="{Binding IsNotRestarting}"
+                                        HorizontalOptions="Fill" />
+                                <Border Grid.Column="0" Grid.ColumnSpan="2"
                                         BackgroundColor="{StaticResource SystemBlueOverlay}"
                                         Stroke="{StaticResource ActionBlue}"
                                         StrokeShape="RoundRectangle 4"
@@ -178,47 +117,41 @@
                                         StrokeDashArray="4,2"
                                         Padding="0"
                                         Margin="0"
-                                        IsVisible="{Binding IsLaunching}"
-                                        MinimumHeightRequest="24"
+                                        IsVisible="{Binding IsRestarting}"
+                                        MinimumHeightRequest="44"
                                         HorizontalOptions="Fill"
                                         VerticalOptions="Fill">
                                     <HorizontalStackLayout HorizontalOptions="Center"
                                                            VerticalOptions="Center"
                                                            Spacing="8">
-                                        <ActivityIndicator IsRunning="{Binding IsLaunching}"
+                                        <ActivityIndicator IsRunning="{Binding IsRestarting}"
                                                            Color="{StaticResource LabelPrimary}"
                                                            WidthRequest="16"
                                                            HeightRequest="16"
                                                            VerticalOptions="Center" />
-                                        <Label Text="Launching"
+                                        <Label Text="Restarting"
                                                TextColor="{StaticResource LabelPrimary}"
                                                FontSize="13"
                                                VerticalOptions="Center" />
                                     </HorizontalStackLayout>
                                 </Border>
                             </Grid>
+
+                            <!-- Stopped: Launch -->
+                            <Button Grid.Row="1"
+                                    Text="Launch"
+                                    ImageSource="icon_play.png"
+                                    ContentLayout="Left,4"
+                                    Command="{Binding LaunchCommand}"
+                                    IsVisible="{Binding IsStopped}"
+                                    BackgroundColor="{StaticResource ActionBlue}"
+                                    TextColor="{StaticResource LabelPrimary}"
+                                    FontSize="13"
+                                    HeightRequest="24"
+                                    CornerRadius="4"
+                                    HorizontalOptions="Fill"
+                                    Margin="0" />
                         </Grid>
-
-                        <!-- Bottom row: Launch log -->
-                        <Border Grid.Row="1"
-                                IsVisible="{Binding IsLogVisible}"
-                                BackgroundColor="{StaticResource BackgroundTertiary}"
-                                Stroke="{StaticResource Separator}"
-                                StrokeThickness="1"
-                                StrokeShape="RoundRectangle 0,0,8,8"
-                                Padding="10,8"
-                                Margin="0">
-                            <ScrollView x:Name="LogScrollView"
-                                        MaximumHeightRequest="160"
-                                        Orientation="Vertical">
-                                <Label Text="{Binding LaunchLog}"
-                                       FontFamily="Consolas"
-                                       FontSize="11"
-                                       TextColor="{StaticResource LabelSecondary}"
-                                       LineBreakMode="WordWrap" />
-                            </ScrollView>
-                        </Border>
-
                     </Grid>
                 </Border>
             </DataTemplate>
