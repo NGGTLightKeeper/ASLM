@@ -163,6 +163,11 @@ namespace ASLM.Pages
         internal void OnModuleStateChanged()
         {
             BuildPageButtons();
+
+            if (_consolesView is ConsolesView consolesView)
+            {
+                _ = consolesView.RefreshAsync();
+            }
         }
 
 
@@ -301,6 +306,11 @@ namespace ASLM.Pages
             if (button == ConsolesButton)
             {
                 _consolesView ??= _services.GetRequiredService<ConsolesView>();
+                if (_consolesView is ConsolesView consolesView)
+                {
+                    _ = consolesView.RefreshAsync();
+                }
+
                 return _consolesView;
             }
 

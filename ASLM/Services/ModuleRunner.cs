@@ -2,6 +2,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using ASLM.Models;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,7 @@ namespace ASLM.Services
         private readonly EngineInstaller _engineInstaller;
         private readonly PortManager _portManager;
         private readonly ProcessTracker _processTracker;
+        private readonly ModuleConsoleService _consoleService;
         private readonly ILogger<ModuleRunner> _logger;
         private bool _disposed;
 
@@ -35,13 +37,21 @@ namespace ASLM.Services
         /// Creates the module runner.
         /// </summary>
         /// <param name="engineInstaller">Service to resolve engine paths.</param>
+        /// <param name="portManager">Service to assign ports for settings resolution.</param>
         /// <param name="processTracker">Service that groups child processes under ASLM.</param>
+        /// <param name="consoleService">Service to report console output and process sessions.</param>
         /// <param name="logger">Logger instance.</param>
-        public ModuleRunner(EngineInstaller engineInstaller, PortManager portManager, ProcessTracker processTracker, ILogger<ModuleRunner> logger)
+        public ModuleRunner(
+            EngineInstaller engineInstaller,
+            PortManager portManager,
+            ProcessTracker processTracker,
+            ModuleConsoleService consoleService,
+            ILogger<ModuleRunner> logger)
         {
             _engineInstaller = engineInstaller;
             _portManager = portManager;
             _processTracker = processTracker;
+            _consoleService = consoleService;
             _logger = logger;
         }
 
@@ -56,30 +66,33 @@ namespace ASLM.Services
         /// <returns>True if all setup steps succeeded; otherwise, false.</returns>
         public async Task<bool> ExecuteFirstRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct)
         {
+            _consoleService.EnsureModule(module);
+            var moduleLog = CreateModuleLog(module, log);
+
             // 1. Install engine dependencies (libraries) first
-            if (!await InstallDependenciesAsync(module, log, ct))
+            if (!await InstallDependenciesAsync(module, moduleLog, ct))
                 return false;
 
             // 2. Run firstRun commands
             if (module.Commands.FirstRun.Count == 0)
             {
-                log.Report("No first-run commands defined.");
+                moduleLog.Report("No first-run commands defined.");
                 module.Status.FirstRunCompleted = true;
                 return true;
             }
 
-            log.Report($"Running {module.Commands.FirstRun.Count} setup command(s)...");
+            moduleLog.Report($"Running {module.Commands.FirstRun.Count} setup command(s)...");
 
             foreach (var cmd in module.Commands.FirstRun)
             {
                 if (ct.IsCancellationRequested) return false;
                 
-                log.Report($"[Setup] {cmd.Name}: {cmd.Description}");
-                bool success = await RunCommandAsync(module, cmd, log, ct, trackProcess: false);
+                moduleLog.Report($"[Setup] {cmd.Name}: {cmd.Description}");
+                bool success = await RunCommandAsync(module, cmd, moduleLog, ct, trackProcess: false, sessionStage: "Setup");
                 
                 if (!success)
                 {
-                    log.Report($"✗ Setup failed at step: {cmd.Name}");
+                    moduleLog.Report($"✗ Setup failed at step: {cmd.Name}");
                     return false;
                 }
             }
@@ -99,9 +112,12 @@ namespace ASLM.Services
         /// <returns>True if commands were started successfully.</returns>
         public async Task<bool> ExecuteRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct)
         {
+            _consoleService.EnsureModule(module);
+            var moduleLog = CreateModuleLog(module, log);
+
             if (module.Commands.Run.Count == 0)
             {
-                log.Report($"No run commands for {module.Name}.");
+                moduleLog.Report($"No run commands for {module.Name}.");
                 return true;
             }
 
@@ -109,7 +125,7 @@ namespace ASLM.Services
             // then apply only the settings that actually need updating.
             if (module.Settings != null && module.Settings.Count > 0)
             {
-                log.Report("Synchronizing module settings...");
+                moduleLog.Report("Synchronizing module settings...");
 
                 // Collect only settings that have a SetExec defined.
                 var settingsToSync = module.Settings
@@ -137,7 +153,7 @@ namespace ASLM.Services
 
                         if (upToDate)
                         {
-                            log.Report($"[Sync] '{t.Setting.Key}' is already up to date ({current!.Trim()})");
+                            moduleLog.Report($"[Sync] '{t.Setting.Key}' is already up to date ({current!.Trim()})");
                         }
 
                         return (t.Setting, t.Target, NeedsUpdate: !upToDate);
@@ -152,22 +168,22 @@ namespace ASLM.Services
 
                         if (needsUpdate)
                         {
-                            log.Report($"[Sync] Applying '{setting.Key}' = {target}");
+                            moduleLog.Report($"[Sync] Applying '{setting.Key}' = {target}");
                             await ExecuteSettingCommandAsync(module, setting, isSet: true, newValue: target, ct);
                         }
                     }
                 }
             }
 
-            log.Report($"Starting {module.Name}...");
+            moduleLog.Report($"Starting {module.Name}...");
 
             foreach (var cmd in module.Commands.Run)
             {
                 if (ct.IsCancellationRequested) return false;
 
-                log.Report($"[Run] {cmd.Name}: {cmd.Description}");
+                moduleLog.Report($"[Run] {cmd.Name}: {cmd.Description}");
                 // Run commands are long-running; we start them in the background and track their processes.
-                _ = RunCommandAsync(module, cmd, log, ct, trackProcess: true);
+                _ = RunCommandAsync(module, cmd, moduleLog, ct, trackProcess: true, sessionStage: "Run");
             }
 
             return true;
@@ -181,6 +197,9 @@ namespace ASLM.Services
         /// <param name="moduleSourcePath">The module's SourcePath (unique per instance).</param>
         public async Task StopModuleAsync(string moduleSourcePath)
         {
+            _consoleService.AppendOverviewLine(moduleSourcePath, "Stopping module processes...");
+            _consoleService.UpdateModuleEnabledState(moduleSourcePath, false);
+
             List<Process> processes;
             lock (_processLock)
             {
@@ -194,6 +213,8 @@ namespace ASLM.Services
             {
                 await KillProcessSafeAsync(process);
             }
+
+            _consoleService.AppendOverviewLine(moduleSourcePath, "Module processes stopped.");
         }
 
         // Global stop
@@ -215,6 +236,9 @@ namespace ASLM.Services
             var tasks = new List<Task>();
             foreach (var (moduleId, processes) in allEntries)
             {
+                _consoleService.AppendOverviewLine(moduleId, "Stopping all module processes...");
+                _consoleService.UpdateModuleEnabledState(moduleId, false);
+
                 foreach (var process in processes)
                 {
                     tasks.Add(KillProcessSafeAsync(process));
@@ -384,10 +408,9 @@ namespace ASLM.Services
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+                ConfigureProcessForStreaming(psi, exePath, engineDep.Id);
 
                 using var process = new Process { StartInfo = psi };
-                process.OutputDataReceived += (s, e) => { if (e.Data != null) log.Report($"  {e.Data}"); };
-                process.ErrorDataReceived += (s, e) => { if (e.Data != null) log.Report($"  {e.Data}"); };
 
                 if (!process.Start())
                 {
@@ -395,12 +418,45 @@ namespace ASLM.Services
                     return false;
                 }
 
+                var sessionHandle = _consoleService.StartProcessSession(
+                    module,
+                    new ModuleCommand
+                    {
+                        Name = $"Dependencies: {engineDep.Id}",
+                        Description = $"Install libraries via {engineConfig.PackageManager.Command}",
+                        Exec = args
+                    },
+                    "Dependencies",
+                    $"Exec: {Path.GetFileName(exePath)} {args}",
+                    process,
+                    isTrackedProcess: false);
+
+                process.OutputDataReceived += (s, e) =>
+                {
+                    if (e.Data != null)
+                    {
+                        var line = $"  {e.Data}";
+                        log.Report(line);
+                        _consoleService.AppendProcessLine(sessionHandle, line);
+                    }
+                };
+                process.ErrorDataReceived += (s, e) =>
+                {
+                    if (e.Data != null)
+                    {
+                        var line = $"  {e.Data}";
+                        log.Report(line);
+                        _consoleService.AppendProcessLine(sessionHandle, line);
+                    }
+                };
+
                 // Assign to the job object so dependency installs stay grouped under ASLM.
                 _processTracker.AddProcess(process);
 
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
                 await process.WaitForExitAsync(ct);
+                _consoleService.CompleteProcessSession(sessionHandle, process.ExitCode);
 
                 if (process.ExitCode != 0)
                 {
@@ -431,7 +487,8 @@ namespace ASLM.Services
             IProgress<string> log, 
             CancellationToken ct,
             bool trackProcess = false,
-            bool injectSettings = true)
+            bool injectSettings = true,
+            string sessionStage = "Command")
         {
             try
             {
@@ -492,6 +549,7 @@ namespace ASLM.Services
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+                ConfigureProcessForStreaming(psi, fileName, cmd.Engine);
 
                 // Apply settings as environment variables so the module can consume them dynamically
                 if (injectSettings)
@@ -499,13 +557,10 @@ namespace ASLM.Services
                     InjectSettingsIntoEnvironment(module, psi);
                 }
                 
-                log.Report($"Exec: {Path.GetFileName(fileName)} {arguments}");
+                var execMessage = $"Exec: {Path.GetFileName(fileName)} {arguments}";
+                log.Report(execMessage);
 
                 var process = new Process { StartInfo = psi };
-                
-                // 3. Output Handling
-                process.OutputDataReceived += (s, e) => { if (e.Data != null) log.Report($"  {e.Data}"); };
-                process.ErrorDataReceived += (s, e) => { if (e.Data != null) log.Report($"  err: {e.Data}"); };
 
                 // 4. Start & Wait
                 if (!process.Start())
@@ -514,6 +569,33 @@ namespace ASLM.Services
                     process.Dispose();
                     return false;
                 }
+
+                var sessionHandle = _consoleService.StartProcessSession(
+                    module,
+                    cmd,
+                    sessionStage,
+                    execMessage,
+                    process,
+                    isTrackedProcess: trackProcess);
+
+                process.OutputDataReceived += (s, e) =>
+                {
+                    if (e.Data != null)
+                    {
+                        var line = $"  {e.Data}";
+                        log.Report(line);
+                        _consoleService.AppendProcessLine(sessionHandle, line);
+                    }
+                };
+                process.ErrorDataReceived += (s, e) =>
+                {
+                    if (e.Data != null)
+                    {
+                        var line = $"  {e.Data}";
+                        log.Report(line);
+                        _consoleService.AppendProcessLine(sessionHandle, line);
+                    }
+                };
 
                 // Assign to the job object so launched processes stay grouped under ASLM.
                 _processTracker.AddProcess(process);
@@ -526,12 +608,15 @@ namespace ASLM.Services
                         var list = _runningProcesses.GetOrAdd(module.SourcePath, _ => new List<Process>());
                         list.Add(process);
                     }
+
+                    _ = MonitorObservedProcessesAsync(module, process.Id, ct);
                 }
 
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
 
                 await process.WaitForExitAsync(ct);
+                _consoleService.CompleteProcessSession(sessionHandle, process.ExitCode);
 
                 // Remove from tracking after process exits naturally
                 if (trackProcess)
@@ -596,7 +681,7 @@ namespace ASLM.Services
 
                 // Capture the exact output, avoiding log prefixes and errors
                 var trimmed = msg.TrimStart();
-                if (!trimmed.StartsWith("Exec:") && !trimmed.StartsWith("err:"))
+                if (!trimmed.StartsWith("Exec:"))
                 {
                     lock (lockObject)
                     {
@@ -605,7 +690,14 @@ namespace ASLM.Services
                 }
             });
 
-            bool success = await RunCommandAsync(module, cmd, log, ct, trackProcess: false, injectSettings: isSet);
+            bool success = await RunCommandAsync(
+                module,
+                cmd,
+                log,
+                ct,
+                trackProcess: false,
+                injectSettings: isSet,
+                sessionStage: "Settings");
             if (!success) return null;
 
             // Get the last non-empty line (to ignore banners or headers)
@@ -616,6 +708,210 @@ namespace ASLM.Services
                 .ToList();
             
             return lines.Count > 0 ? lines[^1] : string.Empty;
+        }
+
+        // Console forwarding
+
+        /// <summary>
+        /// Mirrors module log messages into the shared consoles store.
+        /// </summary>
+        private IProgress<string> CreateModuleLog(ModuleConfig module, IProgress<string> log)
+        {
+            return new Progress<string>(message =>
+            {
+                log.Report(message);
+                _consoleService.AppendOverviewLine(module, message);
+            });
+        }
+
+        /// <summary>
+        /// Tunes process startup so redirected console output is as complete and timely as possible.
+        /// </summary>
+        private static void ConfigureProcessForStreaming(ProcessStartInfo psi, string fileName, string? engineId)
+        {
+            if (!IsPythonProcess(fileName, engineId))
+            {
+                return;
+            }
+
+            if (!HasPythonUnbufferedFlag(psi.Arguments))
+            {
+                psi.Arguments = string.IsNullOrWhiteSpace(psi.Arguments)
+                    ? "-u"
+                    : $"-u {psi.Arguments}";
+            }
+
+            psi.Environment["PYTHONUNBUFFERED"] = "1";
+            psi.Environment["PYTHONIOENCODING"] = "utf-8";
+        }
+
+        /// <summary>
+        /// Returns whether the command is executed by a Python runtime.
+        /// </summary>
+        private static bool IsPythonProcess(string fileName, string? engineId)
+        {
+            if (!string.IsNullOrWhiteSpace(engineId) &&
+                engineId.Contains("python", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var executableName = Path.GetFileName(fileName);
+            if (string.IsNullOrWhiteSpace(executableName))
+            {
+                return false;
+            }
+
+            return executableName.StartsWith("python", StringComparison.OrdinalIgnoreCase) ||
+                   executableName.StartsWith("py", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Returns whether the Python command line already enables unbuffered output.
+        /// </summary>
+        private static bool HasPythonUnbufferedFlag(string arguments)
+        {
+            if (string.IsNullOrWhiteSpace(arguments))
+            {
+                return false;
+            }
+
+            var parts = SplitCommand(arguments);
+            return parts.Any(part => string.Equals(part, "-u", StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Observed subprocesses
+
+        /// <summary>
+        /// Polls descendant processes of one tracked module process so externally spawned services stay visible.
+        /// </summary>
+        private async Task MonitorObservedProcessesAsync(ModuleConfig module, int rootProcessId, CancellationToken ct)
+        {
+            var emptyCycles = 0;
+
+            while (!ct.IsCancellationRequested)
+            {
+                try
+                {
+                    var observedProcesses = GetDescendantProcesses(rootProcessId);
+                    _consoleService.SyncObservedProcesses(module, observedProcesses);
+
+                    if (observedProcesses.Count == 0 && !IsProcessAlive(rootProcessId))
+                    {
+                        emptyCycles++;
+                        if (emptyCycles >= 3)
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        emptyCycles = 0;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Observed process polling failed for root process {RootProcessId}.", rootProcessId);
+                }
+
+                try
+                {
+                    await Task.Delay(1000, ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+            }
+
+            _consoleService.SyncObservedProcesses(module, []);
+        }
+
+        /// <summary>
+        /// Returns descendant processes of one root process.
+        /// </summary>
+        private static List<ObservedProcessInfo> GetDescendantProcesses(int rootProcessId)
+        {
+#if WINDOWS
+            var snapshotEntries = TakeProcessSnapshot();
+            var childrenByParent = snapshotEntries
+                .GroupBy(entry => entry.ParentProcessId)
+                .ToDictionary(group => group.Key, group => group.ToList());
+
+            var results = new List<ObservedProcessInfo>();
+            var queue = new Queue<int>();
+            var visited = new HashSet<int> { rootProcessId };
+
+            queue.Enqueue(rootProcessId);
+
+            while (queue.Count > 0)
+            {
+                var parentProcessId = queue.Dequeue();
+                if (!childrenByParent.TryGetValue(parentProcessId, out var children))
+                {
+                    continue;
+                }
+
+                foreach (var child in children)
+                {
+                    if (!visited.Add(child.ProcessId))
+                    {
+                        continue;
+                    }
+
+                    results.Add(new ObservedProcessInfo
+                    {
+                        ProcessId = child.ProcessId,
+                        ProcessName = ResolveObservedProcessName(child)
+                    });
+                    queue.Enqueue(child.ProcessId);
+                }
+            }
+
+            return results;
+#else
+            return [];
+#endif
+        }
+
+        /// <summary>
+        /// Returns whether the process is still alive.
+        /// </summary>
+        private static bool IsProcessAlive(int processId)
+        {
+            try
+            {
+                using var process = Process.GetProcessById(processId);
+                return !process.HasExited;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Resolves a stable display name for one observed child process.
+        /// </summary>
+        private static string ResolveObservedProcessName(ProcessSnapshotEntry entry)
+        {
+            try
+            {
+                using var process = Process.GetProcessById(entry.ProcessId);
+                if (!string.IsNullOrWhiteSpace(process.ProcessName))
+                {
+                    return process.ProcessName;
+                }
+            }
+            catch
+            {
+                // Fall back to the process snapshot name.
+            }
+
+            var snapshotName = Path.GetFileNameWithoutExtension(entry.ExecutableName);
+            return string.IsNullOrWhiteSpace(snapshotName)
+                ? $"Process {entry.ProcessId}"
+                : snapshotName;
         }
 
         // Process shutdown
@@ -680,6 +976,93 @@ namespace ASLM.Services
                 }
             }
         }
+
+#if WINDOWS
+        /// <summary>
+        /// Takes one snapshot of the Windows process table.
+        /// </summary>
+        private static List<ProcessSnapshotEntry> TakeProcessSnapshot()
+        {
+            var results = new List<ProcessSnapshotEntry>();
+            var snapshotHandle = CreateToolhelp32Snapshot(Th32csSnapProcess, 0);
+            if (snapshotHandle == IntPtr.Zero || snapshotHandle == InvalidHandleValue)
+            {
+                return results;
+            }
+
+            try
+            {
+                var processEntry = new ProcessEntry32
+                {
+                    dwSize = (uint)Marshal.SizeOf<ProcessEntry32>()
+                };
+
+                if (!Process32First(snapshotHandle, ref processEntry))
+                {
+                    return results;
+                }
+
+                do
+                {
+                    results.Add(new ProcessSnapshotEntry
+                    {
+                        ProcessId = unchecked((int)processEntry.th32ProcessID),
+                        ParentProcessId = unchecked((int)processEntry.th32ParentProcessID),
+                        ExecutableName = processEntry.szExeFile
+                    });
+                }
+                while (Process32Next(snapshotHandle, ref processEntry));
+
+                return results;
+            }
+            finally
+            {
+                CloseHandle(snapshotHandle);
+            }
+        }
+
+        private const uint Th32csSnapProcess = 0x00000002;
+        private static readonly IntPtr InvalidHandleValue = new(-1);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool Process32First(IntPtr hSnapshot, ref ProcessEntry32 lppe);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool Process32Next(IntPtr hSnapshot, ref ProcessEntry32 lppe);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool CloseHandle(IntPtr hObject);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        private struct ProcessEntry32
+        {
+            public uint dwSize;
+            public uint cntUsage;
+            public uint th32ProcessID;
+            public IntPtr th32DefaultHeapID;
+            public uint th32ModuleID;
+            public uint cntThreads;
+            public uint th32ParentProcessID;
+            public int pcPriClassBase;
+            public uint dwFlags;
+
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szExeFile;
+        }
+
+        private sealed class ProcessSnapshotEntry
+        {
+            public int ProcessId { get; set; }
+            public int ParentProcessId { get; set; }
+            public string ExecutableName { get; set; } = string.Empty;
+        }
+#endif
 
         // Disposal
 
