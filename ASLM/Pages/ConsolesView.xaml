@@ -2,12 +2,15 @@
 
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:services="clr-namespace:ASLM.Services"
              x:Class="ASLM.Pages.ConsolesView">
 
+    <!-- Page layout -->
     <Grid RowDefinitions="Auto,*"
           RowSpacing="12"
           Margin="12,16">
 
+        <!-- Header -->
         <Grid Grid.Row="0"
               ColumnDefinitions="*,Auto"
               ColumnSpacing="12">
@@ -24,12 +27,6 @@
             <HorizontalStackLayout Grid.Column="1"
                                    Spacing="10"
                                    VerticalOptions="Center">
-                <Label Text="Follow output"
-                       FontSize="13"
-                       VerticalOptions="Center"
-                       TextColor="{StaticResource LabelSecondary}" />
-                <Switch IsToggled="{Binding FollowOutput}"
-                        VerticalOptions="Center" />
                 <HorizontalStackLayout Spacing="6"
                                        VerticalOptions="Center">
                     <CheckBox IsChecked="{Binding ShowCompletedProcesses}"
@@ -50,15 +47,17 @@
             </HorizontalStackLayout>
         </Grid>
 
+        <!-- Workspace -->
         <Grid x:Name="WorkspaceLayout"
               Grid.Row="1"
               ColumnDefinitions="280,320,*"
               ColumnSpacing="12"
               RowSpacing="12">
 
+            <!-- Modules column -->
             <Border x:Name="ModulesPanel"
                     Grid.Column="0"
-                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                    BackgroundColor="#18181C"
                     StrokeThickness="0"
                     StrokeShape="RoundRectangle 12"
                     Padding="12">
@@ -89,7 +88,7 @@
 
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border BackgroundColor="{StaticResource BackgroundPrimary}"
+                                <Border BackgroundColor="#141418"
                                         StrokeThickness="0"
                                         StrokeShape="RoundRectangle 10"
                                         Padding="10"
@@ -113,9 +112,10 @@
                 </Grid>
             </Border>
 
+            <!-- Sessions column -->
             <Border x:Name="SessionsPanel"
                     Grid.Column="1"
-                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                    BackgroundColor="#18181C"
                     StrokeThickness="0"
                     StrokeShape="RoundRectangle 12"
                     Padding="12">
@@ -146,7 +146,7 @@
 
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border BackgroundColor="{StaticResource BackgroundPrimary}"
+                                <Border BackgroundColor="#141418"
                                         StrokeThickness="0"
                                         StrokeShape="RoundRectangle 10"
                                         Padding="10"
@@ -172,15 +172,17 @@
                 </Grid>
             </Border>
 
+            <!-- Console output column -->
             <Border x:Name="OutputPanel"
                     Grid.Column="2"
-                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                    BackgroundColor="#101013"
                     StrokeThickness="0"
                     StrokeShape="RoundRectangle 12"
                     Padding="12">
                 <Grid RowDefinitions="Auto,Auto,*,Auto"
                       RowSpacing="10">
-                    <VerticalStackLayout Spacing="4">
+                    <VerticalStackLayout x:Name="OutputHeaderPanel"
+                                         Spacing="4">
                         <Label Text="{Binding SelectedSessionTitle}"
                                FontSize="18"
                                FontAttributes="Bold"
@@ -190,7 +192,8 @@
                                TextColor="{StaticResource LabelSecondary}" />
                     </VerticalStackLayout>
 
-                    <VerticalStackLayout Grid.Row="1"
+                    <VerticalStackLayout x:Name="OutputDetailsPanel"
+                                         Grid.Row="1"
                                          Spacing="2">
                         <Label Text="{Binding SelectedSessionDescription}"
                                FontSize="12"
@@ -204,17 +207,15 @@
                                MaxLines="2" />
                     </VerticalStackLayout>
 
-                    <Editor x:Name="OutputEditor"
-                            Grid.Row="2"
-                            Text="{Binding SelectedSessionText}"
-                            IsReadOnly="True"
-                            AutoSize="Disabled"
-                            FontFamily="Consolas"
-                            FontSize="12"
-                            TextColor="{StaticResource LabelPrimary}"
-                            BackgroundColor="{StaticResource BackgroundPrimary}" />
+                    <services:ConsoleOutputView x:Name="ConsoleOutputHost"
+                                                Grid.Row="2"
+                                                Text="{Binding SelectedSessionText}"
+                                                SessionKey="{Binding SelectedSessionKey}"
+                                                HorizontalOptions="Fill"
+                                                VerticalOptions="Fill" />
 
-                    <Label Grid.Row="3"
+                    <Label x:Name="OutputFooterLabel"
+                           Grid.Row="3"
                            Text="{Binding SelectedSessionFooter}"
                            FontSize="12"
                            TextColor="{StaticResource LabelSecondary}" />

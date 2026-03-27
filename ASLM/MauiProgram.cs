@@ -25,6 +25,10 @@ namespace ASLM
             // Configure the shared application host and bundled fonts.
             builder
                 .UseMauiApp<App>()
+                .ConfigureMauiHandlers(handlers =>
+                {
+                    handlers.AddHandler<ConsoleOutputView, ConsoleOutputViewHandler>();
+                })
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
