@@ -135,7 +135,7 @@ namespace ASLM.Pages
 
             _hasLoaded = true;
             await RefreshModulesAsync();
-            NavigateTo(ModuleManagementButton);
+            NavigateTo(HomeButton);
             _ = StartEnabledModulesAsync();
         }
 
@@ -153,6 +153,11 @@ namespace ASLM.Pages
             {
                 moduleManagementView.RefreshModules(_allModules, _moduleInstaller, _moduleRunner);
             }
+
+            if (_homeView is HomeView homeView)
+            {
+                _ = homeView.RefreshAsync();
+            }
         }
 
         // Module state callback
@@ -163,6 +168,16 @@ namespace ASLM.Pages
         internal void OnModuleStateChanged()
         {
             BuildPageButtons();
+
+            if (_consolesView is ConsolesView consolesView)
+            {
+                _ = consolesView.RefreshAsync();
+            }
+
+            if (_homeView is HomeView homeView)
+            {
+                _ = homeView.RefreshAsync();
+            }
         }
 
 
@@ -223,8 +238,33 @@ namespace ASLM.Pages
         {
             if (sender is Button button)
             {
+                if (button == SettingsButton)
+                {
+                    OpenSettingsOverlay();
+                    return;
+                }
+
                 NavigateTo(button);
             }
+        }
+
+        private void OpenSettingsOverlay()
+        {
+            _settingsView ??= _services.GetRequiredService<SettingsView>();
+            if (_settingsView is SettingsView settingsView)
+            {
+                settingsView.CloseRequested -= OnSettingsCloseRequested;
+                settingsView.CloseRequested += OnSettingsCloseRequested;
+                _ = settingsView.RefreshAsync();
+            }
+
+            OverlayContainer.Content = _settingsView;
+            OverlayContainer.IsVisible = true;
+        }
+
+        private void OnSettingsCloseRequested(object? sender, EventArgs e)
+        {
+            OverlayContainer.IsVisible = false;
         }
 
         // View activation
@@ -260,6 +300,51 @@ namespace ASLM.Pages
             ContentArea.Content = GetViewForButton(navButton);
         }
 
+        /// <summary>
+        /// Opens the home dashboard.
+        /// </summary>
+        internal void OpenHome()
+        {
+            NavigateTo(HomeButton);
+        }
+
+        /// <summary>
+        /// Opens the consoles page and optionally focuses one module.
+        /// </summary>
+        internal void OpenConsoles(string? moduleSourcePath = null)
+        {
+            NavigateTo(ConsolesButton);
+
+            if (_consolesView is not ConsolesView consolesView)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(moduleSourcePath))
+            {
+                _ = consolesView.RefreshAsync();
+                return;
+            }
+
+            _ = consolesView.ShowModuleAsync(moduleSourcePath);
+        }
+
+        /// <summary>
+        /// Opens the modules page and optionally scrolls one module card into view.
+        /// </summary>
+        internal void OpenModuleManagement(string? moduleSourcePath = null)
+        {
+            NavigateTo(ModuleManagementButton);
+
+            if (string.IsNullOrWhiteSpace(moduleSourcePath) ||
+                _moduleManagementView is not ModuleManagementView moduleManagementView)
+            {
+                return;
+            }
+
+            moduleManagementView.FocusModule(moduleSourcePath);
+        }
+
         // View resolution
 
         /// <summary>
@@ -269,13 +354,24 @@ namespace ASLM.Pages
         {
             if (button == HomeButton)
             {
-                _homeView ??= _services.GetRequiredService<HomeView>();
+                if (_homeView == null)
+                {
+                    var homeView = _services.GetRequiredService<HomeView>();
+                    homeView.Initialize(this);
+                    _homeView = homeView;
+                }
+
                 return _homeView;
             }
 
             if (button == ConsolesButton)
             {
                 _consolesView ??= _services.GetRequiredService<ConsolesView>();
+                if (_consolesView is ConsolesView consolesView)
+                {
+                    _ = consolesView.RefreshAsync();
+                }
+
                 return _consolesView;
             }
 
@@ -295,12 +391,6 @@ namespace ASLM.Pages
             {
                 _downloadModulesView ??= _services.GetRequiredService<DownloadModulesView>();
                 return _downloadModulesView;
-            }
-
-            if (button == SettingsButton)
-            {
-                _settingsView ??= _services.GetRequiredService<SettingsView>();
-                return _settingsView;
             }
 
             return new Label { Text = "Unknown page", TextColor = Colors.White };

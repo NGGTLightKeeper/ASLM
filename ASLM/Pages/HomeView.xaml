@@ -2,22 +2,609 @@
 
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="ASLM.Pages.HomeView">
-    <Grid>
-        <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="12">
-            <Image Source="{StaticResource IconDashboard}"
-                   WidthRequest="48"
-                   HeightRequest="48"
-                   HorizontalOptions="Center" />
+             x:Class="ASLM.Pages.HomeView"
+             x:Name="Root">
+
+    <Grid RowDefinitions="Auto,Auto,*"
+          RowSpacing="8"
+          Margin="12,16">
+
+        <VerticalStackLayout Grid.Row="0"
+                             Margin="4,0,4,0"
+                             Spacing="4">
             <Label Text="Home"
                    FontSize="24"
                    FontAttributes="Bold"
-                   TextColor="{StaticResource LabelPrimary}"
-                   HorizontalOptions="Center" />
-            <Label Text="Dashboard coming soon"
+                   TextColor="{StaticResource LabelPrimary}" />
+            <Label Text="{Binding Subtitle}"
                    FontSize="14"
-                   TextColor="{StaticResource LabelSecondary}"
-                   HorizontalOptions="Center" />
+                   TextColor="{StaticResource LabelSecondary}" />
         </VerticalStackLayout>
+
+        <CollectionView Grid.Row="1"
+                        Margin="4,0,4,0"
+                        ItemsSource="{Binding SummaryCards}"
+                        SelectionMode="None">
+            <CollectionView.ItemsLayout>
+                <GridItemsLayout Orientation="Vertical"
+                                 Span="{Binding BindingContext.SummaryGridSpan, Source={x:Reference Root}}"
+                                 VerticalItemSpacing="4"
+                                 HorizontalItemSpacing="4" />
+            </CollectionView.ItemsLayout>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{StaticResource BackgroundSecondary}"
+                            Stroke="{StaticResource Separator}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="12">
+                        <Grid RowDefinitions="Auto,Auto,Auto"
+                              RowSpacing="10">
+                            <Grid ColumnDefinitions="*,Auto"
+                                  ColumnSpacing="8">
+                                <VerticalStackLayout Spacing="2">
+                                    <Label Text="{Binding Title}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource LabelPrimary}" />
+                                    <Label Text="{Binding Subtitle}"
+                                           FontSize="12"
+                                           TextColor="{StaticResource LabelSecondary}" />
+                                </VerticalStackLayout>
+
+                                <Border Grid.Column="1"
+                                        BackgroundColor="{Binding AccentOverlayColor}"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 6"
+                                        Padding="8,3"
+                                        VerticalOptions="Start">
+                                    <Label Text="{Binding StatusText}"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource LabelPrimary}" />
+                                </Border>
+                            </Grid>
+
+                            <VerticalStackLayout Grid.Row="1"
+                                                 Spacing="8"
+                                                 BindableLayout.ItemsSource="{Binding Metrics}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid RowDefinitions="Auto,Auto"
+                                              RowSpacing="4">
+                                            <Grid ColumnDefinitions="Auto,*,Auto"
+                                                  ColumnSpacing="8">
+                                                <Label Text="{Binding Name}"
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource LabelSecondary}" />
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding DetailText}"
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource LabelSecondary}"
+                                                       LineBreakMode="TailTruncation" />
+                                                <Label Grid.Column="2"
+                                                       Text="{Binding ValueText}"
+                                                       FontSize="12"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{StaticResource LabelPrimary}" />
+                                            </Grid>
+
+                                            <ProgressBar Grid.Row="1"
+                                                         Progress="{Binding ProgressValue}"
+                                                         ProgressColor="{Binding AccentColor}"
+                                                         BackgroundColor="{StaticResource BackgroundTertiary}"
+                                                         HeightRequest="4"
+                                                         IsVisible="{Binding HasProgress}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+
+                            <Label Grid.Row="2"
+                                   Text="{Binding FooterText}"
+                                   FontSize="12"
+                                   TextColor="{StaticResource LabelSecondary}" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Grid x:Name="WorkspaceLayout"
+              Grid.Row="2"
+              Margin="4,0,4,0"
+              ColumnSpacing="8"
+              RowSpacing="8">
+            <Border x:Name="ProcessTreePanel"
+                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                    Stroke="{StaticResource Separator}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="0">
+                <Grid RowDefinitions="Auto,*">
+                    <VerticalStackLayout Grid.Row="0"
+                                         Spacing="2"
+                                         Padding="12,12,12,8">
+                        <Label Text="Managed Processes"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource LabelPrimary}" />
+                        <Label Text="{Binding ProcessTreeCaption}"
+                               FontSize="12"
+                               TextColor="{StaticResource LabelSecondary}" />
+                    </VerticalStackLayout>
+
+                    <ScrollView Grid.Row="1"
+                                Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Always">
+                        <Grid RowDefinitions="Auto,1,*"
+                              MinimumWidthRequest="{Binding ProcessTableWidth}">
+                            <Grid Grid.Row="0"
+                                  ColumnSpacing="{Binding BindingContext.ProcessTableColumnSpacing, Source={x:Reference Root}}"
+                                  Padding="12,0,12,8"
+                                  MinimumWidthRequest="{Binding ProcessTableWidth}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="{Binding BindingContext.ProcessNameColumnWidth, Source={x:Reference Root}}" />
+                                    <ColumnDefinition Width="{Binding BindingContext.ProcessCpuColumnWidth, Source={x:Reference Root}}" />
+                                    <ColumnDefinition Width="{Binding BindingContext.ProcessGpuColumnWidth, Source={x:Reference Root}}" />
+                                    <ColumnDefinition Width="{Binding BindingContext.ProcessMemoryColumnWidth, Source={x:Reference Root}}" />
+                                    <ColumnDefinition Width="{Binding BindingContext.ProcessDiskColumnWidth, Source={x:Reference Root}}" />
+                                    <ColumnDefinition Width="{Binding BindingContext.ProcessNetworkColumnWidth, Source={x:Reference Root}}" />
+                                    <ColumnDefinition Width="{Binding BindingContext.ProcessDetailsColumnWidth, Source={x:Reference Root}}" />
+                                </Grid.ColumnDefinitions>
+
+                                <Grid ColumnDefinitions="*,8"
+                                      ColumnSpacing="0">
+                                    <Label Text="Name"
+                                           FontSize="11"
+                                           TextColor="{StaticResource LabelSecondary}"
+                                           VerticalOptions="Center" />
+                                    <BoxView Grid.Column="1"
+                                             ClassId="Name"
+                                             WidthRequest="8"
+                                             BackgroundColor="{StaticResource Separator}"
+                                             Opacity="0.7"
+                                             HorizontalOptions="End">
+                                        <BoxView.GestureRecognizers>
+                                            <PanGestureRecognizer PanUpdated="OnProcessColumnResizePanUpdated" />
+                                        </BoxView.GestureRecognizers>
+                                    </BoxView>
+                                </Grid>
+
+                                <Grid Grid.Column="1"
+                                      ColumnDefinitions="*,8"
+                                      ColumnSpacing="0">
+                                    <Label Text="CPU"
+                                           FontSize="11"
+                                           TextColor="{StaticResource LabelSecondary}"
+                                           HorizontalTextAlignment="End"
+                                           VerticalOptions="Center" />
+                                    <BoxView Grid.Column="1"
+                                             ClassId="Cpu"
+                                             WidthRequest="8"
+                                             BackgroundColor="{StaticResource Separator}"
+                                             Opacity="0.7"
+                                             HorizontalOptions="End">
+                                        <BoxView.GestureRecognizers>
+                                            <PanGestureRecognizer PanUpdated="OnProcessColumnResizePanUpdated" />
+                                        </BoxView.GestureRecognizers>
+                                    </BoxView>
+                                </Grid>
+
+                                <Grid Grid.Column="2"
+                                      ColumnDefinitions="*,8"
+                                      ColumnSpacing="0">
+                                    <Label Text="GPU"
+                                           FontSize="11"
+                                           TextColor="{StaticResource LabelSecondary}"
+                                           HorizontalTextAlignment="End"
+                                           VerticalOptions="Center" />
+                                    <BoxView Grid.Column="1"
+                                             ClassId="Gpu"
+                                             WidthRequest="8"
+                                             BackgroundColor="{StaticResource Separator}"
+                                             Opacity="0.7"
+                                             HorizontalOptions="End">
+                                        <BoxView.GestureRecognizers>
+                                            <PanGestureRecognizer PanUpdated="OnProcessColumnResizePanUpdated" />
+                                        </BoxView.GestureRecognizers>
+                                    </BoxView>
+                                </Grid>
+
+                                <Grid Grid.Column="3"
+                                      ColumnDefinitions="*,8"
+                                      ColumnSpacing="0">
+                                    <Label Text="RAM"
+                                           FontSize="11"
+                                           TextColor="{StaticResource LabelSecondary}"
+                                           HorizontalTextAlignment="End"
+                                           VerticalOptions="Center" />
+                                    <BoxView Grid.Column="1"
+                                             ClassId="Memory"
+                                             WidthRequest="8"
+                                             BackgroundColor="{StaticResource Separator}"
+                                             Opacity="0.7"
+                                             HorizontalOptions="End">
+                                        <BoxView.GestureRecognizers>
+                                            <PanGestureRecognizer PanUpdated="OnProcessColumnResizePanUpdated" />
+                                        </BoxView.GestureRecognizers>
+                                    </BoxView>
+                                </Grid>
+
+                                <Grid Grid.Column="4"
+                                      ColumnDefinitions="*,8"
+                                      ColumnSpacing="0">
+                                    <Label Text="Disk"
+                                           FontSize="11"
+                                           TextColor="{StaticResource LabelSecondary}"
+                                           HorizontalTextAlignment="End"
+                                           VerticalOptions="Center" />
+                                    <BoxView Grid.Column="1"
+                                             ClassId="Disk"
+                                             WidthRequest="8"
+                                             BackgroundColor="{StaticResource Separator}"
+                                             Opacity="0.7"
+                                             HorizontalOptions="End">
+                                        <BoxView.GestureRecognizers>
+                                            <PanGestureRecognizer PanUpdated="OnProcessColumnResizePanUpdated" />
+                                        </BoxView.GestureRecognizers>
+                                    </BoxView>
+                                </Grid>
+
+                                <Grid Grid.Column="5"
+                                      ColumnDefinitions="*,8"
+                                      ColumnSpacing="0">
+                                    <Label Text="Net"
+                                           FontSize="11"
+                                           TextColor="{StaticResource LabelSecondary}"
+                                           HorizontalTextAlignment="End"
+                                           VerticalOptions="Center" />
+                                    <BoxView Grid.Column="1"
+                                             ClassId="Network"
+                                             WidthRequest="8"
+                                             BackgroundColor="{StaticResource Separator}"
+                                             Opacity="0.7"
+                                             HorizontalOptions="End">
+                                        <BoxView.GestureRecognizers>
+                                            <PanGestureRecognizer PanUpdated="OnProcessColumnResizePanUpdated" />
+                                        </BoxView.GestureRecognizers>
+                                    </BoxView>
+                                </Grid>
+
+                                <Grid Grid.Column="6"
+                                      ColumnDefinitions="*,8"
+                                      ColumnSpacing="0">
+                                    <Label Text="Details"
+                                           FontSize="11"
+                                           TextColor="{StaticResource LabelSecondary}"
+                                           VerticalOptions="Center" />
+                                    <BoxView Grid.Column="1"
+                                             ClassId="Details"
+                                             WidthRequest="8"
+                                             BackgroundColor="{StaticResource Separator}"
+                                             Opacity="0.7"
+                                             HorizontalOptions="End">
+                                        <BoxView.GestureRecognizers>
+                                            <PanGestureRecognizer PanUpdated="OnProcessColumnResizePanUpdated" />
+                                        </BoxView.GestureRecognizers>
+                                    </BoxView>
+                                </Grid>
+                            </Grid>
+
+                            <BoxView Grid.Row="1"
+                                     HeightRequest="1"
+                                     BackgroundColor="{StaticResource Separator}" />
+
+                            <CollectionView Grid.Row="2"
+                                            ItemsSource="{Binding ProcessNodes}"
+                                            SelectionMode="None"
+                                            MinimumWidthRequest="{Binding ProcessTableWidth}">
+                                <CollectionView.ItemsLayout>
+                                    <LinearItemsLayout Orientation="Vertical"
+                                                       ItemSpacing="0" />
+                                </CollectionView.ItemsLayout>
+
+                                <CollectionView.EmptyView>
+                                    <Label Text="The managed process tree will appear here after modules start."
+                                           FontSize="13"
+                                           TextColor="{StaticResource LabelSecondary}"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"
+                                           Margin="0,20,0,0" />
+                                </CollectionView.EmptyView>
+
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid RowDefinitions="Auto,1"
+                                              MinimumWidthRequest="{Binding BindingContext.ProcessTableWidth, Source={x:Reference Root}}">
+                                            <Grid Grid.Row="0"
+                                                  ColumnSpacing="{Binding BindingContext.ProcessTableColumnSpacing, Source={x:Reference Root}}"
+                                                  Padding="12,7"
+                                                  MinimumWidthRequest="{Binding BindingContext.ProcessTableWidth, Source={x:Reference Root}}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="{Binding BindingContext.ProcessNameColumnWidth, Source={x:Reference Root}}" />
+                                                    <ColumnDefinition Width="{Binding BindingContext.ProcessCpuColumnWidth, Source={x:Reference Root}}" />
+                                                    <ColumnDefinition Width="{Binding BindingContext.ProcessGpuColumnWidth, Source={x:Reference Root}}" />
+                                                    <ColumnDefinition Width="{Binding BindingContext.ProcessMemoryColumnWidth, Source={x:Reference Root}}" />
+                                                    <ColumnDefinition Width="{Binding BindingContext.ProcessDiskColumnWidth, Source={x:Reference Root}}" />
+                                                    <ColumnDefinition Width="{Binding BindingContext.ProcessNetworkColumnWidth, Source={x:Reference Root}}" />
+                                                    <ColumnDefinition Width="{Binding BindingContext.ProcessDetailsColumnWidth, Source={x:Reference Root}}" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Grid ColumnDefinitions="18,*"
+                                                      ColumnSpacing="6"
+                                                      Margin="{Binding IndentMargin}">
+                                                    <Button Text="{Binding ExpanderText}"
+                                                            Command="{Binding ToggleCommand}"
+                                                            BackgroundColor="{StaticResource BackgroundTertiary}"
+                                                            TextColor="{StaticResource LabelPrimary}"
+                                                            FontSize="10"
+                                                            Padding="0"
+                                                            WidthRequest="18"
+                                                            HeightRequest="18"
+                                                            CornerRadius="4"
+                                                            IsVisible="{Binding CanExpand}"
+                                                            IsEnabled="{Binding CanExpand}"
+                                                            VerticalOptions="Center" />
+                                                    <Label Grid.Column="1"
+                                                           Text="{Binding Title}"
+                                                           FontSize="12"
+                                                           FontAttributes="{Binding TitleFontAttributes}"
+                                                           TextColor="{Binding TitleColor}"
+                                                           VerticalOptions="Center"
+                                                           LineBreakMode="TailTruncation" />
+                                                    <Grid.GestureRecognizers>
+                                                        <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                                    </Grid.GestureRecognizers>
+                                                </Grid>
+
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding CpuText}"
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource LabelPrimary}"
+                                                       HorizontalTextAlignment="End"
+                                                       VerticalOptions="Center" />
+                                                <Label Grid.Column="2"
+                                                       Text="{Binding GpuText}"
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource LabelPrimary}"
+                                                       HorizontalTextAlignment="End"
+                                                       VerticalOptions="Center" />
+                                                <Label Grid.Column="3"
+                                                       Text="{Binding MemoryText}"
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource LabelPrimary}"
+                                                       HorizontalTextAlignment="End"
+                                                       VerticalOptions="Center" />
+                                                <Label Grid.Column="4"
+                                                       Text="{Binding DiskText}"
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource LabelPrimary}"
+                                                       HorizontalTextAlignment="End"
+                                                       VerticalOptions="Center" />
+                                                <Label Grid.Column="5"
+                                                       Text="{Binding NetworkText}"
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource LabelPrimary}"
+                                                       HorizontalTextAlignment="End"
+                                                       VerticalOptions="Center" />
+                                                <Label Grid.Column="6"
+                                                       Text="{Binding DetailsText}"
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource LabelSecondary}"
+                                                       VerticalOptions="Center"
+                                                       LineBreakMode="TailTruncation" />
+                                            </Grid>
+
+                                            <BoxView Grid.Row="1"
+                                                     Margin="12,0"
+                                                     HeightRequest="1"
+                                                     BackgroundColor="{StaticResource Separator}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </Grid>
+                    </ScrollView>
+                </Grid>
+            </Border>
+
+            <Border x:Name="ModulesPanel"
+                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                    Stroke="{StaticResource Separator}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="0">
+                <Grid RowDefinitions="Auto,*">
+                    <VerticalStackLayout Grid.Row="0"
+                                         Spacing="2"
+                                         Padding="12,12,12,8">
+                        <Label Text="Modules"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource LabelPrimary}" />
+                        <Label Text="{Binding ModulesCaption}"
+                               FontSize="12"
+                               TextColor="{StaticResource LabelSecondary}" />
+                    </VerticalStackLayout>
+
+                    <ScrollView Grid.Row="1"
+                                Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Always">
+                        <Grid RowDefinitions="Auto,1,*"
+                              MinimumWidthRequest="{Binding ModulesTableWidth}">
+                            <Grid Grid.Row="0"
+                                  ColumnSpacing="{Binding BindingContext.ModulesTableColumnSpacing, Source={x:Reference Root}}"
+                                  Padding="12,0,12,8"
+                                  MinimumWidthRequest="{Binding ModulesTableWidth}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="{Binding BindingContext.ModulesNameColumnWidth, Source={x:Reference Root}}" />
+                                    <ColumnDefinition Width="{Binding BindingContext.ModulesActionsColumnWidth, Source={x:Reference Root}}" />
+                                </Grid.ColumnDefinitions>
+
+                                <Grid ColumnDefinitions="*,8"
+                                      ColumnSpacing="0">
+                                    <Label Text="Name"
+                                           FontSize="11"
+                                           TextColor="{StaticResource LabelSecondary}"
+                                           VerticalOptions="Center" />
+                                    <BoxView Grid.Column="1"
+                                             ClassId="Name"
+                                             WidthRequest="8"
+                                             BackgroundColor="{StaticResource Separator}"
+                                             Opacity="0.7"
+                                             HorizontalOptions="End">
+                                        <BoxView.GestureRecognizers>
+                                            <PanGestureRecognizer PanUpdated="OnModulesColumnResizePanUpdated" />
+                                        </BoxView.GestureRecognizers>
+                                    </BoxView>
+                                </Grid>
+
+                                <Grid Grid.Column="1"
+                                      ColumnDefinitions="*,8"
+                                      ColumnSpacing="0">
+                                    <Label Text="Actions"
+                                           FontSize="11"
+                                           TextColor="{StaticResource LabelSecondary}"
+                                           VerticalOptions="Center" />
+                                    <BoxView Grid.Column="1"
+                                             ClassId="Actions"
+                                             WidthRequest="8"
+                                             BackgroundColor="{StaticResource Separator}"
+                                             Opacity="0.7"
+                                             HorizontalOptions="End">
+                                        <BoxView.GestureRecognizers>
+                                            <PanGestureRecognizer PanUpdated="OnModulesColumnResizePanUpdated" />
+                                        </BoxView.GestureRecognizers>
+                                    </BoxView>
+                                </Grid>
+                            </Grid>
+
+                            <BoxView Grid.Row="1"
+                                     HeightRequest="1"
+                                     BackgroundColor="{StaticResource Separator}" />
+
+                            <CollectionView x:Name="ModulesCollection"
+                                            Grid.Row="2"
+                                            ItemsSource="{Binding Modules}"
+                                            SelectionMode="None"
+                                            MinimumWidthRequest="{Binding ModulesTableWidth}">
+                                <CollectionView.ItemsLayout>
+                                    <LinearItemsLayout Orientation="Vertical"
+                                                       ItemSpacing="0" />
+                                </CollectionView.ItemsLayout>
+
+                                <CollectionView.EmptyView>
+                                    <Label Text="Installed modules will appear here."
+                                           FontSize="13"
+                                           TextColor="{StaticResource LabelSecondary}"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"
+                                           Margin="0,20,0,0" />
+                                </CollectionView.EmptyView>
+
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid RowDefinitions="Auto,1"
+                                              MinimumWidthRequest="{Binding BindingContext.ModulesTableWidth, Source={x:Reference Root}}">
+                                            <Grid Grid.Row="0"
+                                                  ColumnSpacing="{Binding BindingContext.ModulesTableColumnSpacing, Source={x:Reference Root}}"
+                                                  Padding="12,8"
+                                                  MinimumWidthRequest="{Binding BindingContext.ModulesTableWidth, Source={x:Reference Root}}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="{Binding BindingContext.ModulesNameColumnWidth, Source={x:Reference Root}}" />
+                                                    <ColumnDefinition Width="{Binding BindingContext.ModulesActionsColumnWidth, Source={x:Reference Root}}" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <VerticalStackLayout Spacing="2">
+                                                    <Label Text="{Binding Name}"
+                                                           FontSize="13"
+                                                           FontAttributes="Bold"
+                                                           TextColor="{StaticResource LabelPrimary}"
+                                                           LineBreakMode="TailTruncation" />
+                                                    <Label Text="{Binding SecondaryText}"
+                                                           FontSize="11"
+                                                           TextColor="{StaticResource LabelSecondary}"
+                                                           LineBreakMode="TailTruncation" />
+                                                </VerticalStackLayout>
+
+                                                <Grid Grid.Column="1"
+                                                      VerticalOptions="Center">
+                                                    <HorizontalStackLayout Spacing="4"
+                                                                           HorizontalOptions="End"
+                                                                           IsVisible="{Binding IsRunningAndIdle}">
+                                                        <ImageButton Source="icon_stop.png"
+                                                                     Command="{Binding StopCommand}"
+                                                                     BackgroundColor="{StaticResource ActionRed}"
+                                                                     HeightRequest="28"
+                                                                     WidthRequest="28"
+                                                                     Padding="6"
+                                                                     CornerRadius="6" />
+                                                        <ImageButton Source="icon_restart.png"
+                                                                     Command="{Binding RestartCommand}"
+                                                                     BackgroundColor="{StaticResource ActionBlue}"
+                                                                     HeightRequest="28"
+                                                                     WidthRequest="28"
+                                                                     Padding="6"
+                                                                     CornerRadius="6" />
+                                                        <ImageButton Source="icon_console.png"
+                                                                     Command="{Binding ConsoleCommand}"
+                                                                     BackgroundColor="{StaticResource BackgroundTertiary}"
+                                                                     HeightRequest="28"
+                                                                     WidthRequest="28"
+                                                                     Padding="6"
+                                                                     CornerRadius="6"
+                                                                     IsEnabled="{Binding CanOpenConsole}"
+                                                                     IsVisible="{Binding CanOpenConsole}" />
+                                                        <ImageButton Source="icon_modules.png"
+                                                                     Command="{Binding ManageCommand}"
+                                                                     BackgroundColor="{StaticResource BackgroundTertiary}"
+                                                                     HeightRequest="28"
+                                                                     WidthRequest="28"
+                                                                     Padding="6"
+                                                                     CornerRadius="6" />
+                                                    </HorizontalStackLayout>
+
+                                                    <HorizontalStackLayout Spacing="4"
+                                                                           HorizontalOptions="End"
+                                                                           IsVisible="{Binding IsStoppedAndIdle}">
+                                                        <ImageButton Source="icon_play.png"
+                                                                     Command="{Binding LaunchCommand}"
+                                                                     BackgroundColor="{StaticResource ActionBlue}"
+                                                                     HeightRequest="28"
+                                                                     WidthRequest="28"
+                                                                     Padding="6"
+                                                                     CornerRadius="6" />
+                                                    </HorizontalStackLayout>
+
+                                                    <HorizontalStackLayout Spacing="6"
+                                                                           HorizontalOptions="End"
+                                                                           IsVisible="{Binding IsBusy}">
+                                                        <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                                                           WidthRequest="16"
+                                                                           HeightRequest="16"
+                                                                           Color="{StaticResource LabelPrimary}" />
+                                                        <Label Text="{Binding BusyText}"
+                                                               FontSize="11"
+                                                               TextColor="{StaticResource LabelSecondary}"
+                                                               VerticalOptions="Center" />
+                                                    </HorizontalStackLayout>
+                                                </Grid>
+                                            </Grid>
+
+                                            <BoxView Grid.Row="1"
+                                                     Margin="12,0"
+                                                     HeightRequest="1"
+                                                     BackgroundColor="{StaticResource Separator}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </Grid>
+                    </ScrollView>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </ContentView>

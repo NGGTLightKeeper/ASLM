@@ -1,22 +1,1209 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using ASLM.Models;
+using ASLM.Services;
+
 namespace ASLM.Pages
 {
     // Consoles view
 
     /// <summary>
-    /// Displays the placeholder view for future console and log features.
+    /// Displays module consoles, per-process sessions, and merged console output.
     /// </summary>
-    public partial class ConsolesView : ContentView
+    public partial class ConsolesView : ContentView, IConsolesView
     {
-        // Initialization
+        private const double CompactBreakpoint = 1180;
+
+        private readonly ConsolesPageViewModel _viewModel = new();
+        private readonly ConsolesPresenter _presenter;
+        private bool _suppressSelection;
 
         /// <summary>
-        /// Creates the consoles placeholder view.
+        /// Creates the consoles view and initializes its responsive shell layout.
         /// </summary>
-        public ConsolesView()
+        public ConsolesView(ModuleInstaller moduleInstaller, ModuleConsoleService consoleService)
         {
             InitializeComponent();
+
+            BindingContext = _viewModel;
+
+            _presenter = new ConsolesPresenter(this, moduleInstaller, consoleService);
+
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+            SizeChanged += OnSizeChanged;
+
+            UpdateResponsiveLayout();
+        }
+
+        /// <summary>
+        /// Requests a presenter-driven refresh of the current consoles dashboard.
+        /// </summary>
+        internal Task RefreshAsync()
+        {
+            return _presenter.RefreshAsync();
+        }
+
+        /// <summary>
+        /// Opens the consoles workspace focused on the requested module.
+        /// </summary>
+        internal Task ShowModuleAsync(string sourcePath)
+        {
+            return _presenter.SelectModuleAsync(sourcePath);
+        }
+
+        // Lifetime events
+
+        /// <summary>
+        /// Activates the presenter and refreshes the measured output layout when the view loads.
+        /// </summary>
+        private async void OnLoaded(object? sender, EventArgs e)
+        {
+            await _presenter.ActivateAsync();
+            QueueConsoleLayoutRefresh();
+        }
+
+        /// <summary>
+        /// Deactivates the presenter when the view leaves the visual tree.
+        /// </summary>
+        private void OnUnloaded(object? sender, EventArgs e)
+        {
+            _presenter.Deactivate();
+        }
+
+        // Layout events
+
+        /// <summary>
+        /// Rebuilds the responsive workspace layout and refreshes console sizing after a resize.
+        /// </summary>
+        private void OnSizeChanged(object? sender, EventArgs e)
+        {
+            UpdateResponsiveLayout();
+            QueueConsoleLayoutRefresh();
+        }
+
+        // Toolbar actions
+
+        /// <summary>
+        /// Reloads the current console state from the presenter.
+        /// </summary>
+        private async void OnRefreshClicked(object? sender, EventArgs e)
+        {
+            await _presenter.RefreshAsync();
+        }
+
+        /// <summary>
+        /// Toggles whether completed process sessions stay visible in the session list.
+        /// </summary>
+        private async void OnShowCompletedProcessesChanged(object? sender, CheckedChangedEventArgs e)
+        {
+            await _presenter.SetShowCompletedProcessesAsync(e.Value);
+        }
+
+        // Selection events
+
+        /// <summary>
+        /// Selects the requested module unless the selection is being synchronized programmatically.
+        /// </summary>
+        private async void OnModuleSelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_suppressSelection)
+            {
+                return;
+            }
+
+            if (e.CurrentSelection.FirstOrDefault() is ConsoleModuleItemViewModel module)
+            {
+                await _presenter.SelectModuleAsync(module.SourcePath);
+            }
+        }
+
+        /// <summary>
+        /// Selects the requested console session unless the selection is being synchronized programmatically.
+        /// </summary>
+        private async void OnSessionSelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_suppressSelection)
+            {
+                return;
+            }
+
+            if (e.CurrentSelection.FirstOrDefault() is ConsoleSessionItemViewModel session)
+            {
+                await _presenter.SelectSessionAsync(session.Id);
+            }
+        }
+
+        /// <summary>
+        /// Applies the latest presenter state to the view model and synchronized selections.
+        /// </summary>
+        void IConsolesView.Render(ConsolesDashboardState state)
+        {
+            _suppressSelection = true;
+
+            _viewModel.Subtitle = state.Subtitle;
+            _viewModel.ModuleListCaption = state.ModuleListCaption;
+            _viewModel.SessionListCaption = state.SessionListCaption;
+            _viewModel.ShowCompletedProcesses = state.ShowCompletedProcesses;
+            _viewModel.SelectedSessionId = state.SelectedSessionId;
+            _viewModel.SelectedSessionKey = state.SelectedSessionKey;
+            _viewModel.SelectedSessionTitle = state.SelectedSessionTitle;
+            _viewModel.SelectedSessionStatus = state.SelectedSessionStatus;
+            _viewModel.SelectedSessionDescription = state.SelectedSessionDescription;
+            _viewModel.SelectedSessionCommandLine = state.SelectedSessionCommandLine;
+            _viewModel.SelectedSessionFooter = state.SelectedSessionFooter;
+            _viewModel.SelectedSessionText = string.Join(Environment.NewLine, state.SelectedSessionLines);
+
+            SyncModuleItems(_viewModel.Modules, state.Modules);
+            SyncSessionItems(_viewModel.Sessions, state.Sessions);
+
+            var selectedModule = _viewModel.Modules.FirstOrDefault(module => module.SourcePath == state.SelectedModuleSourcePath);
+            if (!ReferenceEquals(ModulesCollection.SelectedItem, selectedModule))
+            {
+                ModulesCollection.SelectedItem = selectedModule;
+            }
+
+            var selectedSession = _viewModel.Sessions.FirstOrDefault(session => session.Id == state.SelectedSessionId);
+            if (!ReferenceEquals(SessionsCollection.SelectedItem, selectedSession))
+            {
+                SessionsCollection.SelectedItem = selectedSession;
+            }
+
+            QueueConsoleLayoutRefresh();
+            _suppressSelection = false;
+        }
+
+        // Responsive layout
+
+        /// <summary>
+        /// Switches the workspace between the compact stacked layout and the wide three-column layout.
+        /// </summary>
+        private void UpdateResponsiveLayout()
+        {
+            var isCompact = Width > 0 && Width < CompactBreakpoint;
+
+            WorkspaceLayout.ColumnDefinitions.Clear();
+            WorkspaceLayout.RowDefinitions.Clear();
+
+            if (isCompact)
+            {
+                WorkspaceLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Star });
+                WorkspaceLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                WorkspaceLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                WorkspaceLayout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+                Grid.SetRow(ModulesPanel, 0);
+                Grid.SetColumn(ModulesPanel, 0);
+                Grid.SetRow(SessionsPanel, 1);
+                Grid.SetColumn(SessionsPanel, 0);
+                Grid.SetRow(OutputPanel, 2);
+                Grid.SetColumn(OutputPanel, 0);
+            }
+            else
+            {
+                WorkspaceLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = 280 });
+                WorkspaceLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = 320 });
+                WorkspaceLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                WorkspaceLayout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+                Grid.SetRow(ModulesPanel, 0);
+                Grid.SetColumn(ModulesPanel, 0);
+                Grid.SetRow(SessionsPanel, 0);
+                Grid.SetColumn(SessionsPanel, 1);
+                Grid.SetRow(OutputPanel, 0);
+                Grid.SetColumn(OutputPanel, 2);
+            }
+        }
+
+        /// <summary>
+        /// Schedules several delayed layout refresh passes so the native console host can settle after updates.
+        /// </summary>
+        private void QueueConsoleLayoutRefresh()
+        {
+            RefreshConsoleLayout();
+
+            if (Dispatcher == null)
+            {
+                return;
+            }
+
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(1), RefreshConsoleLayout);
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(16), RefreshConsoleLayout);
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(48), RefreshConsoleLayout);
+        }
+
+        /// <summary>
+        /// Invalidates the page and console containers so the output region is remeasured.
+        /// </summary>
+        private void RefreshConsoleLayout()
+        {
+            InvalidateMeasure();
+            WorkspaceLayout.InvalidateMeasure();
+            ModulesPanel.InvalidateMeasure();
+            SessionsPanel.InvalidateMeasure();
+            OutputPanel.InvalidateMeasure();
+            ConsoleOutputHost.InvalidateMeasure();
+        }
+
+        // Collection synchronization
+
+        /// <summary>
+        /// Synchronizes the module item view models with the latest presenter state.
+        /// </summary>
+        private static void SyncModuleItems(ObservableCollection<ConsoleModuleItemViewModel> target, IReadOnlyList<ConsoleModuleItemViewModel> source)
+        {
+            SyncKeyedItems(
+                target,
+                source,
+                static item => item.SourcePath,
+                static (targetItem, sourceItem) => targetItem.UpdateFrom(sourceItem));
+        }
+
+        /// <summary>
+        /// Synchronizes the session item view models with the latest presenter state.
+        /// </summary>
+        private static void SyncSessionItems(ObservableCollection<ConsoleSessionItemViewModel> target, IReadOnlyList<ConsoleSessionItemViewModel> source)
+        {
+            SyncKeyedItems(
+                target,
+                source,
+                static item => item.Id,
+                static (targetItem, sourceItem) => targetItem.UpdateFrom(sourceItem));
+        }
+
+        /// <summary>
+        /// Updates an observable collection in place by key so item instances stay stable for the UI.
+        /// </summary>
+        private static void SyncKeyedItems<T>(
+            ObservableCollection<T> target,
+            IReadOnlyList<T> source,
+            Func<T, string> keySelector,
+            Action<T, T> updateExisting)
+            where T : class
+        {
+            for (var index = 0; index < source.Count; index++)
+            {
+                var sourceItem = source[index];
+
+                if (index < target.Count &&
+                    string.Equals(keySelector(target[index]), keySelector(sourceItem), StringComparison.Ordinal))
+                {
+                    updateExisting(target[index], sourceItem);
+                    continue;
+                }
+
+                var existingIndex = -1;
+                for (var searchIndex = index + 1; searchIndex < target.Count; searchIndex++)
+                {
+                    if (string.Equals(keySelector(target[searchIndex]), keySelector(sourceItem), StringComparison.Ordinal))
+                    {
+                        existingIndex = searchIndex;
+                        break;
+                    }
+                }
+
+                if (existingIndex >= 0)
+                {
+                    var existingItem = target[existingIndex];
+                    target.Move(existingIndex, index);
+                    updateExisting(existingItem, sourceItem);
+                }
+                else
+                {
+                    target.Insert(index, sourceItem);
+                }
+            }
+
+            while (target.Count > source.Count)
+            {
+                target.RemoveAt(target.Count - 1);
+            }
+        }
+    }
+
+    // Consoles view contract
+
+    /// <summary>
+    /// Defines the rendering contract used by the consoles presenter.
+    /// </summary>
+    internal interface IConsolesView
+    {
+        /// <summary>
+        /// Applies a fully prepared dashboard state to the view.
+        /// </summary>
+        void Render(ConsolesDashboardState state);
+    }
+
+    // Consoles presenter
+
+    /// <summary>
+    /// Builds dashboard state for the consoles view and coordinates selections with the console store.
+    /// </summary>
+    internal sealed class ConsolesPresenter
+    {
+        private const string AllModulesModuleId = "__all_modules__";
+        private const string GlobalUnifiedSessionId = "__all_modules_unified__";
+        private const string UnifiedSessionId = "__module_unified__";
+
+        private readonly IConsolesView _view;
+        private readonly ModuleInstaller _moduleInstaller;
+        private readonly ModuleConsoleService _consoleService;
+        private readonly SemaphoreSlim _refreshLock = new(1, 1);
+
+        private List<ModuleConfig> _knownModules = [];
+        private bool _isActive;
+        private int _refreshQueued;
+        private bool _showCompletedProcesses;
+        private string? _selectedModuleSourcePath;
+        private string? _selectedSessionId;
+
+        /// <summary>
+        /// Creates the presenter for the consoles dashboard.
+        /// </summary>
+        public ConsolesPresenter(IConsolesView view, ModuleInstaller moduleInstaller, ModuleConsoleService consoleService)
+        {
+            _view = view;
+            _moduleInstaller = moduleInstaller;
+            _consoleService = consoleService;
+        }
+
+        /// <summary>
+        /// Starts listening for console store changes and renders the initial dashboard state.
+        /// </summary>
+        public async Task ActivateAsync()
+        {
+            if (_isActive)
+            {
+                return;
+            }
+
+            _isActive = true;
+            _consoleService.StateChanged += OnConsoleStateChanged;
+            await RefreshAsync(forceModuleReload: true);
+        }
+
+        /// <summary>
+        /// Stops listening for console store changes.
+        /// </summary>
+        public void Deactivate()
+        {
+            if (!_isActive)
+            {
+                return;
+            }
+
+            _consoleService.StateChanged -= OnConsoleStateChanged;
+            _isActive = false;
+        }
+
+        /// <summary>
+        /// Selects a module and resets the session selection to that module's default console.
+        /// </summary>
+        public async Task SelectModuleAsync(string sourcePath)
+        {
+            if (string.Equals(_selectedModuleSourcePath, sourcePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            _selectedModuleSourcePath = sourcePath;
+            _selectedSessionId = null;
+            await RefreshAsync(forceModuleReload: false);
+        }
+
+        /// <summary>
+        /// Updates whether completed process sessions stay visible in per-module session lists.
+        /// </summary>
+        public async Task SetShowCompletedProcessesAsync(bool showCompletedProcesses)
+        {
+            if (_showCompletedProcesses == showCompletedProcesses)
+            {
+                return;
+            }
+
+            _showCompletedProcesses = showCompletedProcesses;
+            await RefreshAsync(forceModuleReload: false);
+        }
+
+        /// <summary>
+        /// Selects a console session inside the currently active module scope.
+        /// </summary>
+        public async Task SelectSessionAsync(string sessionId)
+        {
+            if (string.Equals(_selectedSessionId, sessionId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _selectedSessionId = sessionId;
+            await RefreshAsync(forceModuleReload: false);
+        }
+
+        /// <summary>
+        /// Reloads modules when required and rerenders the dashboard.
+        /// </summary>
+        public Task RefreshAsync()
+        {
+            return RefreshAsync(forceModuleReload: true);
+        }
+
+        /// <summary>
+        /// Reloads module metadata when requested, snapshots console state, and renders the result.
+        /// </summary>
+        private async Task RefreshAsync(bool forceModuleReload)
+        {
+            await _refreshLock.WaitAsync();
+            try
+            {
+                if (forceModuleReload || _knownModules.Count == 0)
+                {
+                    _knownModules = await _moduleInstaller.DiscoverModulesAsync();
+                }
+
+                _consoleService.EnsureModules(_knownModules);
+
+                var snapshots = _consoleService.GetSnapshot();
+                var state = BuildState(snapshots);
+
+                await MainThread.InvokeOnMainThreadAsync(() => _view.Render(state));
+            }
+            finally
+            {
+                _refreshLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// Coalesces bursts of console change notifications into a single refresh.
+        /// </summary>
+        private void OnConsoleStateChanged(object? sender, EventArgs e)
+        {
+            if (!_isActive || Interlocked.Exchange(ref _refreshQueued, 1) == 1)
+            {
+                return;
+            }
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(100);
+                Interlocked.Exchange(ref _refreshQueued, 0);
+                await RefreshAsync(forceModuleReload: false);
+            });
+        }
+
+        /// <summary>
+        /// Builds the full dashboard state for the current module and session selection.
+        /// </summary>
+        private ConsolesDashboardState BuildState(IReadOnlyList<ModuleConsoleModuleSnapshot> snapshots)
+        {
+            var activeModules = snapshots
+                .Where(module => module.IsEnabled || module.ActiveProcessCount > 0)
+                .ToList();
+
+            var moduleItems = new List<ConsoleModuleItemViewModel>();
+            if (activeModules.Count > 0)
+            {
+                moduleItems.Add(new ConsoleModuleItemViewModel
+                {
+                    SourcePath = AllModulesModuleId,
+                    Name = "All Modules",
+                    StatusText = $"{activeModules.Count} active modules",
+                    ActivityText = "Unified console for all active modules"
+                });
+            }
+
+            moduleItems.AddRange(activeModules.Select(MapModule));
+
+            if (moduleItems.Count == 0)
+            {
+                _selectedModuleSourcePath = null;
+            }
+            else if (string.IsNullOrWhiteSpace(_selectedModuleSourcePath) ||
+                     !moduleItems.Any(module => string.Equals(module.SourcePath, _selectedModuleSourcePath, StringComparison.OrdinalIgnoreCase)))
+            {
+                _selectedModuleSourcePath = moduleItems[0].SourcePath;
+            }
+
+            var isGlobalModule = string.Equals(_selectedModuleSourcePath, AllModulesModuleId, StringComparison.Ordinal);
+            var selectedModule = activeModules.FirstOrDefault(module => module.SourcePath == _selectedModuleSourcePath);
+            var activeModulePaths = activeModules.Select(module => module.SourcePath).ToList();
+
+            IReadOnlyList<ConsoleSessionItemViewModel> sessionItems;
+            IReadOnlyList<string> selectedSessionLines;
+            string selectedSessionTitle;
+            string selectedSessionStatus;
+            string selectedSessionDescription;
+            string selectedSessionCommandLine;
+            string selectedSessionFooter;
+
+            if (isGlobalModule)
+            {
+                _selectedSessionId = GlobalUnifiedSessionId;
+                sessionItems =
+                [
+                    new ConsoleSessionItemViewModel
+                    {
+                        Id = GlobalUnifiedSessionId,
+                        ModuleSourcePath = AllModulesModuleId,
+                        SessionSourceId = GlobalUnifiedSessionId,
+                        Title = "Unified Console",
+                        StatusText = "Merged output across all active modules",
+                        Preview = "Includes unified logs and completed process history from active modules."
+                    }
+                ];
+
+                selectedSessionLines = _consoleService.GetUnifiedOverviewLines(activeModulePaths);
+                selectedSessionTitle = "All Modules / Unified Console";
+                selectedSessionStatus = $"{activeModules.Count} active modules";
+                selectedSessionDescription = "Merged output across all active modules. Completed processes remain visible here even when hidden from per-module lists.";
+                selectedSessionCommandLine = string.Empty;
+                selectedSessionFooter = $"{selectedSessionLines.Count} visible lines";
+            }
+            else if (selectedModule == null)
+            {
+                _selectedSessionId = null;
+                sessionItems = [];
+                selectedSessionLines = ["No output yet."];
+                selectedSessionTitle = "No console selected";
+                selectedSessionStatus = "Start or select a module to see console activity.";
+                selectedSessionDescription = "Console output from module startup, setup, settings sync, services, and run subprocesses will appear here.";
+                selectedSessionCommandLine = string.Empty;
+                selectedSessionFooter = "Waiting for module activity.";
+            }
+            else
+            {
+                var visibleSessions = selectedModule.Sessions
+                    .Where(session => !string.Equals(session.Id, "overview", StringComparison.OrdinalIgnoreCase))
+                    .Where(session => _showCompletedProcesses || session.IsRunning)
+                    .ToList();
+
+                sessionItems =
+                [
+                    new ConsoleSessionItemViewModel
+                    {
+                        Id = UnifiedSessionId,
+                        ModuleSourcePath = selectedModule.SourcePath,
+                        SessionSourceId = UnifiedSessionId,
+                        Title = "Unified Console",
+                        StatusText = "Merged output for this module",
+                        Preview = "Includes shared lifecycle logs and completed process history for the selected module."
+                    },
+                    .. visibleSessions.Select(session => MapSession(selectedModule, session))
+                ];
+
+                if (string.IsNullOrWhiteSpace(_selectedSessionId) ||
+                    !sessionItems.Any(session => string.Equals(session.Id, _selectedSessionId, StringComparison.Ordinal)))
+                {
+                    _selectedSessionId = UnifiedSessionId;
+                }
+
+                var selectedSessionItem = sessionItems.FirstOrDefault(session => string.Equals(session.Id, _selectedSessionId, StringComparison.Ordinal));
+                var selectedSession = selectedSessionItem == null ||
+                                      string.Equals(selectedSessionItem.SessionSourceId, UnifiedSessionId, StringComparison.Ordinal)
+                    ? null
+                    : visibleSessions.FirstOrDefault(session => string.Equals(session.Id, selectedSessionItem.SessionSourceId, StringComparison.Ordinal));
+
+                if (selectedSessionItem == null || string.Equals(_selectedSessionId, UnifiedSessionId, StringComparison.Ordinal))
+                {
+                    selectedSessionLines = _consoleService.GetUnifiedModuleLines(selectedModule.SourcePath);
+                    selectedSessionTitle = $"{selectedModule.Name} / Unified Console";
+                    selectedSessionStatus = $"{selectedModule.ActiveProcessCount} active subprocesses";
+                    selectedSessionDescription = "Merged output for the selected module. Completed processes stay visible here even when hidden in the per-process list.";
+                    selectedSessionCommandLine = string.Empty;
+                    selectedSessionFooter = $"{selectedSessionLines.Count} visible lines";
+                }
+                else if (selectedSession == null)
+                {
+                    selectedSessionLines = ["No output yet."];
+                    selectedSessionTitle = "No console selected";
+                    selectedSessionStatus = "Start or select a module to see console activity.";
+                    selectedSessionDescription = "Console output from module startup, setup, settings sync, services, and run subprocesses will appear here.";
+                    selectedSessionCommandLine = string.Empty;
+                    selectedSessionFooter = "Waiting for module activity.";
+                }
+                else
+                {
+                    selectedSessionLines = _consoleService.GetSessionLines(selectedModule.SourcePath, selectedSession.Id);
+                    selectedSessionTitle = $"{selectedModule.Name} / {selectedSession.Title}";
+                    selectedSessionStatus = BuildSelectedStatus(selectedSession);
+                    selectedSessionDescription = selectedSession.IsObservedProcess
+                        ? "Observed child process started by the module. ASLM can keep it visible as a service, but direct stdout/stderr capture may be unavailable for third-party executables."
+                        : string.IsNullOrWhiteSpace(selectedSession.CommandDescription)
+                            ? $"{selectedSession.Stage} session"
+                            : selectedSession.CommandDescription;
+                    selectedSessionCommandLine = selectedSession.CommandLine ?? string.Empty;
+                    selectedSessionFooter = BuildFooter(selectedSession);
+                }
+            }
+
+            var activeProcesses = activeModules.Sum(module => module.ActiveProcessCount);
+            var totalSessions = activeModules.Sum(module => module.Sessions.Count);
+
+            return new ConsolesDashboardState
+            {
+                Subtitle = activeModules.Count == 0
+                    ? "No module consoles are available yet."
+                    : $"{activeModules.Count} active modules - {activeProcesses} active subprocesses - {totalSessions} sessions",
+                ModuleListCaption = activeModules.Count == 0
+                    ? "No active modules"
+                    : $"{activeModules.Count} active modules",
+                ShowCompletedProcesses = _showCompletedProcesses,
+                SessionListCaption = isGlobalModule
+                    ? "Unified output across active modules."
+                    : selectedModule == null
+                        ? "Select a module to inspect its output."
+                        : $"{sessionItems.Count} visible consoles for {selectedModule.Name}",
+                Modules = moduleItems,
+                SelectedModuleSourcePath = _selectedModuleSourcePath,
+                Sessions = sessionItems,
+                SelectedSessionId = _selectedSessionId,
+                SelectedSessionKey = $"{_selectedModuleSourcePath}|{_selectedSessionId}",
+                SelectedSessionTitle = selectedSessionTitle,
+                SelectedSessionStatus = selectedSessionStatus,
+                SelectedSessionDescription = selectedSessionDescription,
+                SelectedSessionCommandLine = selectedSessionCommandLine,
+                SelectedSessionLines = selectedSessionLines,
+                SelectedSessionFooter = selectedSessionFooter
+            };
+        }
+
+        /// <summary>
+        /// Maps one module snapshot to its sidebar item view model.
+        /// </summary>
+        private static ConsoleModuleItemViewModel MapModule(ModuleConsoleModuleSnapshot module)
+        {
+            var activityText = module.LastActivityUtc.HasValue
+                ? $"Last activity {module.LastActivityUtc.Value.ToLocalTime():HH:mm:ss}"
+                : "No activity yet";
+
+            return new ConsoleModuleItemViewModel
+            {
+                SourcePath = module.SourcePath,
+                Name = module.Name,
+                StatusText = $"{(module.IsEnabled ? "Enabled" : "Disabled")} - {module.ActiveProcessCount} active - {module.Sessions.Count} sessions",
+                ActivityText = activityText
+            };
+        }
+
+        /// <summary>
+        /// Maps one session snapshot to its list item view model.
+        /// </summary>
+        private static ConsoleSessionItemViewModel MapSession(ModuleConsoleModuleSnapshot module, ModuleConsoleSessionSnapshot session)
+        {
+            var status = session.IsObservedProcess
+                ? session.IsRunning
+                    ? $"Service - Observed{FormatPid(session.ProcessId)}"
+                    : $"Service - Stopped{FormatPid(session.ProcessId)}"
+                : session.IsRunning
+                    ? $"{session.Stage} - Running{FormatPid(session.ProcessId)}"
+                    : session.ExitCode.HasValue
+                        ? $"{session.Stage} - Exit {session.ExitCode.Value}{FormatPid(session.ProcessId)}"
+                        : $"{session.Stage} - Completed";
+
+            return new ConsoleSessionItemViewModel
+            {
+                Id = $"{module.SourcePath}::{session.Id}",
+                ModuleSourcePath = module.SourcePath,
+                SessionSourceId = session.Id,
+                Title = session.Title,
+                StatusText = status,
+                Preview = string.IsNullOrWhiteSpace(session.Preview)
+                    ? session.IsObservedProcess
+                        ? "Observed child process. Direct stdout/stderr capture may be unavailable."
+                        : "No output yet."
+                    : session.Preview
+            };
+        }
+
+        /// <summary>
+        /// Builds the human-readable status line shown above the selected console output.
+        /// </summary>
+        private static string BuildSelectedStatus(ModuleConsoleSessionSnapshot session)
+        {
+            if (session.IsObservedProcess)
+            {
+                return session.IsRunning
+                    ? $"Observed service is running{FormatPid(session.ProcessId)}"
+                    : $"Observed service stopped{FormatPid(session.ProcessId)}";
+            }
+
+            if (session.IsRunning)
+            {
+                return $"{session.Stage} session is running{FormatPid(session.ProcessId)}";
+            }
+
+            if (session.ExitCode.HasValue)
+            {
+                return $"{session.Stage} session finished with exit code {session.ExitCode.Value}{FormatPid(session.ProcessId)}";
+            }
+
+            return $"{session.Stage} session completed";
+        }
+
+        /// <summary>
+        /// Builds the footer metadata shown under the selected console output.
+        /// </summary>
+        private static string BuildFooter(ModuleConsoleSessionSnapshot session)
+        {
+            var started = $"Started {session.StartedUtc.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
+            var ended = session.EndedUtc.HasValue
+                ? $" - Ended {session.EndedUtc.Value.ToLocalTime():HH:mm:ss}"
+                : string.Empty;
+            var observedSuffix = session.IsObservedProcess
+                ? " - direct stdout/stderr capture may be unavailable"
+                : string.Empty;
+
+            return $"{session.LineCount} buffered lines - {started}{ended}{observedSuffix}";
+        }
+
+        /// <summary>
+        /// Formats the process identifier suffix used in session status labels.
+        /// </summary>
+        private static string FormatPid(int? processId)
+        {
+            return processId.HasValue ? $" - PID {processId.Value}" : string.Empty;
+        }
+    }
+
+    // Consoles dashboard state
+
+    /// <summary>
+    /// Represents the complete UI state required to render the consoles dashboard.
+    /// </summary>
+    internal sealed class ConsolesDashboardState
+    {
+        /// <summary>
+        /// Gets or sets the page subtitle summarizing active modules and sessions.
+        /// </summary>
+        public string Subtitle { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the caption shown above the module list.
+        /// </summary>
+        public string ModuleListCaption { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the caption shown above the session list.
+        /// </summary>
+        public string SessionListCaption { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets whether completed process sessions are visible in the session list.
+        /// </summary>
+        public bool ShowCompletedProcesses { get; set; }
+
+        /// <summary>
+        /// Gets or sets the rendered module items.
+        /// </summary>
+        public IReadOnlyList<ConsoleModuleItemViewModel> Modules { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the source path of the selected module scope.
+        /// </summary>
+        public string? SelectedModuleSourcePath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the rendered session items for the selected module scope.
+        /// </summary>
+        public IReadOnlyList<ConsoleSessionItemViewModel> Sessions { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the selected session identifier.
+        /// </summary>
+        public string? SelectedSessionId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the composite key used to detect session changes in the native console host.
+        /// </summary>
+        public string SelectedSessionKey { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the title shown above the selected console output.
+        /// </summary>
+        public string SelectedSessionTitle { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the status line shown above the selected console output.
+        /// </summary>
+        public string SelectedSessionStatus { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the descriptive text shown for the selected console output.
+        /// </summary>
+        public string SelectedSessionDescription { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the command line shown for the selected console output.
+        /// </summary>
+        public string SelectedSessionCommandLine { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the console lines shown in the output pane.
+        /// </summary>
+        public IReadOnlyList<string> SelectedSessionLines { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the footer shown below the selected console output.
+        /// </summary>
+        public string SelectedSessionFooter { get; set; } = string.Empty;
+    }
+
+    // Consoles page view model
+
+    /// <summary>
+    /// Exposes bindable state for the consoles page shell and output pane.
+    /// </summary>
+    public sealed class ConsolesPageViewModel : INotifyPropertyChanged
+    {
+        private bool _showCompletedProcesses;
+        private string _subtitle = string.Empty;
+        private string _moduleListCaption = string.Empty;
+        private string _sessionListCaption = string.Empty;
+        private string? _selectedSessionId;
+        private string _selectedSessionKey = string.Empty;
+        private string _selectedSessionTitle = "No console selected";
+        private string _selectedSessionStatus = string.Empty;
+        private string _selectedSessionDescription = string.Empty;
+        private string _selectedSessionCommandLine = string.Empty;
+        private string _selectedSessionFooter = string.Empty;
+        private string _selectedSessionText = string.Empty;
+
+        /// <inheritdoc />
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        /// <summary>
+        /// Gets the module items shown in the module list.
+        /// </summary>
+        public ObservableCollection<ConsoleModuleItemViewModel> Modules { get; } = new();
+
+        /// <summary>
+        /// Gets the session items shown in the session list.
+        /// </summary>
+        public ObservableCollection<ConsoleSessionItemViewModel> Sessions { get; } = new();
+
+        /// <summary>
+        /// Gets or sets whether completed process sessions are shown in the session list.
+        /// </summary>
+        public bool ShowCompletedProcesses
+        {
+            get => _showCompletedProcesses;
+            set => SetProperty(ref _showCompletedProcesses, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the page subtitle.
+        /// </summary>
+        public string Subtitle
+        {
+            get => _subtitle;
+            set => SetProperty(ref _subtitle, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the caption shown above the module list.
+        /// </summary>
+        public string ModuleListCaption
+        {
+            get => _moduleListCaption;
+            set => SetProperty(ref _moduleListCaption, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the caption shown above the session list.
+        /// </summary>
+        public string SessionListCaption
+        {
+            get => _sessionListCaption;
+            set => SetProperty(ref _sessionListCaption, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the selected session identifier.
+        /// </summary>
+        public string? SelectedSessionId
+        {
+            get => _selectedSessionId;
+            set => SetProperty(ref _selectedSessionId, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the composite session key used by the native console host.
+        /// </summary>
+        public string SelectedSessionKey
+        {
+            get => _selectedSessionKey;
+            set => SetProperty(ref _selectedSessionKey, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the selected console title.
+        /// </summary>
+        public string SelectedSessionTitle
+        {
+            get => _selectedSessionTitle;
+            set => SetProperty(ref _selectedSessionTitle, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the selected console status line.
+        /// </summary>
+        public string SelectedSessionStatus
+        {
+            get => _selectedSessionStatus;
+            set => SetProperty(ref _selectedSessionStatus, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the selected console description.
+        /// </summary>
+        public string SelectedSessionDescription
+        {
+            get => _selectedSessionDescription;
+            set => SetProperty(ref _selectedSessionDescription, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the selected console command line.
+        /// </summary>
+        public string SelectedSessionCommandLine
+        {
+            get => _selectedSessionCommandLine;
+            set => SetProperty(ref _selectedSessionCommandLine, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the selected console footer.
+        /// </summary>
+        public string SelectedSessionFooter
+        {
+            get => _selectedSessionFooter;
+            set => SetProperty(ref _selectedSessionFooter, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the text rendered by the native console output host.
+        /// </summary>
+        public string SelectedSessionText
+        {
+            get => _selectedSessionText;
+            set => SetProperty(ref _selectedSessionText, value);
+        }
+
+        /// <summary>
+        /// Updates a bindable field and raises <see cref="PropertyChanged"/> when the value changes.
+        /// </summary>
+        private void SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value))
+            {
+                return;
+            }
+
+            field = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
+    // Module list item view model
+
+    /// <summary>
+    /// Represents one module item in the consoles module list.
+    /// </summary>
+    public sealed class ConsoleModuleItemViewModel : INotifyPropertyChanged
+    {
+        private string _sourcePath = string.Empty;
+        private string _name = string.Empty;
+        private string _statusText = string.Empty;
+        private string _activityText = string.Empty;
+
+        /// <inheritdoc />
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        /// <summary>
+        /// Gets or sets the module source path used as the stable list key.
+        /// </summary>
+        public string SourcePath
+        {
+            get => _sourcePath;
+            set => SetProperty(ref _sourcePath, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the module name shown in the list.
+        /// </summary>
+        public string Name
+        {
+            get => _name;
+            set => SetProperty(ref _name, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the secondary module status text.
+        /// </summary>
+        public string StatusText
+        {
+            get => _statusText;
+            set => SetProperty(ref _statusText, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the activity summary shown for the module.
+        /// </summary>
+        public string ActivityText
+        {
+            get => _activityText;
+            set => SetProperty(ref _activityText, value);
+        }
+
+        /// <summary>
+        /// Compares two module items by their rendered state.
+        /// </summary>
+        public bool IsSameAs(ConsoleModuleItemViewModel other)
+        {
+            return SourcePath == other.SourcePath &&
+                   Name == other.Name &&
+                   StatusText == other.StatusText &&
+                   ActivityText == other.ActivityText;
+        }
+
+        /// <summary>
+        /// Copies the rendered state from another module item.
+        /// </summary>
+        public void UpdateFrom(ConsoleModuleItemViewModel other)
+        {
+            SourcePath = other.SourcePath;
+            Name = other.Name;
+            StatusText = other.StatusText;
+            ActivityText = other.ActivityText;
+        }
+
+        /// <summary>
+        /// Updates a bindable field and raises <see cref="PropertyChanged"/> when the value changes.
+        /// </summary>
+        private void SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value))
+            {
+                return;
+            }
+
+            field = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
+    // Session list item view model
+
+    /// <summary>
+    /// Represents one console session item in the consoles session list.
+    /// </summary>
+    public sealed class ConsoleSessionItemViewModel : INotifyPropertyChanged
+    {
+        private string _id = string.Empty;
+        private string _moduleSourcePath = string.Empty;
+        private string _sessionSourceId = string.Empty;
+        private string _title = string.Empty;
+        private string _statusText = string.Empty;
+        private string _preview = string.Empty;
+
+        /// <inheritdoc />
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        /// <summary>
+        /// Gets or sets the stable list identifier for this item.
+        /// </summary>
+        public string Id
+        {
+            get => _id;
+            set => SetProperty(ref _id, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the owning module source path.
+        /// </summary>
+        public string ModuleSourcePath
+        {
+            get => _moduleSourcePath;
+            set => SetProperty(ref _moduleSourcePath, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the underlying session identifier from the console store.
+        /// </summary>
+        public string SessionSourceId
+        {
+            get => _sessionSourceId;
+            set => SetProperty(ref _sessionSourceId, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the session title shown in the list.
+        /// </summary>
+        public string Title
+        {
+            get => _title;
+            set => SetProperty(ref _title, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the session status text shown in the list.
+        /// </summary>
+        public string StatusText
+        {
+            get => _statusText;
+            set => SetProperty(ref _statusText, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the short preview text shown in the list.
+        /// </summary>
+        public string Preview
+        {
+            get => _preview;
+            set => SetProperty(ref _preview, value);
+        }
+
+        /// <summary>
+        /// Compares two session items by their rendered state.
+        /// </summary>
+        public bool IsSameAs(ConsoleSessionItemViewModel other)
+        {
+            return Id == other.Id &&
+                   ModuleSourcePath == other.ModuleSourcePath &&
+                   SessionSourceId == other.SessionSourceId &&
+                   Title == other.Title &&
+                   StatusText == other.StatusText &&
+                   Preview == other.Preview;
+        }
+
+        /// <summary>
+        /// Copies the rendered state from another session item.
+        /// </summary>
+        public void UpdateFrom(ConsoleSessionItemViewModel other)
+        {
+            Id = other.Id;
+            ModuleSourcePath = other.ModuleSourcePath;
+            SessionSourceId = other.SessionSourceId;
+            Title = other.Title;
+            StatusText = other.StatusText;
+            Preview = other.Preview;
+        }
+
+        /// <summary>
+        /// Updates a bindable field and raises <see cref="PropertyChanged"/> when the value changes.
+        /// </summary>
+        private void SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value))
+            {
+                return;
+            }
+
+            field = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

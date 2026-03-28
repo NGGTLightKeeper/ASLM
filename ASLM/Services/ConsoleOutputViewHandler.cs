@@ -1,0 +1,406 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
+using Microsoft.Maui.Handlers;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using WinUIColor = Windows.UI.Color;
+using WinUICornerRadius = Microsoft.UI.Xaml.CornerRadius;
+using WinUIHorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment;
+using WinUISolidColorBrush = Microsoft.UI.Xaml.Media.SolidColorBrush;
+using WinUIThickness = Microsoft.UI.Xaml.Thickness;
+using WinUIVerticalAlignment = Microsoft.UI.Xaml.VerticalAlignment;
+
+namespace ASLM.Services
+{
+    // Native console output handler
+
+    /// <summary>
+    /// Maps <see cref="ConsoleOutputView"/> to a native WinUI text box with stable selection, sizing, and scrolling.
+    /// </summary>
+    public sealed class ConsoleOutputViewHandler : ViewHandler<ConsoleOutputView, TextBox>
+    {
+        private static readonly WinUIColor ConsoleSurfaceColor = WinUIColor.FromArgb(255, 10, 10, 12);
+        private static readonly WinUIColor ConsoleTextColor = WinUIColor.FromArgb(255, 232, 232, 236);
+        private static readonly WinUIColor ConsoleSelectionColor = WinUIColor.FromArgb(96, 42, 118, 255);
+
+        public static readonly IPropertyMapper<ConsoleOutputView, ConsoleOutputViewHandler> Mapper =
+            new PropertyMapper<ConsoleOutputView, ConsoleOutputViewHandler>(ViewHandler.ViewMapper)
+            {
+                [nameof(ConsoleOutputView.Text)] = static (handler, view) => handler.ApplyText(view.Text),
+                [nameof(ConsoleOutputView.SessionKey)] = static (handler, view) => handler.ApplySessionKey(view.SessionKey)
+            };
+
+        private ScrollViewer? _scrollViewer;
+        private bool _isNearBottom = true;
+        private bool _forceScrollToEnd = true;
+        private bool _pendingScrollToEnd = true;
+        private bool _isApplyingProgrammaticScroll;
+        private string _lastSessionKey = string.Empty;
+
+        /// <summary>
+        /// Creates the handler instance for the native console host.
+        /// </summary>
+        public ConsoleOutputViewHandler() : base(Mapper)
+        {
+        }
+
+        /// <summary>
+        /// Creates the native WinUI text box used to render console output.
+        /// </summary>
+        protected override TextBox CreatePlatformView()
+        {
+            var textBox = new TextBox
+            {
+                AcceptsReturn = true,
+                IsReadOnly = true,
+                TextWrapping = TextWrapping.Wrap,
+                HorizontalAlignment = WinUIHorizontalAlignment.Stretch,
+                VerticalAlignment = WinUIVerticalAlignment.Stretch,
+                HorizontalContentAlignment = WinUIHorizontalAlignment.Stretch,
+                VerticalContentAlignment = WinUIVerticalAlignment.Stretch,
+                BorderThickness = new WinUIThickness(0),
+                Padding = new WinUIThickness(10, 8, 10, 8),
+                Background = new WinUISolidColorBrush(ConsoleSurfaceColor),
+                Foreground = new WinUISolidColorBrush(ConsoleTextColor),
+                SelectionHighlightColor = new WinUISolidColorBrush(ConsoleSelectionColor),
+                FontFamily = new FontFamily("Consolas"),
+                FontSize = 12,
+                TextReadingOrder = TextReadingOrder.DetectFromContent,
+                IsSpellCheckEnabled = false,
+                IsTextPredictionEnabled = false,
+                MinHeight = 0,
+                CornerRadius = new WinUICornerRadius(10)
+            };
+
+            ApplyConsoleChrome(textBox);
+            return textBox;
+        }
+
+        /// <summary>
+        /// Hooks native events and applies the initial virtual view state.
+        /// </summary>
+        protected override void ConnectHandler(TextBox platformView)
+        {
+            base.ConnectHandler(platformView);
+
+            platformView.Loaded += OnPlatformViewLoaded;
+            platformView.SizeChanged += OnPlatformViewSizeChanged;
+            platformView.TextChanged += OnPlatformViewTextChanged;
+            platformView.LayoutUpdated += OnPlatformViewLayoutUpdated;
+
+            EnsureScrollViewer();
+            ApplySessionKey(VirtualView?.SessionKey);
+            ApplyText(VirtualView?.Text);
+            QueueViewportRefresh(scrollToEnd: true, passCount: 4);
+        }
+
+        /// <summary>
+        /// Unhooks native events and releases the cached scroll viewer.
+        /// </summary>
+        protected override void DisconnectHandler(TextBox platformView)
+        {
+            platformView.Loaded -= OnPlatformViewLoaded;
+            platformView.SizeChanged -= OnPlatformViewSizeChanged;
+            platformView.TextChanged -= OnPlatformViewTextChanged;
+            platformView.LayoutUpdated -= OnPlatformViewLayoutUpdated;
+
+            if (_scrollViewer != null)
+            {
+                _scrollViewer.ViewChanged -= OnScrollViewerViewChanged;
+                _scrollViewer = null;
+            }
+
+            base.DisconnectHandler(platformView);
+        }
+
+        /// <summary>
+        /// Refreshes the viewport after the native text box enters the visual tree.
+        /// </summary>
+        private void OnPlatformViewLoaded(object sender, RoutedEventArgs e)
+        {
+            EnsureScrollViewer();
+            _pendingScrollToEnd = true;
+            QueueViewportRefresh(scrollToEnd: true, passCount: 5);
+        }
+
+        /// <summary>
+        /// Reapplies viewport sizing after the native text box changes size.
+        /// </summary>
+        private void OnPlatformViewSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_pendingScrollToEnd || _isNearBottom)
+            {
+                QueueViewportRefresh(scrollToEnd: true, passCount: 4);
+            }
+            else
+            {
+                QueueViewportRefresh(scrollToEnd: false, passCount: 2);
+            }
+        }
+
+        /// <summary>
+        /// Continues deferred scroll-to-end work after the native text content changes.
+        /// </summary>
+        private void OnPlatformViewTextChanged(object sender, Microsoft.UI.Xaml.Controls.TextChangedEventArgs e)
+        {
+            if (_pendingScrollToEnd)
+            {
+                QueueViewportRefresh(scrollToEnd: true, passCount: 4);
+            }
+        }
+
+        /// <summary>
+        /// Ensures the inner scroll viewer exists before deferred viewport work runs.
+        /// </summary>
+        private void OnPlatformViewLayoutUpdated(object? sender, object e)
+        {
+            EnsureScrollViewer();
+
+            if (_pendingScrollToEnd)
+            {
+                QueueViewportRefresh(scrollToEnd: true, passCount: 2);
+            }
+        }
+
+        /// <summary>
+        /// Tracks whether the user is still near the bottom of the console output.
+        /// </summary>
+        private void OnScrollViewerViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
+        {
+            if (_scrollViewer == null || _isApplyingProgrammaticScroll)
+            {
+                return;
+            }
+
+            _isNearBottom = IsNearBottom();
+        }
+
+        /// <summary>
+        /// Detects when the selected session changes so a new console opens pinned to the latest output.
+        /// </summary>
+        private void ApplySessionKey(string? sessionKey)
+        {
+            var resolvedSessionKey = sessionKey ?? string.Empty;
+            if (string.Equals(_lastSessionKey, resolvedSessionKey, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastSessionKey = resolvedSessionKey;
+            _forceScrollToEnd = true;
+            _pendingScrollToEnd = true;
+            QueueViewportRefresh(scrollToEnd: true, passCount: 4);
+        }
+
+        /// <summary>
+        /// Applies updated console text and decides whether the viewport should remain pinned to the bottom.
+        /// </summary>
+        private void ApplyText(string? text)
+        {
+            if (PlatformView == null)
+            {
+                return;
+            }
+
+            var resolvedText = text ?? string.Empty;
+            var shouldPinToBottom = _forceScrollToEnd || IsNearBottom() || string.IsNullOrEmpty(PlatformView.Text);
+
+            if (!string.Equals(PlatformView.Text, resolvedText, StringComparison.Ordinal))
+            {
+                PlatformView.Text = resolvedText;
+            }
+
+            if (shouldPinToBottom)
+            {
+                _pendingScrollToEnd = true;
+                QueueViewportRefresh(scrollToEnd: true, passCount: 4);
+            }
+            else
+            {
+                _pendingScrollToEnd = false;
+                QueueViewportRefresh(scrollToEnd: false, passCount: 2);
+            }
+
+            _forceScrollToEnd = false;
+        }
+
+        /// <summary>
+        /// Schedules one or more deferred viewport refresh passes on the native dispatcher queue.
+        /// </summary>
+        private void QueueViewportRefresh(bool scrollToEnd, int passCount)
+        {
+            if (PlatformView?.DispatcherQueue == null)
+            {
+                return;
+            }
+
+            if (scrollToEnd)
+            {
+                _pendingScrollToEnd = true;
+            }
+
+            QueueViewportRefreshPass(passCount);
+        }
+
+        /// <summary>
+        /// Runs one deferred viewport refresh pass and reschedules the remainder when needed.
+        /// </summary>
+        private void QueueViewportRefreshPass(int remainingPasses)
+        {
+            if (PlatformView?.DispatcherQueue == null || remainingPasses <= 0)
+            {
+                return;
+            }
+
+            PlatformView.DispatcherQueue.TryEnqueue(() =>
+            {
+                RefreshViewport();
+
+                if (_pendingScrollToEnd)
+                {
+                    ScrollToEnd();
+                }
+
+                if (remainingPasses > 1)
+                {
+                    QueueViewportRefreshPass(remainingPasses - 1);
+                }
+            });
+        }
+
+        /// <summary>
+        /// Forces the native text box and its inner scroll viewer to update layout.
+        /// </summary>
+        private void RefreshViewport()
+        {
+            if (PlatformView == null)
+            {
+                return;
+            }
+
+            EnsureScrollViewer();
+            PlatformView.UpdateLayout();
+            _scrollViewer?.UpdateLayout();
+        }
+
+        /// <summary>
+        /// Moves the native selection and viewport to the end of the console output.
+        /// </summary>
+        private void ScrollToEnd()
+        {
+            if (PlatformView == null)
+            {
+                return;
+            }
+
+            RefreshViewport();
+
+            var textLength = PlatformView.Text?.Length ?? 0;
+            PlatformView.Select(textLength, 0);
+
+            if (_scrollViewer != null)
+            {
+                _isApplyingProgrammaticScroll = true;
+                _scrollViewer.ChangeView(null, _scrollViewer.ScrollableHeight, null, true);
+                _scrollViewer.UpdateLayout();
+                _isApplyingProgrammaticScroll = false;
+            }
+
+            _isNearBottom = true;
+            _pendingScrollToEnd = false;
+        }
+
+        /// <summary>
+        /// Determines whether the current viewport is already close enough to the bottom to keep autoscroll enabled.
+        /// </summary>
+        private bool IsNearBottom()
+        {
+            EnsureScrollViewer();
+
+            return _scrollViewer == null ||
+                   _scrollViewer.ScrollableHeight <= 0 ||
+                   _scrollViewer.VerticalOffset >= _scrollViewer.ScrollableHeight - 8;
+        }
+
+        /// <summary>
+        /// Finds and caches the inner scroll viewer hosted by the native text box.
+        /// </summary>
+        private void EnsureScrollViewer()
+        {
+            if (PlatformView == null)
+            {
+                return;
+            }
+
+            var resolvedScrollViewer = FindDescendantScrollViewer(PlatformView);
+            if (ReferenceEquals(_scrollViewer, resolvedScrollViewer))
+            {
+                return;
+            }
+
+            if (_scrollViewer != null)
+            {
+                _scrollViewer.ViewChanged -= OnScrollViewerViewChanged;
+            }
+
+            _scrollViewer = resolvedScrollViewer;
+            if (_scrollViewer != null)
+            {
+                _scrollViewer.ViewChanged += OnScrollViewerViewChanged;
+                _isNearBottom = IsNearBottom();
+            }
+        }
+
+        /// <summary>
+        /// Applies the dark console surface resources so hover and focus states do not brighten the background.
+        /// </summary>
+        private static void ApplyConsoleChrome(TextBox textBox)
+        {
+            var surfaceBrush = new WinUISolidColorBrush(ConsoleSurfaceColor);
+            var textBrush = new WinUISolidColorBrush(ConsoleTextColor);
+            var transparentBrush = new WinUISolidColorBrush(WinUIColor.FromArgb(0, 0, 0, 0));
+
+            textBox.Resources["TextControlBackground"] = surfaceBrush;
+            textBox.Resources["TextControlBackgroundPointerOver"] = surfaceBrush;
+            textBox.Resources["TextControlBackgroundFocused"] = surfaceBrush;
+            textBox.Resources["TextControlBackgroundDisabled"] = surfaceBrush;
+            textBox.Resources["TextControlForeground"] = textBrush;
+            textBox.Resources["TextControlForegroundPointerOver"] = textBrush;
+            textBox.Resources["TextControlForegroundFocused"] = textBrush;
+            textBox.Resources["TextControlForegroundDisabled"] = textBrush;
+            textBox.Resources["TextControlBorderBrush"] = transparentBrush;
+            textBox.Resources["TextControlBorderBrushPointerOver"] = transparentBrush;
+            textBox.Resources["TextControlBorderBrushFocused"] = transparentBrush;
+            textBox.Resources["TextControlBorderBrushDisabled"] = transparentBrush;
+            textBox.Resources["TextControlHeaderForeground"] = textBrush;
+            textBox.Resources["TextControlHeaderForegroundFocused"] = textBrush;
+            textBox.Resources["TextControlPlaceholderForeground"] = textBrush;
+        }
+
+        /// <summary>
+        /// Recursively searches the WinUI visual tree for the first nested scroll viewer.
+        /// </summary>
+        private static ScrollViewer? FindDescendantScrollViewer(DependencyObject root)
+        {
+            if (root is ScrollViewer scrollViewer)
+            {
+                return scrollViewer;
+            }
+
+            var childCount = VisualTreeHelper.GetChildrenCount(root);
+            for (var index = 0; index < childCount; index++)
+            {
+                var child = VisualTreeHelper.GetChild(root, index);
+                var result = FindDescendantScrollViewer(child);
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+
+            return null;
+        }
+    }
+}

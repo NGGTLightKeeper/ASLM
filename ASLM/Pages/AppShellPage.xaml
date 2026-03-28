@@ -82,6 +82,9 @@
                      IsVisible="False"
                      Navigating="Browser_Navigating" />
         </Grid>
+        
+        <!-- Overlay Container -->
+        <ContentView x:Name="OverlayContainer" Grid.ColumnSpan="2" IsVisible="False" />
 
     </Grid>
 
