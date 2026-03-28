@@ -106,6 +106,23 @@ namespace ASLM.Pages
             PopulateModules(modules, installer, runner);
         }
 
+        /// <summary>
+        /// Scrolls the requested module card into view.
+        /// </summary>
+        internal void FocusModule(string sourcePath)
+        {
+            var module = Modules.FirstOrDefault(candidate =>
+                string.Equals(candidate.SourcePath, sourcePath, StringComparison.OrdinalIgnoreCase));
+
+            if (module == null || Dispatcher == null)
+            {
+                return;
+            }
+
+            Dispatcher.Dispatch(() =>
+                DashboardView.ScrollTo(module, position: ScrollToPosition.MakeVisible, animate: true));
+        }
+
         // Module population
 
         /// <summary>
@@ -206,6 +223,11 @@ namespace ASLM.Pages
         /// Gets the module name shown on the card.
         /// </summary>
         public string Name => _config.Name;
+
+        /// <summary>
+        /// Gets the stable source path of the module manifest.
+        /// </summary>
+        public string SourcePath => _config.SourcePath;
 
         // Version label
 

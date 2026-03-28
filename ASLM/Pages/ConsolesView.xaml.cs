@@ -47,6 +47,14 @@ namespace ASLM.Pages
             return _presenter.RefreshAsync();
         }
 
+        /// <summary>
+        /// Opens the consoles workspace focused on the requested module.
+        /// </summary>
+        internal Task ShowModuleAsync(string sourcePath)
+        {
+            return _presenter.SelectModuleAsync(sourcePath);
+        }
+
         // Lifetime events
 
         /// <summary>

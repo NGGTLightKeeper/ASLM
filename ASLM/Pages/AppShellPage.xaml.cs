@@ -135,7 +135,7 @@ namespace ASLM.Pages
 
             _hasLoaded = true;
             await RefreshModulesAsync();
-            NavigateTo(ModuleManagementButton);
+            NavigateTo(HomeButton);
             _ = StartEnabledModulesAsync();
         }
 
@@ -153,6 +153,11 @@ namespace ASLM.Pages
             {
                 moduleManagementView.RefreshModules(_allModules, _moduleInstaller, _moduleRunner);
             }
+
+            if (_homeView is HomeView homeView)
+            {
+                _ = homeView.RefreshAsync();
+            }
         }
 
         // Module state callback
@@ -167,6 +172,11 @@ namespace ASLM.Pages
             if (_consolesView is ConsolesView consolesView)
             {
                 _ = consolesView.RefreshAsync();
+            }
+
+            if (_homeView is HomeView homeView)
+            {
+                _ = homeView.RefreshAsync();
             }
         }
 
@@ -290,6 +300,51 @@ namespace ASLM.Pages
             ContentArea.Content = GetViewForButton(navButton);
         }
 
+        /// <summary>
+        /// Opens the home dashboard.
+        /// </summary>
+        internal void OpenHome()
+        {
+            NavigateTo(HomeButton);
+        }
+
+        /// <summary>
+        /// Opens the consoles page and optionally focuses one module.
+        /// </summary>
+        internal void OpenConsoles(string? moduleSourcePath = null)
+        {
+            NavigateTo(ConsolesButton);
+
+            if (_consolesView is not ConsolesView consolesView)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(moduleSourcePath))
+            {
+                _ = consolesView.RefreshAsync();
+                return;
+            }
+
+            _ = consolesView.ShowModuleAsync(moduleSourcePath);
+        }
+
+        /// <summary>
+        /// Opens the modules page and optionally scrolls one module card into view.
+        /// </summary>
+        internal void OpenModuleManagement(string? moduleSourcePath = null)
+        {
+            NavigateTo(ModuleManagementButton);
+
+            if (string.IsNullOrWhiteSpace(moduleSourcePath) ||
+                _moduleManagementView is not ModuleManagementView moduleManagementView)
+            {
+                return;
+            }
+
+            moduleManagementView.FocusModule(moduleSourcePath);
+        }
+
         // View resolution
 
         /// <summary>
@@ -299,7 +354,13 @@ namespace ASLM.Pages
         {
             if (button == HomeButton)
             {
-                _homeView ??= _services.GetRequiredService<HomeView>();
+                if (_homeView == null)
+                {
+                    var homeView = _services.GetRequiredService<HomeView>();
+                    homeView.Initialize(this);
+                    _homeView = homeView;
+                }
+
                 return _homeView;
             }
 
