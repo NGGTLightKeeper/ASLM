@@ -257,7 +257,10 @@ namespace ASLM.Services
         /// <summary>
         /// Synchronizes observed child processes that were started by a running module process.
         /// </summary>
-        public void SyncObservedProcesses(ModuleConfig module, IReadOnlyList<ObservedProcessInfo> observedProcesses)
+        public void SyncObservedProcesses(
+            ModuleConfig module,
+            ModuleConsoleSessionHandle ownerHandle,
+            IReadOnlyList<ObservedProcessInfo> observedProcesses)
         {
             var stateChanged = false;
 
@@ -266,7 +269,14 @@ namespace ASLM.Services
                 EnsureModuleCore(module);
 
                 var moduleState = _modules[module.SourcePath];
-                var overviewSession = GetOrCreateOverviewSessionCore(moduleState);
+                GetOrCreateOverviewSessionCore(moduleState);
+                var ownerSessionId = ownerHandle.SessionId;
+                if (string.IsNullOrWhiteSpace(ownerSessionId) ||
+                    !moduleState.Sessions.ContainsKey(ownerSessionId))
+                {
+                    return;
+                }
+
                 var activeProcessIds = observedProcesses
                     .Select(process => process.ProcessId)
                     .ToHashSet();
@@ -274,7 +284,8 @@ namespace ASLM.Services
                 foreach (var process in observedProcesses)
                 {
                     var existingSession = moduleState.Sessions.Values
-                        .FirstOrDefault(session => session.ProcessId == process.ProcessId);
+                        .FirstOrDefault(session => session.ProcessId == process.ProcessId &&
+                                                   string.Equals(session.ObservedOwnerSessionId, ownerSessionId, StringComparison.OrdinalIgnoreCase));
 
                     if (existingSession != null)
                     {
@@ -295,20 +306,21 @@ namespace ASLM.Services
                         CommandLine = process.ProcessName,
                         ProcessId = process.ProcessId,
                         IsRunning = true,
-                        IsTrackedProcess = true,
+                        IsTrackedProcess = false,
                         IsObservedProcess = true,
+                        ObservedOwnerSessionId = ownerSessionId,
                         StartedUtc = DateTimeOffset.UtcNow
                     };
 
                     moduleState.Sessions[sessionState.Id] = sessionState;
                     moduleState.LastActivityUtc = sessionState.StartedUtc;
                     AppendLineCore(sessionState, "Observed subprocess detected. Direct stdout/stderr capture is unavailable.");
-                    AppendLineCore(overviewSession, $"[Service] {process.ProcessName} (PID {process.ProcessId}) detected. Direct stdout/stderr capture is unavailable.");
                     stateChanged = true;
                 }
 
                 foreach (var sessionState in moduleState.Sessions.Values
                              .Where(session => session.IsObservedProcess &&
+                                               string.Equals(session.ObservedOwnerSessionId, ownerSessionId, StringComparison.OrdinalIgnoreCase) &&
                                                session.IsRunning &&
                                                session.ProcessId.HasValue &&
                                                !activeProcessIds.Contains(session.ProcessId.Value)))
@@ -322,7 +334,6 @@ namespace ASLM.Services
                         AppendLineCore(sessionState, "Observed subprocess exited.");
                     }
 
-                    AppendLineCore(overviewSession, $"[Service] {sessionState.Title} (PID {sessionState.ProcessId}) exited.");
                     stateChanged = true;
                 }
             }
@@ -646,7 +657,7 @@ namespace ASLM.Services
                 Name = moduleState.Name,
                 IsEnabled = moduleState.IsEnabled,
                 LastActivityUtc = moduleState.LastActivityUtc,
-                ActiveProcessCount = sessions.Count(session => session.IsTrackedProcess && session.IsRunning),
+                ActiveProcessCount = sessions.Count(session => session.IsTrackedProcess && !session.IsObservedProcess && session.IsRunning),
                 Sessions = sessions
             };
         }
@@ -814,6 +825,7 @@ namespace ASLM.Services
         public bool IsRunning { get; set; }
         public bool IsTrackedProcess { get; set; }
         public bool IsObservedProcess { get; set; }
+        public string ObservedOwnerSessionId { get; set; } = string.Empty;
         public int? ExitCode { get; set; }
         public DateTimeOffset StartedUtc { get; set; }
         public DateTimeOffset? EndedUtc { get; set; }

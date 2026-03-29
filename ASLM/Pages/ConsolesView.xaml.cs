@@ -577,6 +577,7 @@ namespace ASLM.Pages
             {
                 var visibleSessions = selectedModule.Sessions
                     .Where(session => !string.Equals(session.Id, "overview", StringComparison.OrdinalIgnoreCase))
+                    .Where(session => !session.IsObservedProcess)
                     .Where(session => _showCompletedProcesses || session.IsRunning)
                     .ToList();
 
@@ -640,7 +641,7 @@ namespace ASLM.Pages
             }
 
             var activeProcesses = activeModules.Sum(module => module.ActiveProcessCount);
-            var totalSessions = activeModules.Sum(module => module.Sessions.Count);
+            var totalSessions = activeModules.Sum(module => module.Sessions.Count(session => !session.IsObservedProcess));
 
             return new ConsolesDashboardState
             {
@@ -683,7 +684,7 @@ namespace ASLM.Pages
             {
                 SourcePath = module.SourcePath,
                 Name = module.Name,
-                StatusText = $"{(module.IsEnabled ? "Enabled" : "Disabled")} - {module.ActiveProcessCount} active - {module.Sessions.Count} sessions",
+                StatusText = $"{(module.IsEnabled ? "Enabled" : "Disabled")} - {module.ActiveProcessCount} active - {module.Sessions.Count(session => !session.IsObservedProcess)} sessions",
                 ActivityText = activityText
             };
         }

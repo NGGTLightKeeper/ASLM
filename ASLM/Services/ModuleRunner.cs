@@ -609,7 +609,7 @@ namespace ASLM.Services
                         list.Add(process);
                     }
 
-                    _ = MonitorObservedProcessesAsync(module, process.Id, ct);
+                    _ = MonitorObservedProcessesAsync(module, sessionHandle, process.Id, ct);
                 }
 
                 process.BeginOutputReadLine();
@@ -785,7 +785,11 @@ namespace ASLM.Services
         /// <summary>
         /// Polls descendant processes of one tracked module process so externally spawned services stay visible.
         /// </summary>
-        private async Task MonitorObservedProcessesAsync(ModuleConfig module, int rootProcessId, CancellationToken ct)
+        private async Task MonitorObservedProcessesAsync(
+            ModuleConfig module,
+            ModuleConsoleSessionHandle ownerHandle,
+            int rootProcessId,
+            CancellationToken ct)
         {
             var emptyCycles = 0;
 
@@ -794,7 +798,7 @@ namespace ASLM.Services
                 try
                 {
                     var observedProcesses = GetDescendantProcesses(rootProcessId);
-                    _consoleService.SyncObservedProcesses(module, observedProcesses);
+                    _consoleService.SyncObservedProcesses(module, ownerHandle, observedProcesses);
 
                     if (observedProcesses.Count == 0 && !IsProcessAlive(rootProcessId))
                     {
@@ -824,7 +828,7 @@ namespace ASLM.Services
                 }
             }
 
-            _consoleService.SyncObservedProcesses(module, []);
+            _consoleService.SyncObservedProcesses(module, ownerHandle, []);
         }
 
         /// <summary>
@@ -1027,11 +1031,11 @@ namespace ASLM.Services
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessId);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport("kernel32.dll", EntryPoint = "Process32FirstW", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool Process32First(IntPtr hSnapshot, ref ProcessEntry32 lppe);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport("kernel32.dll", EntryPoint = "Process32NextW", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool Process32Next(IntPtr hSnapshot, ref ProcessEntry32 lppe);
 
@@ -1039,7 +1043,7 @@ namespace ASLM.Services
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool CloseHandle(IntPtr hObject);
 
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct ProcessEntry32
         {
             public uint dwSize;

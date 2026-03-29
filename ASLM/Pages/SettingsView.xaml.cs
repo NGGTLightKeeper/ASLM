@@ -88,11 +88,6 @@ namespace ASLM.Pages
             bool InitialUseCustomValue);
 
         /// <summary>
-        /// Represents one displayable choice inside a picker while preserving its underlying value.
-        /// </summary>
-        private record ChoiceOption(string Value, string Label);
-
-        /// <summary>
         /// Represents a lightweight settings toggle with a fixed visual and hitbox.
         /// </summary>
         private sealed class CompactToggle
@@ -1854,9 +1849,6 @@ namespace ASLM.Pages
             var allowedValues = setting.AllowedValues ?? [];
             var picker = CreatePicker(null, 13);
             var pickerContainer = CreatePickerContainer(picker);
-            var options = allowedValues
-                .Select(allowedValue => new ChoiceOption(allowedValue, ResolveChoiceLabel(module, allowedValue)))
-                .ToList();
 
             var selectedValue = setting.FormatValueForDisplay(value);
             if (string.IsNullOrWhiteSpace(selectedValue))
@@ -1865,24 +1857,23 @@ namespace ASLM.Pages
             }
 
             if (!string.IsNullOrWhiteSpace(selectedValue) &&
-                options.All(option => !string.Equals(option.Value, selectedValue, StringComparison.OrdinalIgnoreCase)))
+                allowedValues.All(option => !string.Equals(option, selectedValue, StringComparison.OrdinalIgnoreCase)))
             {
-                options.Insert(0, new ChoiceOption(selectedValue, ResolveChoiceLabel(module, selectedValue)));
+                allowedValues = [selectedValue, .. allowedValues];
             }
 
-            picker.ItemsSource = options;
-            picker.ItemDisplayBinding = new Binding(nameof(ChoiceOption.Label));
+            picker.ItemsSource = allowedValues;
 
-            var selectedIndex = options.FindIndex(option =>
-                string.Equals(option.Value, selectedValue, StringComparison.OrdinalIgnoreCase));
-            picker.SelectedIndex = selectedIndex >= 0 ? selectedIndex : (options.Count > 0 ? 0 : -1);
+            var selectedIndex = allowedValues.FindIndex(option =>
+                string.Equals(option, selectedValue, StringComparison.OrdinalIgnoreCase));
+            picker.SelectedIndex = selectedIndex >= 0 ? selectedIndex : (allowedValues.Count > 0 ? 0 : -1);
             picker.SelectedIndexChanged += (_, _) => UpdateActionButtons();
 
             return (pickerContainer, new SettingControlMapping(
                 module,
                 setting,
-                () => picker.SelectedIndex >= 0 && picker.SelectedIndex < options.Count
-                    ? options[picker.SelectedIndex].Value
+                () => picker.SelectedIndex >= 0 && picker.SelectedIndex < allowedValues.Count
+                    ? allowedValues[picker.SelectedIndex]
                     : null,
                 null,
                 baseline.DisplayValue,
@@ -1895,19 +1886,22 @@ namespace ASLM.Pages
         private (View Control, SettingControlMapping? Mapping) CreatePickerEditor(ModuleConfig module, ModuleSetting setting, object? value)
         {
             var baseline = GetSettingBaseline(module, setting, value);
-            var picker = CreatePicker("Select value", 14);
+            var picker = CreatePicker(null, 14);
             var pickerContainer = CreatePickerContainer(picker);
-
-            foreach (var allowedValue in setting.AllowedValues!)
-            {
-                picker.Items.Add(allowedValue);
-            }
+            var allowedValues = setting.AllowedValues!.ToList();
+            picker.ItemsSource = allowedValues;
 
             var currentValue = setting.FormatValueForDisplay(value);
-            var selectedIndex = setting.AllowedValues.FindIndex(v => string.Equals(v, currentValue, StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrWhiteSpace(currentValue))
+            {
+                currentValue = setting.FormatValueForDisplay(setting.Default);
+            }
+
+            var selectedIndex = allowedValues.FindIndex(option =>
+                string.Equals(option, currentValue, StringComparison.OrdinalIgnoreCase));
             if (selectedIndex < 0 && !string.IsNullOrWhiteSpace(currentValue))
             {
-                picker.Items.Insert(0, currentValue);
+                allowedValues.Insert(0, currentValue);
                 selectedIndex = 0;
             }
 
@@ -1917,7 +1911,9 @@ namespace ASLM.Pages
             return (pickerContainer, new SettingControlMapping(
                 module,
                 setting,
-                () => picker.SelectedIndex >= 0 ? picker.Items[picker.SelectedIndex] : null,
+                () => picker.SelectedIndex >= 0 && picker.SelectedIndex < allowedValues.Count
+                    ? allowedValues[picker.SelectedIndex]
+                    : null,
                 null,
                 baseline.DisplayValue,
                 baseline.UseCustomValue));
@@ -2525,23 +2521,6 @@ namespace ASLM.Pages
         private static bool IsActiveEngineSelector(ModuleSetting setting) =>
             string.Equals(setting.Key, "llm-engine", StringComparison.OrdinalIgnoreCase) &&
             setting.AllowedValues is { Count: > 0 };
-
-        /// <summary>
-        /// Resolves a human-readable label for one allowed engine value using sibling name settings when available.
-        /// </summary>
-        private static string ResolveChoiceLabel(ModuleConfig module, string value)
-        {
-            var nameSetting = module.Settings.FirstOrDefault(setting =>
-                setting.Key.Equals($"{value}_name", StringComparison.OrdinalIgnoreCase));
-
-            if (nameSetting == null)
-            {
-                return value;
-            }
-
-            var label = nameSetting.FormatValueForDisplay(nameSetting.Value ?? nameSetting.Default);
-            return string.IsNullOrWhiteSpace(label) ? value : label;
-        }
 
         /// <summary>
         /// Builds the save confirmation message, including deferred runtime updates when present.

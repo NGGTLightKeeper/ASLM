@@ -92,10 +92,16 @@
         ],
         "run": [
             {
-                "name": "Start UI Server",
+                "name": "UI Server",
                 "description": "Launches the Django development server",
                 "engine": "python-runtime",
                 "exec": "main.py runserver"
+            },
+            {
+                "name": "Ollama Runtime",
+                "description": "Launches the managed Ollama service in a dedicated console session",
+                "engine": "python-runtime",
+                "exec": "main.py ollama_runtime --log"
             }
         ]
     },
@@ -121,6 +127,21 @@
             "setExec": "main.py set_setting --key api-port --value {value}"
         },
         {
+            "key": "console_log_level",
+            "name": "Console Log Level",
+            "description": "How much runtime detail ASLM-Chat prints into the ASLM console.",
+            "type": "select",
+            "default": "debug",
+            "allowedValues": [
+                "basic",
+                "debug",
+                "trace"
+            ],
+            "engine": "python-runtime",
+            "getExec": "main.py get_setting --key console_log_level",
+            "setExec": "main.py set_setting --key console_log_level --value {value}"
+        },
+        {
             "key": "llm-engine",
             "name": "Active LLM Engine",
             "description": "Engine used for chat generation in the UI",
@@ -134,7 +155,7 @@
             "engine": "python-runtime",
             "getExec": "main.py get_setting --key llm-engine",
             "setExec": "main.py set_setting --key llm-engine --value {value}",
-            "value": "openai"
+            "value": "ollama-service"
         },
         {
             "key": "ollama-service",
