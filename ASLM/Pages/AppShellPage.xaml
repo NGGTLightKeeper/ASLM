@@ -84,7 +84,10 @@
         </Grid>
         
         <!-- Overlay Container -->
-        <ContentView x:Name="OverlayContainer" Grid.ColumnSpan="2" IsVisible="False" />
+        <ContentView x:Name="OverlayContainer"
+                     Grid.ColumnSpan="2"
+                     IsVisible="False"
+                     BackgroundColor="Transparent" />
 
     </Grid>
 

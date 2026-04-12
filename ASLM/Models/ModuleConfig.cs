@@ -77,6 +77,10 @@ namespace ASLM.Models
         [JsonPropertyName("settings")]
         public List<ModuleSetting> Settings { get; set; } = [];
 
+        // Optional bridge that exposes dynamic download catalogs and install plans to ASLM.
+        [JsonPropertyName("downloadsBridge")]
+        public ModuleDownloadsBridge? DownloadsBridge { get; set; }
+
         // Persisted installation and runtime state of the module.
         [JsonPropertyName("status")]
         public ModuleStatus Status { get; set; } = new();
@@ -117,6 +121,9 @@ namespace ASLM.Models
             {
                 setting?.Normalize();
             }
+
+            // Normalize the optional downloads bridge only when the manifest declares it.
+            DownloadsBridge?.Normalize();
 
             // Ensure persisted runtime status is always available.
             Status ??= new();
