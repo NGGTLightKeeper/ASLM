@@ -51,6 +51,11 @@ namespace ASLM
             builder.Services.AddSingleton<ProcessTracker>();
             builder.Services.AddSingleton<ModuleRunner>();
             builder.Services.AddSingleton<PortManager>();
+            builder.Services.AddSingleton<ModuleDownloadBridgeService>();
+            builder.Services.AddSingleton<DownloadCatalogStateService>();
+            builder.Services.AddSingleton<DownloadCatalogService>();
+            builder.Services.AddSingleton<DownloadInstallService>();
+            builder.Services.AddSingleton<OllamaSettingsService>();
 
             // Page registrations
             builder.Services.AddTransient<AppShellPage>();

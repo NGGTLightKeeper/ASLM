@@ -2,22 +2,568 @@
 
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="ASLM.Pages.DownloadModulesView">
-    <Grid>
-        <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="12">
-            <Image Source="{StaticResource IconRibbon}"
-                   WidthRequest="48"
-                   HeightRequest="48"
-                   HorizontalOptions="Center" />
-            <Label Text="Download Modules"
-                   FontSize="24"
-                   FontAttributes="Bold"
-                   TextColor="{StaticResource LabelPrimary}"
-                   HorizontalOptions="Center" />
-            <Label Text="Module store will be connected to API"
-                   FontSize="14"
-                   TextColor="{StaticResource LabelSecondary}"
-                   HorizontalOptions="Center" />
-        </VerticalStackLayout>
-    </Grid>
+             x:Class="ASLM.Pages.DownloadModulesView"
+             BackgroundColor="#40000000">
+    <ContentView.GestureRecognizers>
+        <TapGestureRecognizer Tapped="OnBackgroundTapped" />
+    </ContentView.GestureRecognizers>
+
+    <Border x:Name="DownloadDialog"
+            WidthRequest="1240"
+            HeightRequest="720"
+            HorizontalOptions="Center"
+            VerticalOptions="Center"
+            BackgroundColor="{StaticResource BackgroundSecondary}"
+            Stroke="{StaticResource Separator}"
+            StrokeThickness="1"
+            Padding="0"
+            StrokeShape="RoundRectangle 10">
+
+        <Border.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnDialogTapped" />
+        </Border.GestureRecognizers>
+
+        <Grid ColumnDefinitions="208,332,*"
+              ColumnSpacing="0">
+
+            <Border Grid.Column="0"
+                    BackgroundColor="#18181A"
+                    StrokeThickness="0"
+                    Padding="12,14,8,12">
+                <Grid RowDefinitions="Auto,*"
+                      RowSpacing="0">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Download"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource LabelPrimary}" />
+                        <Label Text="{Binding CategoryCountLabel}"
+                               FontSize="12"
+                               TextColor="{StaticResource LabelSecondary}" />
+                    </VerticalStackLayout>
+
+                    <CollectionView Grid.Row="1"
+                                    Margin="0,12,0,0"
+                                    SelectionMode="None"
+                                    VerticalScrollBarVisibility="Never"
+                                    ItemsSource="{Binding Categories}">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="6" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border BackgroundColor="{Binding BackgroundColor}"
+                                        Stroke="{Binding StrokeColor}"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 8"
+                                        Padding="10,9">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding SelectCommand}" />
+                                    </Border.GestureRecognizers>
+
+                                    <Grid ColumnDefinitions="*,Auto"
+                                          ColumnSpacing="10">
+                                        <Label Text="{Binding Title}"
+                                               FontSize="13"
+                                               FontAttributes="Bold"
+                                               TextColor="{Binding TitleColor}"
+                                               VerticalOptions="Center"
+                                               MaxLines="1"
+                                               LineBreakMode="TailTruncation" />
+
+                                        <Label Grid.Column="1"
+                                               Text="{Binding ItemCountLabel}"
+                                               FontSize="11"
+                                               TextColor="{Binding SubtitleColor}"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </Grid>
+            </Border>
+
+            <BoxView Grid.Column="0"
+                     HorizontalOptions="End"
+                     WidthRequest="1"
+                     Color="{StaticResource Separator}"
+                     Opacity="0.45" />
+
+            <Border Grid.Column="1"
+                    BackgroundColor="#161618"
+                    StrokeThickness="0"
+                    Padding="14,14,10,12">
+                <Grid RowDefinitions="Auto,Auto,Auto,*"
+                      RowSpacing="10">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="{Binding ActiveCategoryTitle}"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource LabelPrimary}" />
+                        <Label Text="{Binding ActiveCategoryItemCountLabel}"
+                               FontSize="12"
+                               TextColor="{StaticResource LabelSecondary}" />
+                    </VerticalStackLayout>
+
+                    <Border Grid.Row="1"
+                            BackgroundColor="#19191C"
+                            Stroke="{StaticResource Separator}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 6"
+                            Padding="12,0">
+                        <Entry x:Name="SearchEntry"
+                               Text="{Binding SearchText}"
+                               Placeholder="Search the provider catalog"
+                               ClearButtonVisibility="WhileEditing"
+                               HeightRequest="42"
+                               FontSize="13"
+                               TextChanged="OnSearchTextChanged"
+                               HandlerChanged="OnSearchEntryHandlerChanged"
+                               BackgroundColor="Transparent"
+                               TextColor="{StaticResource LabelPrimary}"
+                               PlaceholderColor="{StaticResource LabelSecondary}" />
+                    </Border>
+
+                    <ScrollView Grid.Row="2"
+                                Orientation="Vertical"
+                                VerticalScrollBarVisibility="Never"
+                                IsVisible="{Binding HasFilters}"
+                                MaximumHeightRequest="108">
+                        <FlexLayout BindableLayout.ItemsSource="{Binding Filters}"
+                                    Direction="Row"
+                                    Wrap="Wrap"
+                                    AlignItems="Start"
+                                    JustifyContent="Start">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="{Binding BackgroundColor}"
+                                            Stroke="{Binding StrokeColor}"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 16"
+                                            Padding="10,5"
+                                            Margin="0,0,8,8">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                        </Border.GestureRecognizers>
+
+                                        <Label Text="{Binding Title}"
+                                               FontSize="11"
+                                               TextColor="{Binding TitleColor}"
+                                               MaxLines="1"
+                                               LineBreakMode="TailTruncation" />
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                    </ScrollView>
+
+                    <Grid Grid.Row="3">
+                        <CollectionView IsVisible="{Binding HasCurrentItems}"
+                                        SelectionMode="None"
+                                        VerticalScrollBarVisibility="Never"
+                                        ItemsSource="{Binding CurrentItems}">
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                            </CollectionView.ItemsLayout>
+
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="{Binding BackgroundColor}"
+                                            Stroke="{Binding StrokeColor}"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8"
+                                            Padding="12,11">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding SelectCommand}" />
+                                        </Border.GestureRecognizers>
+
+                                        <VerticalStackLayout Spacing="6">
+                                            <Grid ColumnDefinitions="*,Auto"
+                                                  ColumnSpacing="8">
+                                                <Label Text="{Binding Title}"
+                                                       FontSize="14"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{Binding TitleColor}"
+                                                       MaxLines="1"
+                                                       LineBreakMode="TailTruncation" />
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding VariantCountLabel}"
+                                                       FontSize="11"
+                                                       TextColor="{Binding SubtitleColor}"
+                                                       VerticalOptions="Center" />
+                                            </Grid>
+
+                                            <Label Text="{Binding Summary}"
+                                                   IsVisible="{Binding HasSummary}"
+                                                   FontSize="12"
+                                                   TextColor="{StaticResource LabelSecondary}"
+                                                   MaxLines="2"
+                                                   LineBreakMode="TailTruncation" />
+
+                                            <Label Text="{Binding MetadataLine}"
+                                                   IsVisible="{Binding HasMetadata}"
+                                                   FontSize="11"
+                                                   TextColor="{StaticResource LabelSecondary}"
+                                                   MaxLines="1"
+                                                   LineBreakMode="TailTruncation" />
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <VerticalStackLayout IsVisible="{Binding IsItemListEmptyVisible}"
+                                             VerticalOptions="Center"
+                                             HorizontalOptions="Center"
+                                             Spacing="6"
+                                             Margin="16">
+                            <Label Text="No items"
+                                   FontSize="17"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource LabelPrimary}"
+                                   HorizontalOptions="Center" />
+                            <Label Text="{Binding ItemListEmptyMessage}"
+                                   FontSize="13"
+                                   TextColor="{StaticResource LabelSecondary}"
+                                   HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <BoxView Grid.Column="1"
+                     HorizontalOptions="End"
+                     WidthRequest="1"
+                     Color="{StaticResource Separator}"
+                     Opacity="0.45" />
+
+            <Grid Grid.Column="2"
+                  RowDefinitions="Auto,*"
+                  RowSpacing="14"
+                  Padding="16,16,14,14">
+
+                <Grid Grid.Row="0"
+                      ColumnDefinitions="*,Auto,Auto,Auto"
+                      ColumnSpacing="8">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="{Binding DetailHeaderTitle}"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource LabelPrimary}" />
+                        <Label Text="{Binding StatusText}"
+                               FontSize="12"
+                               TextColor="{StaticResource LabelSecondary}"
+                               MaxLines="1"
+                               LineBreakMode="TailTruncation" />
+                    </VerticalStackLayout>
+
+                    <ActivityIndicator Grid.Column="1"
+                                       IsVisible="{Binding IsBusy}"
+                                       IsRunning="{Binding IsBusy}"
+                                       VerticalOptions="Center"
+                                       Color="{StaticResource LabelPrimary}" />
+
+                    <Button Grid.Column="2"
+                            Text="Refresh"
+                            HeightRequest="34"
+                            CornerRadius="6"
+                            Padding="14,0"
+                            BackgroundColor="{StaticResource ActionBlue}"
+                            TextColor="{StaticResource LabelPrimary}"
+                            FontSize="13"
+                            Clicked="OnRefreshClicked" />
+
+                    <Button Grid.Column="3"
+                            Text="&#x2715;"
+                            FontSize="17"
+                            WidthRequest="34"
+                            HeightRequest="34"
+                            Padding="0"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource LabelSecondary}"
+                            CornerRadius="6"
+                            Clicked="OnCloseClicked" />
+                </Grid>
+
+                <Grid Grid.Row="1">
+                    <Grid IsVisible="{Binding HasSelectedItem}">
+                        <ScrollView x:Name="DetailScrollView"
+                                    VerticalScrollBarVisibility="Never">
+                            <VerticalStackLayout Spacing="14"
+                                                 Padding="0,0,2,0">
+                                <Border IsVisible="{Binding HasSelectedItem}"
+                                        BackgroundColor="{StaticResource BackgroundTertiary}"
+                                        Stroke="{StaticResource Separator}"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 8"
+                                        Padding="14,12">
+                                    <VerticalStackLayout Spacing="6">
+                                        <Label Text="{Binding SelectedItemTitle}"
+                                               FontSize="22"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource LabelPrimary}"
+                                               MaxLines="1"
+                                               LineBreakMode="TailTruncation" />
+                                        <Label Text="{Binding SelectedItemSummary}"
+                                               IsVisible="{Binding HasSelectedItemSummary}"
+                                               FontSize="12"
+                                               TextColor="{StaticResource LabelSecondary}"
+                                               MaxLines="3"
+                                               LineBreakMode="TailTruncation" />
+                                        <Label Text="{Binding SelectedItemMetadataLine}"
+                                               IsVisible="{Binding HasSelectedItemMetadata}"
+                                               FontSize="12"
+                                               TextColor="{StaticResource LabelSecondary}"
+                                               MaxLines="1"
+                                               LineBreakMode="TailTruncation" />
+                                        <Label Text="{Binding SelectedItemTagsLine}"
+                                               IsVisible="{Binding HasSelectedItemTags}"
+                                               FontSize="11"
+                                               TextColor="{StaticResource LabelSecondary}"
+                                               MaxLines="1"
+                                               LineBreakMode="TailTruncation" />
+                                    </VerticalStackLayout>
+                                </Border>
+
+                                <Border BackgroundColor="{StaticResource BackgroundTertiary}"
+                                        Stroke="{StaticResource Separator}"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 8"
+                                        Padding="12"
+                                        IsVisible="{Binding HasVariants}">
+                                    <Grid RowDefinitions="Auto,Auto,Auto"
+                                          RowSpacing="10">
+                                        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto"
+                                              ColumnSpacing="8">
+                                            <VerticalStackLayout Spacing="2">
+                                                <Label Text="Variant"
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource LabelSecondary}" />
+                                                <Label Text="{Binding SelectedVariantTitle}"
+                                                       FontSize="15"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{StaticResource LabelPrimary}"
+                                                       MaxLines="1"
+                                                       LineBreakMode="TailTruncation" />
+                                            </VerticalStackLayout>
+
+                                            <Border Grid.Column="1"
+                                                    IsVisible="{Binding ShowSelectedVariantInstalledBadge}"
+                                                    BackgroundColor="{StaticResource SystemBlueOverlay}"
+                                                    Stroke="{StaticResource ActionBlue}"
+                                                    StrokeThickness="1"
+                                                    StrokeShape="RoundRectangle 6"
+                                                    Padding="8,4"
+                                                    VerticalOptions="Center">
+                                                <Label Text="{Binding SelectedVariantInstalledLabel}"
+                                                       FontSize="11"
+                                                       TextColor="{StaticResource LabelPrimary}" />
+                                            </Border>
+
+                                            <Button Grid.Column="2"
+                                                    Text="Install"
+                                                    IsVisible="{Binding ShowInstallButton}"
+                                                    HeightRequest="32"
+                                                    CornerRadius="6"
+                                                    Padding="12,0"
+                                                    BackgroundColor="{StaticResource ActionBlue}"
+                                                    TextColor="{StaticResource LabelPrimary}"
+                                                    FontSize="12"
+                                                    Clicked="OnInstallClicked" />
+
+                                            <Button Grid.Column="3"
+                                                    Text="Open"
+                                                    IsVisible="{Binding ShowOpenVariantButton}"
+                                                    HeightRequest="32"
+                                                    CornerRadius="6"
+                                                    Padding="12,0"
+                                                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                                                    TextColor="{StaticResource LabelPrimary}"
+                                                    FontSize="12"
+                                                    Clicked="OnOpenClicked" />
+
+                                            <Button Grid.Column="4"
+                                                    Text="Remove"
+                                                    IsVisible="{Binding ShowDeleteButton}"
+                                                    HeightRequest="32"
+                                                    CornerRadius="6"
+                                                    Padding="12,0"
+                                                    BackgroundColor="#4C1F24"
+                                                    TextColor="{StaticResource LabelPrimary}"
+                                                    FontSize="12"
+                                                    Clicked="OnDeleteClicked" />
+                                        </Grid>
+
+                                        <Label Grid.Row="1"
+                                               Text="{Binding SelectedVariantMetadataLine}"
+                                               IsVisible="{Binding HasSelectedVariantMetadata}"
+                                               FontSize="11"
+                                               TextColor="{StaticResource LabelSecondary}"
+                                               MaxLines="1"
+                                               LineBreakMode="TailTruncation" />
+
+                                        <CollectionView Grid.Row="2"
+                                                        HeightRequest="{Binding VariantSelectorHeight}"
+                                                        SelectionMode="None"
+                                                        VerticalScrollBarVisibility="Always"
+                                                        ItemsSource="{Binding Variants}">
+                                            <CollectionView.ItemsLayout>
+                                                <LinearItemsLayout Orientation="Vertical" ItemSpacing="6" />
+                                            </CollectionView.ItemsLayout>
+                                            <CollectionView.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border BackgroundColor="{Binding BackgroundColor}"
+                                                            Stroke="{Binding StrokeColor}"
+                                                            StrokeThickness="1"
+                                                            StrokeShape="RoundRectangle 8"
+                                                            Padding="10,8">
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer Command="{Binding SelectCommand}" />
+                                                        </Border.GestureRecognizers>
+
+                                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto"
+                                                              ColumnSpacing="10">
+                                                            <Label Text="&#x2713;"
+                                                                   FontSize="14"
+                                                                   TextColor="{Binding TitleColor}"
+                                                                   WidthRequest="16"
+                                                                   VerticalOptions="Center"
+                                                                   IsVisible="{Binding IsSelected}" />
+
+                                                            <VerticalStackLayout Grid.Column="1"
+                                                                                 Spacing="2">
+                                                                <Label Text="{Binding Title}"
+                                                                       FontSize="13"
+                                                                       FontAttributes="Bold"
+                                                                       TextColor="{Binding TitleColor}"
+                                                                       MaxLines="1"
+                                                                       LineBreakMode="TailTruncation" />
+                                                                <Label Text="{Binding SelectorDetailLine}"
+                                                                       IsVisible="{Binding HasSelectorDetailLine}"
+                                                                       FontSize="11"
+                                                                       TextColor="{StaticResource LabelSecondary}"
+                                                                       MaxLines="1"
+                                                                       LineBreakMode="TailTruncation" />
+                                                            </VerticalStackLayout>
+
+                                                            <Border Grid.Column="2"
+                                                                    IsVisible="{Binding ShowInstalledBadge}"
+                                                                    BackgroundColor="{StaticResource SystemBlueOverlay}"
+                                                                    Stroke="{StaticResource ActionBlue}"
+                                                                    StrokeThickness="1"
+                                                                    StrokeShape="RoundRectangle 6"
+                                                                    Padding="8,4"
+                                                                    VerticalOptions="Center">
+                                                                <Label Text="{Binding InstalledLabel}"
+                                                                       FontSize="11"
+                                                                       TextColor="{StaticResource LabelPrimary}" />
+                                                            </Border>
+
+                                                            <Label Grid.Column="3"
+                                                                   Text="{Binding SizeLabel}"
+                                                                   IsVisible="{Binding HasSizeLabel}"
+                                                                   FontSize="11"
+                                                                   TextColor="{StaticResource LabelSecondary}"
+                                                                   VerticalOptions="Center"
+                                                                   HorizontalTextAlignment="End" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </CollectionView.ItemTemplate>
+                                        </CollectionView>
+                                    </Grid>
+                                </Border>
+
+                                <VerticalStackLayout Spacing="8"
+                                                     IsVisible="{Binding HasInfoBlocks}">
+                                    <Label Text="{Binding SelectedInfoBlockTitle}"
+                                           FontSize="15"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource LabelPrimary}"
+                                           VerticalOptions="Center" />
+
+                                    <ScrollView Orientation="Vertical"
+                                                VerticalScrollBarVisibility="Never"
+                                                MaximumHeightRequest="76"
+                                                IsVisible="{Binding HasMultipleInfoBlocks}">
+                                        <FlexLayout BindableLayout.ItemsSource="{Binding InfoBlocks}"
+                                                    Direction="Row"
+                                                    Wrap="Wrap"
+                                                    AlignItems="Start"
+                                                    JustifyContent="Start">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border BackgroundColor="{Binding BackgroundColor}"
+                                                            Stroke="{Binding StrokeColor}"
+                                                            StrokeThickness="1"
+                                                            StrokeShape="RoundRectangle 16"
+                                                            Padding="10,5"
+                                                            Margin="0,0,8,8">
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer Command="{Binding SelectCommand}" />
+                                                        </Border.GestureRecognizers>
+
+                                                        <Label Text="{Binding Title}"
+                                                               FontSize="11"
+                                                               TextColor="{Binding TitleColor}"
+                                                               MaxLines="1"
+                                                               LineBreakMode="TailTruncation" />
+                                                    </Border>
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </FlexLayout>
+                                    </ScrollView>
+
+                                    <Border IsVisible="{Binding HasSelectedInfoBlockText}"
+                                            BackgroundColor="{StaticResource BackgroundTertiary}"
+                                            Stroke="{StaticResource Separator}"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8"
+                                            Padding="14">
+                                        <Label Text="{Binding SelectedInfoBlockText}"
+                                               FontSize="12"
+                                               TextColor="{StaticResource LabelSecondary}"
+                                               LineBreakMode="WordWrap" />
+                                    </Border>
+
+                                    <Border IsVisible="{Binding HasSelectedInfoBlockWebContent}"
+                                            BackgroundColor="{StaticResource BackgroundTertiary}"
+                                            Stroke="{StaticResource Separator}"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 8"
+                                            Padding="0">
+                                        <WebView Source="{Binding SelectedInfoBlockSource}"
+                                                 HandlerChanged="OnInfoBlockWebViewHandlerChanged"
+                                                 Navigating="OnInfoBlockWebViewNavigating"
+                                                 Navigated="OnInfoBlockWebViewNavigated"
+                                                 HeightRequest="{Binding SelectedInfoBlockWebHeight}"
+                                                 HorizontalOptions="Fill"
+                                                 VerticalOptions="Start" />
+                                    </Border>
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                        </ScrollView>
+                    </Grid>
+
+                    <VerticalStackLayout IsVisible="{Binding IsDetailEmptyVisible}"
+                                         VerticalOptions="Center"
+                                         HorizontalOptions="Center"
+                                         Spacing="8"
+                                         Margin="24">
+                        <Label Text="Select an item"
+                               FontSize="22"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource LabelPrimary}"
+                               HorizontalOptions="Center" />
+                        <Label Text="{Binding DetailEmptyMessage}"
+                               FontSize="14"
+                               TextColor="{StaticResource LabelSecondary}"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
 </ContentView>

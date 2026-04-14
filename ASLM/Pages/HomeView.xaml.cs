@@ -702,8 +702,8 @@ namespace ASLM.Pages
             IReadOnlyList<ModuleConsoleModuleSnapshot> consoleSnapshots,
             HomeDiagnosticsSnapshot diagnostics)
         {
-            var activeSessionCount = consoleSnapshots.Sum(module => module.Sessions.Count(session => session.IsRunning));
-            var totalSessionCount = consoleSnapshots.Sum(module => module.Sessions.Count);
+            var activeSessionCount = consoleSnapshots.Sum(module => module.Sessions.Count(session => session.IsRunning && !session.IsObservedProcess));
+            var totalSessionCount = consoleSnapshots.Sum(module => module.Sessions.Count(session => !session.IsObservedProcess));
             var runningModuleCount = modules.Count(module => module.Status.Enabled);
             var updatedAt = diagnostics.CapturedUtc.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
 
@@ -733,8 +733,8 @@ namespace ASLM.Pages
             HomeDiagnosticsSnapshot diagnostics)
         {
             var updatedAt = diagnostics.CapturedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-            var activeSessionCount = consoleSnapshots.Sum(module => module.Sessions.Count(session => session.IsRunning));
-            var totalSessionCount = consoleSnapshots.Sum(module => module.Sessions.Count);
+            var activeSessionCount = consoleSnapshots.Sum(module => module.Sessions.Count(session => session.IsRunning && !session.IsObservedProcess));
+            var totalSessionCount = consoleSnapshots.Sum(module => module.Sessions.Count(session => !session.IsObservedProcess));
             var systemMetrics = new List<HomeSummaryMetricViewModel>
             {
                 CreatePercentMetric(
@@ -2421,7 +2421,7 @@ namespace ASLM.Pages
                 ModulesBySourcePath = moduleDiagnostics,
                 GpuAdapters = gpuAdapters,
                 RootNode = rootNode,
-                ActiveProcessCount = Math.Max(0, liveProcesses.Count - 1),
+                ActiveProcessCount = internalProcessIds.Count + moduleDiagnostics.Values.Sum(module => module.ProcessIds.Count),
                 ActiveModuleCount = moduleDiagnostics.Values.Count(module => module.ProcessIds.Count > 0),
                 LastModuleActivityUtc = lastModuleActivities.Count > 0
                     ? lastModuleActivities.Max()
@@ -2482,7 +2482,7 @@ namespace ASLM.Pages
                 consoleByModule.TryGetValue(module.SourcePath, out var consoleSnapshot);
 
                 var sessionsByPid = (consoleSnapshot?.Sessions ?? [])
-                    .Where(session => session.ProcessId.HasValue)
+                    .Where(session => session.ProcessId.HasValue && !session.IsObservedProcess)
                     .GroupBy(session => session.ProcessId!.Value)
                     .ToDictionary(
                         group => group.Key,
@@ -2490,6 +2490,12 @@ namespace ASLM.Pages
                             .OrderByDescending(session => session.IsRunning)
                             .ThenByDescending(session => session.IsTrackedProcess)
                             .First());
+
+                var observedProcessIds = (consoleSnapshot?.Sessions ?? [])
+                    .Where(session => session.IsObservedProcess &&
+                                      session.ProcessId.HasValue)
+                    .Select(session => session.ProcessId!.Value)
+                    .ToHashSet();
 
                 var trackedRootPids = (consoleSnapshot?.Sessions ?? [])
                     .Where(session => session.IsRunning &&
@@ -2512,6 +2518,8 @@ namespace ASLM.Pages
                 {
                     processIds.Add(processId);
                 }
+
+                processIds.ExceptWith(observedProcessIds);
 
                 processIds.RemoveWhere(globallyAssigned.Contains);
                 globallyAssigned.UnionWith(processIds);

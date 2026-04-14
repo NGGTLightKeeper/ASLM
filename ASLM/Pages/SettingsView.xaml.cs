@@ -23,6 +23,8 @@ namespace ASLM.Pages
         private const double MinDialogHeight = 540;
         private const double MaxDialogWidth = 1280;
         private const double MaxDialogHeight = 720;
+        private static readonly TimeSpan OllamaSignInPollInterval = TimeSpan.FromSeconds(3);
+        private static readonly TimeSpan OllamaSignInPollDuration = TimeSpan.FromMinutes(5);
 
         private static readonly Color ActiveCategoryTextColor = Colors.White;
         private static readonly Color InactiveCategoryTextColor = Color.FromArgb("#99EBEBF5");
@@ -36,6 +38,7 @@ namespace ASLM.Pages
         private readonly EngineInstaller _engineInstaller;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
+        private readonly OllamaSettingsService _ollamaSettingsService;
         private readonly List<SettingControlMapping> _settingMappings = [];
         private readonly Dictionary<string, SettingBaseline> _settingBaselines = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Border> _categoryButtons = new(StringComparer.OrdinalIgnoreCase);
@@ -44,6 +47,7 @@ namespace ASLM.Pages
         private SettingsCategory? _activeCategory;
         private SettingsCategoryGroup _activeGroup = SettingsCategoryGroup.Aslm;
         private AslmBaseline _aslmBaseline = new(string.Empty, string.Empty, string.Empty);
+        private OllamaPersistentSettings _ollamaDraft = new();
         private string _userNameDraft = string.Empty;
         private string _officialPortDraft = string.Empty;
         private string _thirdPartyPortDraft = string.Empty;
@@ -51,6 +55,13 @@ namespace ASLM.Pages
         private bool _isRefreshingVisibility;
         private bool _isSwitchingCategory;
         private bool _isSaving;
+        private bool _isOllamaAccountActionRunning;
+        private bool _isOllamaMetadataRefreshRunning;
+        private string _ollamaAccountAction = string.Empty;
+        private Button? _ollamaAccountButton;
+        private Label? _ollamaAccountStatusLabel;
+        private CancellationTokenSource? _ollamaMetadataRefreshCts;
+        private CancellationTokenSource? _ollamaStatusPollingCts;
 
         /// <summary>
         /// Raised when the user asks to close the settings overlay.
@@ -73,6 +84,7 @@ namespace ASLM.Pages
         {
             AslmProfile,
             AslmPorts,
+            Ollama,
             Module
         }
 
@@ -86,11 +98,6 @@ namespace ASLM.Pages
             Func<bool>? ReadCustomValue,
             string InitialDisplayValue,
             bool InitialUseCustomValue);
-
-        /// <summary>
-        /// Represents one displayable choice inside a picker while preserving its underlying value.
-        /// </summary>
-        private record ChoiceOption(string Value, string Label);
 
         /// <summary>
         /// Represents a lightweight settings toggle with a fixed visual and hitbox.
@@ -327,12 +334,18 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the settings view and hooks the first-load handler.
         /// </summary>
-        public SettingsView(AppDataService appData, EngineInstaller engineInstaller, ModuleInstaller moduleInstaller, ModuleRunner moduleRunner)
+        public SettingsView(
+            AppDataService appData,
+            EngineInstaller engineInstaller,
+            ModuleInstaller moduleInstaller,
+            ModuleRunner moduleRunner,
+            OllamaSettingsService ollamaSettingsService)
         {
             _appData = appData;
             _engineInstaller = engineInstaller;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
+            _ollamaSettingsService = ollamaSettingsService;
             InitializeComponent();
             ApplyFlatEntryStyle(UsernameEntry);
             ApplyFlatEntryStyle(OfficialPortEntry);
@@ -344,6 +357,7 @@ namespace ASLM.Pages
             ThirdPartyPortEntry.TextChanged += (_, _) => UpdateActionButtons();
             SizeChanged += OnViewSizeChanged;
             Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
         }
 
         // Refresh
@@ -392,6 +406,9 @@ namespace ASLM.Pages
                 return;
             }
 
+            StopOllamaStatusPolling();
+            StopOllamaMetadataRefresh();
+            _ollamaSettingsService.StopManagedRuntime();
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
@@ -405,6 +422,7 @@ namespace ASLM.Pages
             var previousCategoryId = _activeCategory?.Id;
 
             LoadAslmDraftsFromAppData();
+            LoadOllamaDraftsFromService();
             await LoadModuleDraftsAsync(reloadModules: true, reloadRuntimeValues: true);
 
             _categories = CreateOrderedCategories();
@@ -444,6 +462,16 @@ namespace ASLM.Pages
             {
                 Debug.WriteLine($"Failed to load settings view: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Stops background Ollama status polling when the settings view leaves the visual tree.
+        /// </summary>
+        private void OnUnloaded(object? sender, EventArgs e)
+        {
+            StopOllamaStatusPolling();
+            StopOllamaMetadataRefresh();
+            _ollamaSettingsService.StopManagedRuntime();
         }
 
         /// <summary>
@@ -488,6 +516,22 @@ namespace ASLM.Pages
 
             ApplyAslmDraftsToControls();
             PortErrorLabel.IsVisible = false;
+        }
+
+        /// <summary>
+        /// Copies the persisted Ollama settings into the editable page draft.
+        /// </summary>
+        private void LoadOllamaDraftsFromService()
+        {
+            try
+            {
+                _ollamaDraft = _ollamaSettingsService.LoadSettings();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to load Ollama settings: {ex.Message}");
+                _ollamaDraft = new OllamaPersistentSettings();
+            }
         }
 
         /// <summary>
@@ -554,7 +598,14 @@ namespace ASLM.Pages
                     "Reserved port ranges for official modules and third-party integrations.",
                     SettingsCategoryKind.AslmPorts,
                     null,
-                    true)
+                    true),
+                new(
+                    "aslm-ollama",
+                    "Ollama",
+                    "Ollama account sign-in and sign-out controls.",
+                    SettingsCategoryKind.Ollama,
+                    null,
+                    false)
             };
 
             categories.AddRange(
@@ -724,6 +775,9 @@ namespace ASLM.Pages
                 case SettingsCategoryKind.AslmPorts:
                     RenderAslmCategory(showProfile: false, showPorts: true);
                     break;
+                case SettingsCategoryKind.Ollama:
+                    RenderOllamaCategory();
+                    break;
                 case SettingsCategoryKind.Module:
                     RenderModuleCategory(category.Module!);
                     break;
@@ -783,13 +837,16 @@ namespace ASLM.Pages
         {
             var canInteract = !_isSaving && _activeCategory != null;
             var hasChanges = canInteract && HasUnsavedChanges();
-            DefaultButton.IsEnabled = canInteract;
+            var canReset = _activeCategory is { Kind: not SettingsCategoryKind.Ollama };
+            DefaultButton.IsVisible = canReset;
+            DefaultButton.IsEnabled = canInteract && canReset;
             SaveButton.IsEnabled = canInteract;
             SaveButton.Text = _isSaving ? "Saving..." : "Save";
             ApplyActionButtonState(DefaultButton, false);
 
             if (_activeCategory == null)
             {
+                DefaultButton.IsVisible = false;
                 SaveAndRestartButton.IsEnabled = false;
                 SaveAndRestartButton.IsVisible = false;
                 SaveButton.IsVisible = false;
@@ -842,6 +899,7 @@ namespace ASLM.Pages
         {
             ApplyAslmDraftsToControls();
             _settingMappings.Clear();
+            ResetOllamaControlReferences();
 
             AslmSettingsContainer.IsVisible = true;
             UserProfileSection.IsVisible = showProfile;
@@ -852,11 +910,78 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Rebuilds the Ollama settings page using the current persistent draft values.
+        /// </summary>
+        private void RenderOllamaCategory()
+        {
+            _settingMappings.Clear();
+            ResetOllamaControlReferences();
+            ModuleSettingsContainer.Children.Clear();
+
+            AslmSettingsContainer.IsVisible = false;
+            ModuleSettingsContainer.IsVisible = true;
+            EmptyCategoryState.IsVisible = false;
+
+            var section = CreateModuleSectionBorder();
+            var content = new VerticalStackLayout { Spacing = 12 };
+
+            content.Children.Add(CreateOllamaAccountCard());
+
+            section.Content = content;
+            ModuleSettingsContainer.Children.Add(section);
+
+            UpdateOllamaAccountActionControls();
+            StartOllamaMetadataRefresh();
+        }
+
+        /// <summary>
+        /// Builds the account card shown at the top of the Ollama category.
+        /// </summary>
+        private Border CreateOllamaAccountCard()
+        {
+            var card = CreateSettingCardBorder();
+            var row = new Grid
+            {
+                ColumnSpacing = 16,
+                VerticalOptions = LayoutOptions.Center,
+                MinimumHeightRequest = 44
+            };
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+
+            var text = new VerticalStackLayout
+            {
+                Spacing = 2,
+                VerticalOptions = LayoutOptions.Center
+            };
+
+            var title = CreateCardTitle("Ollama Account");
+            title.VerticalOptions = LayoutOptions.Center;
+            text.Children.Add(title);
+
+            _ollamaAccountStatusLabel = CreateSecondaryLabel("Not signed in");
+            _ollamaAccountStatusLabel.LineBreakMode = LineBreakMode.TailTruncation;
+            _ollamaAccountStatusLabel.MaxLines = 1;
+            text.Children.Add(_ollamaAccountStatusLabel);
+
+            row.Children.Add(text);
+            Grid.SetColumn(text, 0);
+
+            _ollamaAccountButton = CreateInlineActionButton("Sign In", OnOllamaAccountButtonClicked);
+            row.Children.Add(_ollamaAccountButton);
+            Grid.SetColumn(_ollamaAccountButton, 1);
+
+            card.Content = row;
+            return card;
+        }
+
+        /// <summary>
         /// Rebuilds the currently visible module settings page from the in-memory draft state.
         /// </summary>
         private void RenderModuleCategory(ModuleConfig module)
         {
             _settingMappings.Clear();
+            ResetOllamaControlReferences();
             ModuleSettingsContainer.Children.Clear();
 
             var settings = module.Settings?.Where(ShouldDisplaySetting).ToList() ?? [];
@@ -907,6 +1032,7 @@ namespace ASLM.Pages
         /// </summary>
         private void ShowEmptyCategory(string message)
         {
+            ResetOllamaControlReferences();
             AslmSettingsContainer.IsVisible = false;
             ModuleSettingsContainer.IsVisible = false;
             ModuleSettingsContainer.Children.Clear();
@@ -1026,6 +1152,7 @@ namespace ASLM.Pages
             }
 
             LoadAslmDraftsFromAppData();
+            LoadOllamaDraftsFromService();
             await LoadModuleDraftsAsync(reloadModules: false, reloadRuntimeValues: true);
             _categories = CreateOrderedCategories();
 
@@ -1047,6 +1174,7 @@ namespace ASLM.Pages
                 SettingsCategoryKind.AslmProfile => !string.Equals(UsernameEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.UserName, StringComparison.Ordinal),
                 SettingsCategoryKind.AslmPorts => !string.Equals(OfficialPortEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.OfficialPort, StringComparison.Ordinal) ||
                                                   !string.Equals(ThirdPartyPortEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.ThirdPartyPort, StringComparison.Ordinal),
+                SettingsCategoryKind.Ollama => false,
                 SettingsCategoryKind.Module => HasUnsavedModuleChanges(),
                 _ => false
             };
@@ -1125,6 +1253,8 @@ namespace ASLM.Pages
                     _thirdPartyPortDraft = defaultPorts.ThirdPartyStart.ToString(CultureInfo.InvariantCulture);
                     PortErrorLabel.IsVisible = false;
                     RenderAslmCategory(showProfile: false, showPorts: true);
+                    break;
+                case SettingsCategoryKind.Ollama:
                     break;
                 case SettingsCategoryKind.Module:
                     ResetModuleToDefaults(_activeCategory.Module!);
@@ -1243,6 +1373,9 @@ namespace ASLM.Pages
                         await ShowSuccessAsync(BuildSaveMessage(hasChanges, false, []));
                         break;
                     }
+
+                    case SettingsCategoryKind.Ollama:
+                        break;
 
                     case SettingsCategoryKind.Module:
                     {
@@ -1539,6 +1672,323 @@ namespace ASLM.Pages
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Handles the single Ollama account action button click.
+        /// </summary>
+        private async void OnOllamaAccountButtonClicked(object? sender, EventArgs e)
+        {
+            await ExecuteOllamaAccountActionAsync(signIn: !IsOllamaSignedIn());
+        }
+
+        /// <summary>
+        /// Runs one Ollama account action and refreshes the compact account button state.
+        /// </summary>
+        private async Task ExecuteOllamaAccountActionAsync(bool signIn)
+        {
+            if (_isOllamaAccountActionRunning)
+            {
+                return;
+            }
+
+            StopOllamaStatusPolling();
+
+            if (!signIn)
+            {
+                var confirmed = await ShowAlertAsync(
+                    "Sign out from Ollama",
+                    "This removes the current ollama.com session for this Windows profile. Continue?",
+                    "Sign out",
+                    "Cancel");
+
+                if (!confirmed)
+                {
+                    return;
+                }
+            }
+
+            try
+            {
+                _isOllamaAccountActionRunning = true;
+                _ollamaAccountAction = signIn ? "signin" : "signout";
+                UpdateOllamaAccountActionControls();
+
+                var result = signIn
+                    ? await _ollamaSettingsService.SignInAsync()
+                    : await _ollamaSettingsService.SignOutAsync();
+
+                await RefreshOllamaRuntimeMetadataAsync(queryLiveStatus: signIn);
+                UpdateOllamaAccountActionControls();
+
+                if (!result.Success)
+                {
+                    await ShowErrorAsync(result.Message);
+                    return;
+                }
+
+                if (signIn && result.IsPendingVerification && !IsOllamaSignedIn())
+                {
+                    StartOllamaStatusPolling();
+                }
+            }
+            finally
+            {
+                _isOllamaAccountActionRunning = false;
+                _ollamaAccountAction = string.Empty;
+                UpdateOllamaAccountActionControls();
+            }
+        }
+
+        /// <summary>
+        /// Refreshes the non-editable Ollama metadata without overwriting unsaved field edits.
+        /// </summary>
+        private async Task RefreshOllamaRuntimeMetadataAsync(bool queryLiveStatus, CancellationToken ct = default)
+        {
+            try
+            {
+                var refreshed = queryLiveStatus
+                    ? await _ollamaSettingsService.RefreshSettingsAsync(ct)
+                    : _ollamaSettingsService.LoadSettings();
+                ApplyOllamaRuntimeMetadata(refreshed);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to refresh Ollama settings: {ex.Message}");
+                ApplyOllamaRuntimeMetadata(new OllamaPersistentSettings());
+            }
+        }
+
+        /// <summary>
+        /// Copies the latest Ollama metadata into the visible UI draft.
+        /// </summary>
+        private void ApplyOllamaRuntimeMetadata(OllamaPersistentSettings refreshed)
+        {
+            _ollamaDraft.IsCliAvailable = refreshed.IsCliAvailable;
+            _ollamaDraft.IsSignedIn = refreshed.IsSignedIn;
+            _ollamaDraft.UserName = refreshed.UserName;
+        }
+
+        /// <summary>
+        /// Updates the current account status labels and action buttons when the Ollama card is visible.
+        /// </summary>
+        private void UpdateOllamaAccountActionControls()
+        {
+            if (_ollamaAccountStatusLabel != null)
+            {
+                _ollamaAccountStatusLabel.Text = BuildOllamaAccountStatusText();
+            }
+
+            if (_ollamaAccountButton != null)
+            {
+                var isSignedIn = IsOllamaSignedIn();
+                _ollamaAccountButton.Text =
+                    _isOllamaAccountActionRunning && string.Equals(_ollamaAccountAction, "signin", StringComparison.Ordinal) ? "Signing In..." :
+                    _isOllamaAccountActionRunning && string.Equals(_ollamaAccountAction, "signout", StringComparison.Ordinal) ? "Signing Out..." :
+                    isSignedIn ? "Sign Out" : "Sign In";
+                _ollamaAccountButton.IsEnabled = _ollamaDraft.IsCliAvailable &&
+                    !_isOllamaAccountActionRunning &&
+                    !_isOllamaMetadataRefreshRunning;
+                ApplyOllamaAccountButtonState(_ollamaAccountButton, isSignedIn);
+            }
+        }
+
+        /// <summary>
+        /// Starts a background refresh for the live Ollama account state when the account page is visible.
+        /// </summary>
+        private void StartOllamaMetadataRefresh()
+        {
+            if (_activeCategory?.Kind != SettingsCategoryKind.Ollama)
+            {
+                return;
+            }
+
+            StopOllamaMetadataRefresh();
+
+            if (!_ollamaDraft.IsCliAvailable)
+            {
+                UpdateOllamaAccountActionControls();
+                return;
+            }
+
+            var refreshCts = new CancellationTokenSource();
+            _ollamaMetadataRefreshCts = refreshCts;
+            _isOllamaMetadataRefreshRunning = true;
+            UpdateOllamaAccountActionControls();
+
+            _ = RefreshOllamaMetadataAsync(refreshCts);
+        }
+
+        /// <summary>
+        /// Stops the in-flight live Ollama metadata refresh, if any.
+        /// </summary>
+        private void StopOllamaMetadataRefresh()
+        {
+            var refreshCts = _ollamaMetadataRefreshCts;
+            _ollamaMetadataRefreshCts = null;
+            _isOllamaMetadataRefreshRunning = false;
+            refreshCts?.Cancel();
+            refreshCts?.Dispose();
+            UpdateOllamaAccountActionControls();
+        }
+
+        /// <summary>
+        /// Refreshes the live Ollama metadata without blocking the initial settings page render.
+        /// </summary>
+        private async Task RefreshOllamaMetadataAsync(CancellationTokenSource refreshCts)
+        {
+            try
+            {
+                await RefreshOllamaRuntimeMetadataAsync(queryLiveStatus: true, refreshCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    if (!ReferenceEquals(_ollamaMetadataRefreshCts, refreshCts))
+                    {
+                        return;
+                    }
+
+                    refreshCts.Dispose();
+                    _ollamaMetadataRefreshCts = null;
+                    _isOllamaMetadataRefreshRunning = false;
+                    UpdateOllamaAccountActionControls();
+                });
+            }
+        }
+
+        /// <summary>
+        /// Clears the current references to dynamically created Ollama controls before the page is rebuilt.
+        /// </summary>
+        private void ResetOllamaControlReferences()
+        {
+            _ollamaAccountButton = null;
+            _ollamaAccountStatusLabel = null;
+        }
+
+        /// <summary>
+        /// Determines whether the current Ollama account state should be treated as signed in.
+        /// </summary>
+        private bool IsOllamaSignedIn() => _ollamaDraft.IsSignedIn;
+
+        /// <summary>
+        /// Starts a short-lived background poll that waits for the browser sign-in flow to complete.
+        /// </summary>
+        private void StartOllamaStatusPolling()
+        {
+            StopOllamaStatusPolling();
+
+            var pollingCts = new CancellationTokenSource();
+            _ollamaStatusPollingCts = pollingCts;
+            UpdateOllamaAccountActionControls();
+
+            _ = PollOllamaStatusAsync(pollingCts);
+        }
+
+        /// <summary>
+        /// Cancels the active background sign-in status poll, if any.
+        /// </summary>
+        private void StopOllamaStatusPolling()
+        {
+            var pollingCts = _ollamaStatusPollingCts;
+            _ollamaStatusPollingCts = null;
+            pollingCts?.Cancel();
+            pollingCts?.Dispose();
+            UpdateOllamaAccountActionControls();
+        }
+
+        /// <summary>
+        /// Polls the local Ollama API until sign-in completes or the timeout window expires.
+        /// </summary>
+        private async Task PollOllamaStatusAsync(CancellationTokenSource pollingCts)
+        {
+            var ct = pollingCts.Token;
+            var deadline = DateTime.UtcNow + OllamaSignInPollDuration;
+
+            try
+            {
+                while (!ct.IsCancellationRequested && DateTime.UtcNow < deadline)
+                {
+                    await RefreshOllamaRuntimeMetadataAsync(queryLiveStatus: true, ct);
+
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        UpdateOllamaAccountActionControls();
+                    });
+
+                    if (IsOllamaSignedIn())
+                    {
+                        return;
+                    }
+
+                    await Task.Delay(OllamaSignInPollInterval, ct);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    if (!ReferenceEquals(_ollamaStatusPollingCts, pollingCts))
+                    {
+                        return;
+                    }
+
+                    pollingCts.Dispose();
+                    _ollamaStatusPollingCts = null;
+                    UpdateOllamaAccountActionControls();
+                });
+            }
+        }
+
+        /// <summary>
+        /// Returns the compact status line shown under the Ollama account title.
+        /// </summary>
+        private string BuildOllamaAccountStatusText()
+        {
+            if (!_ollamaDraft.IsCliAvailable)
+            {
+                return "Internal Ollama is not installed";
+            }
+
+            if (_isOllamaAccountActionRunning && string.Equals(_ollamaAccountAction, "signin", StringComparison.Ordinal))
+            {
+                return "Waiting for browser sign-in";
+            }
+
+            if (_isOllamaAccountActionRunning && string.Equals(_ollamaAccountAction, "signout", StringComparison.Ordinal))
+            {
+                return "Signing out";
+            }
+
+            if (_isOllamaMetadataRefreshRunning)
+            {
+                return "Checking account";
+            }
+
+            if (_ollamaStatusPollingCts != null && !_ollamaDraft.IsSignedIn)
+            {
+                return "Waiting for browser sign-in";
+            }
+
+            if (_ollamaDraft.IsSignedIn)
+            {
+                return string.IsNullOrWhiteSpace(_ollamaDraft.UserName)
+                    ? "Signed in"
+                    : $"Signed in as {_ollamaDraft.UserName}";
+            }
+
+            return "Not signed in";
         }
 
         /// <summary>
@@ -1854,9 +2304,6 @@ namespace ASLM.Pages
             var allowedValues = setting.AllowedValues ?? [];
             var picker = CreatePicker(null, 13);
             var pickerContainer = CreatePickerContainer(picker);
-            var options = allowedValues
-                .Select(allowedValue => new ChoiceOption(allowedValue, ResolveChoiceLabel(module, allowedValue)))
-                .ToList();
 
             var selectedValue = setting.FormatValueForDisplay(value);
             if (string.IsNullOrWhiteSpace(selectedValue))
@@ -1865,24 +2312,23 @@ namespace ASLM.Pages
             }
 
             if (!string.IsNullOrWhiteSpace(selectedValue) &&
-                options.All(option => !string.Equals(option.Value, selectedValue, StringComparison.OrdinalIgnoreCase)))
+                allowedValues.All(option => !string.Equals(option, selectedValue, StringComparison.OrdinalIgnoreCase)))
             {
-                options.Insert(0, new ChoiceOption(selectedValue, ResolveChoiceLabel(module, selectedValue)));
+                allowedValues = [selectedValue, .. allowedValues];
             }
 
-            picker.ItemsSource = options;
-            picker.ItemDisplayBinding = new Binding(nameof(ChoiceOption.Label));
+            picker.ItemsSource = allowedValues;
 
-            var selectedIndex = options.FindIndex(option =>
-                string.Equals(option.Value, selectedValue, StringComparison.OrdinalIgnoreCase));
-            picker.SelectedIndex = selectedIndex >= 0 ? selectedIndex : (options.Count > 0 ? 0 : -1);
+            var selectedIndex = allowedValues.FindIndex(option =>
+                string.Equals(option, selectedValue, StringComparison.OrdinalIgnoreCase));
+            picker.SelectedIndex = selectedIndex >= 0 ? selectedIndex : (allowedValues.Count > 0 ? 0 : -1);
             picker.SelectedIndexChanged += (_, _) => UpdateActionButtons();
 
             return (pickerContainer, new SettingControlMapping(
                 module,
                 setting,
-                () => picker.SelectedIndex >= 0 && picker.SelectedIndex < options.Count
-                    ? options[picker.SelectedIndex].Value
+                () => picker.SelectedIndex >= 0 && picker.SelectedIndex < allowedValues.Count
+                    ? allowedValues[picker.SelectedIndex]
                     : null,
                 null,
                 baseline.DisplayValue,
@@ -1895,19 +2341,22 @@ namespace ASLM.Pages
         private (View Control, SettingControlMapping? Mapping) CreatePickerEditor(ModuleConfig module, ModuleSetting setting, object? value)
         {
             var baseline = GetSettingBaseline(module, setting, value);
-            var picker = CreatePicker("Select value", 14);
+            var picker = CreatePicker(null, 14);
             var pickerContainer = CreatePickerContainer(picker);
-
-            foreach (var allowedValue in setting.AllowedValues!)
-            {
-                picker.Items.Add(allowedValue);
-            }
+            var allowedValues = setting.AllowedValues!.ToList();
+            picker.ItemsSource = allowedValues;
 
             var currentValue = setting.FormatValueForDisplay(value);
-            var selectedIndex = setting.AllowedValues.FindIndex(v => string.Equals(v, currentValue, StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrWhiteSpace(currentValue))
+            {
+                currentValue = setting.FormatValueForDisplay(setting.Default);
+            }
+
+            var selectedIndex = allowedValues.FindIndex(option =>
+                string.Equals(option, currentValue, StringComparison.OrdinalIgnoreCase));
             if (selectedIndex < 0 && !string.IsNullOrWhiteSpace(currentValue))
             {
-                picker.Items.Insert(0, currentValue);
+                allowedValues.Insert(0, currentValue);
                 selectedIndex = 0;
             }
 
@@ -1917,7 +2366,9 @@ namespace ASLM.Pages
             return (pickerContainer, new SettingControlMapping(
                 module,
                 setting,
-                () => picker.SelectedIndex >= 0 ? picker.Items[picker.SelectedIndex] : null,
+                () => picker.SelectedIndex >= 0 && picker.SelectedIndex < allowedValues.Count
+                    ? allowedValues[picker.SelectedIndex]
+                    : null,
                 null,
                 baseline.DisplayValue,
                 baseline.UseCustomValue));
@@ -2122,6 +2573,40 @@ namespace ASLM.Pages
             Grid.SetColumn(toggle.View, 1);
 
             return row;
+        }
+
+        /// <summary>
+        /// Creates a compact secondary action button used inside the Ollama account card.
+        /// </summary>
+        private static Button CreateInlineActionButton(string text, EventHandler clicked)
+        {
+            var button = new Button
+            {
+                Text = text,
+                FontSize = 13,
+                HeightRequest = 36,
+                MinimumHeightRequest = 36,
+                CornerRadius = 6,
+                Padding = new Thickness(14, 0),
+                HorizontalOptions = LayoutOptions.Start
+            };
+
+            ApplyActionButtonState(button, true);
+            button.Clicked += clicked;
+            return button;
+        }
+
+        /// <summary>
+        /// Applies the Ollama account button color for the current sign-in state.
+        /// </summary>
+        private static void ApplyOllamaAccountButtonState(Button button, bool isSignedIn)
+        {
+            button.BackgroundColor = isSignedIn
+                ? Color.FromArgb("#FF453A")
+                : Color.FromArgb("#0A84FF");
+            button.TextColor = Colors.White;
+            button.BorderWidth = 0;
+            button.Opacity = button.IsEnabled ? 1.0 : 0.55;
         }
 
         /// <summary>
@@ -2525,23 +3010,6 @@ namespace ASLM.Pages
         private static bool IsActiveEngineSelector(ModuleSetting setting) =>
             string.Equals(setting.Key, "llm-engine", StringComparison.OrdinalIgnoreCase) &&
             setting.AllowedValues is { Count: > 0 };
-
-        /// <summary>
-        /// Resolves a human-readable label for one allowed engine value using sibling name settings when available.
-        /// </summary>
-        private static string ResolveChoiceLabel(ModuleConfig module, string value)
-        {
-            var nameSetting = module.Settings.FirstOrDefault(setting =>
-                setting.Key.Equals($"{value}_name", StringComparison.OrdinalIgnoreCase));
-
-            if (nameSetting == null)
-            {
-                return value;
-            }
-
-            var label = nameSetting.FormatValueForDisplay(nameSetting.Value ?? nameSetting.Default);
-            return string.IsNullOrWhiteSpace(label) ? value : label;
-        }
 
         /// <summary>
         /// Builds the save confirmation message, including deferred runtime updates when present.

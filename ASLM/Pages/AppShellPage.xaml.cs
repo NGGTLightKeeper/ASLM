@@ -238,6 +238,12 @@ namespace ASLM.Pages
         {
             if (sender is Button button)
             {
+                if (button == UploadModulesButton)
+                {
+                    OpenDownloadOverlay();
+                    return;
+                }
+
                 if (button == SettingsButton)
                 {
                     OpenSettingsOverlay();
@@ -248,6 +254,11 @@ namespace ASLM.Pages
             }
         }
 
+        // Overlay navigation
+
+        /// <summary>
+        /// Opens the shared settings overlay and refreshes it before showing.
+        /// </summary>
         private void OpenSettingsOverlay()
         {
             _settingsView ??= _services.GetRequiredService<SettingsView>();
@@ -262,7 +273,35 @@ namespace ASLM.Pages
             OverlayContainer.IsVisible = true;
         }
 
+        /// <summary>
+        /// Opens the shared download overlay and refreshes it before showing.
+        /// </summary>
+        private void OpenDownloadOverlay()
+        {
+            _downloadModulesView ??= _services.GetRequiredService<DownloadModulesView>();
+            if (_downloadModulesView is DownloadModulesView downloadModulesView)
+            {
+                downloadModulesView.CloseRequested -= OnDownloadCloseRequested;
+                downloadModulesView.CloseRequested += OnDownloadCloseRequested;
+                _ = downloadModulesView.OpenAsync();
+            }
+
+            OverlayContainer.Content = _downloadModulesView;
+            OverlayContainer.IsVisible = true;
+        }
+
+        /// <summary>
+        /// Hides the overlay container when the settings view requests close.
+        /// </summary>
         private void OnSettingsCloseRequested(object? sender, EventArgs e)
+        {
+            OverlayContainer.IsVisible = false;
+        }
+
+        /// <summary>
+        /// Hides the overlay container when the download view requests close.
+        /// </summary>
+        private void OnDownloadCloseRequested(object? sender, EventArgs e)
         {
             OverlayContainer.IsVisible = false;
         }
@@ -389,8 +428,14 @@ namespace ASLM.Pages
 
             if (button == UploadModulesButton)
             {
-                _downloadModulesView ??= _services.GetRequiredService<DownloadModulesView>();
-                return _downloadModulesView;
+                if (_homeView == null)
+                {
+                    var homeView = _services.GetRequiredService<HomeView>();
+                    homeView.Initialize(this);
+                    _homeView = homeView;
+                }
+
+                return ContentArea.Content ?? _homeView;
             }
 
             return new Label { Text = "Unknown page", TextColor = Colors.White };
@@ -561,7 +606,7 @@ namespace ASLM.Pages
                 return Task.CompletedTask;
             }
 
-            // Start all enabled modules in parallel — no artificial delay between them.
+            // Start all enabled modules in parallel with no artificial delay between them.
             foreach (var module in enabledModules)
             {
                 var logProgress = new Progress<string>(message =>
