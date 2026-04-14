@@ -61,7 +61,7 @@
                       ColumnDefinitions="*,Auto"
                       Margin="0,0,0,14">
                     <Label x:Name="ActiveCategoryTitleLabel"
-                           Text="Settings"
+                           Text=""
                            FontSize="17"
                            FontAttributes="Bold"
                            TextColor="{StaticResource LabelPrimary}"
@@ -89,7 +89,9 @@
                                          Spacing="12"
                                          Padding="0,0,4,0">
 
-                        <VerticalStackLayout x:Name="AslmSettingsContainer" Spacing="14">
+                        <VerticalStackLayout x:Name="AslmSettingsContainer"
+                                             Spacing="14"
+                                             IsVisible="False">
                             <VerticalStackLayout x:Name="UserProfileSection" Spacing="8">
                                 <Label Text="Display Name"
                                        FontSize="15"
@@ -199,6 +201,7 @@
                                 MinimumHeightRequest="36"
                                 CornerRadius="6"
                                 Padding="0"
+                                IsVisible="False"
                                 Clicked="OnDefaultClicked" />
 
                         <Button x:Name="SaveButton"
@@ -210,6 +213,7 @@
                                 MinimumHeightRequest="36"
                                 CornerRadius="6"
                                 Padding="0"
+                                IsVisible="False"
                                 BackgroundColor="{StaticResource BackgroundSecondary}"
                                 TextColor="{StaticResource LabelSecondary}"
                                 Clicked="OnSaveClicked" />
@@ -223,6 +227,7 @@
                                 MinimumHeightRequest="36"
                                 CornerRadius="6"
                                 Padding="0"
+                                IsVisible="False"
                                 BackgroundColor="{StaticResource BackgroundSecondary}"
                                 TextColor="{StaticResource LabelSecondary}"
                                 Clicked="OnSaveAndRestartClicked" />
