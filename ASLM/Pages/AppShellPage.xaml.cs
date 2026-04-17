@@ -30,6 +30,7 @@ namespace ASLM.Pages
         private const string LabelModules = "Modules";
         private const string LabelDownload = "Download";
         private const string LabelSettings = "Settings";
+        private const int MaxConcurrentModuleStarts = 2;
 
         private static readonly Color ActiveTextColor = Colors.White;
         private static readonly Color InactiveTextColor = Color.FromArgb("#8E8E93");
@@ -54,6 +55,7 @@ namespace ASLM.Pages
 
         private Button? _activeNavButton;
         private Button[] _navButtons = [];
+        private CancellationTokenSource? _pageButtonLayoutCts;
 
         // Initialization
 
@@ -523,28 +525,46 @@ namespace ASLM.Pages
                 ModulePagePanel.Children.Add(button);
             }
 
-            // Re-apply ContentLayout in a retry loop until images from disk are fully loaded.
-            // At restart the first iteration is usually enough; at cold start it may take longer.
-            _ = Task.Run(async () =>
+            _pageButtonLayoutCts?.Cancel();
+            _pageButtonLayoutCts?.Dispose();
+            _pageButtonLayoutCts = new CancellationTokenSource();
+            _ = RefreshPageButtonLayoutAsync(_pageButtonLayoutCts.Token);
+        }
+
+        /// <summary>
+        /// Re-applies page button layout after image-backed buttons finish their first native measure.
+        /// </summary>
+        private async Task RefreshPageButtonLayoutAsync(CancellationToken ct)
+        {
+            try
             {
-                for (var i = 0; i < 20; i++)
+                foreach (var delay in new[] { 16, 80, 160, 320 })
                 {
-                    await Task.Delay(50);
-                    Dispatcher.Dispatch(() =>
-                    {
-                        var spacing = _panelExpanded ? 14 : 0;
-                        foreach (var child in ModulePagePanel.Children)
-                        {
-                            if (child is Button btn)
-                            {
-                                btn.ContentLayout = new Button.ButtonContentLayout(
-                                    Button.ButtonContentLayout.ImagePosition.Left, spacing);
-                                UpdateButtonAlignment(btn);
-                            }
-                        }
-                    });
+                    await Task.Delay(delay, ct);
+                    Dispatcher.Dispatch(ApplyPageButtonLayout);
                 }
-            });
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        /// <summary>
+        /// Applies text/icon spacing and native alignment to all dynamic module page buttons.
+        /// </summary>
+        private void ApplyPageButtonLayout()
+        {
+            var spacing = _panelExpanded ? 14 : 0;
+            foreach (var child in ModulePagePanel.Children)
+            {
+                if (child is Button button)
+                {
+                    button.ContentLayout = new Button.ButtonContentLayout(
+                        Button.ButtonContentLayout.ImagePosition.Left,
+                        spacing);
+                    UpdateButtonAlignment(button);
+                }
+            }
         }
 
         // Module page activation
@@ -595,7 +615,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Starts enabled modules that expose run commands when the shell opens.
         /// </summary>
-        private Task StartEnabledModulesAsync()
+        private async Task StartEnabledModulesAsync()
         {
             var enabledModules = _allModules
                 .Where(module => module.Status.Enabled && module.Commands.Run.Count > 0)
@@ -603,19 +623,26 @@ namespace ASLM.Pages
 
             if (enabledModules.Count == 0)
             {
-                return Task.CompletedTask;
+                return;
             }
 
-            // Start all enabled modules in parallel with no artificial delay between them.
-            foreach (var module in enabledModules)
+            using var startThrottle = new SemaphoreSlim(MaxConcurrentModuleStarts);
+            var startTasks = enabledModules.Select(async module =>
             {
-                var logProgress = new Progress<string>(message =>
-                    System.Diagnostics.Debug.WriteLine($"[ModuleStart:{module.Name}] {message}"));
+                await startThrottle.WaitAsync();
+                try
+                {
+                    var logProgress = new Progress<string>(message => System.Diagnostics.Debug.WriteLine($"[ModuleStart:{module.Name}] {message}"));
 
-                _ = Task.Run(() => _moduleRunner.ExecuteRunAsync(module, logProgress, CancellationToken.None));
-            }
+                    await _moduleRunner.ExecuteRunAsync(module, logProgress, CancellationToken.None);
+                }
+                finally
+                {
+                    startThrottle.Release();
+                }
+            });
 
-            return Task.CompletedTask;
+            await Task.WhenAll(startTasks);
         }
 
 

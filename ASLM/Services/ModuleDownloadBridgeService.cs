@@ -15,6 +15,8 @@ namespace ASLM.Services
     /// </summary>
     public class ModuleDownloadBridgeService
     {
+        private const int MaxBridgeOutputCharacters = 2_000_000;
+
         private readonly EngineInstaller _engineInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly ILogger<ModuleDownloadBridgeService> _logger;
@@ -263,8 +265,8 @@ namespace ASLM.Services
                 await process.StandardInput.FlushAsync();
                 process.StandardInput.Close();
 
-                var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
-                var stderrTask = process.StandardError.ReadToEndAsync(ct);
+                var stdoutTask = ReadBoundedToEndAsync(process.StandardOutput, ct);
+                var stderrTask = ReadBoundedToEndAsync(process.StandardError, ct);
 
                 await process.WaitForExitAsync(ct);
 
@@ -323,6 +325,44 @@ namespace ASLM.Services
         {
             return bridge.Operations.Count == 0 ||
                    bridge.Operations.Any(candidate => string.Equals(candidate, operation, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Drains a bridge output stream while keeping only a bounded amount of text in memory.
+        /// </summary>
+        private static async Task<string> ReadBoundedToEndAsync(StreamReader reader, CancellationToken ct)
+        {
+            var builder = new StringBuilder();
+            var buffer = new char[8192];
+            var truncated = false;
+
+            while (true)
+            {
+                var read = await reader.ReadAsync(buffer.AsMemory(0, buffer.Length), ct);
+                if (read == 0)
+                {
+                    break;
+                }
+
+                var remainingCapacity = MaxBridgeOutputCharacters - builder.Length;
+                if (remainingCapacity > 0)
+                {
+                    builder.Append(buffer, 0, Math.Min(read, remainingCapacity));
+                }
+
+                if (read > remainingCapacity)
+                {
+                    truncated = true;
+                }
+            }
+
+            if (truncated)
+            {
+                builder.AppendLine();
+                builder.Append("[output truncated]");
+            }
+
+            return builder.ToString();
         }
 
         /// <summary>

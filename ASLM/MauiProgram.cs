@@ -48,6 +48,7 @@ namespace ASLM
             builder.Services.AddSingleton<EngineInstaller>();
             builder.Services.AddSingleton<ModuleInstaller>();
             builder.Services.AddSingleton<ModuleConsoleService>();
+            builder.Services.AddSingleton<ProcessSnapshotService>();
             builder.Services.AddSingleton<ProcessTracker>();
             builder.Services.AddSingleton<ModuleRunner>();
             builder.Services.AddSingleton<PortManager>();

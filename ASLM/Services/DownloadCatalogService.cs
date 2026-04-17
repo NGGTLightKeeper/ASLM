@@ -12,6 +12,8 @@ namespace ASLM.Services
     /// </summary>
     public class DownloadCatalogService
     {
+        private const int MaxConcurrentBridgeRequests = 4;
+
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleDownloadBridgeService _bridgeService;
         private readonly DownloadCatalogStateService _stateService;
@@ -53,13 +55,93 @@ namespace ASLM.Services
 
             var warnings = new List<string>();
             var categoryBuilders = new Dictionary<string, CategoryBuilder>(StringComparer.OrdinalIgnoreCase);
+            var mergeLock = new object();
+            using var bridgeThrottle = new SemaphoreSlim(MaxConcurrentBridgeRequests);
 
-            foreach (var module in bridgeModules)
+            var loadTasks = bridgeModules.Select(async module =>
             {
-                List<ModuleDownloadCategoryPayload> categories;
+                await bridgeThrottle.WaitAsync(ct);
                 try
                 {
-                    categories = await _bridgeService.GetCategoriesAsync(module, preferCached, forceRefresh, ct);
+                    await LoadModuleCatalogAsync(
+                        module,
+                        queryText,
+                        filters,
+                        preferCached,
+                        forceRefresh,
+                        warnings,
+                        categoryBuilders,
+                        mergeLock,
+                        ct);
+                }
+                finally
+                {
+                    bridgeThrottle.Release();
+                }
+            });
+
+            await Task.WhenAll(loadTasks);
+
+            // Convert builders only after every module has contributed its portion of the catalog.
+            return new DownloadCatalogSnapshot
+            {
+                Warnings = warnings,
+                Categories = categoryBuilders.Values
+                    .Select(builder => builder.ToCategory(_stateService))
+                    .OrderBy(category => category.SortOrder)
+                    .ThenBy(category => category.Title, StringComparer.OrdinalIgnoreCase)
+                    .ToList()
+            };
+        }
+
+        /// <summary>
+        /// Loads and merges the bridge catalog exposed by one module.
+        /// </summary>
+        private async Task LoadModuleCatalogAsync(
+            ModuleConfig module,
+            string? queryText,
+            IReadOnlyCollection<string>? filters,
+            bool preferCached,
+            bool forceRefresh,
+            List<string> warnings,
+            Dictionary<string, CategoryBuilder> categoryBuilders,
+            object mergeLock,
+            CancellationToken ct)
+        {
+            List<ModuleDownloadCategoryPayload> categories;
+            try
+            {
+                categories = await _bridgeService.GetCategoriesAsync(module, preferCached, forceRefresh, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load download categories for module {ModuleId}.", module.Id);
+                AddWarning(warnings, mergeLock, $"{module.Name}: download categories could not be loaded.");
+                return;
+            }
+
+            foreach (var category in categories)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                // Group by the shared category key so equivalent provider catalogs merge into one UI surface.
+                if (string.IsNullOrWhiteSpace(category.Id))
+                {
+                    continue;
+                }
+
+                var groupKey = !string.IsNullOrWhiteSpace(category.GroupKey)
+                    ? category.GroupKey
+                    : $"{module.Id}:{category.Id}";
+
+                ModuleDownloadBridgeResponse itemResponse;
+                try
+                {
+                    itemResponse = await _bridgeService.GetItemsAsync(module, category.Id, queryText, filters, preferCached, forceRefresh, ct);
                 }
                 catch (OperationCanceledException)
                 {
@@ -67,42 +149,14 @@ namespace ASLM.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to load download categories for module {ModuleId}.", module.Id);
-                    warnings.Add($"{module.Name}: download categories could not be loaded.");
+                    _logger.LogWarning(ex, "Failed to load download items for module {ModuleId} category {CategoryId}.", module.Id, category.Id);
+                    AddWarning(warnings, mergeLock, $"{module.Name}: {category.Title} could not be loaded.");
                     continue;
                 }
 
-                foreach (var category in categories)
+                lock (mergeLock)
                 {
-                    ct.ThrowIfCancellationRequested();
-
-                    // Group by the shared category key so equivalent provider catalogs merge into one UI surface.
-                    if (string.IsNullOrWhiteSpace(category.Id))
-                    {
-                        continue;
-                    }
-
-                    var groupKey = !string.IsNullOrWhiteSpace(category.GroupKey)
-                        ? category.GroupKey
-                        : $"{module.Id}:{category.Id}";
-
                     var categoryBuilder = GetOrCreateCategoryBuilder(categoryBuilders, groupKey, category);
-
-                    ModuleDownloadBridgeResponse itemResponse;
-                    try
-                    {
-                        itemResponse = await _bridgeService.GetItemsAsync(module, category.Id, queryText, filters, preferCached, forceRefresh, ct);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        throw;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Failed to load download items for module {ModuleId} category {CategoryId}.", module.Id, category.Id);
-                        warnings.Add($"{module.Name}: {category.Title} could not be loaded.");
-                        continue;
-                    }
 
                     foreach (var filterPayload in itemResponse.Filters)
                     {
@@ -131,26 +185,25 @@ namespace ASLM.Services
                             ? item.GroupKey
                             : groupKey;
 
-                        if (!string.Equals(resourceGroupKey, categoryBuilder.GroupKey, StringComparison.OrdinalIgnoreCase))
-                        {
-                            categoryBuilder = GetOrCreateCategoryBuilder(categoryBuilders, resourceGroupKey, category);
-                        }
+                        var itemCategoryBuilder = string.Equals(resourceGroupKey, categoryBuilder.GroupKey, StringComparison.OrdinalIgnoreCase)
+                            ? categoryBuilder
+                            : GetOrCreateCategoryBuilder(categoryBuilders, resourceGroupKey, category);
 
-                        MergeItem(categoryBuilder, module, category, item);
+                        MergeItem(itemCategoryBuilder, module, category, item);
                     }
                 }
             }
+        }
 
-            // Convert builders only after every module has contributed its portion of the catalog.
-            return new DownloadCatalogSnapshot
+        /// <summary>
+        /// Adds one warning while bridge catalog loading runs in parallel.
+        /// </summary>
+        private static void AddWarning(List<string> warnings, object mergeLock, string warning)
+        {
+            lock (mergeLock)
             {
-                Warnings = warnings,
-                Categories = categoryBuilders.Values
-                    .Select(builder => builder.ToCategory(_stateService))
-                    .OrderBy(category => category.SortOrder)
-                    .ThenBy(category => category.Title, StringComparer.OrdinalIgnoreCase)
-                    .ToList()
-            };
+                warnings.Add(warning);
+            }
         }
 
         /// <summary>

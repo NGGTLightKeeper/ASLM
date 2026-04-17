@@ -42,6 +42,7 @@ namespace ASLM.Pages
         private readonly List<SettingControlMapping> _settingMappings = [];
         private readonly Dictionary<string, SettingBaseline> _settingBaselines = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Border> _categoryButtons = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _runtimeLoadedModuleIds = new(StringComparer.OrdinalIgnoreCase);
         private List<ModuleConfig> _loadedModules = [];
         private List<SettingsCategory> _categories = [];
         private SettingsCategory? _activeCategory;
@@ -57,6 +58,7 @@ namespace ASLM.Pages
         private bool _isSaving;
         private bool _isOllamaAccountActionRunning;
         private bool _isOllamaMetadataRefreshRunning;
+        private int _actionButtonUpdateQueued;
         private string _ollamaAccountAction = string.Empty;
         private Button? _ollamaAccountButton;
         private Label? _ollamaAccountStatusLabel;
@@ -352,9 +354,9 @@ namespace ASLM.Pages
             ApplyFlatEntryStyle(ThirdPartyPortEntry);
             ApplyScrollViewChrome(CategoryScroll, isSidebar: true);
             ApplyScrollViewChrome(SettingsScroll, isSidebar: false);
-            UsernameEntry.TextChanged += (_, _) => UpdateActionButtons();
-            OfficialPortEntry.TextChanged += (_, _) => UpdateActionButtons();
-            ThirdPartyPortEntry.TextChanged += (_, _) => UpdateActionButtons();
+            UsernameEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
+            OfficialPortEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
+            ThirdPartyPortEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
             SizeChanged += OnViewSizeChanged;
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
@@ -423,7 +425,7 @@ namespace ASLM.Pages
 
             LoadAslmDraftsFromAppData();
             LoadOllamaDraftsFromService();
-            await LoadModuleDraftsAsync(reloadModules: true, reloadRuntimeValues: true);
+            await LoadModuleDraftsAsync(reloadModules: true, reloadRuntimeValues: false);
 
             _categories = CreateOrderedCategories();
 
@@ -542,36 +544,48 @@ namespace ASLM.Pages
             if (reloadModules || _loadedModules.Count == 0)
             {
                 _loadedModules = await _moduleInstaller.DiscoverModulesAsync();
+                _runtimeLoadedModuleIds.Clear();
+                _settingBaselines.Clear();
             }
 
             if (reloadRuntimeValues)
             {
+                _runtimeLoadedModuleIds.Clear();
                 _settingBaselines.Clear();
             }
 
             foreach (var module in _loadedModules)
             {
-                var settings = module.Settings?.Where(ShouldDisplaySetting).ToList() ?? [];
-                if (settings.Count == 0)
-                {
-                    continue;
-                }
-
-                var loaded = reloadRuntimeValues
-                    ? await Task.WhenAll(settings.Select(setting => LoadSettingValueAsync(module, setting)))
-                    : settings.Select(setting => new LoadedSetting(setting, GetFallbackValue(module, setting))).ToArray();
-
+                await LoadModuleDraftAsync(module, reloadRuntimeValues);
                 if (reloadRuntimeValues)
                 {
-                    UpdateSettingBaselines(module, loaded);
+                    _runtimeLoadedModuleIds.Add(GetModuleRuntimeKey(module));
                 }
+            }
+        }
 
-                foreach (var item in loaded)
+        /// <summary>
+        /// Loads one module's visible settings, optionally using live runtime getters.
+        /// </summary>
+        private async Task LoadModuleDraftAsync(ModuleConfig module, bool reloadRuntimeValues)
+        {
+            var settings = module.Settings?.Where(ShouldDisplaySetting).ToList() ?? [];
+            if (settings.Count == 0)
+            {
+                return;
+            }
+
+            var loaded = reloadRuntimeValues
+                ? await Task.WhenAll(settings.Select(setting => LoadSettingValueAsync(module, setting)))
+                : settings.Select(setting => new LoadedSetting(setting, GetFallbackValue(module, setting))).ToArray();
+
+            UpdateSettingBaselines(module, loaded);
+
+            foreach (var item in loaded)
+            {
+                if (!item.Setting.IsAutomaticallyManaged || item.Setting.UseCustomValue)
                 {
-                    if (!item.Setting.IsAutomaticallyManaged || item.Setting.UseCustomValue)
-                    {
-                        item.Setting.Value = item.Value;
-                    }
+                    item.Setting.Value = item.Value;
                 }
             }
         }
@@ -721,7 +735,10 @@ namespace ASLM.Pages
             }
         }
 
-                private async Task TrySelectCategoryAsync(SettingsCategory category)
+        /// <summary>
+        /// Switches to the requested category after preserving or discarding pending edits.
+        /// </summary>
+        private async Task TrySelectCategoryAsync(SettingsCategory category)
         {
             if (_isSaving || _isSwitchingCategory)
             {
@@ -780,12 +797,92 @@ namespace ASLM.Pages
                     break;
                 case SettingsCategoryKind.Module:
                     RenderModuleCategory(category.Module!);
+                    _ = RefreshActiveModuleRuntimeValuesAsync(category);
                     break;
             }
 
             UpdateSelectorButtonStates();
             UpdateActionButtons();
         }
+
+        /// <summary>
+        /// Loads live runtime values only for the currently visible module settings page.
+        /// </summary>
+        private async Task RefreshActiveModuleRuntimeValuesAsync(SettingsCategory category)
+        {
+            if (category.Kind != SettingsCategoryKind.Module || category.Module == null)
+            {
+                return;
+            }
+
+            var module = category.Module;
+            var runtimeKey = GetModuleRuntimeKey(module);
+            if (_runtimeLoadedModuleIds.Contains(runtimeKey))
+            {
+                return;
+            }
+
+            try
+            {
+                var settings = module.Settings?.Where(ShouldDisplaySetting).ToList() ?? [];
+                if (settings.Count == 0)
+                {
+                    _runtimeLoadedModuleIds.Add(runtimeKey);
+                    return;
+                }
+
+                var loaded = await Task.WhenAll(settings.Select(setting => LoadSettingValueAsync(module, setting)));
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    var stillActive =
+                        _activeCategory?.Kind == SettingsCategoryKind.Module &&
+                        _activeCategory.Module != null &&
+                        string.Equals(_activeCategory.Module.SourcePath, module.SourcePath, StringComparison.OrdinalIgnoreCase);
+
+                    if (stillActive && HasUnsavedChanges())
+                    {
+                        return;
+                    }
+
+                    UpdateSettingBaselines(module, loaded);
+                    foreach (var item in loaded)
+                    {
+                        if (!item.Setting.IsAutomaticallyManaged || item.Setting.UseCustomValue)
+                        {
+                            item.Setting.Value = item.Value;
+                        }
+                    }
+
+                    _runtimeLoadedModuleIds.Add(runtimeKey);
+
+                    if (stillActive)
+                    {
+                        RenderModuleCategory(module);
+                        UpdateActionButtons();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to refresh runtime settings for module '{module.Name}': {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Forces live runtime values for one module after settings are saved.
+        /// </summary>
+        private async Task ReloadModuleRuntimeValuesAsync(ModuleConfig module)
+        {
+            _runtimeLoadedModuleIds.Remove(GetModuleRuntimeKey(module));
+            await LoadModuleDraftAsync(module, reloadRuntimeValues: true);
+            _runtimeLoadedModuleIds.Add(GetModuleRuntimeKey(module));
+        }
+
+        /// <summary>
+        /// Returns the stable key used to remember whether live runtime values were already loaded.
+        /// </summary>
+        private static string GetModuleRuntimeKey(ModuleConfig module) => module.SourcePath;
 
         /// <summary>
         /// Returns the category that matches the stored category identifier, if it still exists.
@@ -828,6 +925,29 @@ namespace ASLM.Pages
 
             button.BackgroundColor = isActive ? ActiveCategoryBackgroundColor : InactiveCategoryBackgroundColor;
             button.Opacity = isActive ? 1.0 : 0.92;
+        }
+
+        /// <summary>
+        /// Coalesces rapid editor changes before recomputing save/reset button state.
+        /// </summary>
+        private void QueueActionButtonUpdate()
+        {
+            if (Dispatcher == null)
+            {
+                UpdateActionButtons();
+                return;
+            }
+
+            if (Interlocked.Exchange(ref _actionButtonUpdateQueued, 1) == 1)
+            {
+                return;
+            }
+
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(50), () =>
+            {
+                Interlocked.Exchange(ref _actionButtonUpdateQueued, 0);
+                UpdateActionButtons();
+            });
         }
 
         /// <summary>
@@ -1389,7 +1509,7 @@ namespace ASLM.Pages
                         var moduleSaveResult = await SaveActiveModuleAsync(_activeCategory.Module!);
                         if (moduleSaveResult.TouchedModules.Count > 0)
                         {
-                            await LoadModuleDraftsAsync(reloadModules: false, reloadRuntimeValues: true);
+                            await ReloadModuleRuntimeValuesAsync(_activeCategory.Module!);
                         }
 
                         var activeCategoryId = _activeCategory.Id;
@@ -2284,7 +2404,7 @@ namespace ASLM.Pages
                 };
             }
 
-            toggle.Toggled += (_, _) => UpdateActionButtons();
+            toggle.Toggled += (_, _) => QueueActionButtonUpdate();
 
             return (toggle.View, new SettingControlMapping(
                 module,
@@ -2322,7 +2442,7 @@ namespace ASLM.Pages
             var selectedIndex = allowedValues.FindIndex(option =>
                 string.Equals(option, selectedValue, StringComparison.OrdinalIgnoreCase));
             picker.SelectedIndex = selectedIndex >= 0 ? selectedIndex : (allowedValues.Count > 0 ? 0 : -1);
-            picker.SelectedIndexChanged += (_, _) => UpdateActionButtons();
+            picker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
 
             return (pickerContainer, new SettingControlMapping(
                 module,
@@ -2361,7 +2481,7 @@ namespace ASLM.Pages
             }
 
             picker.SelectedIndex = selectedIndex;
-            picker.SelectedIndexChanged += (_, _) => UpdateActionButtons();
+            picker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
 
             return (pickerContainer, new SettingControlMapping(
                 module,
@@ -2382,7 +2502,7 @@ namespace ASLM.Pages
             var baseline = GetSettingBaseline(module, setting, value);
             var (field, entry) = CreateTextField(setting.FormatValueForDisplay(value));
             entry.Keyboard = Keyboard.Numeric;
-            entry.TextChanged += (_, _) => UpdateActionButtons();
+            entry.TextChanged += (_, _) => QueueActionButtonUpdate();
 
             return (field, new SettingControlMapping(module, setting, () => entry.Text, null, baseline.DisplayValue, baseline.UseCustomValue));
         }
@@ -2394,7 +2514,7 @@ namespace ASLM.Pages
         {
             var baseline = GetSettingBaseline(module, setting, value);
             var (field, entry) = CreateTextField(setting.FormatValueForDisplay(value));
-            entry.TextChanged += (_, _) => UpdateActionButtons();
+            entry.TextChanged += (_, _) => QueueActionButtonUpdate();
             return (field, new SettingControlMapping(module, setting, () => entry.Text, null, baseline.DisplayValue, baseline.UseCustomValue));
         }
 
@@ -2405,7 +2525,7 @@ namespace ASLM.Pages
         {
             var baseline = GetSettingBaseline(module, setting, value);
             var (field, entry) = CreatePasswordField(setting.FormatValueForDisplay(value));
-            entry.TextChanged += (_, _) => UpdateActionButtons();
+            entry.TextChanged += (_, _) => QueueActionButtonUpdate();
             return (field, new SettingControlMapping(module, setting, () => entry.Text, null, baseline.DisplayValue, baseline.UseCustomValue));
         }
 
@@ -2437,7 +2557,7 @@ namespace ASLM.Pages
                     lastCustomValue = args.NewTextValue ?? string.Empty;
                 }
 
-                UpdateActionButtons();
+                QueueActionButtonUpdate();
             };
 
             customToggle.Toggled += (_, args) =>
@@ -2447,7 +2567,7 @@ namespace ASLM.Pages
                     : setting.FormatValueForDisplay(_moduleRunner.GetResolvedSettingValue(module, setting));
 
                 ApplyTextEntryState(entry, !args.Value);
-                UpdateActionButtons();
+                QueueActionButtonUpdate();
             };
 
             ApplyTextEntryState(entry, !setting.UseCustomValue);

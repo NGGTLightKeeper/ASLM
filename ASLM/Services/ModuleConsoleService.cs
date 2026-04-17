@@ -18,10 +18,12 @@ namespace ASLM.Services
         private const int MaxDisplayedCharacters = 60000;
         private const int MaxStoredLineLength = 4000;
         private const int MaxDisplayedLineLength = 1200;
+        private const int StateChangedDebounceMilliseconds = 75;
 
         private readonly object _sync = new();
         private readonly Dictionary<string, ModuleConsoleModuleState> _modules = new(StringComparer.OrdinalIgnoreCase);
         private long _lineSequence;
+        private int _stateChangeQueued;
 
         /// <summary>
         /// Raised whenever the console store changes.
@@ -409,16 +411,14 @@ namespace ASLM.Services
                     return ["No module logs yet."];
                 }
 
-                var mergedEntries = BuildUnifiedModuleEntries(moduleState)
-                    .OrderBy(line => line.Sequence)
-                    .ToList();
+                var (mergedEntries, totalLineCount) = SelectLatestDisplayEntries(BuildUnifiedModuleEntries(moduleState));
 
-                if (mergedEntries.Count == 0)
+                if (totalLineCount == 0)
                 {
                     return ["No module logs yet."];
                 }
 
-                return BuildDisplayLines(mergedEntries);
+                return BuildDisplayLines(mergedEntries, totalLineCount);
             }
         }
 
@@ -435,18 +435,16 @@ namespace ASLM.Services
             lock (_sync)
             {
                 var modulePathSet = moduleSourcePaths.ToHashSet(StringComparer.OrdinalIgnoreCase);
-                var mergedEntries = _modules.Values
+                var (mergedEntries, totalLineCount) = SelectLatestDisplayEntries(_modules.Values
                     .Where(module => modulePathSet.Contains(module.SourcePath))
-                    .SelectMany(BuildUnifiedModuleEntries)
-                    .OrderBy(line => line.Sequence)
-                    .ToList();
+                    .SelectMany(BuildUnifiedModuleEntries));
 
-                if (mergedEntries.Count == 0)
+                if (totalLineCount == 0)
                 {
                     return ["No active module logs yet."];
                 }
 
-                return BuildDisplayLines(mergedEntries);
+                return BuildDisplayLines(mergedEntries, totalLineCount);
             }
         }
 
@@ -570,24 +568,60 @@ namespace ASLM.Services
             return line[..MaxDisplayedLineLength] + " ...";
         }
 
-        private static IReadOnlyList<string> BuildDisplayLines(IReadOnlyList<ModuleConsoleLineState> lines)
+        private static (List<ModuleConsoleLineState> Lines, int TotalCount) SelectLatestDisplayEntries(IEnumerable<ModuleConsoleLineState> entries)
         {
-            var startIndex = Math.Max(0, lines.Count - MaxDisplayedLines);
-            var selectedLines = lines
-                .Skip(startIndex)
-                .Select(line => TrimLineForDisplay(line.Text))
-                .ToList();
+            var heap = new PriorityQueue<ModuleConsoleLineState, long>();
+            var totalCount = 0;
 
-            var currentLength = selectedLines.Sum(line => line.Length + Environment.NewLine.Length);
-            var truncatedByCharacters = false;
-            while (selectedLines.Count > 1 && currentLength > MaxDisplayedCharacters)
+            foreach (var entry in entries)
             {
-                truncatedByCharacters = true;
-                currentLength -= selectedLines[0].Length + Environment.NewLine.Length;
-                selectedLines.RemoveAt(0);
+                totalCount++;
+                heap.Enqueue(entry, entry.Sequence);
+                if (heap.Count > MaxDisplayedLines)
+                {
+                    heap.Dequeue();
+                }
             }
 
-            var trimmedLineCount = lines.Count - selectedLines.Count;
+            var latestEntries = new List<ModuleConsoleLineState>(heap.Count);
+            while (heap.TryDequeue(out var entry, out _))
+            {
+                latestEntries.Add(entry);
+            }
+
+            latestEntries.Sort((left, right) => left.Sequence.CompareTo(right.Sequence));
+            return (latestEntries, totalCount);
+        }
+
+        private static IReadOnlyList<string> BuildDisplayLines(IReadOnlyList<ModuleConsoleLineState> lines, int? totalLineCountOverride = null)
+        {
+            var startIndex = Math.Max(0, lines.Count - MaxDisplayedLines);
+            var selectedLines = new List<string>(lines.Count - startIndex);
+            var currentLength = 0;
+
+            for (var index = startIndex; index < lines.Count; index++)
+            {
+                var text = TrimLineForDisplay(lines[index].Text);
+                selectedLines.Add(text);
+                currentLength += text.Length + Environment.NewLine.Length;
+            }
+
+            var truncatedByCharacters = false;
+            var firstVisibleIndex = 0;
+            while (selectedLines.Count - firstVisibleIndex > 1 && currentLength > MaxDisplayedCharacters)
+            {
+                truncatedByCharacters = true;
+                currentLength -= selectedLines[firstVisibleIndex].Length + Environment.NewLine.Length;
+                firstVisibleIndex++;
+            }
+
+            if (firstVisibleIndex > 0)
+            {
+                selectedLines.RemoveRange(0, firstVisibleIndex);
+            }
+
+            var totalLineCount = totalLineCountOverride ?? lines.Count;
+            var trimmedLineCount = totalLineCount - selectedLines.Count;
             if (trimmedLineCount > 0 || truncatedByCharacters)
             {
                 selectedLines.Insert(0, $"[Console output trimmed: showing the latest {selectedLines.Count} lines]");
@@ -664,7 +698,17 @@ namespace ASLM.Services
 
         private void RaiseStateChanged()
         {
-            StateChanged?.Invoke(this, EventArgs.Empty);
+            if (Interlocked.Exchange(ref _stateChangeQueued, 1) == 1)
+            {
+                return;
+            }
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(StateChangedDebounceMilliseconds);
+                Interlocked.Exchange(ref _stateChangeQueued, 0);
+                StateChanged?.Invoke(this, EventArgs.Empty);
+            });
         }
     }
 

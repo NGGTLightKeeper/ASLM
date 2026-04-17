@@ -6,7 +6,6 @@ using System.Globalization;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 using ASLM.Models;
@@ -310,12 +309,16 @@ namespace ASLM.Pages
             try
             {
                 // Query the aggregated catalog with the current search and filter state
-                var snapshot = await _catalogService.LoadCatalogAsync(
-                    queryText: SearchText,
-                    filters: GetSelectedFilterKeys(),
-                    preferCached: preferCached,
-                    forceRefresh: forceRefresh,
-                    ct: ct);
+                var queryText = SearchText;
+                var selectedFilters = GetSelectedFilterKeys();
+                var snapshot = await Task.Run(
+                    () => _catalogService.LoadCatalogAsync(
+                        queryText: queryText,
+                        filters: selectedFilters,
+                        preferCached: preferCached,
+                        forceRefresh: forceRefresh,
+                        ct: ct),
+                    ct);
                 if (ct.IsCancellationRequested) return;
 
                 var snapshotSignature = ComputeCatalogSignature(snapshot);
@@ -634,7 +637,9 @@ namespace ASLM.Pages
             try
             {
                 // Ignore late responses when the user has already moved to another item
-                var detail = await _catalogService.GetItemDetailAsync(item, preferCached, forceRefresh, ct);
+                var detail = await Task.Run(
+                    () => _catalogService.GetItemDetailAsync(item, preferCached, forceRefresh, ct),
+                    ct);
                 if (ct.IsCancellationRequested || _selectedItem?.Item.ResourceKey != itemResourceKey) return;
 
                 var detailSignature = ComputeDetailSignature(detail);
@@ -1171,51 +1176,75 @@ namespace ASLM.Pages
         // Compute a compact signature for catalog-level change detection
         private static string ComputeCatalogSignature(DownloadCatalogSnapshot snapshot)
         {
-            return JsonSerializer.Serialize(snapshot.Categories.Select(category => new
+            var builder = new StringBuilder();
+            builder.Append(snapshot.Categories.Count).Append(';');
+
+            foreach (var category in snapshot.Categories)
             {
-                category.GroupKey,
-                category.Title,
-                Filters = category.Filters.Select(filter => new
+                AppendSignatureSegment(builder, category.GroupKey);
+                AppendSignatureSegment(builder, category.Title);
+                builder.Append(category.Filters.Count).Append(';');
+
+                foreach (var filter in category.Filters)
                 {
-                    filter.Key,
-                    filter.Kind,
-                    filter.Selected,
-                    filter.SortOrder
-                }),
-                Items = category.Items.Select(item => new
+                    AppendSignatureSegment(builder, filter.Key);
+                    AppendSignatureSegment(builder, filter.Kind);
+                    builder.Append(filter.Selected ? '1' : '0').Append(';');
+                    builder.Append(filter.SortOrder).Append(';');
+                }
+
+                builder.Append(category.Items.Count).Append(';');
+                foreach (var item in category.Items)
                 {
-                    item.ResourceKey,
-                    item.Installed,
-                    item.InstalledVersion,
-                    item.VariantCount,
-                    item.SortOrder
-                })
-            }));
+                    AppendSignatureSegment(builder, item.ResourceKey);
+                    builder.Append(item.Installed ? '1' : '0').Append(';');
+                    AppendSignatureSegment(builder, item.InstalledVersion);
+                    builder.Append(item.VariantCount).Append(';');
+                    builder.Append(item.SortOrder).Append(';');
+                }
+            }
+
+            return builder.ToString();
         }
 
         // Compute a compact signature for detail-level change detection
         private static string ComputeDetailSignature(DownloadCatalogItemDetail detail)
         {
-            return JsonSerializer.Serialize(new
+            var builder = new StringBuilder();
+            AppendSignatureSegment(builder, detail.ResourceKey);
+            AppendSignatureSegment(builder, detail.DefaultVariantResourceKey);
+            builder.Append(detail.Variants.Count).Append(';');
+
+            foreach (var variant in detail.Variants)
             {
-                detail.ResourceKey,
-                detail.DefaultVariantResourceKey,
-                Variants = detail.Variants.Select(variant => new
-                {
-                    variant.ResourceKey,
-                    variant.Installed,
-                    variant.InstalledVersion,
-                    variant.Detail
-                }),
-                Blocks = detail.Blocks.Select(block => new
-                {
-                    block.Id,
-                    block.Format,
-                    block.Content,
-                    block.ContentUrl,
-                    block.SourceUrl
-                })
-            });
+                AppendSignatureSegment(builder, variant.ResourceKey);
+                builder.Append(variant.Installed ? '1' : '0').Append(';');
+                AppendSignatureSegment(builder, variant.InstalledVersion);
+                AppendSignatureSegment(builder, variant.Detail);
+            }
+
+            builder.Append(detail.Blocks.Count).Append(';');
+            foreach (var block in detail.Blocks)
+            {
+                AppendSignatureSegment(builder, block.Id);
+                AppendSignatureSegment(builder, block.Format);
+                AppendSignatureSegment(builder, block.Content);
+                AppendSignatureSegment(builder, block.ContentUrl);
+                AppendSignatureSegment(builder, block.SourceUrl);
+            }
+
+            return builder.ToString();
+        }
+
+        private static void AppendSignatureSegment(StringBuilder builder, string? value)
+        {
+            if (value == null)
+            {
+                builder.Append("-1:");
+                return;
+            }
+
+            builder.Append(value.Length).Append(':').Append(value).Append(';');
         }
 
         // Dialog sizing
@@ -1922,10 +1951,31 @@ namespace ASLM.Pages
             // Append one blank line when the builder is not already separated
             private static void AppendBlankLine(StringBuilder builder)
             {
-                if (builder.Length > 0 && !builder.ToString().EndsWith(Environment.NewLine + Environment.NewLine, StringComparison.Ordinal))
+                if (builder.Length > 0 && CountTrailingLineFeeds(builder) < 2)
                 {
                     builder.AppendLine();
                 }
+            }
+
+            private static int CountTrailingLineFeeds(StringBuilder builder)
+            {
+                var count = 0;
+                for (var index = builder.Length - 1; index >= 0 && count < 2; index--)
+                {
+                    var current = builder[index];
+                    if (current == '\n')
+                    {
+                        count++;
+                        continue;
+                    }
+
+                    if (current != '\r')
+                    {
+                        break;
+                    }
+                }
+
+                return count;
             }
 
             // Inline markdown helpers

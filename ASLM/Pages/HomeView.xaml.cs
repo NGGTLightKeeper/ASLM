@@ -47,13 +47,14 @@ namespace ASLM.Pages
         public HomeView(
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
-            ModuleConsoleService consoleService)
+            ModuleConsoleService consoleService,
+            ProcessSnapshotService processSnapshotService)
         {
             InitializeComponent();
 
             BindingContext = _viewModel;
 
-            _presenter = new HomeDashboardPresenter(this, moduleInstaller, moduleRunner, consoleService);
+            _presenter = new HomeDashboardPresenter(this, moduleInstaller, moduleRunner, consoleService, processSnapshotService);
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
@@ -464,37 +465,33 @@ namespace ASLM.Pages
             Action<T, T> updateExisting)
             where T : class
         {
+            var indexByKey = BuildIndex(target, keySelector);
+
             for (var index = 0; index < source.Count; index++)
             {
                 var sourceItem = source[index];
+                var sourceKey = keySelector(sourceItem);
 
                 if (index < target.Count &&
-                    string.Equals(keySelector(target[index]), keySelector(sourceItem), StringComparison.Ordinal))
+                    string.Equals(keySelector(target[index]), sourceKey, StringComparison.Ordinal))
                 {
                     updateExisting(target[index], sourceItem);
                     continue;
                 }
 
-                var existingIndex = -1;
-                for (var searchIndex = index + 1; searchIndex < target.Count; searchIndex++)
-                {
-                    if (string.Equals(keySelector(target[searchIndex]), keySelector(sourceItem), StringComparison.Ordinal))
-                    {
-                        existingIndex = searchIndex;
-                        break;
-                    }
-                }
-
-                if (existingIndex >= 0)
+                if (indexByKey.TryGetValue(sourceKey, out var existingIndex) && existingIndex >= index)
                 {
                     // Move the matching item instead of replacing it so CollectionView rows
                     // keep their instance identity and avoid full reanimation on refresh.
+                    var existingItem = target[existingIndex];
                     target.Move(existingIndex, index);
-                    updateExisting(target[index], sourceItem);
+                    updateExisting(existingItem, sourceItem);
+                    indexByKey = BuildIndex(target, keySelector);
                 }
                 else
                 {
                     target.Insert(index, sourceItem);
+                    indexByKey = BuildIndex(target, keySelector);
                 }
             }
 
@@ -502,6 +499,18 @@ namespace ASLM.Pages
             {
                 target.RemoveAt(target.Count - 1);
             }
+        }
+
+        private static Dictionary<string, int> BuildIndex<T>(ObservableCollection<T> target, Func<T, string> keySelector)
+            where T : class
+        {
+            var indexByKey = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (var index = 0; index < target.Count; index++)
+            {
+                indexByKey[keySelector(target[index])] = index;
+            }
+
+            return indexByKey;
         }
     }
 
@@ -531,7 +540,7 @@ namespace ASLM.Pages
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly ModuleConsoleService _consoleService;
-        private readonly HomeDiagnosticsCollector _diagnosticsCollector = new();
+        private readonly HomeDiagnosticsCollector _diagnosticsCollector;
         private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
         private readonly Dictionary<string, HomeModuleOperationState> _moduleOperations =
@@ -557,12 +566,14 @@ namespace ASLM.Pages
             IHomeDashboardView view,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
-            ModuleConsoleService consoleService)
+            ModuleConsoleService consoleService,
+            ProcessSnapshotService processSnapshotService)
         {
             _view = view;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             _consoleService = consoleService;
+            _diagnosticsCollector = new HomeDiagnosticsCollector(processSnapshotService);
         }
 
         /// <summary>
@@ -2316,6 +2327,7 @@ namespace ASLM.Pages
             new(@"pid_(\d+).*?phys_(\d+).*?eng_(\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static IReadOnlyList<string>? _cachedGpuAdapterNames;
 
+        private readonly ProcessSnapshotService _processSnapshotService;
         private readonly Dictionary<int, HomeProcessSample> _processSamples = new();
 
         private HomeSystemCpuSample? _lastSystemCpuSample;
@@ -2324,6 +2336,14 @@ namespace ASLM.Pages
         private DateTimeOffset _cachedDiskStatsUtc = DateTimeOffset.MinValue;
         private HomeGpuQueryResult _cachedGpuQuery = new();
         private DateTimeOffset _cachedGpuQueryUtc = DateTimeOffset.MinValue;
+        private Dictionary<int, int> _cachedConnectionCounts = new();
+        private HashSet<int> _cachedConnectionProcessIds = new();
+        private DateTimeOffset _cachedConnectionCountsUtc = DateTimeOffset.MinValue;
+
+        public HomeDiagnosticsCollector(ProcessSnapshotService processSnapshotService)
+        {
+            _processSnapshotService = processSnapshotService;
+        }
 
         /// <summary>
         /// Captures a complete diagnostics snapshot for the current dashboard refresh.
@@ -2334,7 +2354,7 @@ namespace ASLM.Pages
         {
             var capturedUtc = DateTimeOffset.UtcNow;
             var currentProcessId = Environment.ProcessId;
-            var processSnapshotEntries = TakeProcessSnapshot();
+            var processSnapshotEntries = _processSnapshotService.GetSnapshot(TimeSpan.FromMilliseconds(500));
             var entriesByPid = processSnapshotEntries.ToDictionary(entry => entry.ProcessId);
             var childrenByParent = processSnapshotEntries
                 .GroupBy(entry => entry.ParentProcessId)
@@ -2349,7 +2369,7 @@ namespace ASLM.Pages
             var networkStats = SampleNetwork(capturedUtc);
             var gpuQuery = GetGpuUsageSample(capturedUtc);
             var gpuAdapters = BuildGpuAdapterSnapshots(gpuQuery, managedPids);
-            var connectionCounts = QueryProcessConnectionCounts(managedPids);
+            var connectionCounts = GetConnectionCountsSample(capturedUtc, managedPids);
 
             var liveProcesses = new Dictionary<int, HomeLiveProcessInfo>();
             foreach (var processId in managedPids.OrderBy(processId => processId))
@@ -2434,7 +2454,7 @@ namespace ASLM.Pages
         /// </summary>
         private HomeDiskStats GetDiskStatsSample(DateTimeOffset capturedUtc)
         {
-            if ((capturedUtc - _cachedDiskStatsUtc).TotalMilliseconds < 1800)
+            if ((capturedUtc - _cachedDiskStatsUtc).TotalMilliseconds < 3000)
             {
                 return _cachedDiskStats;
             }
@@ -2449,7 +2469,7 @@ namespace ASLM.Pages
         /// </summary>
         private HomeGpuQueryResult GetGpuUsageSample(DateTimeOffset capturedUtc)
         {
-            if ((capturedUtc - _cachedGpuQueryUtc).TotalMilliseconds < 1800)
+            if ((capturedUtc - _cachedGpuQueryUtc).TotalMilliseconds < 3000)
             {
                 return _cachedGpuQuery;
             }
@@ -2457,6 +2477,23 @@ namespace ASLM.Pages
             _cachedGpuQuery = QueryGpuUsage();
             _cachedGpuQueryUtc = capturedUtc;
             return _cachedGpuQuery;
+        }
+
+        /// <summary>
+        /// Returns cached per-process connection counts while the managed PID set is unchanged.
+        /// </summary>
+        private IReadOnlyDictionary<int, int> GetConnectionCountsSample(DateTimeOffset capturedUtc, IReadOnlyCollection<int> processIds)
+        {
+            if ((capturedUtc - _cachedConnectionCountsUtc).TotalMilliseconds < 2000 &&
+                _cachedConnectionProcessIds.SetEquals(processIds))
+            {
+                return _cachedConnectionCounts;
+            }
+
+            _cachedConnectionCounts = QueryProcessConnectionCounts(processIds);
+            _cachedConnectionProcessIds = processIds.ToHashSet();
+            _cachedConnectionCountsUtc = capturedUtc;
+            return _cachedConnectionCounts;
         }
 
         // Module diagnostics
@@ -2468,7 +2505,7 @@ namespace ASLM.Pages
             IReadOnlyList<ModuleConfig> modules,
             IReadOnlyList<ModuleConsoleModuleSnapshot> consoleSnapshots,
             IReadOnlyDictionary<int, HomeLiveProcessInfo> liveProcesses,
-            IReadOnlyDictionary<int, HomeProcessSnapshotEntry> entriesByPid,
+            IReadOnlyDictionary<int, ProcessSnapshotEntry> entriesByPid,
             IReadOnlyDictionary<int, List<int>> childrenByParent,
             int currentProcessId,
             long totalPhysicalBytes)
@@ -2597,9 +2634,9 @@ namespace ASLM.Pages
             int currentProcessId,
             IReadOnlyDictionary<int, HomeLiveProcessInfo> liveProcesses,
             IReadOnlyCollection<HomeModuleDiagnostics> moduleDiagnostics,
-            IReadOnlyCollection<int> internalProcessIds,
+            ISet<int> internalProcessIds,
             IReadOnlyDictionary<int, List<int>> childrenByParent,
-            IReadOnlyDictionary<int, HomeProcessSnapshotEntry> entriesByPid,
+            IReadOnlyDictionary<int, ProcessSnapshotEntry> entriesByPid,
             long totalPhysicalBytes)
         {
             var moduleNodes = moduleDiagnostics
@@ -2682,7 +2719,7 @@ namespace ASLM.Pages
             HomeModuleDiagnostics moduleDiagnostics,
             IReadOnlyDictionary<int, HomeLiveProcessInfo> liveProcesses,
             IReadOnlyDictionary<int, List<int>> childrenByParent,
-            IReadOnlyDictionary<int, HomeProcessSnapshotEntry> entriesByPid)
+            IReadOnlyDictionary<int, ProcessSnapshotEntry> entriesByPid)
         {
             var rootProcessIds = moduleDiagnostics.RootProcessIds
                 .Where(processId => moduleDiagnostics.ProcessIds.Contains(processId))
@@ -2710,7 +2747,7 @@ namespace ASLM.Pages
                     processId,
                     liveProcesses,
                     childrenByParent,
-                    moduleDiagnostics.ProcessIds.ToHashSet(),
+                    moduleDiagnostics.ProcessIds,
                     moduleDiagnostics.SessionsByPid))
                 .ToList();
 
@@ -2742,7 +2779,7 @@ namespace ASLM.Pages
             int processId,
             IReadOnlyDictionary<int, HomeLiveProcessInfo> liveProcesses,
             IReadOnlyDictionary<int, List<int>> childrenByParent,
-            IReadOnlyCollection<int> allowedProcessIds,
+            ISet<int> allowedProcessIds,
             IReadOnlyDictionary<int, ModuleConsoleSessionSnapshot>? sessionsByPid)
         {
             var process = liveProcesses[processId];
@@ -2814,7 +2851,7 @@ namespace ASLM.Pages
         private bool TrySampleProcess(
             int processId,
             DateTimeOffset capturedUtc,
-            IReadOnlyDictionary<int, HomeProcessSnapshotEntry> entriesByPid,
+            IReadOnlyDictionary<int, ProcessSnapshotEntry> entriesByPid,
             IReadOnlyDictionary<int, double> gpuByPid,
             IReadOnlyDictionary<int, int> connectionCounts,
             long totalPhysicalBytes,
@@ -3450,49 +3487,6 @@ namespace ASLM.Pages
             return descendants;
         }
 
-        /// <summary>
-        /// Takes one snapshot of the Windows process table.
-        /// </summary>
-        private static IReadOnlyList<HomeProcessSnapshotEntry> TakeProcessSnapshot()
-        {
-            var results = new List<HomeProcessSnapshotEntry>();
-            var snapshotHandle = CreateToolhelp32Snapshot(Th32csSnapProcess, 0);
-            if (snapshotHandle == IntPtr.Zero || snapshotHandle == InvalidHandleValue)
-            {
-                return results;
-            }
-
-            try
-            {
-                var processEntry = new ProcessEntry32
-                {
-                    dwSize = (uint)Marshal.SizeOf<ProcessEntry32>()
-                };
-
-                if (!Process32First(snapshotHandle, ref processEntry))
-                {
-                    return results;
-                }
-
-                do
-                {
-                    results.Add(new HomeProcessSnapshotEntry
-                    {
-                        ProcessId = unchecked((int)processEntry.th32ProcessID),
-                        ParentProcessId = unchecked((int)processEntry.th32ParentProcessID),
-                        ExecutableName = processEntry.szExeFile
-                    });
-                }
-                while (Process32Next(snapshotHandle, ref processEntry));
-
-                return results;
-            }
-            finally
-            {
-                CloseHandle(snapshotHandle);
-            }
-        }
-
         // Native helpers
 
         /// <summary>
@@ -3618,10 +3612,8 @@ namespace ASLM.Pages
 
         // Native interop
 
-        private const uint Th32csSnapProcess = 0x00000002;
         private const uint ErrorSuccess = 0;
         private const uint ErrorInsufficientBuffer = 122;
-        private static readonly IntPtr InvalidHandleValue = new(-1);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool GetSystemTimes(
@@ -3652,21 +3644,6 @@ namespace ASLM.Pages
             int ipVersion,
             UdpTableClass tableClass,
             uint reserved);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr CreateToolhelp32Snapshot(uint flags, uint processId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool Process32First(IntPtr snapshot, ref ProcessEntry32 entry);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool Process32Next(IntPtr snapshot, ref ProcessEntry32 entry);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool CloseHandle(IntPtr handle);
 
         private enum TcpTableClass
         {
@@ -3754,22 +3731,6 @@ namespace ASLM.Pages
             public uint OwningPid;
         }
 
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-        private struct ProcessEntry32
-        {
-            public uint dwSize;
-            public uint cntUsage;
-            public uint th32ProcessID;
-            public IntPtr th32DefaultHeapID;
-            public uint th32ModuleID;
-            public uint cntThreads;
-            public uint th32ParentProcessID;
-            public int pcPriClassBase;
-            public uint dwFlags;
-
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-            public string szExeFile;
-        }
     }
 
 
@@ -4233,24 +4194,4 @@ namespace ASLM.Pages
         public double SendBytesPerSecond { get; set; }
     }
 
-    /// <summary>
-    /// Represents one raw process entry captured from the process snapshot API.
-    /// </summary>
-    internal sealed class HomeProcessSnapshotEntry
-    {
-        /// <summary>
-        /// Gets or sets the process identifier.
-        /// </summary>
-        public int ProcessId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the parent process identifier.
-        /// </summary>
-        public int ParentProcessId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the executable file name reported by the snapshot API.
-        /// </summary>
-        public string ExecutableName { get; set; } = string.Empty;
-    }
 }

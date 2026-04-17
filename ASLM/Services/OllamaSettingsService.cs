@@ -221,13 +221,32 @@ namespace ASLM.Services
             {
                 if (_managedRuntimeProcess is null)
                 {
-                    _managedRuntimeProcess = new Process { StartInfo = psi };
+                    var runtimeProcess = new Process { StartInfo = psi };
+                    runtimeProcess.OutputDataReceived += (_, args) =>
+                    {
+                        if (!string.IsNullOrWhiteSpace(args.Data))
+                        {
+                            _logger.LogTrace("Managed Ollama stdout: {Line}", args.Data);
+                        }
+                    };
+                    runtimeProcess.ErrorDataReceived += (_, args) =>
+                    {
+                        if (!string.IsNullOrWhiteSpace(args.Data))
+                        {
+                            _logger.LogTrace("Managed Ollama stderr: {Line}", args.Data);
+                        }
+                    };
+
+                    _managedRuntimeProcess = runtimeProcess;
                     if (!_managedRuntimeProcess.Start())
                     {
                         _managedRuntimeProcess.Dispose();
                         _managedRuntimeProcess = null;
                         return ManagedRuntimeState.Unavailable;
                     }
+
+                    _managedRuntimeProcess.BeginOutputReadLine();
+                    _managedRuntimeProcess.BeginErrorReadLine();
                 }
             }
 

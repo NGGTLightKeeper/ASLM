@@ -26,6 +26,7 @@ namespace ASLM.Services
         // moduleId -> portName -> assigned port
         private Dictionary<string, Dictionary<string, int>> _portMap = [];
         private bool _loaded;
+        private DateTimeOffset _lastOrphanCleanupUtc = DateTimeOffset.MinValue;
 
         // Initialization
 
@@ -53,18 +54,7 @@ namespace ASLM.Services
             {
                 EnsureLoaded();
 
-                // Remove stale assignments before calculating new ones.
-                var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
-                var rootDir = Directory.GetParent(appDir)?.FullName ?? appDir;
-                var modulesRoot = Path.Combine(rootDir, "Modules");
-
-                if (Directory.Exists(modulesRoot))
-                {
-                    var activeModuleIds = Directory.GetDirectories(modulesRoot)
-                        .Select(Path.GetFileName)
-                        .OfType<string>();
-                    CleanupOrphanedPorts(activeModuleIds);
-                }
+                CleanupOrphanedPortsIfDue();
 
                 var portSettings = module.Settings?
                     .Where(setting => setting.Type.Equals("port", StringComparison.OrdinalIgnoreCase))
@@ -207,6 +197,34 @@ namespace ASLM.Services
 
                 SavePortMap();
             }
+        }
+
+        /// <summary>
+        /// Periodically removes stale assignments without scanning Modules on every port lookup.
+        /// </summary>
+        private void CleanupOrphanedPortsIfDue()
+        {
+            var now = DateTimeOffset.UtcNow;
+            if (now - _lastOrphanCleanupUtc < TimeSpan.FromSeconds(30))
+            {
+                return;
+            }
+
+            _lastOrphanCleanupUtc = now;
+
+            var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+            var rootDir = Directory.GetParent(appDir)?.FullName ?? appDir;
+            var modulesRoot = Path.Combine(rootDir, "Modules");
+
+            if (!Directory.Exists(modulesRoot))
+            {
+                return;
+            }
+
+            var activeModuleIds = Directory.GetDirectories(modulesRoot)
+                .Select(Path.GetFileName)
+                .OfType<string>();
+            CleanupOrphanedPorts(activeModuleIds);
         }
 
 

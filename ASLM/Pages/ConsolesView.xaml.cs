@@ -20,6 +20,7 @@ namespace ASLM.Pages
         private readonly ConsolesPageViewModel _viewModel = new();
         private readonly ConsolesPresenter _presenter;
         private bool _suppressSelection;
+        private int _layoutRefreshQueued;
 
         /// <summary>
         /// Creates the consoles view and initializes its responsive shell layout.
@@ -225,14 +226,17 @@ namespace ASLM.Pages
         {
             RefreshConsoleLayout();
 
-            if (Dispatcher == null)
+            if (Dispatcher == null || Interlocked.Exchange(ref _layoutRefreshQueued, 1) == 1)
             {
                 return;
             }
 
-            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(1), RefreshConsoleLayout);
             Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(16), RefreshConsoleLayout);
-            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(48), RefreshConsoleLayout);
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(48), () =>
+            {
+                RefreshConsoleLayout();
+                Interlocked.Exchange(ref _layoutRefreshQueued, 0);
+            });
         }
 
         /// <summary>
@@ -284,36 +288,31 @@ namespace ASLM.Pages
             Action<T, T> updateExisting)
             where T : class
         {
+            var indexByKey = BuildIndex(target, keySelector);
+
             for (var index = 0; index < source.Count; index++)
             {
                 var sourceItem = source[index];
+                var sourceKey = keySelector(sourceItem);
 
                 if (index < target.Count &&
-                    string.Equals(keySelector(target[index]), keySelector(sourceItem), StringComparison.Ordinal))
+                    string.Equals(keySelector(target[index]), sourceKey, StringComparison.Ordinal))
                 {
                     updateExisting(target[index], sourceItem);
                     continue;
                 }
 
-                var existingIndex = -1;
-                for (var searchIndex = index + 1; searchIndex < target.Count; searchIndex++)
-                {
-                    if (string.Equals(keySelector(target[searchIndex]), keySelector(sourceItem), StringComparison.Ordinal))
-                    {
-                        existingIndex = searchIndex;
-                        break;
-                    }
-                }
-
-                if (existingIndex >= 0)
+                if (indexByKey.TryGetValue(sourceKey, out var existingIndex) && existingIndex >= index)
                 {
                     var existingItem = target[existingIndex];
                     target.Move(existingIndex, index);
                     updateExisting(existingItem, sourceItem);
+                    indexByKey = BuildIndex(target, keySelector);
                 }
                 else
                 {
                     target.Insert(index, sourceItem);
+                    indexByKey = BuildIndex(target, keySelector);
                 }
             }
 
@@ -321,6 +320,18 @@ namespace ASLM.Pages
             {
                 target.RemoveAt(target.Count - 1);
             }
+        }
+
+        private static Dictionary<string, int> BuildIndex<T>(ObservableCollection<T> target, Func<T, string> keySelector)
+            where T : class
+        {
+            var indexByKey = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (var index = 0; index < target.Count; index++)
+            {
+                indexByKey[keySelector(target[index])] = index;
+            }
+
+            return indexByKey;
         }
     }
 
