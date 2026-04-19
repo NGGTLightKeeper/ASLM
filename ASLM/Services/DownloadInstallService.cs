@@ -23,6 +23,7 @@ namespace ASLM.Services
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleDownloadBridgeService _bridgeService;
         private readonly EngineInstaller _engineInstaller;
+        private readonly ModuleEnvironmentService _moduleEnvironmentService;
         private readonly DownloadCatalogStateService _stateService;
         private readonly ILogger<DownloadInstallService> _logger;
         private readonly HttpClient _httpClient = new();
@@ -40,12 +41,14 @@ namespace ASLM.Services
             ModuleInstaller moduleInstaller,
             ModuleDownloadBridgeService bridgeService,
             EngineInstaller engineInstaller,
+            ModuleEnvironmentService moduleEnvironmentService,
             DownloadCatalogStateService stateService,
             ILogger<DownloadInstallService> logger)
         {
             _moduleInstaller = moduleInstaller;
             _bridgeService = bridgeService;
             _engineInstaller = engineInstaller;
+            _moduleEnvironmentService = moduleEnvironmentService;
             _stateService = stateService;
             _logger = logger;
         }
@@ -435,25 +438,24 @@ namespace ASLM.Services
                 throw new InvalidOperationException($"Engine '{engineId}' is not installed.");
             }
 
-            if (engineConfig.PackageManager == null)
+            if (engineConfig.PackageManager == null &&
+                string.IsNullOrWhiteSpace(engineConfig.ModuleEnvironment?.PackageManagerCommand))
             {
                 throw new InvalidOperationException($"Engine '{engineId}' does not declare a package manager.");
             }
 
-            var engineDir = Path.GetDirectoryName(engineConfig.SourcePath) ?? string.Empty;
-            string executablePath;
-            if (!string.IsNullOrWhiteSpace(engineConfig.PackageManager.Executable))
-            {
-                executablePath = Path.Combine(engineDir, engineConfig.PackageManager.Executable);
-            }
-            else
-            {
-                executablePath = _engineInstaller.GetEngineExecutablePath(engineId)
-                    ?? throw new InvalidOperationException($"Engine executable could not be resolved for '{engineId}'.");
-            }
+            var environment = await _moduleEnvironmentService.EnsureEnvironmentAsync(module, engineConfig, log, ct);
+            var executablePath = _moduleEnvironmentService.ResolvePackageManagerExecutable(environment, engineConfig);
+            var arguments = _moduleEnvironmentService.BuildPackageInstallArguments(environment, engineConfig, action.Packages);
+            var environmentVariables = environment?.EnvironmentVariables;
 
-            var arguments = $"{engineConfig.PackageManager.Command} {string.Join(" ", action.Packages)}";
-            await RunProcessAsync(executablePath, arguments, Path.GetDirectoryName(module.SourcePath) ?? GetRootDirectory(), log, ct);
+            await RunProcessAsync(
+                executablePath,
+                arguments,
+                Path.GetDirectoryName(module.SourcePath) ?? GetRootDirectory(),
+                log,
+                ct,
+                environmentVariables?.ToDictionary(pair => pair.Key, pair => (string?)pair.Value, StringComparer.OrdinalIgnoreCase));
         }
 
         /// <summary>
@@ -764,7 +766,9 @@ namespace ASLM.Services
             {
                 foreach (var pair in environment)
                 {
-                    psi.Environment[pair.Key] = pair.Value ?? string.Empty;
+                    var value = (pair.Value ?? string.Empty)
+                        .Replace("{path}", GetProcessEnvironmentValue(psi, "PATH"), StringComparison.OrdinalIgnoreCase);
+                    psi.Environment[pair.Key] = value;
                 }
             }
 
@@ -803,6 +807,22 @@ namespace ASLM.Services
             {
                 throw new InvalidOperationException($"Process exited with code {process.ExitCode}: {Path.GetFileName(fileName)} {arguments}");
             }
+        }
+
+        /// <summary>
+        /// Returns one environment value from a process start info using Windows-friendly key matching.
+        /// </summary>
+        private static string GetProcessEnvironmentValue(ProcessStartInfo psi, string key)
+        {
+            foreach (var pair in psi.Environment)
+            {
+                if (string.Equals(pair.Key, key, StringComparison.OrdinalIgnoreCase))
+                {
+                    return pair.Value ?? string.Empty;
+                }
+            }
+
+            return Environment.GetEnvironmentVariable(key) ?? string.Empty;
         }
 
         /// <summary>

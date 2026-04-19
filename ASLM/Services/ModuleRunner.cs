@@ -16,6 +16,7 @@ namespace ASLM.Services
     public class ModuleRunner : IDisposable
     {
         private readonly EngineInstaller _engineInstaller;
+        private readonly ModuleEnvironmentService _moduleEnvironmentService;
         private readonly PortManager _portManager;
         private readonly ProcessTracker _processTracker;
         private readonly ModuleConsoleService _consoleService;
@@ -45,6 +46,7 @@ namespace ASLM.Services
         /// <param name="logger">Logger instance.</param>
         public ModuleRunner(
             EngineInstaller engineInstaller,
+            ModuleEnvironmentService moduleEnvironmentService,
             PortManager portManager,
             ProcessTracker processTracker,
             ModuleConsoleService consoleService,
@@ -52,6 +54,7 @@ namespace ASLM.Services
             ILogger<ModuleRunner> logger)
         {
             _engineInstaller = engineInstaller;
+            _moduleEnvironmentService = moduleEnvironmentService;
             _portManager = portManager;
             _processTracker = processTracker;
             _consoleService = consoleService;
@@ -379,27 +382,17 @@ namespace ASLM.Services
                     return false;
                 }
 
-                if (engineConfig.PackageManager == null)
+                if (engineConfig.PackageManager == null &&
+                    string.IsNullOrWhiteSpace(engineConfig.ModuleEnvironment?.PackageManagerCommand))
                 {
                     log.Report($"⚠ Engine '{engineDep.Id}' has no packageManager defined, skipping library install.");
                     continue;
                 }
 
-                // Resolve the executable: custom packageManager.executable or engine executable
-                var engineDir = Path.GetDirectoryName(engineConfig.SourcePath) ?? "";
-                string exePath;
-                if (!string.IsNullOrEmpty(engineConfig.PackageManager.Executable))
-                {
-                    exePath = Path.Combine(engineDir, engineConfig.PackageManager.Executable);
-                }
-                else
-                {
-                    exePath = _engineInstaller.GetEngineExecutablePath(engineDep.Id)
-                              ?? throw new InvalidOperationException($"Engine executable not found for '{engineDep.Id}'.");
-                }
-
+                var environment = await _moduleEnvironmentService.EnsureEnvironmentAsync(module, engineConfig, log, ct);
+                var exePath = _moduleEnvironmentService.ResolvePackageManagerExecutable(environment, engineConfig);
                 var libs = string.Join(" ", engineDep.Libraries);
-                var args = $"{engineConfig.PackageManager.Command} {libs}";
+                var args = _moduleEnvironmentService.BuildPackageInstallArguments(environment, engineConfig, engineDep.Libraries);
                 log.Report($"[Deps] Installing libraries for {engineDep.Id}: {libs}");
 
                 var psi = new ProcessStartInfo
@@ -413,6 +406,7 @@ namespace ASLM.Services
                     CreateNoWindow = true
                 };
                 ConfigureProcessForStreaming(psi, exePath, engineDep.Id);
+                _moduleEnvironmentService.ApplyEnvironmentVariables(module, engineConfig, psi);
 
                 using var process = new Process { StartInfo = psi };
 
@@ -427,7 +421,7 @@ namespace ASLM.Services
                     new ModuleCommand
                     {
                         Name = $"Dependencies: {engineDep.Id}",
-                        Description = $"Install libraries via {engineConfig.PackageManager.Command}",
+                        Description = $"Install libraries via {args}",
                         Exec = args
                     },
                     "Dependencies",
@@ -501,6 +495,7 @@ namespace ASLM.Services
 
                 string fileName;
                 string arguments = string.Empty;
+                EngineConfig? commandEngineConfig = null;
 
                 // 1. Resolve Execution Strategy
                 var execString = cmd.Exec ?? string.Empty;
@@ -518,14 +513,15 @@ namespace ASLM.Services
                 if (!string.IsNullOrEmpty(cmd.Engine))
                 {
                     // Run via Engine (e.g. Python)
-                    var enginePath = _engineInstaller.GetEngineExecutablePath(cmd.Engine);
-                    if (string.IsNullOrEmpty(enginePath))
+                    commandEngineConfig = _engineInstaller.GetEngineConfig(cmd.Engine);
+                    if (commandEngineConfig == null)
                     {
                         log.Report($"Error: Engine '{cmd.Engine}' not found or not installed.");
                         return false;
                     }
 
-                    fileName = enginePath;
+                    var environment = await _moduleEnvironmentService.EnsureEnvironmentAsync(module, commandEngineConfig, log, ct);
+                    fileName = _moduleEnvironmentService.ResolveCommandExecutable(environment, commandEngineConfig);
                     // Combine engine + script/args
                     // cmd.Exec = "manage.py runserver"
                     // We need to ensure we run it in the module directory context
@@ -554,6 +550,10 @@ namespace ASLM.Services
                     CreateNoWindow = true
                 };
                 ConfigureProcessForStreaming(psi, fileName, cmd.Engine);
+                if (commandEngineConfig != null)
+                {
+                    _moduleEnvironmentService.ApplyEnvironmentVariables(module, commandEngineConfig, psi);
+                }
 
                 // Apply settings as environment variables so the module can consume them dynamically
                 if (injectSettings)

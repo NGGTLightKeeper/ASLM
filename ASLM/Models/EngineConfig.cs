@@ -43,6 +43,10 @@ namespace ASLM.Models
         [JsonPropertyName("packageManager")]
         public EnginePackageManager? PackageManager { get; set; }
 
+        // Optional per-module environment configuration used to isolate dependencies.
+        [JsonPropertyName("moduleEnvironment")]
+        public EngineModuleEnvironment? ModuleEnvironment { get; set; }
+
         // Informational system requirements declared by the engine package.
         [JsonPropertyName("requirements")]
         public EngineRequirements? Requirements { get; set; }
@@ -79,6 +83,7 @@ namespace ASLM.Models
 
             // Normalize optional nested configuration blocks when they are present.
             PackageManager?.Normalize();
+            ModuleEnvironment?.Normalize();
             Requirements?.Normalize();
 
             // Recreate and normalize the main installation pipeline.
@@ -186,6 +191,68 @@ namespace ASLM.Models
         {
             // Keep package installation commands safe for command construction.
             Command ??= string.Empty;
+        }
+    }
+
+
+    // Module environments
+
+    /// <summary>
+    /// Describes how one engine creates and uses isolated environments per module.
+    /// </summary>
+    public class EngineModuleEnvironment
+    {
+        // Allows an engine manifest to opt out while keeping the block for documentation.
+        [JsonPropertyName("enabled")]
+        public bool Enabled { get; set; } = true;
+
+        // Environment folder prefix inside the engine directory.
+        [JsonPropertyName("directoryPrefix")]
+        public string DirectoryPrefix { get; set; } = "venv-";
+
+        // Optional descriptive kind, for example "python-venv" or "node-prefix".
+        [JsonPropertyName("kind")]
+        public string Kind { get; set; } = string.Empty;
+
+        // Optional command run with the engine executable to create the environment.
+        [JsonPropertyName("createCommand")]
+        public string CreateCommand { get; set; } = string.Empty;
+
+        // Executable used for module commands after environment creation.
+        [JsonPropertyName("executablePath")]
+        public string ExecutablePath { get; set; } = string.Empty;
+
+        // Optional package-manager executable override for environment-scoped installs.
+        [JsonPropertyName("packageManagerExecutable")]
+        public string PackageManagerExecutable { get; set; } = string.Empty;
+
+        // Optional package-manager command override for environment-scoped installs.
+        [JsonPropertyName("packageManagerCommand")]
+        public string PackageManagerCommand { get; set; } = string.Empty;
+
+        // Environment variables injected when commands run through this module environment.
+        [JsonPropertyName("environment")]
+        public Dictionary<string, string> Environment { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Restores string values and dictionaries after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            DirectoryPrefix = string.IsNullOrWhiteSpace(DirectoryPrefix) ? "venv-" : DirectoryPrefix;
+            Kind ??= string.Empty;
+            CreateCommand ??= string.Empty;
+            ExecutablePath ??= string.Empty;
+            PackageManagerExecutable ??= string.Empty;
+            PackageManagerCommand ??= string.Empty;
+
+            Environment ??= new(StringComparer.OrdinalIgnoreCase);
+            Environment = Environment
+                .Where(static pair => !string.IsNullOrWhiteSpace(pair.Key))
+                .ToDictionary(
+                    static pair => pair.Key.Trim(),
+                    static pair => pair.Value ?? string.Empty,
+                    StringComparer.OrdinalIgnoreCase);
         }
     }
 

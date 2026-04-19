@@ -46,6 +46,7 @@ namespace ASLM
             // Service registrations
             builder.Services.AddSingleton<AppDataService>();
             builder.Services.AddSingleton<EngineInstaller>();
+            builder.Services.AddSingleton<ModuleEnvironmentService>();
             builder.Services.AddSingleton<ModuleInstaller>();
             builder.Services.AddSingleton<ModuleConsoleService>();
             builder.Services.AddSingleton<ProcessSnapshotService>();
