@@ -13,6 +13,17 @@
         "type": "github",
         "repo": "NGGTLightKeeper/ASLM-Chat"
     },
+    "update": {
+        "mode": "release",
+        "channel": "release",
+        "branch": "main",
+        "preserve": [
+            "Data/downloads_bridge_cache",
+            "Settings/settings.json",
+            "db.sqlite3"
+        ],
+        "runFirstRunAfterUpdate": true
+    },
     "dependencies": {
         "engines": [
             {

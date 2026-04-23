@@ -32,6 +32,7 @@ namespace ASLM.Services
         public ModuleInstaller(ModuleRunner moduleRunner)
         {
             _moduleRunner = moduleRunner;
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("ASLM-ModuleInstaller");
         }
 
 
@@ -144,8 +145,9 @@ namespace ASLM.Services
                 return false;
             }
 
-            // This currently assumes the repository publishes its installable branch as main.
-            var zipUrl = $"https://github.com/{module.Source.Repo}/archive/refs/heads/main.zip";
+            // Use the branch selected in the module update configuration for source-based installs.
+            var branch = string.IsNullOrWhiteSpace(module.Update.Branch) ? "main" : module.Update.Branch;
+            var zipUrl = $"https://api.github.com/repos/{module.Source.Repo}/zipball/{Uri.EscapeDataString(branch)}";
             var tempZip = Path.GetTempFileName();
             var tempExtractDir = Path.Combine(Path.GetTempPath(), "ASLM_ModuleSrc_" + Guid.NewGuid());
 

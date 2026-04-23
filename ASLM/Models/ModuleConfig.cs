@@ -81,6 +81,10 @@ namespace ASLM.Models
         [JsonPropertyName("downloadsBridge")]
         public ModuleDownloadsBridge? DownloadsBridge { get; set; }
 
+        // Update behavior for this module package.
+        [JsonPropertyName("update")]
+        public ModuleUpdateConfig Update { get; set; } = new();
+
         // Persisted installation and runtime state of the module.
         [JsonPropertyName("status")]
         public ModuleStatus Status { get; set; } = new();
@@ -125,6 +129,10 @@ namespace ASLM.Models
             // Normalize the optional downloads bridge only when the manifest declares it.
             DownloadsBridge?.Normalize();
 
+            // Normalize module update preferences and preservation rules.
+            Update ??= new();
+            Update.Normalize();
+
             // Ensure persisted runtime status is always available.
             Status ??= new();
             Status.Normalize();
@@ -160,6 +168,71 @@ namespace ASLM.Models
             return fullPath.StartsWith(moduleDirPrefix, StringComparison.OrdinalIgnoreCase)
                 ? fullPath
                 : null;
+        }
+    }
+
+
+    // Module updates
+
+    /// <summary>
+    /// Describes how ASLM should check and apply updates for a module.
+    /// </summary>
+    public class ModuleUpdateConfig
+    {
+        // Update mode: release assets/release archive or a repository branch archive.
+        [JsonPropertyName("mode")]
+        public string Mode { get; set; } = "release";
+
+        // Release channel: release only, or release plus pre-release.
+        [JsonPropertyName("channel")]
+        public string Channel { get; set; } = "release";
+
+        // Branch selected when mode is branch.
+        [JsonPropertyName("branch")]
+        public string Branch { get; set; } = "main";
+
+        // Optional release asset name. When absent, release zipball is used for modules.
+        [JsonPropertyName("assetName")]
+        public string? AssetName { get; set; }
+
+        // Relative files and directories copied out before replacement and restored after update.
+        [JsonPropertyName("preserve")]
+        public List<string> Preserve { get; set; } = [];
+
+        // Indicates whether first-run setup should run again after files are replaced.
+        [JsonPropertyName("runFirstRunAfterUpdate")]
+        public bool RunFirstRunAfterUpdate { get; set; } = true;
+
+        // Last branch commit installed by the updater.
+        [JsonPropertyName("installedCommitSha")]
+        public string? InstalledCommitSha { get; set; }
+
+        // Last release tag installed by the updater.
+        [JsonPropertyName("installedReleaseTag")]
+        public string? InstalledReleaseTag { get; set; }
+
+        /// <summary>
+        /// Restores defaults and removes unsafe empty preservation entries.
+        /// </summary>
+        public void Normalize()
+        {
+            Mode = string.Equals(Mode, "branch", StringComparison.OrdinalIgnoreCase) ? "branch" : "release";
+            Channel = string.Equals(Channel, "pre-release", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(Channel, "prerelease", StringComparison.OrdinalIgnoreCase)
+                ? "pre-release"
+                : "release";
+            Branch = string.IsNullOrWhiteSpace(Branch) ? "main" : Branch.Trim();
+            AssetName = string.IsNullOrWhiteSpace(AssetName) ? null : AssetName.Trim();
+            InstalledCommitSha = string.IsNullOrWhiteSpace(InstalledCommitSha) ? null : InstalledCommitSha.Trim();
+            InstalledReleaseTag = string.IsNullOrWhiteSpace(InstalledReleaseTag) ? null : InstalledReleaseTag.Trim();
+
+            Preserve ??= [];
+            Preserve = Preserve
+                .Where(static path => !string.IsNullOrWhiteSpace(path))
+                .Select(static path => path.Trim().Replace('\\', '/').Trim('/'))
+                .Where(static path => path.Length > 0 && path != "." && !path.Contains("..", StringComparison.Ordinal))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
     }
 

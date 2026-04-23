@@ -13,6 +13,7 @@ namespace ASLM.Pages
     public partial class LoadingPage : ContentPage
     {
         private readonly AppDataService _appData;
+        private readonly UpdateSchedulerService _updateScheduler;
         private readonly IServiceProvider _services;
         private bool _initialized;
 
@@ -21,10 +22,14 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the startup loading page.
         /// </summary>
-        public LoadingPage(AppDataService appData, IServiceProvider services)
+        public LoadingPage(
+            AppDataService appData,
+            UpdateSchedulerService updateScheduler,
+            IServiceProvider services)
         {
             InitializeComponent();
             _appData = appData;
+            _updateScheduler = updateScheduler;
             _services = services;
         }
 
@@ -44,6 +49,7 @@ namespace ASLM.Pages
 
             _initialized = true;
             await _appData.InitializeAsync();
+            _updateScheduler.Start();
 
             Page nextPage = _appData.IsFirstRun
                 ? _services.GetRequiredService<SetupWizardPage>()

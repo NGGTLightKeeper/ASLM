@@ -58,6 +58,9 @@ namespace ASLM
             builder.Services.AddSingleton<DownloadCatalogService>();
             builder.Services.AddSingleton<DownloadInstallService>();
             builder.Services.AddSingleton<OllamaSettingsService>();
+            builder.Services.AddSingleton<GitHubUpdateClient>();
+            builder.Services.AddSingleton<UpdateService>();
+            builder.Services.AddSingleton<UpdateSchedulerService>();
 
             // Page registrations
             builder.Services.AddTransient<AppShellPage>();

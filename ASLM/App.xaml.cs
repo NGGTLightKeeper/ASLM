@@ -82,6 +82,9 @@ namespace ASLM
 
                 var tracker = _services.GetRequiredService<ProcessTracker>();
                 tracker.Dispose();
+
+                var updateScheduler = _services.GetService<UpdateSchedulerService>();
+                updateScheduler?.Dispose();
             }
             catch (Exception ex)
             {

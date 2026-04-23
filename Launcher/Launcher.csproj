@@ -46,7 +46,7 @@
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(Configuration)' == 'Release'">
-		<Content Include="..\Data\**\ASLM_Data.json">
+		<Content Include="..\Data\**\*.*">
 			<Link>Data\%(RecursiveDir)%(Filename)%(Extension)</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>

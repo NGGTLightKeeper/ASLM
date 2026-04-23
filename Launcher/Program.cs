@@ -12,6 +12,9 @@ internal static class Program
     private const string FolderName = "App";
     private const string ExeName = "ASLM.exe";
     private const string LogFileName = "Launcher.log";
+    private const string PatcherFolderName = "Patcher";
+    private const string PatcherExeName = "Patcher.exe";
+    private const string PendingUpdatePath = ".aslm-update\\pending.json";
 
     // Process startup.
 
@@ -27,6 +30,11 @@ internal static class Program
 
         try
         {
+            if (TryStartPendingPatcher(currentDir, logPath))
+            {
+                return;
+            }
+
             // Ensure the target executable exists.
             if (!File.Exists(targetPath))
             {
@@ -61,6 +69,61 @@ internal static class Program
         {
             Log($"Critical Error: {ex.Message}\nStack Trace: {ex.StackTrace}", logPath);
             Environment.Exit(1);
+        }
+    }
+
+    /// <summary>
+    /// Starts the external patcher from a temporary shadow copy when a self-update is pending.
+    /// </summary>
+    private static bool TryStartPendingPatcher(string rootDir, string logPath)
+    {
+        var pendingPath = Path.Combine(rootDir, PendingUpdatePath);
+        if (!File.Exists(pendingPath))
+        {
+            return false;
+        }
+
+        var patcherDir = Path.Combine(rootDir, PatcherFolderName);
+        var patcherPath = Path.Combine(patcherDir, PatcherExeName);
+        if (!File.Exists(patcherPath))
+        {
+            Log("Pending update found, but patcher is missing: " + patcherPath, logPath);
+            return false;
+        }
+
+        try
+        {
+            var shadowDir = Path.Combine(Path.GetTempPath(), "Patcher_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(shadowDir);
+
+            foreach (var file in Directory.EnumerateFiles(patcherDir, "Patcher*"))
+            {
+                File.Copy(file, Path.Combine(shadowDir, Path.GetFileName(file)), overwrite: true);
+            }
+
+            var shadowPatcher = Path.Combine(shadowDir, PatcherExeName);
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = shadowPatcher,
+                WorkingDirectory = shadowDir,
+                UseShellExecute = false
+            };
+            startInfo.ArgumentList.Add("--root");
+            startInfo.ArgumentList.Add(rootDir);
+
+            if (Process.Start(startInfo) == null)
+            {
+                Log("Failed to start patcher (Process.Start returned null).", logPath);
+                return false;
+            }
+
+            Log("Pending update detected. Handed control to patcher.", logPath);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log("Failed to start patcher: " + ex, logPath);
+            return false;
         }
     }
 

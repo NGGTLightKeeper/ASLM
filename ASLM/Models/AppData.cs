@@ -23,6 +23,10 @@ namespace ASLM.Models
         [JsonPropertyName("ports")]
         public AppPortConfig Ports { get; set; } = new();
 
+        // Stores ASLM and module update preferences.
+        [JsonPropertyName("updates")]
+        public AppUpdateSettings Updates { get; set; } = new();
+
         /// <summary>
         /// Restores nested objects after JSON deserialization.
         /// </summary>
@@ -34,6 +38,10 @@ namespace ASLM.Models
 
             // Recreate the ports section when it is missing from the persisted file.
             Ports ??= new();
+
+            // Recreate and normalize update preferences when the section is absent.
+            Updates ??= new();
+            Updates.Normalize();
         }
     }
 
@@ -82,5 +90,58 @@ namespace ASLM.Models
         // Number of ports reserved for third-party modules.
         [JsonPropertyName("thirdPartyCount")]
         public int ThirdPartyCount { get; set; } = 1000;
+    }
+
+
+    // Update settings
+
+    /// <summary>
+    /// Stores user preferences for update checks and automatic installation.
+    /// </summary>
+    public class AppUpdateSettings
+    {
+        [JsonPropertyName("checkEnabled")]
+        public bool CheckEnabled { get; set; } = true;
+
+        [JsonPropertyName("autoUpdateEnabled")]
+        public bool AutoUpdateEnabled { get; set; }
+
+        [JsonPropertyName("autoCheckPeriodHours")]
+        public int AutoCheckPeriodHours { get; set; } = 24;
+
+        [JsonPropertyName("lastAutoCheckUtc")]
+        public string? LastAutoCheckUtc { get; set; }
+
+        [JsonPropertyName("appChannel")]
+        public string AppChannel { get; set; } = "release";
+
+        [JsonPropertyName("moduleDefaultMode")]
+        public string ModuleDefaultMode { get; set; } = "release";
+
+        [JsonPropertyName("moduleDefaultChannel")]
+        public string ModuleDefaultChannel { get; set; } = "release";
+
+        /// <summary>
+        /// Restores safe defaults and clamps numeric values.
+        /// </summary>
+        public void Normalize()
+        {
+            AutoCheckPeriodHours = Math.Clamp(AutoCheckPeriodHours <= 0 ? 24 : AutoCheckPeriodHours, 1, 720);
+            LastAutoCheckUtc = string.IsNullOrWhiteSpace(LastAutoCheckUtc) ? null : LastAutoCheckUtc;
+            AppChannel = NormalizeChannel(AppChannel);
+            ModuleDefaultMode = NormalizeMode(ModuleDefaultMode);
+            ModuleDefaultChannel = NormalizeChannel(ModuleDefaultChannel);
+        }
+
+        private static string NormalizeChannel(string? value) =>
+            string.Equals(value, "pre-release", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "prerelease", StringComparison.OrdinalIgnoreCase)
+                ? "pre-release"
+                : "release";
+
+        private static string NormalizeMode(string? value) =>
+            string.Equals(value, "branch", StringComparison.OrdinalIgnoreCase)
+                ? "branch"
+                : "release";
     }
 }
