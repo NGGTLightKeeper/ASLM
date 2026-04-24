@@ -61,6 +61,7 @@ namespace ASLM.Models
         public string TargetKind { get; set; } = string.Empty;
         public string TargetId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
         public string CurrentVersion { get; set; } = string.Empty;
         public string RemoteVersion { get; set; } = string.Empty;
         public string Channel { get; set; } = string.Empty;
@@ -69,6 +70,7 @@ namespace ASLM.Models
         public string? ReleaseTag { get; set; }
         public string? CommitSha { get; set; }
         public bool IsPrerelease { get; set; }
+        public DateTimeOffset? PublishedAt { get; set; }
         public ModuleConfig? Module { get; set; }
     }
 

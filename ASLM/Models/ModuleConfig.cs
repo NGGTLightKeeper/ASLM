@@ -93,6 +93,10 @@ namespace ASLM.Models
         [JsonIgnore]
         public string SourcePath { get; set; } = string.Empty;
 
+        // Indicates whether the original manifest explicitly declared an update block.
+        [JsonIgnore]
+        public bool HasDeclaredUpdateConfig { get; set; }
+
         /// <summary>
         /// Restores nested objects, collections, and strings after JSON deserialization.
         /// </summary>
@@ -179,7 +183,7 @@ namespace ASLM.Models
     /// </summary>
     public class ModuleUpdateConfig
     {
-        // Update mode: release assets/release archive or a repository branch archive.
+        // Update mode: release assets/release archive, pre-release stream, or a repository branch archive.
         [JsonPropertyName("mode")]
         public string Mode { get; set; } = "release";
 
@@ -211,20 +215,23 @@ namespace ASLM.Models
         [JsonPropertyName("installedReleaseTag")]
         public string? InstalledReleaseTag { get; set; }
 
+        // User-selected release tag used for installs, including rollbacks.
+        [JsonPropertyName("selectedReleaseTag")]
+        public string? SelectedReleaseTag { get; set; }
+
         /// <summary>
         /// Restores defaults and removes unsafe empty preservation entries.
         /// </summary>
         public void Normalize()
         {
-            Mode = string.Equals(Mode, "branch", StringComparison.OrdinalIgnoreCase) ? "branch" : "release";
-            Channel = string.Equals(Channel, "pre-release", StringComparison.OrdinalIgnoreCase) ||
-                      string.Equals(Channel, "prerelease", StringComparison.OrdinalIgnoreCase)
-                ? "pre-release"
-                : "release";
+            // Keep backward compatibility with the earlier shape where pre-release was stored in Channel.
+            Mode = NormalizeMode(Mode, Channel);
+            Channel = Mode == "pre-release" ? "pre-release" : "release";
             Branch = string.IsNullOrWhiteSpace(Branch) ? "main" : Branch.Trim();
             AssetName = string.IsNullOrWhiteSpace(AssetName) ? null : AssetName.Trim();
             InstalledCommitSha = string.IsNullOrWhiteSpace(InstalledCommitSha) ? null : InstalledCommitSha.Trim();
             InstalledReleaseTag = string.IsNullOrWhiteSpace(InstalledReleaseTag) ? null : InstalledReleaseTag.Trim();
+            SelectedReleaseTag = string.IsNullOrWhiteSpace(SelectedReleaseTag) ? null : SelectedReleaseTag.Trim();
 
             Preserve ??= [];
             Preserve = Preserve
@@ -233,6 +240,33 @@ namespace ASLM.Models
                 .Where(static path => path.Length > 0 && path != "." && !path.Contains("..", StringComparison.Ordinal))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        /// <summary>
+        /// Normalizes the requested update mode while preserving legacy pre-release channel settings.
+        /// </summary>
+        private static string NormalizeMode(string? mode, string? channel)
+        {
+            if (string.Equals(mode, "branch", StringComparison.OrdinalIgnoreCase))
+            {
+                return "branch";
+            }
+
+            if (IsPrereleaseValue(mode) || IsPrereleaseValue(channel))
+            {
+                return "pre-release";
+            }
+
+            return "release";
+        }
+
+        /// <summary>
+        /// Returns whether the provided text represents the pre-release stream.
+        /// </summary>
+        private static bool IsPrereleaseValue(string? value)
+        {
+            return string.Equals(value, "pre-release", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(value, "prerelease", StringComparison.OrdinalIgnoreCase);
         }
     }
 

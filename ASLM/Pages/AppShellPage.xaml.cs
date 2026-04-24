@@ -52,6 +52,7 @@ namespace ASLM.Pages
         private View? _moduleManagementView;
         private View? _downloadModulesView;
         private View? _settingsView;
+        private View? _moduleUpdateDialogView;
 
         private Button? _activeNavButton;
         private Button[] _navButtons = [];
@@ -293,6 +294,33 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Opens the shared module update overlay for the selected module.
+        /// </summary>
+        internal void OpenModuleUpdateOverlay(ModuleViewModel module, ModuleUpdateDialogMode mode)
+        {
+            _ = OpenModuleUpdateOverlayAsync(module, mode);
+        }
+
+        /// <summary>
+        /// Loads and shows the module update overlay before binding it to the selected module.
+        /// </summary>
+        private async Task OpenModuleUpdateOverlayAsync(ModuleViewModel module, ModuleUpdateDialogMode mode)
+        {
+            _moduleUpdateDialogView ??= _services.GetRequiredService<ModuleUpdateDialogView>();
+            if (_moduleUpdateDialogView is not ModuleUpdateDialogView moduleUpdateDialogView)
+            {
+                return;
+            }
+
+            moduleUpdateDialogView.CloseRequested -= OnModuleUpdateCloseRequested;
+            moduleUpdateDialogView.CloseRequested += OnModuleUpdateCloseRequested;
+            await moduleUpdateDialogView.OpenAsync(module, mode);
+
+            OverlayContainer.Content = _moduleUpdateDialogView;
+            OverlayContainer.IsVisible = true;
+        }
+
+        /// <summary>
         /// Hides the overlay container when the settings view requests close.
         /// </summary>
         private void OnSettingsCloseRequested(object? sender, EventArgs e)
@@ -304,6 +332,14 @@ namespace ASLM.Pages
         /// Hides the overlay container when the download view requests close.
         /// </summary>
         private void OnDownloadCloseRequested(object? sender, EventArgs e)
+        {
+            OverlayContainer.IsVisible = false;
+        }
+
+        /// <summary>
+        /// Hides the overlay container when the module update view requests close.
+        /// </summary>
+        private void OnModuleUpdateCloseRequested(object? sender, EventArgs e)
         {
             OverlayContainer.IsVisible = false;
         }

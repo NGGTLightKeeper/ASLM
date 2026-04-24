@@ -73,6 +73,7 @@ namespace ASLM
             builder.Services.AddTransient<ModuleManagementView>();
             builder.Services.AddTransient<DownloadModulesView>();
             builder.Services.AddTransient<SettingsView>();
+            builder.Services.AddTransient<ModuleUpdateDialogView>();
 
             return builder.Build();
         }

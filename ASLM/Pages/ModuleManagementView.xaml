@@ -4,8 +4,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ASLM.Pages.ModuleManagementView">
 
+    <ContentView.GestureRecognizers>
+        <TapGestureRecognizer Tapped="OnBackgroundTapped" />
+    </ContentView.GestureRecognizers>
+
     <CollectionView x:Name="DashboardView"
-                    Margin="12,16"
+                    Margin="8,8"
                     ItemsSource="{Binding Modules}"
                     SelectionMode="None">
 
@@ -19,11 +23,13 @@
         <CollectionView.Header>
             <VerticalStackLayout Spacing="8" Margin="4,0,4,8">
                 <Label Text="Modules"
-                       FontSize="24" FontAttributes="Bold"
+                       FontSize="24"
+                       FontAttributes="Bold"
                        TextColor="{StaticResource LabelPrimary}" />
                 <Label x:Name="DashboardSubtitle"
                        Text="Manage your installed modules"
-                       FontSize="14" TextColor="{StaticResource LabelSecondary}"
+                       FontSize="14"
+                       TextColor="{StaticResource LabelSecondary}"
                        Margin="0,0,0,8" />
             </VerticalStackLayout>
         </CollectionView.Header>
@@ -45,136 +51,132 @@
                         StrokeShape="RoundRectangle 8"
                         Padding="0">
 
-                    <Grid ColumnDefinitions="Auto, *">
-                        <!-- Icon -->
-                        <Border Grid.Column="0"
-                                IsVisible="{Binding HasIcon}"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 0"
-                                BackgroundColor="{StaticResource BackgroundSecondary}"
-                                WidthRequest="164"
-                                HeightRequest="164"
-                                Padding="0"
-                                Margin="8,8,0,8">
-                            <Image Source="{Binding IconFullPath}"
-                                   Aspect="AspectFit"
-                                   HorizontalOptions="Fill"
-                                   VerticalOptions="Fill" />
-                        </Border>
+                    <Grid>
+                        <Grid ColumnDefinitions="Auto,*">
+                            <Border Grid.Column="0"
+                                    IsVisible="{Binding HasIcon}"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 4"
+                                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                                    WidthRequest="164"
+                                    HeightRequest="164"
+                                    Padding="0"
+                                    Margin="8,8,0,8">
+                                <Image Source="{Binding IconFullPath}"
+                                       Aspect="AspectFit"
+                                       HorizontalOptions="Fill"
+                                       VerticalOptions="Fill" />
+                            </Border>
 
-                        <!-- Right side: Text + Buttons -->
-                        <Grid Grid.Column="1"
-                              RowDefinitions="*, Auto, Auto"
-                              Padding="8">
+                            <Grid Grid.Column="1"
+                                  RowDefinitions="Auto,*,Auto"
+                                  Padding="8">
+                                <Grid Grid.Row="0"
+                                      ColumnDefinitions="*,Auto,Auto,Auto"
+                                      ColumnSpacing="0">
+                                    <Label Text="{Binding Name}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource LabelPrimary}"
+                                           VerticalOptions="Center"
+                                           MaxLines="1"
+                                           LineBreakMode="TailTruncation" />
 
-                            <!-- Text area (top) -->
-                            <VerticalStackLayout Grid.Row="0" Spacing="2">
-                                <Label Text="{Binding Name}"
-                                       FontSize="16"
-                                       FontAttributes="Bold"
-                                       TextColor="{StaticResource LabelPrimary}" />
-                                <Label Text="{Binding VersionString}"
-                                       FontSize="13"
-                                       TextColor="{StaticResource LabelSecondary}" />
-                                <Label Text="{Binding UpdateStatus}"
-                                       FontSize="12"
-                                       TextColor="{StaticResource LabelSecondary}"
-                                       Margin="0,4,0,0" />
-                            </VerticalStackLayout>
+                                    <ActivityIndicator Grid.Column="1"
+                                                       IsRunning="{Binding ShowHeaderBusyIndicator}"
+                                                       IsVisible="{Binding ShowHeaderBusyIndicator}"
+                                                       WidthRequest="16"
+                                                       HeightRequest="16"
+                                                       VerticalOptions="Center"
+                                                       Color="{StaticResource LabelSecondary}" />
 
-                            <!-- Update controls -->
-                            <Grid Grid.Row="1"
-                                  RowDefinitions="Auto,Auto"
-                                  ColumnDefinitions="*,*,Auto,Auto"
-                                  ColumnSpacing="6"
-                                  RowSpacing="6"
-                                  Margin="0,6,0,8">
-                                <Picker Grid.Column="0"
-                                        ItemsSource="{Binding SourceModeOptions}"
-                                        SelectedItem="{Binding SelectedSourceMode, Mode=TwoWay}"
-                                        FontSize="12"
-                                        HeightRequest="32"
-                                        TextColor="{StaticResource LabelPrimary}"
-                                        TitleColor="{StaticResource LabelSecondary}"
-                                        BackgroundColor="{StaticResource BackgroundSecondary}" />
-                                <Picker Grid.Column="1"
-                                        ItemsSource="{Binding ChannelOptions}"
-                                        SelectedItem="{Binding SelectedChannel, Mode=TwoWay}"
-                                        IsVisible="{Binding IsReleaseMode}"
-                                        FontSize="12"
-                                        HeightRequest="32"
-                                        TextColor="{StaticResource LabelPrimary}"
-                                        TitleColor="{StaticResource LabelSecondary}"
-                                        BackgroundColor="{StaticResource BackgroundSecondary}" />
-                                <Picker Grid.Column="1"
-                                        ItemsSource="{Binding BranchOptions}"
-                                        SelectedItem="{Binding SelectedBranch, Mode=TwoWay}"
-                                        IsVisible="{Binding IsBranchMode}"
-                                        FontSize="12"
-                                        HeightRequest="32"
-                                        TextColor="{StaticResource LabelPrimary}"
-                                        TitleColor="{StaticResource LabelSecondary}"
-                                        BackgroundColor="{StaticResource BackgroundSecondary}" />
-                                <Button Grid.Column="2"
-                                        Text="Check"
-                                        Command="{Binding CheckUpdateCommand}"
-                                        FontSize="12"
-                                        HeightRequest="32"
-                                        CornerRadius="4"
-                                        Padding="8,0"
-                                        BackgroundColor="{StaticResource BackgroundSecondary}"
-                                        TextColor="{StaticResource LabelSecondary}" />
-                                <Button Grid.Column="3"
-                                        Text="Update"
-                                        Command="{Binding UpdateCommand}"
-                                        IsEnabled="{Binding CanUpdate}"
-                                        FontSize="12"
-                                        HeightRequest="32"
-                                        CornerRadius="4"
-                                        Padding="8,0"
-                                        BackgroundColor="{StaticResource ActionBlue}"
-                                        TextColor="{StaticResource LabelPrimary}" />
-                                <ActivityIndicator Grid.Row="1"
-                                                   Grid.Column="0"
-                                                   Grid.ColumnSpan="4"
-                                                   IsRunning="{Binding IsUpdating}"
-                                                   IsVisible="{Binding IsUpdating}"
+                                    <Border Grid.Column="2"
+                                            IsVisible="{Binding ShowCardUpdateAction}"
+                                            Background="{SolidColorBrush {StaticResource SystemGreen}}"
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 4"
+                                            MinimumWidthRequest="64"
+                                            HeightRequest="24"
+                                            Padding="8,0"
+                                            VerticalOptions="Center">
+                                        <Grid ColumnDefinitions="Auto,Auto"
+                                              ColumnSpacing="2">
+                                            <Grid.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding OpenUpdateDialogCommand}" />
+                                            </Grid.GestureRecognizers>
+
+                                            <Image Source="icon_update.png"
+                                                   WidthRequest="16"
                                                    HeightRequest="16"
-                                                   Color="{StaticResource LabelPrimary}" />
-                            </Grid>
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center" />
+                                            <Label Grid.Column="1"
+                                                   Text="Update"
+                                                   FontSize="14"
+                                                   TextColor="{StaticResource LabelPrimary}"
+                                                   VerticalOptions="Center" />
+                                        </Grid>
+                                    </Border>
 
-                            <!-- Action buttons (bottom) -->
+                                    <Border Grid.Column="3"
+                                            BackgroundColor="{StaticResource BackgroundSecondary}"
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 4"
+                                            WidthRequest="16"
+                                            HeightRequest="16"
+                                            Padding="0"
+                                            VerticalOptions="Center">
+                                        <Grid>
+                                            <Grid.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding ToggleMenuCommand}" />
+                                            </Grid.GestureRecognizers>
 
-                            <!-- Running: Stop + Restart -->
-                            <Grid Grid.Row="2"
-                                  ColumnDefinitions="*, *"
-                                  ColumnSpacing="8"
-                                  IsVisible="{Binding IsRunning}">
-                                <Button Grid.Column="0"
-                                        Text="Stop"
-                                        ImageSource="icon_stop.png"
-                                        ContentLayout="Left,4"
-                                        Command="{Binding StopCommand}"
-                                        BackgroundColor="{StaticResource ActionRed}"
-                                        TextColor="{StaticResource LabelPrimary}"
-                                        FontSize="13"
-                                        HeightRequest="24"
-                                        CornerRadius="4"
-                                        IsVisible="{Binding IsNotRestarting}"
-                                        HorizontalOptions="Fill" />
-                                <Button Grid.Column="1"
-                                        Text="Restart"
-                                        ImageSource="icon_restart.png"
-                                        ContentLayout="Left,4"
-                                        Command="{Binding RestartCommand}"
-                                        BackgroundColor="{StaticResource ActionBlue}"
-                                        TextColor="{StaticResource LabelPrimary}"
-                                        FontSize="13"
-                                        HeightRequest="24"
-                                        CornerRadius="4"
-                                        IsVisible="{Binding IsNotRestarting}"
-                                        HorizontalOptions="Fill" />
-                                <Border Grid.Column="0" Grid.ColumnSpan="2"
+                                            <Image Source="icon_more.png"
+                                                   WidthRequest="16"
+                                                   HeightRequest="16"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center" />
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+
+                                <VerticalStackLayout Grid.Row="1"
+                                                     Spacing="4"
+                                                     Margin="0,8,0,10">
+                                    <Label Text="{Binding VersionString}"
+                                           FontSize="13"
+                                           TextColor="{StaticResource LabelSecondary}" />
+                                </VerticalStackLayout>
+
+                                <Grid Grid.Row="2"
+                                      ColumnDefinitions="*,*"
+                                      ColumnSpacing="8"
+                                      IsVisible="{Binding ShowRunningActions}">
+                                    <Button Grid.Column="0"
+                                            Text="Stop"
+                                            ImageSource="icon_stop.png"
+                                            ContentLayout="Left,4"
+                                            Command="{Binding StopCommand}"
+                                            BackgroundColor="{StaticResource ActionRed}"
+                                            TextColor="{StaticResource LabelPrimary}"
+                                            FontSize="13"
+                                            HeightRequest="32"
+                                            CornerRadius="4"
+                                            HorizontalOptions="Fill" />
+                                    <Button Grid.Column="1"
+                                            Text="Restart"
+                                            ImageSource="icon_restart.png"
+                                            ContentLayout="Left,4"
+                                            Command="{Binding RestartCommand}"
+                                            BackgroundColor="{StaticResource ActionBlue}"
+                                            TextColor="{StaticResource LabelPrimary}"
+                                            FontSize="13"
+                                            HeightRequest="32"
+                                            CornerRadius="4"
+                                            HorizontalOptions="Fill" />
+                                </Grid>
+
+                                <Border Grid.Row="2"
                                         BackgroundColor="{StaticResource SystemBlueOverlay}"
                                         Stroke="{StaticResource ActionBlue}"
                                         StrokeShape="RoundRectangle 4"
@@ -200,22 +202,119 @@
                                                VerticalOptions="Center" />
                                     </HorizontalStackLayout>
                                 </Border>
-                            </Grid>
 
-                            <!-- Stopped: Launch -->
-                            <Button Grid.Row="2"
-                                    Text="Launch"
-                                    ImageSource="icon_play.png"
-                                    ContentLayout="Left,4"
-                                    Command="{Binding LaunchCommand}"
-                                    IsVisible="{Binding IsStopped}"
-                                    BackgroundColor="{StaticResource ActionBlue}"
-                                    TextColor="{StaticResource LabelPrimary}"
-                                    FontSize="13"
-                                    HeightRequest="24"
-                                    CornerRadius="4"
-                                    HorizontalOptions="Fill"
-                                    Margin="0" />
+                                <Border Grid.Row="2"
+                                        BackgroundColor="{StaticResource SystemBlueOverlay}"
+                                        Stroke="{StaticResource ActionBlue}"
+                                        StrokeShape="RoundRectangle 4"
+                                        StrokeThickness="1"
+                                        StrokeDashArray="4,2"
+                                        Padding="0"
+                                        Margin="0"
+                                        IsVisible="{Binding ShowStartingStatus}"
+                                        MinimumHeightRequest="44"
+                                        HorizontalOptions="Fill"
+                                        VerticalOptions="Fill">
+                                    <HorizontalStackLayout HorizontalOptions="Center"
+                                                           VerticalOptions="Center"
+                                                           Spacing="8">
+                                        <ActivityIndicator IsRunning="{Binding ShowStartingStatus}"
+                                                           Color="{StaticResource LabelPrimary}"
+                                                           WidthRequest="16"
+                                                           HeightRequest="16"
+                                                           VerticalOptions="Center" />
+                                        <Label Text="Starting"
+                                               TextColor="{StaticResource LabelPrimary}"
+                                               FontSize="13"
+                                               VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                </Border>
+
+                                <Border Grid.Row="2"
+                                        BackgroundColor="#2032D74B"
+                                        Stroke="{StaticResource SystemGreen}"
+                                        StrokeShape="RoundRectangle 4"
+                                        StrokeThickness="1"
+                                        StrokeDashArray="4,2"
+                                        Padding="0"
+                                        Margin="0"
+                                        IsVisible="{Binding ShowUpdatingStatus}"
+                                        MinimumHeightRequest="44"
+                                        HorizontalOptions="Fill"
+                                        VerticalOptions="Fill">
+                                    <HorizontalStackLayout HorizontalOptions="Center"
+                                                           VerticalOptions="Center"
+                                                           Spacing="8">
+                                        <ActivityIndicator IsRunning="{Binding ShowUpdatingStatus}"
+                                                           Color="{StaticResource LabelPrimary}"
+                                                           WidthRequest="16"
+                                                           HeightRequest="16"
+                                                           VerticalOptions="Center" />
+                                        <Label Text="Updating"
+                                               TextColor="{StaticResource LabelPrimary}"
+                                               FontSize="13"
+                                               VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                </Border>
+
+                                <Button Grid.Row="2"
+                                        Text="Launch"
+                                        ImageSource="icon_play.png"
+                                        ContentLayout="Left,4"
+                                        Command="{Binding LaunchCommand}"
+                                        IsVisible="{Binding CanShowLaunchAction}"
+                                        BackgroundColor="{StaticResource ActionBlue}"
+                                        TextColor="{StaticResource LabelPrimary}"
+                                        FontSize="13"
+                                        HeightRequest="32"
+                                        CornerRadius="4"
+                                        HorizontalOptions="Fill"
+                                        Margin="0" />
+                            </Grid>
+                        </Grid>
+
+                        <Grid IsVisible="{Binding IsMenuOpen}"
+                              ZIndex="10"
+                              InputTransparent="False">
+                            <BoxView Color="#01000000">
+                                <BoxView.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding CloseMenuCommand}" />
+                                </BoxView.GestureRecognizers>
+                            </BoxView>
+
+                            <Border BackgroundColor="{StaticResource BackgroundTertiary}"
+                                    Stroke="{StaticResource Separator}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="6"
+                                    HorizontalOptions="End"
+                                    VerticalOptions="Start"
+                                    Margin="0,44,10,0">
+                                <VerticalStackLayout Spacing="0">
+                                    <Grid HeightRequest="32"
+                                          Padding="10,0">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding CheckUpdateCommand}" />
+                                        </Grid.GestureRecognizers>
+                                        <Label Text="Check updates"
+                                               FontSize="13"
+                                               TextColor="{StaticResource LabelPrimary}"
+                                               HorizontalOptions="Start"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                    <Grid HeightRequest="32"
+                                          Padding="10,0">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding OpenConfigureUpdatesCommand}" />
+                                        </Grid.GestureRecognizers>
+                                        <Label Text="Configure updates"
+                                               FontSize="13"
+                                               TextColor="{StaticResource LabelPrimary}"
+                                               HorizontalOptions="Start"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Border>
                         </Grid>
                     </Grid>
                 </Border>

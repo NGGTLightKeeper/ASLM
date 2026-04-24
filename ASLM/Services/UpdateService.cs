@@ -168,6 +168,60 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Resolves the concrete install target that should be used for a module during setup.
+        /// </summary>
+        public async Task<UpdateCandidate?> ResolveModuleInstallCandidateAsync(
+            ModuleConfig module,
+            CancellationToken ct = default)
+        {
+            module.Normalize();
+            if (!string.Equals(module.Source.Type, "github", StringComparison.OrdinalIgnoreCase) ||
+                string.IsNullOrWhiteSpace(module.Source.Repo))
+            {
+                return null;
+            }
+
+            if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase))
+            {
+                return await ResolveModuleBranchInstallCandidateAsync(module, ct);
+            }
+
+            return await ResolveModuleReleaseInstallCandidateAsync(module, ct);
+        }
+
+        /// <summary>
+        /// Returns selectable release or pre-release versions for one module repository.
+        /// </summary>
+        public async Task<List<UpdateCandidate>> GetModuleReleaseCandidatesAsync(
+            ModuleConfig module,
+            CancellationToken ct = default)
+        {
+            module.Normalize();
+            if (!string.Equals(module.Source.Type, "github", StringComparison.OrdinalIgnoreCase) ||
+                string.IsNullOrWhiteSpace(module.Source.Repo))
+            {
+                return [];
+            }
+
+            var includePrerelease = IsPrereleaseMode(module.Update.Mode);
+            var releases = await _github.GetReleasesAsync(module.Source.Repo, includePrerelease, ct);
+            var candidates = new List<UpdateCandidate>();
+
+            foreach (var release in releases)
+            {
+                var downloadUrl = ResolveModuleDownloadUrl(module, release);
+                if (string.IsNullOrWhiteSpace(downloadUrl))
+                {
+                    continue;
+                }
+
+                candidates.Add(BuildModuleReleaseCandidate(module, release, downloadUrl));
+            }
+
+            return candidates;
+        }
+
+        /// <summary>
         /// Checks ASLM and every installed module for available updates.
         /// </summary>
         public async Task<List<UpdateCandidate>> CheckAllUpdatesAsync(CancellationToken ct = default)
@@ -258,10 +312,13 @@ namespace ASLM.Services
             Directory.CreateDirectory(extractDir);
 
             await _github.DownloadFileAsync(candidate.DownloadUrl, archivePath, log, progress, ct);
-            ExtractZipSafe(archivePath, extractDir);
+            var payloadDir = await Task.Run(() =>
+            {
+                // Archive extraction and payload inspection can touch a lot of files, so keep it off the UI thread.
+                ExtractZipSafe(archivePath, extractDir);
+                return ResolveSinglePayloadDirectory(extractDir);
+            }, ct);
 
-            // GitHub assets may unpack either directly into the payload root or into a single wrapper folder.
-            var payloadDir = ResolveSinglePayloadDirectory(extractDir);
             var pending = new PendingAppUpdate
             {
                 Version = candidate.RemoteVersion,
@@ -317,17 +374,26 @@ namespace ASLM.Services
                 Directory.CreateDirectory(preserveDir);
 
                 await DownloadModuleArchiveAsync(module, candidate, archivePath, log, progress, ct);
-                ExtractZipSafe(archivePath, extractDir);
+                var preparedUpdate = await Task.Run(() =>
+                {
+                    // Extraction and manifest validation are local filesystem work and should not block the UI thread.
+                    ExtractZipSafe(archivePath, extractDir);
 
-                var newManifestPath = FindUpdatedModuleManifest(extractDir);
-                var newConfig = await LoadModuleConfigFromPathAsync(newManifestPath, ct);
+                    var newManifestPath = FindUpdatedModuleManifest(extractDir);
+                    var newConfig = LoadModuleConfigFromPath(newManifestPath);
+                    return new PreparedModuleUpdate(
+                        NewManifestPath: newManifestPath,
+                        NewConfig: newConfig,
+                        ModuleSourceDir: Path.GetDirectoryName(newManifestPath)!);
+                }, ct);
+
+                var newConfig = preparedUpdate.NewConfig;
                 if (newConfig == null || !string.Equals(newConfig.Id, module.Id, StringComparison.OrdinalIgnoreCase))
                 {
                     throw new InvalidOperationException(
                         "Downloaded module archive does not match the installed module id.");
                 }
 
-                var moduleSourceDir = Path.GetDirectoryName(newManifestPath)!;
                 var wasEnabled = module.Status.Enabled;
 
                 if (wasEnabled)
@@ -338,63 +404,16 @@ namespace ASLM.Services
                     _moduleInstaller.SaveModuleConfig(module);
                 }
 
-                CopyDirectory(moduleDir, backupDir);
-                CopyPreservedPaths(moduleDir, preserveDir, module.Update.Preserve, log);
-
-                try
-                {
-                    // Replace the whole module directory so stale files disappear instead of silently lingering.
-                    ClearDirectory(moduleDir);
-                    CopyDirectory(moduleSourceDir, moduleDir);
-                    RestorePreservedPaths(preserveDir, moduleDir, log);
-
-                    var installedPath = Path.Combine(moduleDir, "ASLM_Module.json");
-                    var installed = await _moduleInstaller.LoadModuleConfig(installedPath)
-                        ?? throw new InvalidOperationException("Updated module manifest could not be loaded.");
-
-                    MergeModuleState(module, installed, candidate);
-                    await _moduleInstaller.SaveConfigAsync(installed);
-
-                    if (installed.Update.RunFirstRunAfterUpdate)
-                    {
-                        log?.Report($"Running first-run setup for {installed.Name}...");
-                        installed.Status.FirstRunCompleted = false;
-
-                        var setupSuccess = await _moduleRunner.ExecuteFirstRunAsync(
-                            installed,
-                            log ?? NoOpProgress<string>.Instance,
-                            ct);
-
-                        if (!setupSuccess)
-                        {
-                            await _moduleInstaller.SaveConfigAsync(installed);
-                            log?.Report("Module update applied, but setup failed.");
-                            return false;
-                        }
-                    }
-
-                    if (wasEnabled && installed.Commands.Run.Count > 0)
-                    {
-                        installed.Status.Enabled = true;
-                        await _moduleInstaller.SaveConfigAsync(installed);
-                        _ = Task.Run(() => _moduleRunner.ExecuteRunAsync(
-                            installed,
-                            log ?? NoOpProgress<string>.Instance,
-                            CancellationToken.None));
-                    }
-
-                    installed.Status.LastUpdated = DateTime.UtcNow.ToString("o");
-                    await _moduleInstaller.SaveConfigAsync(installed);
-                    log?.Report($"{installed.Name} updated to {candidate.RemoteVersion}.");
-                    return true;
-                }
-                catch
-                {
-                    log?.Report("Update failed. Restoring previous module files...");
-                    ClearDirectory(moduleDir);
-                    CopyDirectory(backupDir, moduleDir);
-                    throw;
-                }
+                return await ApplyPreparedModuleUpdateAsync(
+                    module,
+                    candidate,
+                    preparedUpdate,
+                    moduleDir,
+                    backupDir,
+                    preserveDir,
+                    wasEnabled,
+                    log,
+                    ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -470,26 +489,16 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Checks whether a release-tracked module has a newer GitHub release.
+        /// Resolves the branch install target selected by the module manifest.
         /// </summary>
-        private async Task<UpdateCandidate?> CheckModuleReleaseUpdateAsync(ModuleConfig module, CancellationToken ct)
+        private async Task<UpdateCandidate?> ResolveModuleBranchInstallCandidateAsync(
+            ModuleConfig module,
+            CancellationToken ct)
         {
-            var includePrerelease = IsPrereleaseChannel(module.Update.Channel);
-            var release = await _github.GetLatestReleaseAsync(module.Source.Repo, includePrerelease, ct);
-            if (release == null)
-            {
-                return null;
-            }
-
-            var downloadUrl = ResolveModuleDownloadUrl(module, release);
-            if (string.IsNullOrWhiteSpace(downloadUrl))
-            {
-                return null;
-            }
-
-            var currentTag = module.Update.InstalledReleaseTag ?? module.Status.InstalledVersion ?? module.Version;
-            if (string.Equals(currentTag, release.TagName, StringComparison.OrdinalIgnoreCase) ||
-                !IsRemoteVersionNewer(release.TagName, currentTag))
+            var branches = await _github.GetBranchesAsync(module.Source.Repo, ct);
+            var selected = branches.FirstOrDefault(branch =>
+                string.Equals(branch.Name, module.Update.Branch, StringComparison.OrdinalIgnoreCase));
+            if (selected == null || string.IsNullOrWhiteSpace(selected.CommitSha))
             {
                 return null;
             }
@@ -500,14 +509,54 @@ namespace ASLM.Services
                 TargetId = module.Id,
                 Name = module.Name,
                 CurrentVersion = BuildModuleCurrentVersion(module),
-                RemoteVersion = release.TagName,
-                Channel = includePrerelease ? "pre-release" : "release",
-                Mode = "release",
-                DownloadUrl = downloadUrl,
-                ReleaseTag = release.TagName,
-                IsPrerelease = release.Prerelease,
+                RemoteVersion = $"{selected.Name}@{ShortSha(selected.CommitSha)}",
+                Channel = "branch",
+                Mode = "branch",
+                CommitSha = selected.CommitSha,
                 Module = module
             };
+        }
+
+        /// <summary>
+        /// Checks whether a release-tracked module has a newer GitHub release.
+        /// </summary>
+        private async Task<UpdateCandidate?> CheckModuleReleaseUpdateAsync(ModuleConfig module, CancellationToken ct)
+        {
+            var currentTag = ResolveInstalledModuleReleaseTag(module);
+            var candidates = await GetModuleReleaseCandidatesAsync(module, ct);
+
+            // The badge on the card should represent a genuinely newer version,
+            // while the dialog can still expose older versions for rollback.
+            return candidates.FirstOrDefault(candidate =>
+                !string.IsNullOrWhiteSpace(candidate.ReleaseTag) &&
+                !string.Equals(candidate.ReleaseTag, currentTag, StringComparison.OrdinalIgnoreCase) &&
+                IsRemoteVersionNewer(candidate.ReleaseTag, currentTag));
+        }
+
+        /// <summary>
+        /// Resolves the release install target selected by the module manifest.
+        /// </summary>
+        private async Task<UpdateCandidate?> ResolveModuleReleaseInstallCandidateAsync(
+            ModuleConfig module,
+            CancellationToken ct)
+        {
+            var candidates = await GetModuleReleaseCandidatesAsync(module, ct);
+            if (candidates.Count == 0)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrWhiteSpace(module.Update.SelectedReleaseTag))
+            {
+                var selected = candidates.FirstOrDefault(candidate =>
+                    string.Equals(candidate.ReleaseTag, module.Update.SelectedReleaseTag, StringComparison.OrdinalIgnoreCase));
+                if (selected != null)
+                {
+                    return selected;
+                }
+            }
+
+            return candidates[0];
         }
 
         /// <summary>
@@ -523,6 +572,32 @@ namespace ASLM.Services
             }
 
             return release.ZipballUrl;
+        }
+
+        /// <summary>
+        /// Builds one release-backed module update candidate from a GitHub release payload.
+        /// </summary>
+        private static UpdateCandidate BuildModuleReleaseCandidate(
+            ModuleConfig module,
+            GitHubReleaseInfo release,
+            string downloadUrl)
+        {
+            return new UpdateCandidate
+            {
+                TargetKind = "module",
+                TargetId = module.Id,
+                Name = module.Name,
+                DisplayName = BuildReleaseDisplayName(release),
+                CurrentVersion = BuildModuleCurrentVersion(module),
+                RemoteVersion = release.TagName,
+                Channel = release.Prerelease ? "pre-release" : "release",
+                Mode = module.Update.Mode,
+                DownloadUrl = downloadUrl,
+                ReleaseTag = release.TagName,
+                IsPrerelease = release.Prerelease,
+                PublishedAt = release.PublishedAt,
+                Module = module
+            };
         }
 
 
@@ -579,6 +654,101 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Loads one module configuration directly from a specific manifest path synchronously.
+        /// </summary>
+        private ModuleConfig? LoadModuleConfigFromPath(string path)
+        {
+            using var stream = File.OpenRead(path);
+            var config = JsonSerializer.Deserialize<ModuleConfig>(stream, _jsonOptions);
+            config?.Normalize();
+            return config;
+        }
+
+        /// <summary>
+        /// Applies a prepared module update while keeping the heavy file operations off the UI thread.
+        /// </summary>
+        private async Task<bool> ApplyPreparedModuleUpdateAsync(
+            ModuleConfig module,
+            UpdateCandidate candidate,
+            PreparedModuleUpdate preparedUpdate,
+            string moduleDir,
+            string backupDir,
+            string preserveDir,
+            bool wasEnabled,
+            IProgress<string>? log,
+            CancellationToken ct)
+        {
+            try
+            {
+                await Task.Run(() =>
+                {
+                    // Copy out the previous installation state before replacing the module files.
+                    CopyDirectory(moduleDir, backupDir);
+                    CopyPreservedPaths(moduleDir, preserveDir, module.Update.Preserve, log);
+
+                    // Replace the whole module directory so stale files disappear instead of silently lingering.
+                    ClearDirectory(moduleDir);
+                    CopyDirectory(preparedUpdate.ModuleSourceDir, moduleDir);
+                    RestorePreservedPaths(preserveDir, moduleDir, log);
+                }, ct);
+
+                var installedPath = Path.Combine(moduleDir, "ASLM_Module.json");
+                var installed = await _moduleInstaller.LoadModuleConfig(installedPath)
+                    ?? throw new InvalidOperationException("Updated module manifest could not be loaded.");
+
+                MergeModuleState(module, installed, candidate);
+                await _moduleInstaller.SaveConfigAsync(installed);
+
+                if (installed.Update.RunFirstRunAfterUpdate)
+                {
+                    log?.Report($"Running first-run setup for {installed.Name}...");
+                    installed.Status.FirstRunCompleted = false;
+
+                    var setupSuccess = await Task.Run(
+                        () => _moduleRunner.ExecuteFirstRunAsync(
+                            installed,
+                            log ?? NoOpProgress<string>.Instance,
+                            ct),
+                        ct);
+
+                    if (!setupSuccess)
+                    {
+                        await _moduleInstaller.SaveConfigAsync(installed);
+                        log?.Report("Module update applied, but setup failed.");
+                        return false;
+                    }
+                }
+
+                if (wasEnabled && installed.Commands.Run.Count > 0)
+                {
+                    installed.Status.Enabled = true;
+                    await _moduleInstaller.SaveConfigAsync(installed);
+                    _ = Task.Run(() => _moduleRunner.ExecuteRunAsync(
+                        installed,
+                        log ?? NoOpProgress<string>.Instance,
+                        CancellationToken.None));
+                }
+
+                installed.Status.LastUpdated = DateTime.UtcNow.ToString("o");
+                await _moduleInstaller.SaveConfigAsync(installed);
+                log?.Report($"{installed.Name} updated to {candidate.RemoteVersion}.");
+                return true;
+            }
+            catch
+            {
+                log?.Report("Update failed. Restoring previous module files...");
+
+                await Task.Run(() =>
+                {
+                    ClearDirectory(moduleDir);
+                    CopyDirectory(backupDir, moduleDir);
+                }, ct);
+
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Carries forward user state and update metadata from the old module into the new manifest.
         /// </summary>
         private static void MergeModuleState(ModuleConfig oldConfig, ModuleConfig newConfig, UpdateCandidate candidate)
@@ -619,6 +789,7 @@ namespace ASLM.Services
                 .ToList();
             newConfig.Update.InstalledCommitSha = candidate.CommitSha ?? oldConfig.Update.InstalledCommitSha;
             newConfig.Update.InstalledReleaseTag = candidate.ReleaseTag ?? oldConfig.Update.InstalledReleaseTag;
+            newConfig.Update.SelectedReleaseTag = candidate.ReleaseTag ?? oldConfig.Update.SelectedReleaseTag;
             newConfig.Update.Normalize();
         }
 
@@ -632,6 +803,14 @@ namespace ASLM.Services
         {
             return string.Equals(channel, "pre-release", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(channel, "prerelease", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Returns whether the selected module update mode includes GitHub pre-releases.
+        /// </summary>
+        private static bool IsPrereleaseMode(string? mode)
+        {
+            return IsPrereleaseChannel(mode);
         }
 
         /// <summary>
@@ -671,6 +850,14 @@ namespace ASLM.Services
                 return $"{module.Update.Branch}@{ShortSha(module.Update.InstalledCommitSha)}";
             }
 
+            return ResolveInstalledModuleReleaseTag(module);
+        }
+
+        /// <summary>
+        /// Returns the locally installed release tag or version string for one module.
+        /// </summary>
+        private static string ResolveInstalledModuleReleaseTag(ModuleConfig module)
+        {
             return module.Update.InstalledReleaseTag ?? module.Status.InstalledVersion ?? module.Version;
         }
 
@@ -710,6 +897,28 @@ namespace ASLM.Services
         private static string ShortSha(string sha)
         {
             return string.IsNullOrWhiteSpace(sha) ? string.Empty : sha[..Math.Min(7, sha.Length)];
+        }
+
+        /// <summary>
+        /// Builds the compact picker label shown for one release candidate.
+        /// </summary>
+        private static string BuildReleaseDisplayName(GitHubReleaseInfo release)
+        {
+            var label = string.IsNullOrWhiteSpace(release.TagName)
+                ? release.Name
+                : release.TagName;
+
+            if (release.Prerelease)
+            {
+                label += " pre-release";
+            }
+
+            if (release.PublishedAt.HasValue)
+            {
+                label += $" - {release.PublishedAt.Value:yyyy-MM-dd}";
+            }
+
+            return label;
         }
 
 
@@ -948,5 +1157,13 @@ namespace ASLM.Services
             {
             }
         }
+
+        /// <summary>
+        /// Carries the validated extracted module payload into the apply phase.
+        /// </summary>
+        private sealed record PreparedModuleUpdate(
+            string NewManifestPath,
+            ModuleConfig? NewConfig,
+            string ModuleSourceDir);
     }
 }
