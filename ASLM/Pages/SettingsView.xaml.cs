@@ -72,6 +72,7 @@ namespace ASLM.Pages
         private Picker? _moduleUpdateChannelPicker;
         private Label? _updateStatusLabel;
         private Button? _prepareAppUpdateButton;
+        private Button? _restartAppUpdateButton;
         private UpdateCandidate? _pendingAppUpdateCandidate;
         private CancellationTokenSource? _ollamaMetadataRefreshCts;
         private CancellationTokenSource? _ollamaStatusPollingCts;
@@ -1226,8 +1227,11 @@ namespace ASLM.Pages
             var checkButton = CreateInlineActionButton("Check now", OnCheckUpdatesNowClicked);
             _prepareAppUpdateButton = CreateInlineActionButton("Prepare ASLM update", OnPrepareAppUpdateClicked);
             _prepareAppUpdateButton.IsVisible = false;
+            _restartAppUpdateButton = CreateInlineActionButton("Restart now", OnRestartNowClicked);
+            _restartAppUpdateButton.IsVisible = _updateService.HasPendingAppUpdate;
             actions.Children.Add(checkButton);
             actions.Children.Add(_prepareAppUpdateButton);
+            actions.Children.Add(_restartAppUpdateButton);
 
             content.Children.Add(actions);
             content.Children.Add(_updateStatusLabel);
@@ -1253,6 +1257,11 @@ namespace ASLM.Pages
                     _prepareAppUpdateButton.IsVisible = false;
                 }
 
+                if (_restartAppUpdateButton != null)
+                {
+                    _restartAppUpdateButton.IsVisible = _updateService.HasPendingAppUpdate;
+                }
+
                 if (_updateStatusLabel != null)
                 {
                     _updateStatusLabel.Text = "Checking GitHub repositories...";
@@ -1265,6 +1274,11 @@ namespace ASLM.Pages
                 if (_prepareAppUpdateButton != null)
                 {
                     _prepareAppUpdateButton.IsVisible = _pendingAppUpdateCandidate != null && !_updateService.HasPendingAppUpdate;
+                }
+
+                if (_restartAppUpdateButton != null)
+                {
+                    _restartAppUpdateButton.IsVisible = _updateService.HasPendingAppUpdate;
                 }
 
                 if (_updateStatusLabel != null)
@@ -1332,6 +1346,11 @@ namespace ASLM.Pages
                 {
                     _prepareAppUpdateButton.IsVisible = !success;
                 }
+
+                if (_restartAppUpdateButton != null)
+                {
+                    _restartAppUpdateButton.IsVisible = success || _updateService.HasPendingAppUpdate;
+                }
             }
             finally
             {
@@ -1340,6 +1359,110 @@ namespace ASLM.Pages
                     senderButton.IsEnabled = true;
                 }
             }
+        }
+
+        /// <summary>
+        /// Restarts through the launcher so the prepared ASLM update can be applied by the patcher.
+        /// </summary>
+        private async void OnRestartNowClicked(object? sender, EventArgs e)
+        {
+            if (sender is Button restartButton)
+            {
+                restartButton.IsEnabled = false;
+            }
+
+            try
+            {
+                if (_updateStatusLabel != null)
+                {
+                    _updateStatusLabel.Text = "Restarting ASLM...";
+                }
+
+                await _moduleRunner.StopAllModulesAsync();
+                StartLauncherForSelfUpdate();
+                Application.Current?.Quit();
+            }
+            catch (Exception ex)
+            {
+                if (_updateStatusLabel != null)
+                {
+                    _updateStatusLabel.Text = $"Restart failed: {ex.Message}";
+                }
+
+                if (sender is Button failedButton)
+                {
+                    failedButton.IsEnabled = true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Starts the launcher so it can detect the prepared update after the current app exits.
+        /// </summary>
+        private static void StartLauncherForSelfUpdate()
+        {
+            var root = ResolveRootForSelfUpdate();
+            var launcherPath = System.IO.Path.Combine(root, "ASLM.exe");
+            if (!File.Exists(launcherPath))
+            {
+                throw new FileNotFoundException("ASLM launcher was not found.", launcherPath);
+            }
+
+            var arguments = new[]
+            {
+                "--wait-process",
+                Environment.ProcessId.ToString(CultureInfo.InvariantCulture)
+            };
+
+            if (DetachedProcessStarter.TryStartBreakawayProcess(launcherPath, root, arguments))
+            {
+                return;
+            }
+
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = launcherPath,
+                WorkingDirectory = root,
+                UseShellExecute = false
+            };
+            foreach (var argument in arguments)
+            {
+                startInfo.ArgumentList.Add(argument);
+            }
+
+            var process = System.Diagnostics.Process.Start(startInfo);
+
+            if (process == null)
+            {
+                throw new InvalidOperationException("ASLM launcher did not start.");
+            }
+        }
+
+        /// <summary>
+        /// Resolves the ASLM root folder that contains the pending update manifest.
+        /// </summary>
+        private static string ResolveRootForSelfUpdate()
+        {
+            var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(
+                System.IO.Path.DirectorySeparatorChar,
+                System.IO.Path.AltDirectorySeparatorChar);
+            var parentRoot = Directory.GetParent(appDir)?.FullName;
+            var candidateRoots = new[]
+            {
+                parentRoot,
+                appDir
+            };
+
+            foreach (var root in candidateRoots.Where(static root => !string.IsNullOrWhiteSpace(root)))
+            {
+                var pendingPath = System.IO.Path.Combine(root!, ".aslm-update", "pending.json");
+                if (File.Exists(pendingPath))
+                {
+                    return root!;
+                }
+            }
+
+            return parentRoot ?? appDir;
         }
 
         /// <summary>
@@ -2431,6 +2554,7 @@ namespace ASLM.Pages
             _moduleUpdateChannelPicker = null;
             _updateStatusLabel = null;
             _prepareAppUpdateButton = null;
+            _restartAppUpdateButton = null;
             _pendingAppUpdateCandidate = null;
         }
 

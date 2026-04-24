@@ -15,6 +15,7 @@
         "autoCheckPeriodHours": 24,
         "lastAutoCheckUtc": null,
         "appChannel": "release",
+        "installedReleaseTag": null,
         "moduleDefaultMode": "release",
         "moduleDefaultChannel": "release"
     }

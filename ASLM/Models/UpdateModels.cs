@@ -67,8 +67,10 @@ namespace ASLM.Models
         public string Channel { get; set; } = string.Empty;
         public string Mode { get; set; } = string.Empty;
         public string DownloadUrl { get; set; } = string.Empty;
+        public string? ReferenceName { get; set; }
         public string? ReleaseTag { get; set; }
         public string? CommitSha { get; set; }
+        public bool IsVirtualLatest { get; set; }
         public bool IsPrerelease { get; set; }
         public DateTimeOffset? PublishedAt { get; set; }
         public ModuleConfig? Module { get; set; }

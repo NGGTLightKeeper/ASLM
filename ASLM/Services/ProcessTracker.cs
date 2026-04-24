@@ -45,7 +45,8 @@ namespace ASLM.Services
             {
                 BasicLimitInformation = new JOBOBJECT_BASIC_LIMIT_INFORMATION
                 {
-                    LimitFlags = JOBOBJECTLIMIT.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+                    LimitFlags = JOBOBJECTLIMIT.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE |
+                                 JOBOBJECTLIMIT.JOB_OBJECT_LIMIT_BREAKAWAY_OK
                 }
             };
 
@@ -153,6 +154,7 @@ namespace ASLM.Services
         [Flags]
         private enum JOBOBJECTLIMIT : uint
         {
+            JOB_OBJECT_LIMIT_BREAKAWAY_OK = 0x00000800,
             JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000
         }
 

@@ -183,6 +183,9 @@ namespace ASLM.Models
     /// </summary>
     public class ModuleUpdateConfig
     {
+        // Virtual picker value that tracks the newest allowed GitHub release.
+        public const string LatestReleaseTag = "latest";
+
         // Update mode: release assets/release archive, pre-release stream, or a repository branch archive.
         [JsonPropertyName("mode")]
         public string Mode { get; set; } = "release";
@@ -231,7 +234,7 @@ namespace ASLM.Models
             AssetName = string.IsNullOrWhiteSpace(AssetName) ? null : AssetName.Trim();
             InstalledCommitSha = string.IsNullOrWhiteSpace(InstalledCommitSha) ? null : InstalledCommitSha.Trim();
             InstalledReleaseTag = string.IsNullOrWhiteSpace(InstalledReleaseTag) ? null : InstalledReleaseTag.Trim();
-            SelectedReleaseTag = string.IsNullOrWhiteSpace(SelectedReleaseTag) ? null : SelectedReleaseTag.Trim();
+            SelectedReleaseTag = NormalizeSelectedReleaseTag(SelectedReleaseTag);
 
             Preserve ??= [];
             Preserve = Preserve
@@ -252,12 +255,38 @@ namespace ASLM.Models
                 return "branch";
             }
 
-            if (IsPrereleaseValue(mode) || IsPrereleaseValue(channel))
+            if (IsPrereleaseValue(mode))
+            {
+                return "pre-release";
+            }
+
+            if (string.Equals(mode, "release", StringComparison.OrdinalIgnoreCase))
+            {
+                return "release";
+            }
+
+            if (string.IsNullOrWhiteSpace(mode) && IsPrereleaseValue(channel))
             {
                 return "pre-release";
             }
 
             return "release";
+        }
+
+        /// <summary>
+        /// Normalizes the selected release marker while preserving the virtual latest option.
+        /// </summary>
+        private static string? NormalizeSelectedReleaseTag(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            var normalized = value.Trim();
+            return string.Equals(normalized, LatestReleaseTag, StringComparison.OrdinalIgnoreCase)
+                ? LatestReleaseTag
+                : normalized;
         }
 
         /// <summary>
