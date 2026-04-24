@@ -8,16 +8,10 @@
 		<AssemblyName>Patcher</AssemblyName>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<OutputPath>..\Build\Debug\net10.0\win-x64\ASLM\Patcher\</OutputPath>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-	</PropertyGroup>
+	<Import Project="..\ASLM.Build.props" />
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<OutputPath>..\Build\Release\net10.0\win-x64\ASLM\Patcher\</OutputPath>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	<PropertyGroup>
+		<OutputPath>$(ASLMBuildOutputRoot)Patcher\</OutputPath>
 	</PropertyGroup>
 
 </Project>

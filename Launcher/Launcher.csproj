@@ -9,11 +9,10 @@
 		<AssemblyName>ASLM</AssemblyName>
 	</PropertyGroup>
 	
+	<Import Project="..\ASLM.Build.props" />
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<OutputPath>..\Build\Debug\net10.0\win-x64\ASLM\</OutputPath>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	<PropertyGroup>
+		<OutputPath>$(ASLMBuildOutputRoot)</OutputPath>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(Configuration)' == 'Debug'">
@@ -38,13 +37,6 @@
 		</Content>
 	</ItemGroup>
 	
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<OutputPath>..\Build\Release\net10.0\win-x64\ASLM\</OutputPath>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-	</PropertyGroup>
-
 	<ItemGroup Condition="'$(Configuration)' == 'Release'">
 		<Content Include="..\Data\**\*.*">
 			<Link>Data\%(RecursiveDir)%(Filename)%(Extension)</Link>
