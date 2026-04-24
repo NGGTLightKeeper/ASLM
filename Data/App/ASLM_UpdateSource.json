@@ -1,0 +1,18 @@
+{
+    "fileVersion": 1,
+    "source": {
+        "type": "github",
+        "repo": "NGGTLightKeeper/ASLM"
+    },
+    "defaultChannel": "release",
+    "assets": {
+        "windows-x64": "ASLM-windows-amd64.zip"
+    },
+    "preserve": [
+        ".aslm-update/logs",
+        "Data",
+        "Engines",
+        "Models",
+        "Modules"
+    ]
+}

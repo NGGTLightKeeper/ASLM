@@ -8,5 +8,14 @@
         "officialCount": 100,
         "thirdPartyStart": 9000,
         "thirdPartyCount": 1000
+    },
+    "updates": {
+        "checkEnabled": true,
+        "autoUpdateEnabled": false,
+        "autoCheckPeriodHours": 24,
+        "lastAutoCheckUtc": null,
+        "appChannel": "release",
+        "moduleDefaultMode": "release",
+        "moduleDefaultChannel": "release"
     }
 }

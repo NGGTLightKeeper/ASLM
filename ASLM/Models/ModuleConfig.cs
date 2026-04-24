@@ -81,6 +81,10 @@ namespace ASLM.Models
         [JsonPropertyName("downloadsBridge")]
         public ModuleDownloadsBridge? DownloadsBridge { get; set; }
 
+        // Update behavior for this module package.
+        [JsonPropertyName("update")]
+        public ModuleUpdateConfig Update { get; set; } = new();
+
         // Persisted installation and runtime state of the module.
         [JsonPropertyName("status")]
         public ModuleStatus Status { get; set; } = new();
@@ -88,6 +92,10 @@ namespace ASLM.Models
         // Absolute path to the source manifest file resolved at runtime.
         [JsonIgnore]
         public string SourcePath { get; set; } = string.Empty;
+
+        // Indicates whether the original manifest explicitly declared an update block.
+        [JsonIgnore]
+        public bool HasDeclaredUpdateConfig { get; set; }
 
         /// <summary>
         /// Restores nested objects, collections, and strings after JSON deserialization.
@@ -125,6 +133,10 @@ namespace ASLM.Models
             // Normalize the optional downloads bridge only when the manifest declares it.
             DownloadsBridge?.Normalize();
 
+            // Normalize module update preferences and preservation rules.
+            Update ??= new();
+            Update.Normalize();
+
             // Ensure persisted runtime status is always available.
             Status ??= new();
             Status.Normalize();
@@ -160,6 +172,101 @@ namespace ASLM.Models
             return fullPath.StartsWith(moduleDirPrefix, StringComparison.OrdinalIgnoreCase)
                 ? fullPath
                 : null;
+        }
+    }
+
+
+    // Module updates
+
+    /// <summary>
+    /// Describes how ASLM should check and apply updates for a module.
+    /// </summary>
+    public class ModuleUpdateConfig
+    {
+        // Update mode: release assets/release archive, pre-release stream, or a repository branch archive.
+        [JsonPropertyName("mode")]
+        public string Mode { get; set; } = "release";
+
+        // Release channel: release only, or release plus pre-release.
+        [JsonPropertyName("channel")]
+        public string Channel { get; set; } = "release";
+
+        // Branch selected when mode is branch.
+        [JsonPropertyName("branch")]
+        public string Branch { get; set; } = "main";
+
+        // Optional release asset name. When absent, release zipball is used for modules.
+        [JsonPropertyName("assetName")]
+        public string? AssetName { get; set; }
+
+        // Relative files and directories copied out before replacement and restored after update.
+        [JsonPropertyName("preserve")]
+        public List<string> Preserve { get; set; } = [];
+
+        // Indicates whether first-run setup should run again after files are replaced.
+        [JsonPropertyName("runFirstRunAfterUpdate")]
+        public bool RunFirstRunAfterUpdate { get; set; } = true;
+
+        // Last branch commit installed by the updater.
+        [JsonPropertyName("installedCommitSha")]
+        public string? InstalledCommitSha { get; set; }
+
+        // Last release tag installed by the updater.
+        [JsonPropertyName("installedReleaseTag")]
+        public string? InstalledReleaseTag { get; set; }
+
+        // User-selected release tag used for installs, including rollbacks.
+        [JsonPropertyName("selectedReleaseTag")]
+        public string? SelectedReleaseTag { get; set; }
+
+        /// <summary>
+        /// Restores defaults and removes unsafe empty preservation entries.
+        /// </summary>
+        public void Normalize()
+        {
+            // Keep backward compatibility with the earlier shape where pre-release was stored in Channel.
+            Mode = NormalizeMode(Mode, Channel);
+            Channel = Mode == "pre-release" ? "pre-release" : "release";
+            Branch = string.IsNullOrWhiteSpace(Branch) ? "main" : Branch.Trim();
+            AssetName = string.IsNullOrWhiteSpace(AssetName) ? null : AssetName.Trim();
+            InstalledCommitSha = string.IsNullOrWhiteSpace(InstalledCommitSha) ? null : InstalledCommitSha.Trim();
+            InstalledReleaseTag = string.IsNullOrWhiteSpace(InstalledReleaseTag) ? null : InstalledReleaseTag.Trim();
+            SelectedReleaseTag = string.IsNullOrWhiteSpace(SelectedReleaseTag) ? null : SelectedReleaseTag.Trim();
+
+            Preserve ??= [];
+            Preserve = Preserve
+                .Where(static path => !string.IsNullOrWhiteSpace(path))
+                .Select(static path => path.Trim().Replace('\\', '/').Trim('/'))
+                .Where(static path => path.Length > 0 && path != "." && !path.Contains("..", StringComparison.Ordinal))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Normalizes the requested update mode while preserving legacy pre-release channel settings.
+        /// </summary>
+        private static string NormalizeMode(string? mode, string? channel)
+        {
+            if (string.Equals(mode, "branch", StringComparison.OrdinalIgnoreCase))
+            {
+                return "branch";
+            }
+
+            if (IsPrereleaseValue(mode) || IsPrereleaseValue(channel))
+            {
+                return "pre-release";
+            }
+
+            return "release";
+        }
+
+        /// <summary>
+        /// Returns whether the provided text represents the pre-release stream.
+        /// </summary>
+        private static bool IsPrereleaseValue(string? value)
+        {
+            return string.Equals(value, "pre-release", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(value, "prerelease", StringComparison.OrdinalIgnoreCase);
         }
     }
 

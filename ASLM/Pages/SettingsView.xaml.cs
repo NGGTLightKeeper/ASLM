@@ -39,14 +39,17 @@ namespace ASLM.Pages
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly OllamaSettingsService _ollamaSettingsService;
+        private readonly UpdateService _updateService;
         private readonly List<SettingControlMapping> _settingMappings = [];
         private readonly Dictionary<string, SettingBaseline> _settingBaselines = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Border> _categoryButtons = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _runtimeLoadedModuleIds = new(StringComparer.OrdinalIgnoreCase);
         private List<ModuleConfig> _loadedModules = [];
         private List<SettingsCategory> _categories = [];
         private SettingsCategory? _activeCategory;
         private SettingsCategoryGroup _activeGroup = SettingsCategoryGroup.Aslm;
         private AslmBaseline _aslmBaseline = new(string.Empty, string.Empty, string.Empty);
+        private UpdateBaseline _updateBaseline = new(true, false, "24", "release", "release", "release");
         private OllamaPersistentSettings _ollamaDraft = new();
         private string _userNameDraft = string.Empty;
         private string _officialPortDraft = string.Empty;
@@ -57,9 +60,19 @@ namespace ASLM.Pages
         private bool _isSaving;
         private bool _isOllamaAccountActionRunning;
         private bool _isOllamaMetadataRefreshRunning;
+        private int _actionButtonUpdateQueued;
         private string _ollamaAccountAction = string.Empty;
         private Button? _ollamaAccountButton;
         private Label? _ollamaAccountStatusLabel;
+        private CompactToggle? _checkUpdatesToggle;
+        private CompactToggle? _autoUpdatesToggle;
+        private Entry? _updatePeriodEntry;
+        private Picker? _appUpdateChannelPicker;
+        private Picker? _moduleUpdateModePicker;
+        private Picker? _moduleUpdateChannelPicker;
+        private Label? _updateStatusLabel;
+        private Button? _prepareAppUpdateButton;
+        private UpdateCandidate? _pendingAppUpdateCandidate;
         private CancellationTokenSource? _ollamaMetadataRefreshCts;
         private CancellationTokenSource? _ollamaStatusPollingCts;
 
@@ -84,6 +97,7 @@ namespace ASLM.Pages
         {
             AslmProfile,
             AslmPorts,
+            Updates,
             Ollama,
             Module
         }
@@ -314,6 +328,17 @@ namespace ASLM.Pages
         private record AslmBaseline(string UserName, string OfficialPort, string ThirdPartyPort);
 
         /// <summary>
+        /// Stores the initial update settings loaded for the current page session.
+        /// </summary>
+        private record UpdateBaseline(
+            bool CheckEnabled,
+            bool AutoUpdateEnabled,
+            string AutoCheckPeriodHours,
+            string AppChannel,
+            string ModuleDefaultMode,
+            string ModuleDefaultChannel);
+
+        /// <summary>
         /// Describes one selectable settings category shown in the sidebar.
         /// </summary>
         private record SettingsCategory(
@@ -339,22 +364,24 @@ namespace ASLM.Pages
             EngineInstaller engineInstaller,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
-            OllamaSettingsService ollamaSettingsService)
+            OllamaSettingsService ollamaSettingsService,
+            UpdateService updateService)
         {
             _appData = appData;
             _engineInstaller = engineInstaller;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             _ollamaSettingsService = ollamaSettingsService;
+            _updateService = updateService;
             InitializeComponent();
             ApplyFlatEntryStyle(UsernameEntry);
             ApplyFlatEntryStyle(OfficialPortEntry);
             ApplyFlatEntryStyle(ThirdPartyPortEntry);
             ApplyScrollViewChrome(CategoryScroll, isSidebar: true);
             ApplyScrollViewChrome(SettingsScroll, isSidebar: false);
-            UsernameEntry.TextChanged += (_, _) => UpdateActionButtons();
-            OfficialPortEntry.TextChanged += (_, _) => UpdateActionButtons();
-            ThirdPartyPortEntry.TextChanged += (_, _) => UpdateActionButtons();
+            UsernameEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
+            OfficialPortEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
+            ThirdPartyPortEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
             SizeChanged += OnViewSizeChanged;
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
@@ -423,7 +450,7 @@ namespace ASLM.Pages
 
             LoadAslmDraftsFromAppData();
             LoadOllamaDraftsFromService();
-            await LoadModuleDraftsAsync(reloadModules: true, reloadRuntimeValues: true);
+            await LoadModuleDraftsAsync(reloadModules: true, reloadRuntimeValues: false);
 
             _categories = CreateOrderedCategories();
 
@@ -513,6 +540,14 @@ namespace ASLM.Pages
             _officialPortDraft = _appData.Data.Ports.OfficialStart.ToString(CultureInfo.InvariantCulture);
             _thirdPartyPortDraft = _appData.Data.Ports.ThirdPartyStart.ToString(CultureInfo.InvariantCulture);
             _aslmBaseline = new AslmBaseline(_userNameDraft, _officialPortDraft, _thirdPartyPortDraft);
+            _appData.Data.Updates.Normalize();
+            _updateBaseline = new UpdateBaseline(
+                _appData.Data.Updates.CheckEnabled,
+                _appData.Data.Updates.AutoUpdateEnabled,
+                _appData.Data.Updates.AutoCheckPeriodHours.ToString(CultureInfo.InvariantCulture),
+                _appData.Data.Updates.AppChannel,
+                _appData.Data.Updates.ModuleDefaultMode,
+                _appData.Data.Updates.ModuleDefaultChannel);
 
             ApplyAslmDraftsToControls();
             PortErrorLabel.IsVisible = false;
@@ -542,36 +577,48 @@ namespace ASLM.Pages
             if (reloadModules || _loadedModules.Count == 0)
             {
                 _loadedModules = await _moduleInstaller.DiscoverModulesAsync();
+                _runtimeLoadedModuleIds.Clear();
+                _settingBaselines.Clear();
             }
 
             if (reloadRuntimeValues)
             {
+                _runtimeLoadedModuleIds.Clear();
                 _settingBaselines.Clear();
             }
 
             foreach (var module in _loadedModules)
             {
-                var settings = module.Settings?.Where(ShouldDisplaySetting).ToList() ?? [];
-                if (settings.Count == 0)
-                {
-                    continue;
-                }
-
-                var loaded = reloadRuntimeValues
-                    ? await Task.WhenAll(settings.Select(setting => LoadSettingValueAsync(module, setting)))
-                    : settings.Select(setting => new LoadedSetting(setting, GetFallbackValue(module, setting))).ToArray();
-
+                await LoadModuleDraftAsync(module, reloadRuntimeValues);
                 if (reloadRuntimeValues)
                 {
-                    UpdateSettingBaselines(module, loaded);
+                    _runtimeLoadedModuleIds.Add(GetModuleRuntimeKey(module));
                 }
+            }
+        }
 
-                foreach (var item in loaded)
+        /// <summary>
+        /// Loads one module's visible settings, optionally using live runtime getters.
+        /// </summary>
+        private async Task LoadModuleDraftAsync(ModuleConfig module, bool reloadRuntimeValues)
+        {
+            var settings = module.Settings?.Where(ShouldDisplaySetting).ToList() ?? [];
+            if (settings.Count == 0)
+            {
+                return;
+            }
+
+            var loaded = reloadRuntimeValues
+                ? await Task.WhenAll(settings.Select(setting => LoadSettingValueAsync(module, setting)))
+                : settings.Select(setting => new LoadedSetting(setting, GetFallbackValue(module, setting))).ToArray();
+
+            UpdateSettingBaselines(module, loaded);
+
+            foreach (var item in loaded)
+            {
+                if (!item.Setting.IsAutomaticallyManaged || item.Setting.UseCustomValue)
                 {
-                    if (!item.Setting.IsAutomaticallyManaged || item.Setting.UseCustomValue)
-                    {
-                        item.Setting.Value = item.Value;
-                    }
+                    item.Setting.Value = item.Value;
                 }
             }
         }
@@ -599,6 +646,13 @@ namespace ASLM.Pages
                     SettingsCategoryKind.AslmPorts,
                     null,
                     true),
+                new(
+                    "aslm-updates",
+                    "Updates",
+                    "ASLM and module update checks.",
+                    SettingsCategoryKind.Updates,
+                    null,
+                    false),
                 new(
                     "aslm-ollama",
                     "Ollama",
@@ -721,7 +775,10 @@ namespace ASLM.Pages
             }
         }
 
-                private async Task TrySelectCategoryAsync(SettingsCategory category)
+        /// <summary>
+        /// Switches to the requested category after preserving or discarding pending edits.
+        /// </summary>
+        private async Task TrySelectCategoryAsync(SettingsCategory category)
         {
             if (_isSaving || _isSwitchingCategory)
             {
@@ -775,17 +832,100 @@ namespace ASLM.Pages
                 case SettingsCategoryKind.AslmPorts:
                     RenderAslmCategory(showProfile: false, showPorts: true);
                     break;
+                case SettingsCategoryKind.Updates:
+                    RenderUpdatesCategory();
+                    break;
                 case SettingsCategoryKind.Ollama:
                     RenderOllamaCategory();
                     break;
                 case SettingsCategoryKind.Module:
                     RenderModuleCategory(category.Module!);
+                    _ = RefreshActiveModuleRuntimeValuesAsync(category);
                     break;
             }
 
             UpdateSelectorButtonStates();
             UpdateActionButtons();
         }
+
+        /// <summary>
+        /// Loads live runtime values only for the currently visible module settings page.
+        /// </summary>
+        private async Task RefreshActiveModuleRuntimeValuesAsync(SettingsCategory category)
+        {
+            if (category.Kind != SettingsCategoryKind.Module || category.Module == null)
+            {
+                return;
+            }
+
+            var module = category.Module;
+            var runtimeKey = GetModuleRuntimeKey(module);
+            if (_runtimeLoadedModuleIds.Contains(runtimeKey))
+            {
+                return;
+            }
+
+            try
+            {
+                var settings = module.Settings?.Where(ShouldDisplaySetting).ToList() ?? [];
+                if (settings.Count == 0)
+                {
+                    _runtimeLoadedModuleIds.Add(runtimeKey);
+                    return;
+                }
+
+                var loaded = await Task.WhenAll(settings.Select(setting => LoadSettingValueAsync(module, setting)));
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    var stillActive =
+                        _activeCategory?.Kind == SettingsCategoryKind.Module &&
+                        _activeCategory.Module != null &&
+                        string.Equals(_activeCategory.Module.SourcePath, module.SourcePath, StringComparison.OrdinalIgnoreCase);
+
+                    if (stillActive && HasUnsavedChanges())
+                    {
+                        return;
+                    }
+
+                    UpdateSettingBaselines(module, loaded);
+                    foreach (var item in loaded)
+                    {
+                        if (!item.Setting.IsAutomaticallyManaged || item.Setting.UseCustomValue)
+                        {
+                            item.Setting.Value = item.Value;
+                        }
+                    }
+
+                    _runtimeLoadedModuleIds.Add(runtimeKey);
+
+                    if (stillActive)
+                    {
+                        RenderModuleCategory(module);
+                        UpdateActionButtons();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to refresh runtime settings for module '{module.Name}': {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Forces live runtime values for one module after settings are saved.
+        /// </summary>
+        private async Task ReloadModuleRuntimeValuesAsync(ModuleConfig module)
+        {
+            _runtimeLoadedModuleIds.Remove(GetModuleRuntimeKey(module));
+            await LoadModuleDraftAsync(module, reloadRuntimeValues: true);
+            _runtimeLoadedModuleIds.Add(GetModuleRuntimeKey(module));
+        }
+
+        /// <summary>
+        /// Returns the stable key used to remember whether live runtime values were already loaded.
+        /// </summary>
+        private static string GetModuleRuntimeKey(ModuleConfig module) => module.SourcePath;
 
         /// <summary>
         /// Returns the category that matches the stored category identifier, if it still exists.
@@ -828,6 +968,29 @@ namespace ASLM.Pages
 
             button.BackgroundColor = isActive ? ActiveCategoryBackgroundColor : InactiveCategoryBackgroundColor;
             button.Opacity = isActive ? 1.0 : 0.92;
+        }
+
+        /// <summary>
+        /// Coalesces rapid editor changes before recomputing save/reset button state.
+        /// </summary>
+        private void QueueActionButtonUpdate()
+        {
+            if (Dispatcher == null)
+            {
+                UpdateActionButtons();
+                return;
+            }
+
+            if (Interlocked.Exchange(ref _actionButtonUpdateQueued, 1) == 1)
+            {
+                return;
+            }
+
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(50), () =>
+            {
+                Interlocked.Exchange(ref _actionButtonUpdateQueued, 0);
+                UpdateActionButtons();
+            });
         }
 
         /// <summary>
@@ -900,6 +1063,7 @@ namespace ASLM.Pages
             ApplyAslmDraftsToControls();
             _settingMappings.Clear();
             ResetOllamaControlReferences();
+            ResetUpdateControlReferences();
 
             AslmSettingsContainer.IsVisible = true;
             UserProfileSection.IsVisible = showProfile;
@@ -910,12 +1074,88 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Rebuilds the update settings category and its action controls.
+        /// </summary>
+        private void RenderUpdatesCategory()
+        {
+            _settingMappings.Clear();
+            ResetOllamaControlReferences();
+            ResetUpdateControlReferences();
+            ModuleSettingsContainer.Children.Clear();
+
+            AslmSettingsContainer.IsVisible = false;
+            ModuleSettingsContainer.IsVisible = true;
+            EmptyCategoryState.IsVisible = false;
+
+            _appData.Data.Updates.Normalize();
+            var settings = _appData.Data.Updates;
+
+            var section = CreateModuleSectionBorder();
+            var content = new VerticalStackLayout { Spacing = 14 };
+
+            _checkUpdatesToggle = CreateCompactToggle(settings.CheckEnabled);
+            _checkUpdatesToggle.Toggled += (_, _) => QueueActionButtonUpdate();
+            content.Children.Add(CreateUpdateCard(
+                "Check for updates",
+                "Allow ASLM to query configured GitHub repositories.",
+                _checkUpdatesToggle.View));
+
+            _autoUpdatesToggle = CreateCompactToggle(settings.AutoUpdateEnabled);
+            _autoUpdatesToggle.Toggled += (_, _) => QueueActionButtonUpdate();
+            content.Children.Add(CreateUpdateCard(
+                "Install updates automatically",
+                "Automatically apply module updates and prepare ASLM builds for the next restart.",
+                _autoUpdatesToggle.View));
+
+            _updatePeriodEntry = CreateTextEntry(settings.AutoCheckPeriodHours.ToString(CultureInfo.InvariantCulture));
+            _updatePeriodEntry.Keyboard = Keyboard.Numeric;
+            _updatePeriodEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
+            content.Children.Add(CreateUpdateCard(
+                "Auto-check period",
+                "Hours between background update checks.",
+                CreateFieldContainer(_updatePeriodEntry)));
+
+            _appUpdateChannelPicker = CreatePicker("ASLM channel", 13);
+            _appUpdateChannelPicker.ItemsSource = new List<string> { "release", "pre-release" };
+            _appUpdateChannelPicker.SelectedItem = settings.AppChannel;
+            _appUpdateChannelPicker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
+            content.Children.Add(CreateUpdateCard(
+                "ASLM release channel",
+                "Release uses stable GitHub releases only. Pre-release also accepts preview releases.",
+                CreatePickerContainer(_appUpdateChannelPicker)));
+
+            _moduleUpdateModePicker = CreatePicker("Module source", 13);
+            _moduleUpdateModePicker.ItemsSource = new List<string> { "release", "branch" };
+            _moduleUpdateModePicker.SelectedItem = settings.ModuleDefaultMode;
+            _moduleUpdateModePicker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
+            content.Children.Add(CreateUpdateCard(
+                "Default module update mode",
+                "New module preferences start from this mode; individual modules can override it.",
+                CreatePickerContainer(_moduleUpdateModePicker)));
+
+            _moduleUpdateChannelPicker = CreatePicker("Module channel", 13);
+            _moduleUpdateChannelPicker.ItemsSource = new List<string> { "release", "pre-release" };
+            _moduleUpdateChannelPicker.SelectedItem = settings.ModuleDefaultChannel;
+            _moduleUpdateChannelPicker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
+            content.Children.Add(CreateUpdateCard(
+                "Default module release channel",
+                "Used by modules that follow GitHub releases.",
+                CreatePickerContainer(_moduleUpdateChannelPicker)));
+
+            content.Children.Add(CreateManualUpdateCard());
+
+            section.Content = content;
+            ModuleSettingsContainer.Children.Add(section);
+        }
+
+        /// <summary>
         /// Rebuilds the Ollama settings page using the current persistent draft values.
         /// </summary>
         private void RenderOllamaCategory()
         {
             _settingMappings.Clear();
             ResetOllamaControlReferences();
+            ResetUpdateControlReferences();
             ModuleSettingsContainer.Children.Clear();
 
             AslmSettingsContainer.IsVisible = false;
@@ -932,6 +1172,174 @@ namespace ASLM.Pages
 
             UpdateOllamaAccountActionControls();
             StartOllamaMetadataRefresh();
+        }
+
+        /// <summary>
+        /// Creates one update setting card with a title, description, and trailing control.
+        /// </summary>
+        private static Border CreateUpdateCard(string title, string description, View control)
+        {
+            var card = CreateSettingCardBorder();
+            var grid = new Grid
+            {
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition(GridLength.Star),
+                    new ColumnDefinition(GridLength.Auto)
+                },
+                ColumnSpacing = 16,
+                MinimumHeightRequest = 46
+            };
+
+            var text = new VerticalStackLayout { Spacing = 3 };
+            text.Children.Add(CreateCardTitle(title));
+            text.Children.Add(CreateCardDescription(description));
+
+            grid.Children.Add(text);
+            Grid.SetColumn(text, 0);
+
+            control.HorizontalOptions = LayoutOptions.End;
+            control.VerticalOptions = LayoutOptions.Center;
+            grid.Children.Add(control);
+            Grid.SetColumn(control, 1);
+
+            card.Content = grid;
+            return card;
+        }
+
+        /// <summary>
+        /// Creates the manual update action card.
+        /// </summary>
+        private Border CreateManualUpdateCard()
+        {
+            var card = CreateSettingCardBorder();
+            var content = new VerticalStackLayout { Spacing = 10 };
+
+            content.Children.Add(CreateCardTitle("Manual check"));
+            content.Children.Add(CreateCardDescription($"Current ASLM version: {_updateService.CurrentAppVersion}"));
+
+            _updateStatusLabel = CreateSecondaryLabel(_updateService.HasPendingAppUpdate
+                ? "ASLM update is prepared and will be applied on restart."
+                : "No update check has been run in this session.");
+
+            var actions = new HorizontalStackLayout { Spacing = 8 };
+            var checkButton = CreateInlineActionButton("Check now", OnCheckUpdatesNowClicked);
+            _prepareAppUpdateButton = CreateInlineActionButton("Prepare ASLM update", OnPrepareAppUpdateClicked);
+            _prepareAppUpdateButton.IsVisible = false;
+            actions.Children.Add(checkButton);
+            actions.Children.Add(_prepareAppUpdateButton);
+
+            content.Children.Add(actions);
+            content.Children.Add(_updateStatusLabel);
+            card.Content = content;
+            return card;
+        }
+
+        /// <summary>
+        /// Runs a manual update check and exposes app self-update preparation when available.
+        /// </summary>
+        private async void OnCheckUpdatesNowClicked(object? sender, EventArgs e)
+        {
+            if (sender is Button button)
+            {
+                button.IsEnabled = false;
+            }
+
+            try
+            {
+                _pendingAppUpdateCandidate = null;
+                if (_prepareAppUpdateButton != null)
+                {
+                    _prepareAppUpdateButton.IsVisible = false;
+                }
+
+                if (_updateStatusLabel != null)
+                {
+                    _updateStatusLabel.Text = "Checking GitHub repositories...";
+                }
+
+                var updates = await _updateService.CheckAllUpdatesAsync();
+                _pendingAppUpdateCandidate = updates.FirstOrDefault(update =>
+                    string.Equals(update.TargetKind, "app", StringComparison.OrdinalIgnoreCase));
+
+                if (_prepareAppUpdateButton != null)
+                {
+                    _prepareAppUpdateButton.IsVisible = _pendingAppUpdateCandidate != null && !_updateService.HasPendingAppUpdate;
+                }
+
+                if (_updateStatusLabel != null)
+                {
+                    _updateStatusLabel.Text = updates.Count == 0
+                        ? "Everything is up to date."
+                        : $"{updates.Count} update(s) available. Module updates can be applied from the Modules page.";
+                }
+            }
+            catch (Exception ex)
+            {
+                if (_updateStatusLabel != null)
+                {
+                    _updateStatusLabel.Text = $"Update check failed: {ex.Message}";
+                }
+            }
+            finally
+            {
+                if (sender is Button senderButton)
+                {
+                    senderButton.IsEnabled = true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Downloads an available ASLM build and writes the pending update manifest for the patcher.
+        /// </summary>
+        private async void OnPrepareAppUpdateClicked(object? sender, EventArgs e)
+        {
+            if (_pendingAppUpdateCandidate == null)
+            {
+                return;
+            }
+
+            if (sender is Button prepareButton)
+            {
+                prepareButton.IsEnabled = false;
+            }
+
+            try
+            {
+                if (_updateStatusLabel != null)
+                {
+                    _updateStatusLabel.Text = "Downloading ASLM build...";
+                }
+
+                var log = new Progress<string>(message =>
+                {
+                    if (_updateStatusLabel != null)
+                    {
+                        MainThread.BeginInvokeOnMainThread(() => _updateStatusLabel.Text = message);
+                    }
+                });
+
+                var success = await _updateService.PrepareAppUpdateAsync(_pendingAppUpdateCandidate, log);
+                if (_updateStatusLabel != null)
+                {
+                    _updateStatusLabel.Text = success
+                        ? "ASLM update prepared. Restart ASLM to apply it."
+                        : "ASLM update could not be prepared.";
+                }
+
+                if (_prepareAppUpdateButton != null)
+                {
+                    _prepareAppUpdateButton.IsVisible = !success;
+                }
+            }
+            finally
+            {
+                if (sender is Button senderButton)
+                {
+                    senderButton.IsEnabled = true;
+                }
+            }
         }
 
         /// <summary>
@@ -982,6 +1390,7 @@ namespace ASLM.Pages
         {
             _settingMappings.Clear();
             ResetOllamaControlReferences();
+            ResetUpdateControlReferences();
             ModuleSettingsContainer.Children.Clear();
 
             var settings = module.Settings?.Where(ShouldDisplaySetting).ToList() ?? [];
@@ -1033,6 +1442,7 @@ namespace ASLM.Pages
         private void ShowEmptyCategory(string message)
         {
             ResetOllamaControlReferences();
+            ResetUpdateControlReferences();
             AslmSettingsContainer.IsVisible = false;
             ModuleSettingsContainer.IsVisible = false;
             ModuleSettingsContainer.Children.Clear();
@@ -1174,6 +1584,7 @@ namespace ASLM.Pages
                 SettingsCategoryKind.AslmProfile => !string.Equals(UsernameEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.UserName, StringComparison.Ordinal),
                 SettingsCategoryKind.AslmPorts => !string.Equals(OfficialPortEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.OfficialPort, StringComparison.Ordinal) ||
                                                   !string.Equals(ThirdPartyPortEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.ThirdPartyPort, StringComparison.Ordinal),
+                SettingsCategoryKind.Updates => HasUnsavedUpdateChanges(),
                 SettingsCategoryKind.Ollama => false,
                 SettingsCategoryKind.Module => HasUnsavedModuleChanges(),
                 _ => false
@@ -1201,6 +1612,105 @@ namespace ASLM.Pages
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Determines whether update controls differ from the last saved baseline.
+        /// </summary>
+        private bool HasUnsavedUpdateChanges()
+        {
+            if (_checkUpdatesToggle == null ||
+                _autoUpdatesToggle == null ||
+                _updatePeriodEntry == null ||
+                _appUpdateChannelPicker == null ||
+                _moduleUpdateModePicker == null ||
+                _moduleUpdateChannelPicker == null)
+            {
+                return false;
+            }
+
+            return _checkUpdatesToggle.IsToggled != _updateBaseline.CheckEnabled ||
+                   _autoUpdatesToggle.IsToggled != _updateBaseline.AutoUpdateEnabled ||
+                   !string.Equals(_updatePeriodEntry.Text?.Trim() ?? string.Empty, _updateBaseline.AutoCheckPeriodHours, StringComparison.Ordinal) ||
+                   !string.Equals(_appUpdateChannelPicker.SelectedItem?.ToString() ?? "release", _updateBaseline.AppChannel, StringComparison.OrdinalIgnoreCase) ||
+                   !string.Equals(_moduleUpdateModePicker.SelectedItem?.ToString() ?? "release", _updateBaseline.ModuleDefaultMode, StringComparison.OrdinalIgnoreCase) ||
+                   !string.Equals(_moduleUpdateChannelPicker.SelectedItem?.ToString() ?? "release", _updateBaseline.ModuleDefaultChannel, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Reads and validates update settings from the current controls.
+        /// </summary>
+        private bool TryReadUpdateSettings(out AppUpdateSettings settings, out string errorMessage)
+        {
+            settings = new AppUpdateSettings();
+            errorMessage = string.Empty;
+
+            if (_checkUpdatesToggle == null ||
+                _autoUpdatesToggle == null ||
+                _updatePeriodEntry == null ||
+                _appUpdateChannelPicker == null ||
+                _moduleUpdateModePicker == null ||
+                _moduleUpdateChannelPicker == null)
+            {
+                errorMessage = "Update settings controls are not ready.";
+                return false;
+            }
+
+            if (!int.TryParse(_updatePeriodEntry.Text?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var periodHours) ||
+                periodHours < 1 ||
+                periodHours > 720)
+            {
+                errorMessage = "Auto-check period must be between 1 and 720 hours.";
+                return false;
+            }
+
+            settings.CheckEnabled = _checkUpdatesToggle.IsToggled;
+            settings.AutoUpdateEnabled = _autoUpdatesToggle.IsToggled;
+            settings.AutoCheckPeriodHours = periodHours;
+            settings.AppChannel = _appUpdateChannelPicker.SelectedItem?.ToString() ?? "release";
+            settings.ModuleDefaultMode = _moduleUpdateModePicker.SelectedItem?.ToString() ?? "release";
+            settings.ModuleDefaultChannel = _moduleUpdateChannelPicker.SelectedItem?.ToString() ?? "release";
+            settings.Normalize();
+            return true;
+        }
+
+        /// <summary>
+        /// Pushes default update preferences into the visible update controls.
+        /// </summary>
+        private void ApplyUpdateDefaultsToControls()
+        {
+            var defaults = new AppUpdateSettings();
+            defaults.Normalize();
+
+            if (_checkUpdatesToggle != null)
+            {
+                _checkUpdatesToggle.IsToggled = defaults.CheckEnabled;
+            }
+
+            if (_autoUpdatesToggle != null)
+            {
+                _autoUpdatesToggle.IsToggled = defaults.AutoUpdateEnabled;
+            }
+
+            if (_updatePeriodEntry != null)
+            {
+                _updatePeriodEntry.Text = defaults.AutoCheckPeriodHours.ToString(CultureInfo.InvariantCulture);
+            }
+
+            if (_appUpdateChannelPicker != null)
+            {
+                _appUpdateChannelPicker.SelectedItem = defaults.AppChannel;
+            }
+
+            if (_moduleUpdateModePicker != null)
+            {
+                _moduleUpdateModePicker.SelectedItem = defaults.ModuleDefaultMode;
+            }
+
+            if (_moduleUpdateChannelPicker != null)
+            {
+                _moduleUpdateChannelPicker.SelectedItem = defaults.ModuleDefaultChannel;
+            }
         }
 
         /// <summary>
@@ -1253,6 +1763,9 @@ namespace ASLM.Pages
                     _thirdPartyPortDraft = defaultPorts.ThirdPartyStart.ToString(CultureInfo.InvariantCulture);
                     PortErrorLabel.IsVisible = false;
                     RenderAslmCategory(showProfile: false, showPorts: true);
+                    break;
+                case SettingsCategoryKind.Updates:
+                    ApplyUpdateDefaultsToControls();
                     break;
                 case SettingsCategoryKind.Ollama:
                     break;
@@ -1374,6 +1887,37 @@ namespace ASLM.Pages
                         break;
                     }
 
+                    case SettingsCategoryKind.Updates:
+                    {
+                        if (!TryReadUpdateSettings(out var nextSettings, out var errorMessage))
+                        {
+                            await ShowErrorAsync(errorMessage);
+                            return;
+                        }
+
+                        var hasChanges = HasUnsavedUpdateChanges();
+                        _appData.Data.Updates.CheckEnabled = nextSettings.CheckEnabled;
+                        _appData.Data.Updates.AutoUpdateEnabled = nextSettings.AutoUpdateEnabled;
+                        _appData.Data.Updates.AutoCheckPeriodHours = nextSettings.AutoCheckPeriodHours;
+                        _appData.Data.Updates.AppChannel = nextSettings.AppChannel;
+                        _appData.Data.Updates.ModuleDefaultMode = nextSettings.ModuleDefaultMode;
+                        _appData.Data.Updates.ModuleDefaultChannel = nextSettings.ModuleDefaultChannel;
+                        _appData.Data.Updates.Normalize();
+                        await _appData.SaveAsync();
+
+                        _updateBaseline = new UpdateBaseline(
+                            _appData.Data.Updates.CheckEnabled,
+                            _appData.Data.Updates.AutoUpdateEnabled,
+                            _appData.Data.Updates.AutoCheckPeriodHours.ToString(CultureInfo.InvariantCulture),
+                            _appData.Data.Updates.AppChannel,
+                            _appData.Data.Updates.ModuleDefaultMode,
+                            _appData.Data.Updates.ModuleDefaultChannel);
+
+                        RenderUpdatesCategory();
+                        await ShowSuccessAsync(BuildSaveMessage(hasChanges, false, []));
+                        break;
+                    }
+
                     case SettingsCategoryKind.Ollama:
                         break;
 
@@ -1389,7 +1933,7 @@ namespace ASLM.Pages
                         var moduleSaveResult = await SaveActiveModuleAsync(_activeCategory.Module!);
                         if (moduleSaveResult.TouchedModules.Count > 0)
                         {
-                            await LoadModuleDraftsAsync(reloadModules: false, reloadRuntimeValues: true);
+                            await ReloadModuleRuntimeValuesAsync(_activeCategory.Module!);
                         }
 
                         var activeCategoryId = _activeCategory.Id;
@@ -1875,6 +2419,22 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Clears references to dynamically created update controls before the page is rebuilt.
+        /// </summary>
+        private void ResetUpdateControlReferences()
+        {
+            _checkUpdatesToggle = null;
+            _autoUpdatesToggle = null;
+            _updatePeriodEntry = null;
+            _appUpdateChannelPicker = null;
+            _moduleUpdateModePicker = null;
+            _moduleUpdateChannelPicker = null;
+            _updateStatusLabel = null;
+            _prepareAppUpdateButton = null;
+            _pendingAppUpdateCandidate = null;
+        }
+
+        /// <summary>
         /// Determines whether the current Ollama account state should be treated as signed in.
         /// </summary>
         private bool IsOllamaSignedIn() => _ollamaDraft.IsSignedIn;
@@ -2284,7 +2844,7 @@ namespace ASLM.Pages
                 };
             }
 
-            toggle.Toggled += (_, _) => UpdateActionButtons();
+            toggle.Toggled += (_, _) => QueueActionButtonUpdate();
 
             return (toggle.View, new SettingControlMapping(
                 module,
@@ -2322,7 +2882,7 @@ namespace ASLM.Pages
             var selectedIndex = allowedValues.FindIndex(option =>
                 string.Equals(option, selectedValue, StringComparison.OrdinalIgnoreCase));
             picker.SelectedIndex = selectedIndex >= 0 ? selectedIndex : (allowedValues.Count > 0 ? 0 : -1);
-            picker.SelectedIndexChanged += (_, _) => UpdateActionButtons();
+            picker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
 
             return (pickerContainer, new SettingControlMapping(
                 module,
@@ -2361,7 +2921,7 @@ namespace ASLM.Pages
             }
 
             picker.SelectedIndex = selectedIndex;
-            picker.SelectedIndexChanged += (_, _) => UpdateActionButtons();
+            picker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
 
             return (pickerContainer, new SettingControlMapping(
                 module,
@@ -2382,7 +2942,7 @@ namespace ASLM.Pages
             var baseline = GetSettingBaseline(module, setting, value);
             var (field, entry) = CreateTextField(setting.FormatValueForDisplay(value));
             entry.Keyboard = Keyboard.Numeric;
-            entry.TextChanged += (_, _) => UpdateActionButtons();
+            entry.TextChanged += (_, _) => QueueActionButtonUpdate();
 
             return (field, new SettingControlMapping(module, setting, () => entry.Text, null, baseline.DisplayValue, baseline.UseCustomValue));
         }
@@ -2394,7 +2954,7 @@ namespace ASLM.Pages
         {
             var baseline = GetSettingBaseline(module, setting, value);
             var (field, entry) = CreateTextField(setting.FormatValueForDisplay(value));
-            entry.TextChanged += (_, _) => UpdateActionButtons();
+            entry.TextChanged += (_, _) => QueueActionButtonUpdate();
             return (field, new SettingControlMapping(module, setting, () => entry.Text, null, baseline.DisplayValue, baseline.UseCustomValue));
         }
 
@@ -2405,7 +2965,7 @@ namespace ASLM.Pages
         {
             var baseline = GetSettingBaseline(module, setting, value);
             var (field, entry) = CreatePasswordField(setting.FormatValueForDisplay(value));
-            entry.TextChanged += (_, _) => UpdateActionButtons();
+            entry.TextChanged += (_, _) => QueueActionButtonUpdate();
             return (field, new SettingControlMapping(module, setting, () => entry.Text, null, baseline.DisplayValue, baseline.UseCustomValue));
         }
 
@@ -2437,7 +2997,7 @@ namespace ASLM.Pages
                     lastCustomValue = args.NewTextValue ?? string.Empty;
                 }
 
-                UpdateActionButtons();
+                QueueActionButtonUpdate();
             };
 
             customToggle.Toggled += (_, args) =>
@@ -2447,7 +3007,7 @@ namespace ASLM.Pages
                     : setting.FormatValueForDisplay(_moduleRunner.GetResolvedSettingValue(module, setting));
 
                 ApplyTextEntryState(entry, !args.Value);
-                UpdateActionButtons();
+                QueueActionButtonUpdate();
             };
 
             ApplyTextEntryState(entry, !setting.UseCustomValue);

@@ -20,6 +20,7 @@ namespace ASLM.Pages
         private readonly EngineInstaller _engineInstaller;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
+        private readonly UpdateService _updateService;
         private readonly IServiceProvider _services;
 
         private readonly List<(ModuleConfig Module, CheckBox Check)> _moduleChecks = [];
@@ -44,12 +45,14 @@ namespace ASLM.Pages
             EngineInstaller engineInstaller,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
+            UpdateService updateService,
             IServiceProvider services)
         {
             _appData = appData;
             _engineInstaller = engineInstaller;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
+            _updateService = updateService;
             _services = services;
 
             InitializeComponent();
@@ -347,12 +350,10 @@ namespace ASLM.Pages
 
             var allEngines = _engineInstaller.DiscoverEngines();
             totalSteps += requiredEngineIds.Count;
-            totalSteps += selectedModules.Count * 2;
+            totalSteps += selectedModules.Sum(GetModuleInstallStepCount);
 
             // Reset rolling download metrics before the first transfer begins.
-            _lastDownloadedBytes = 0;
-            _lastSpeedUpdate = DateTime.UtcNow;
-            _lastSpeed = 0;
+            ResetDownloadMetrics();
 
             var downloadProgress = new Progress<DownloadProgress>(progress =>
             {
@@ -422,17 +423,40 @@ namespace ASLM.Pages
                     ResetFileProgress();
                 }
 
-                // Download each selected module and then execute its first-run setup.
+                // Install each selected module either through the update-aware pipeline or the legacy download flow.
                 foreach (var module in selectedModules)
                 {
+                    if (ShouldUseConfiguredUpdateInstall(module))
+                    {
+                        UpdateInstallStatus($"Installing {module.Name}...");
+                        ResetFileProgress();
+                        ResetDownloadMetrics();
+
+                        var updateInstalled = await InstallModuleFromUpdateConfigAsync(
+                            module,
+                            logProgress,
+                            downloadProgress,
+                            _cts.Token);
+
+                        completedSteps += GetModuleInstallStepCount(module);
+                        UpdateOverallProgress(completedSteps, totalSteps);
+                        ResetFileProgress();
+
+                        AddLog(updateInstalled
+                            ? $"[OK] {module.Name} installed successfully"
+                            : $"[Error] Installation failed for {module.Name}");
+                        hasFailures |= !updateInstalled;
+                        continue;
+                    }
+
                     UpdateInstallStatus($"Downloading {module.Name}...");
                     ResetFileProgress();
-                    _lastDownloadedBytes = 0;
-                    _lastSpeedUpdate = DateTime.UtcNow;
-                    _lastSpeed = 0;
+                    ResetDownloadMetrics();
 
-                    var downloaded = await Task.Run(
-                        () => _moduleInstaller.DownloadSourceAsync(module, logProgress, downloadProgress, _cts.Token),
+                    var downloaded = await _moduleInstaller.DownloadSourceAsync(
+                        module,
+                        logProgress,
+                        downloadProgress,
                         _cts.Token);
                     completedSteps++;
                     UpdateOverallProgress(completedSteps, totalSteps);
@@ -448,9 +472,7 @@ namespace ASLM.Pages
                     }
 
                     UpdateInstallStatus($"Setting up {module.Name}...");
-                    var success = await Task.Run(
-                        () => _moduleRunner.ExecuteFirstRunAsync(module, logProgress, _cts.Token),
-                        _cts.Token);
+                    var success = await _moduleRunner.ExecuteFirstRunAsync(module, logProgress, _cts.Token);
                     completedSteps++;
                     UpdateOverallProgress(completedSteps, totalSteps);
 
@@ -615,6 +637,55 @@ namespace ASLM.Pages
                 FileProgress.Progress = 0;
                 DownloadDetailLabel.Text = string.Empty;
             });
+        }
+
+        /// <summary>
+        /// Resets the rolling metrics used to calculate the download speed label.
+        /// </summary>
+        private void ResetDownloadMetrics()
+        {
+            _lastDownloadedBytes = 0;
+            _lastSpeedUpdate = DateTime.UtcNow;
+            _lastSpeed = 0;
+        }
+
+        /// <summary>
+        /// Returns whether the module should be installed through the update-aware pipeline.
+        /// </summary>
+        private static bool ShouldUseConfiguredUpdateInstall(ModuleConfig module)
+        {
+            return module.HasDeclaredUpdateConfig &&
+                   string.Equals(module.Source.Type, "github", StringComparison.OrdinalIgnoreCase) &&
+                   !string.IsNullOrWhiteSpace(module.Source.Repo);
+        }
+
+        /// <summary>
+        /// Returns how many overall progress steps one module consumes during setup.
+        /// </summary>
+        private static int GetModuleInstallStepCount(ModuleConfig module)
+        {
+            return ShouldUseConfiguredUpdateInstall(module) ? 1 : 2;
+        }
+
+        /// <summary>
+        /// Installs one module through the updater so setup respects the manifest update configuration.
+        /// </summary>
+        private async Task<bool> InstallModuleFromUpdateConfigAsync(
+            ModuleConfig module,
+            IProgress<string> logProgress,
+            IProgress<DownloadProgress> downloadProgress,
+            CancellationToken ct)
+        {
+            // Setup should resolve the same branch or release candidate the normal updater would use.
+            var candidate = await _updateService.ResolveModuleInstallCandidateAsync(module, ct);
+            if (candidate == null)
+            {
+                logProgress.Report($"[Error] Could not resolve install source for {module.Name}");
+                return false;
+            }
+
+            // Reuse the full module update pipeline so preserve rules and first-run behavior stay consistent.
+            return await _updateService.ApplyModuleUpdateAsync(candidate, logProgress, downloadProgress, ct);
         }
 
         // Byte formatting

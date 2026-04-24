@@ -7,7 +7,15 @@
     "type": "runtime",
     "executablePath": "runtime/python.exe",
     "packageManager": {
-        "command": "-m pip install"
+        "command": "-m pip install --no-warn-script-location"
+    },
+    "moduleEnvironment": {
+        "enabled": true,
+        "directoryPrefix": "venv-",
+        "kind": "python-venv",
+        "createCommand": "-m venv \"{environmentDir}\"",
+        "executablePath": "{environmentDir}/Scripts/python.exe",
+        "packageManagerCommand": "-m pip install --no-warn-script-location"
     },
     "requirements": {
         "os": "windows",

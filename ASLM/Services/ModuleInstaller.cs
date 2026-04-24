@@ -32,6 +32,7 @@ namespace ASLM.Services
         public ModuleInstaller(ModuleRunner moduleRunner)
         {
             _moduleRunner = moduleRunner;
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("ASLM-ModuleInstaller");
         }
 
 
@@ -86,14 +87,15 @@ namespace ASLM.Services
 
             try
             {
-                await using var stream = File.OpenRead(jsonFile);
-                var config = await JsonSerializer.DeserializeAsync<ModuleConfig>(stream, _jsonOptions);
+                var json = await File.ReadAllTextAsync(jsonFile);
+                var config = JsonSerializer.Deserialize<ModuleConfig>(json, _jsonOptions);
                 if (config == null)
                 {
                     return null;
                 }
 
                 config.Normalize();
+                config.HasDeclaredUpdateConfig = HasDeclaredUpdateBlock(json);
 
                 // Treat manifests without an explicit version as the initial schema.
                 if (config.FileVersion == 0)
@@ -144,8 +146,11 @@ namespace ASLM.Services
                 return false;
             }
 
-            // This currently assumes the repository publishes its installable branch as main.
-            var zipUrl = $"https://github.com/{module.Source.Repo}/archive/refs/heads/main.zip";
+            // Legacy setup installs should keep using main unless the manifest explicitly opted into update tracking.
+            var branch = module.HasDeclaredUpdateConfig && !string.IsNullOrWhiteSpace(module.Update.Branch)
+                ? module.Update.Branch
+                : "main";
+            var zipUrl = $"https://api.github.com/repos/{module.Source.Repo}/zipball/{Uri.EscapeDataString(branch)}";
             var tempZip = Path.GetTempFileName();
             var tempExtractDir = Path.Combine(Path.GetTempPath(), "ASLM_ModuleSrc_" + Guid.NewGuid());
 
@@ -234,6 +239,7 @@ namespace ASLM.Services
                     }
 
                     config.Normalize();
+                    config.HasDeclaredUpdateConfig = HasDeclaredUpdateBlock(json);
 
                     if (config.FileVersion == 0)
                     {
@@ -456,6 +462,21 @@ namespace ASLM.Services
             {
                 // Ignore cleanup failures for temporary directories.
             }
+        }
+
+        /// <summary>
+        /// Returns whether the source manifest explicitly declared an update configuration block.
+        /// </summary>
+        private static bool HasDeclaredUpdateBlock(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return false;
+            }
+
+            using var document = JsonDocument.Parse(json);
+            return document.RootElement.ValueKind == JsonValueKind.Object &&
+                   document.RootElement.TryGetProperty("update", out _);
         }
     }
 }

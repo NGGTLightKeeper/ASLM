@@ -38,6 +38,8 @@ namespace ASLM.Services
         private bool _pendingScrollToEnd = true;
         private bool _isApplyingProgrammaticScroll;
         private string _lastSessionKey = string.Empty;
+        private int _viewportRefreshQueued;
+        private int _queuedViewportPasses;
 
         /// <summary>
         /// Creates the handler instance for the native console host.
@@ -241,21 +243,31 @@ namespace ASLM.Services
                 _pendingScrollToEnd = true;
             }
 
-            QueueViewportRefreshPass(passCount);
+            _queuedViewportPasses = Math.Max(_queuedViewportPasses, Math.Clamp(passCount, 1, 3));
+            if (Interlocked.Exchange(ref _viewportRefreshQueued, 1) == 1)
+            {
+                return;
+            }
+
+            QueueViewportRefreshPass();
         }
 
         /// <summary>
         /// Runs one deferred viewport refresh pass and reschedules the remainder when needed.
         /// </summary>
-        private void QueueViewportRefreshPass(int remainingPasses)
+        private void QueueViewportRefreshPass()
         {
-            if (PlatformView?.DispatcherQueue == null || remainingPasses <= 0)
+            if (PlatformView?.DispatcherQueue == null)
             {
+                Interlocked.Exchange(ref _viewportRefreshQueued, 0);
                 return;
             }
 
-            PlatformView.DispatcherQueue.TryEnqueue(() =>
+            if (!PlatformView.DispatcherQueue.TryEnqueue(() =>
             {
+                var remainingPasses = _queuedViewportPasses;
+                _queuedViewportPasses = Math.Max(0, remainingPasses - 1);
+
                 RefreshViewport();
 
                 if (_pendingScrollToEnd)
@@ -263,11 +275,22 @@ namespace ASLM.Services
                     ScrollToEnd();
                 }
 
-                if (remainingPasses > 1)
+                if (_queuedViewportPasses > 0)
                 {
-                    QueueViewportRefreshPass(remainingPasses - 1);
+                    QueueViewportRefreshPass();
+                    return;
                 }
-            });
+
+                Interlocked.Exchange(ref _viewportRefreshQueued, 0);
+                if (_queuedViewportPasses > 0 &&
+                    Interlocked.Exchange(ref _viewportRefreshQueued, 1) == 0)
+                {
+                    QueueViewportRefreshPass();
+                }
+            }))
+            {
+                Interlocked.Exchange(ref _viewportRefreshQueued, 0);
+            }
         }
 
         /// <summary>
@@ -294,8 +317,6 @@ namespace ASLM.Services
             {
                 return;
             }
-
-            RefreshViewport();
 
             var textLength = PlatformView.Text?.Length ?? 0;
             PlatformView.Select(textLength, 0);
@@ -330,6 +351,11 @@ namespace ASLM.Services
         private void EnsureScrollViewer()
         {
             if (PlatformView == null)
+            {
+                return;
+            }
+
+            if (_scrollViewer != null)
             {
                 return;
             }

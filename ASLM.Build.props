@@ -1,0 +1,38 @@
+<Project>
+
+	<PropertyGroup>
+		<ASLMTargetFrameworkForBuildPath Condition="'$(TargetFramework)' != ''">$(TargetFramework)</ASLMTargetFrameworkForBuildPath>
+		<ASLMTargetFrameworkForBuildPath Condition="'$(ASLMTargetFrameworkForBuildPath)' == ''">$([System.Text.RegularExpressions.Regex]::Match('$(TargetFrameworks)', '^[^;]+').Value)</ASLMTargetFrameworkForBuildPath>
+
+		<ASLMRuntimeIdentifierForBuildPath Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</ASLMRuntimeIdentifierForBuildPath>
+		<ASLMRuntimeIdentifierForBuildPath Condition="'$(ASLMRuntimeIdentifierForBuildPath)' == ''">$([System.Text.RegularExpressions.Regex]::Match('$(RuntimeIdentifiers)', '^[^;]+').Value)</ASLMRuntimeIdentifierForBuildPath>
+
+		<ASLMBuildOsRaw Condition="'$(ASLMRuntimeIdentifierForBuildPath)' != ''">$([System.Text.RegularExpressions.Regex]::Match('$(ASLMRuntimeIdentifierForBuildPath)', '^[^-]+').Value)</ASLMBuildOsRaw>
+		<ASLMBuildOsRaw Condition="'$(ASLMBuildOsRaw)' == '' and '$(ASLMTargetFrameworkForBuildPath)' != ''">$([MSBuild]::GetTargetPlatformIdentifier('$(ASLMTargetFrameworkForBuildPath)'))</ASLMBuildOsRaw>
+		<ASLMBuildOsRaw Condition="'$(ASLMBuildOsRaw)' == '' and '$(OS)' == 'Windows_NT'">windows</ASLMBuildOsRaw>
+
+		<ASLMBuildArchRaw Condition="'$(ASLMRuntimeIdentifierForBuildPath)' != ''">$([System.Text.RegularExpressions.Regex]::Match('$(ASLMRuntimeIdentifierForBuildPath)', '[^-]+$').Value)</ASLMBuildArchRaw>
+		<ASLMBuildArchRaw Condition="'$(ASLMBuildArchRaw)' == '' and '$(PlatformTarget)' != '' and '$(PlatformTarget)' != 'AnyCPU'">$([System.String]::Copy('$(PlatformTarget)').ToLowerInvariant())</ASLMBuildArchRaw>
+		<ASLMBuildArchRaw Condition="'$(ASLMBuildArchRaw)' == '' and '$(Platform)' != '' and '$(Platform)' != 'AnyCPU'">$([System.String]::Copy('$(Platform)').ToLowerInvariant())</ASLMBuildArchRaw>
+		<ASLMBuildArchRaw Condition="'$(ASLMBuildArchRaw)' == '' and '$(PROCESSOR_ARCHITECTURE)' != ''">$([System.String]::Copy('$(PROCESSOR_ARCHITECTURE)').ToLowerInvariant())</ASLMBuildArchRaw>
+		<ASLMBuildArchRaw Condition="'$(ASLMBuildArchRaw)' == ''">x64</ASLMBuildArchRaw>
+
+		<ASLMBuildOs Condition="'$(ASLMBuildOsRaw)' == 'win'">windows</ASLMBuildOs>
+		<ASLMBuildOs Condition="'$(ASLMBuildOs)' == '' and '$(ASLMBuildOsRaw)' == 'windows'">windows</ASLMBuildOs>
+		<ASLMBuildOs Condition="'$(ASLMBuildOs)' == '' and '$(ASLMBuildOsRaw)' == 'linux'">linux</ASLMBuildOs>
+		<ASLMBuildOs Condition="'$(ASLMBuildOs)' == '' and '$(ASLMBuildOsRaw)' == 'osx'">macos</ASLMBuildOs>
+		<ASLMBuildOs Condition="'$(ASLMBuildOs)' == '' and '$(ASLMBuildOsRaw)' == 'macos'">macos</ASLMBuildOs>
+		<ASLMBuildOs Condition="'$(ASLMBuildOs)' == ''">$(ASLMBuildOsRaw)</ASLMBuildOs>
+
+		<ASLMBuildArch Condition="'$(ASLMBuildArchRaw)' == 'x64' or '$(ASLMBuildArchRaw)' == 'amd64'">amd64</ASLMBuildArch>
+		<ASLMBuildArch Condition="'$(ASLMBuildArch)' == '' and '$(ASLMBuildArchRaw)' == 'x86'">x86</ASLMBuildArch>
+		<ASLMBuildArch Condition="'$(ASLMBuildArch)' == '' and '$(ASLMBuildArchRaw)' == 'arm64'">arm64</ASLMBuildArch>
+		<ASLMBuildArch Condition="'$(ASLMBuildArch)' == '' and '$(ASLMBuildArchRaw)' == 'arm'">arm</ASLMBuildArch>
+		<ASLMBuildArch Condition="'$(ASLMBuildArch)' == ''">$(ASLMBuildArchRaw)</ASLMBuildArch>
+
+		<ASLMBuildOutputRoot>$(MSBuildThisFileDirectory)Build\$(Configuration)\ASLM-$(ASLMBuildOs)-$(ASLMBuildArch)\</ASLMBuildOutputRoot>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	</PropertyGroup>
+
+</Project>

@@ -46,8 +46,10 @@ namespace ASLM
             // Service registrations
             builder.Services.AddSingleton<AppDataService>();
             builder.Services.AddSingleton<EngineInstaller>();
+            builder.Services.AddSingleton<ModuleEnvironmentService>();
             builder.Services.AddSingleton<ModuleInstaller>();
             builder.Services.AddSingleton<ModuleConsoleService>();
+            builder.Services.AddSingleton<ProcessSnapshotService>();
             builder.Services.AddSingleton<ProcessTracker>();
             builder.Services.AddSingleton<ModuleRunner>();
             builder.Services.AddSingleton<PortManager>();
@@ -56,6 +58,9 @@ namespace ASLM
             builder.Services.AddSingleton<DownloadCatalogService>();
             builder.Services.AddSingleton<DownloadInstallService>();
             builder.Services.AddSingleton<OllamaSettingsService>();
+            builder.Services.AddSingleton<GitHubUpdateClient>();
+            builder.Services.AddSingleton<UpdateService>();
+            builder.Services.AddSingleton<UpdateSchedulerService>();
 
             // Page registrations
             builder.Services.AddTransient<AppShellPage>();
@@ -68,6 +73,7 @@ namespace ASLM
             builder.Services.AddTransient<ModuleManagementView>();
             builder.Services.AddTransient<DownloadModulesView>();
             builder.Services.AddTransient<SettingsView>();
+            builder.Services.AddTransient<ModuleUpdateDialogView>();
 
             return builder.Build();
         }

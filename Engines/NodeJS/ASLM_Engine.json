@@ -10,6 +10,18 @@
         "command": "install",
         "executable": "runtime/npm.cmd"
     },
+    "moduleEnvironment": {
+        "enabled": true,
+        "directoryPrefix": "venv-",
+        "kind": "node-prefix",
+        "executablePath": "{engineExecutable}",
+        "packageManagerExecutable": "{engineDir}/runtime/npm.cmd",
+        "packageManagerCommand": "install --prefix \"{environmentDir}\"",
+        "environment": {
+            "NODE_PATH": "{environmentDir}/node_modules",
+            "PATH": "{environmentDir}/node_modules/.bin;{path}"
+        }
+    },
     "requirements": {
         "os": "windows",
         "arch": "x64",

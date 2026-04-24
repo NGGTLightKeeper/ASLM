@@ -36,6 +36,8 @@ namespace ASLM.Services
         };
 
         private List<EngineConfig>? _cachedEngines;
+        private Dictionary<string, EngineConfig>? _cachedEnginesById;
+        private Dictionary<string, EngineConfig>? _cachedInstalledEnginesById;
         private readonly object _cacheLock = new();
 
         // Discovery
@@ -49,7 +51,10 @@ namespace ASLM.Services
             lock (_cacheLock)
             {
                 if (_cachedEngines != null)
+                {
+                    EnsureEngineLookups(_cachedEngines);
                     return _cachedEngines.ToList();
+                }
 
                 var baseDir = GetRootDirectory();
                 var enginesRoot = Path.Combine(baseDir, "Engines");
@@ -110,8 +115,23 @@ namespace ASLM.Services
                 }
 
                 _cachedEngines = engines;
+                EnsureEngineLookups(_cachedEngines);
                 return _cachedEngines.ToList();
             }
+        }
+
+        /// <summary>
+        /// Builds id-based engine lookup caches when the discovered engine list changes.
+        /// </summary>
+        private void EnsureEngineLookups(IReadOnlyList<EngineConfig> engines)
+        {
+            _cachedEnginesById ??= engines
+                .GroupBy(engine => engine.Id, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+            _cachedInstalledEnginesById ??= engines
+                .Where(engine => engine.Status.Installed)
+                .GroupBy(engine => engine.Id, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
         }
 
         // Engine lookup
@@ -142,8 +162,28 @@ namespace ASLM.Services
         /// <returns>The engine configuration, or null.</returns>
         public EngineConfig? GetEngineConfig(string engineId)
         {
-            var engines = DiscoverEngines();
-            return engines.FirstOrDefault(e => e.Id == engineId && e.Status.Installed);
+            DiscoverEngines();
+
+            lock (_cacheLock)
+            {
+                return _cachedInstalledEnginesById != null &&
+                       _cachedInstalledEnginesById.TryGetValue(engineId, out var engine)
+                    ? engine
+                    : null;
+            }
+        }
+
+        /// <summary>
+        /// Returns whether a manifest exists for one engine id, regardless of install state.
+        /// </summary>
+        public bool HasEngine(string engineId)
+        {
+            DiscoverEngines();
+
+            lock (_cacheLock)
+            {
+                return _cachedEnginesById?.ContainsKey(engineId) == true;
+            }
         }
 
         // Installation
@@ -260,6 +300,8 @@ namespace ASLM.Services
                 lock (_cacheLock)
                 {
                     _cachedEngines = null;
+                    _cachedEnginesById = null;
+                    _cachedInstalledEnginesById = null;
                 }
             }, ct);
         }

@@ -2,7 +2,6 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text;
 using ASLM.Models;
 using Microsoft.Extensions.Logging;
@@ -17,10 +16,13 @@ namespace ASLM.Services
     public class ModuleRunner : IDisposable
     {
         private readonly EngineInstaller _engineInstaller;
+        private readonly ModuleEnvironmentService _moduleEnvironmentService;
         private readonly PortManager _portManager;
         private readonly ProcessTracker _processTracker;
         private readonly ModuleConsoleService _consoleService;
+        private readonly ProcessSnapshotService _processSnapshotService;
         private readonly ILogger<ModuleRunner> _logger;
+        private readonly SemaphoreSlim _settingCommandThrottle = new(4, 4);
         private bool _disposed;
 
         // Running processes
@@ -40,18 +42,23 @@ namespace ASLM.Services
         /// <param name="portManager">Service to assign ports for settings resolution.</param>
         /// <param name="processTracker">Service that groups child processes under ASLM.</param>
         /// <param name="consoleService">Service to report console output and process sessions.</param>
+        /// <param name="processSnapshotService">Service that shares cached process-table snapshots.</param>
         /// <param name="logger">Logger instance.</param>
         public ModuleRunner(
             EngineInstaller engineInstaller,
+            ModuleEnvironmentService moduleEnvironmentService,
             PortManager portManager,
             ProcessTracker processTracker,
             ModuleConsoleService consoleService,
+            ProcessSnapshotService processSnapshotService,
             ILogger<ModuleRunner> logger)
         {
             _engineInstaller = engineInstaller;
+            _moduleEnvironmentService = moduleEnvironmentService;
             _portManager = portManager;
             _processTracker = processTracker;
             _consoleService = consoleService;
+            _processSnapshotService = processSnapshotService;
             _logger = logger;
         }
 
@@ -139,7 +146,8 @@ namespace ASLM.Services
                         .Select(s => (Setting: s, Target: ResolveSettingValue(module, s)))
                         .ToList();
 
-                    // Fire all GetExec checks in parallel to avoid N sequential process spawns.
+                    // Fire GetExec checks in parallel, while ExecuteSettingCommandAsync keeps
+                    // the process-spawn concurrency bounded across the application.
                     var checkTasks = targets.Select(async t =>
                     {
                         if (string.IsNullOrEmpty(t.Setting.GetExec))
@@ -297,8 +305,7 @@ namespace ASLM.Services
                     return rawPort ?? string.Empty;
 
                 case "engine":
-                    if (_engineInstaller.DiscoverEngines().Any(engine =>
-                        engine.Id.Equals(setting.Key, StringComparison.OrdinalIgnoreCase)))
+                    if (_engineInstaller.HasEngine(setting.Key))
                     {
                         return _engineInstaller.GetEngineConfig(setting.Key) != null ? "true" : "false";
                     }
@@ -375,27 +382,17 @@ namespace ASLM.Services
                     return false;
                 }
 
-                if (engineConfig.PackageManager == null)
+                if (engineConfig.PackageManager == null &&
+                    string.IsNullOrWhiteSpace(engineConfig.ModuleEnvironment?.PackageManagerCommand))
                 {
                     log.Report($"⚠ Engine '{engineDep.Id}' has no packageManager defined, skipping library install.");
                     continue;
                 }
 
-                // Resolve the executable: custom packageManager.executable or engine executable
-                var engineDir = Path.GetDirectoryName(engineConfig.SourcePath) ?? "";
-                string exePath;
-                if (!string.IsNullOrEmpty(engineConfig.PackageManager.Executable))
-                {
-                    exePath = Path.Combine(engineDir, engineConfig.PackageManager.Executable);
-                }
-                else
-                {
-                    exePath = _engineInstaller.GetEngineExecutablePath(engineDep.Id)
-                              ?? throw new InvalidOperationException($"Engine executable not found for '{engineDep.Id}'.");
-                }
-
+                var environment = await _moduleEnvironmentService.EnsureEnvironmentAsync(module, engineConfig, log, ct);
+                var exePath = _moduleEnvironmentService.ResolvePackageManagerExecutable(environment, engineConfig);
                 var libs = string.Join(" ", engineDep.Libraries);
-                var args = $"{engineConfig.PackageManager.Command} {libs}";
+                var args = _moduleEnvironmentService.BuildPackageInstallArguments(environment, engineConfig, engineDep.Libraries);
                 log.Report($"[Deps] Installing libraries for {engineDep.Id}: {libs}");
 
                 var psi = new ProcessStartInfo
@@ -409,6 +406,7 @@ namespace ASLM.Services
                     CreateNoWindow = true
                 };
                 ConfigureProcessForStreaming(psi, exePath, engineDep.Id);
+                _moduleEnvironmentService.ApplyEnvironmentVariables(module, engineConfig, psi);
 
                 using var process = new Process { StartInfo = psi };
 
@@ -423,7 +421,7 @@ namespace ASLM.Services
                     new ModuleCommand
                     {
                         Name = $"Dependencies: {engineDep.Id}",
-                        Description = $"Install libraries via {engineConfig.PackageManager.Command}",
+                        Description = $"Install libraries via {args}",
                         Exec = args
                     },
                     "Dependencies",
@@ -497,6 +495,7 @@ namespace ASLM.Services
 
                 string fileName;
                 string arguments = string.Empty;
+                EngineConfig? commandEngineConfig = null;
 
                 // 1. Resolve Execution Strategy
                 var execString = cmd.Exec ?? string.Empty;
@@ -514,14 +513,15 @@ namespace ASLM.Services
                 if (!string.IsNullOrEmpty(cmd.Engine))
                 {
                     // Run via Engine (e.g. Python)
-                    var enginePath = _engineInstaller.GetEngineExecutablePath(cmd.Engine);
-                    if (string.IsNullOrEmpty(enginePath))
+                    commandEngineConfig = _engineInstaller.GetEngineConfig(cmd.Engine);
+                    if (commandEngineConfig == null)
                     {
                         log.Report($"Error: Engine '{cmd.Engine}' not found or not installed.");
                         return false;
                     }
 
-                    fileName = enginePath;
+                    var environment = await _moduleEnvironmentService.EnsureEnvironmentAsync(module, commandEngineConfig, log, ct);
+                    fileName = _moduleEnvironmentService.ResolveCommandExecutable(environment, commandEngineConfig);
                     // Combine engine + script/args
                     // cmd.Exec = "manage.py runserver"
                     // We need to ensure we run it in the module directory context
@@ -550,6 +550,10 @@ namespace ASLM.Services
                     CreateNoWindow = true
                 };
                 ConfigureProcessForStreaming(psi, fileName, cmd.Engine);
+                if (commandEngineConfig != null)
+                {
+                    _moduleEnvironmentService.ApplyEnvironmentVariables(module, commandEngineConfig, psi);
+                }
 
                 // Apply settings as environment variables so the module can consume them dynamically
                 if (injectSettings)
@@ -660,54 +664,62 @@ namespace ASLM.Services
             var execStr = isSet ? setting.SetExec : setting.GetExec;
             if (string.IsNullOrEmpty(execStr)) return null;
 
-            // Replace {value} placeholder specifically for setExec
-            if (isSet && newValue != null)
+            await _settingCommandThrottle.WaitAsync(ct);
+            try
             {
-                execStr = execStr.Replace("{value}", newValue);
-            }
-
-            var cmd = new ModuleCommand
-            {
-                Name = isSet ? $"Set {setting.Key}" : $"Get {setting.Key}",
-                Engine = setting.Engine,
-                Exec = execStr
-            };
-
-            var outputBuilder = new StringBuilder();
-            var lockObject = new object();
-            var log = new Progress<string>(msg =>
-            {
-                if (string.IsNullOrEmpty(msg)) return;
-
-                // Capture the exact output, avoiding log prefixes and errors
-                var trimmed = msg.TrimStart();
-                if (!trimmed.StartsWith("Exec:"))
+                // Replace {value} placeholder specifically for setExec
+                if (isSet && newValue != null)
                 {
-                    lock (lockObject)
-                    {
-                        outputBuilder.AppendLine(trimmed);
-                    }
+                    execStr = execStr.Replace("{value}", newValue);
                 }
-            });
 
-            bool success = await RunCommandAsync(
-                module,
-                cmd,
-                log,
-                ct,
-                trackProcess: false,
-                injectSettings: isSet,
-                sessionStage: "Settings");
-            if (!success) return null;
+                var cmd = new ModuleCommand
+                {
+                    Name = isSet ? $"Set {setting.Key}" : $"Get {setting.Key}",
+                    Engine = setting.Engine,
+                    Exec = execStr
+                };
 
-            // Get the last non-empty line (to ignore banners or headers)
-            var lines = outputBuilder.ToString()
-                .Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(l => l.Trim())
-                .Where(l => !string.IsNullOrEmpty(l))
-                .ToList();
-            
-            return lines.Count > 0 ? lines[^1] : string.Empty;
+                var outputBuilder = new StringBuilder();
+                var lockObject = new object();
+                var log = new Progress<string>(msg =>
+                {
+                    if (string.IsNullOrEmpty(msg)) return;
+
+                    // Capture the exact output, avoiding log prefixes and errors
+                    var trimmed = msg.TrimStart();
+                    if (!trimmed.StartsWith("Exec:"))
+                    {
+                        lock (lockObject)
+                        {
+                            outputBuilder.AppendLine(trimmed);
+                        }
+                    }
+                });
+
+                bool success = await RunCommandAsync(
+                    module,
+                    cmd,
+                    log,
+                    ct,
+                    trackProcess: false,
+                    injectSettings: isSet,
+                    sessionStage: "Settings");
+                if (!success) return null;
+
+                // Get the last non-empty line (to ignore banners or headers)
+                var lines = outputBuilder.ToString()
+                    .Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(l => l.Trim())
+                    .Where(l => !string.IsNullOrEmpty(l))
+                    .ToList();
+
+                return lines.Count > 0 ? lines[^1] : string.Empty;
+            }
+            finally
+            {
+                _settingCommandThrottle.Release();
+            }
         }
 
         // Console forwarding
@@ -834,10 +846,9 @@ namespace ASLM.Services
         /// <summary>
         /// Returns descendant processes of one root process.
         /// </summary>
-        private static List<ObservedProcessInfo> GetDescendantProcesses(int rootProcessId)
+        private List<ObservedProcessInfo> GetDescendantProcesses(int rootProcessId)
         {
-#if WINDOWS
-            var snapshotEntries = TakeProcessSnapshot();
+            var snapshotEntries = _processSnapshotService.GetSnapshot(TimeSpan.FromMilliseconds(800));
             var childrenByParent = snapshotEntries
                 .GroupBy(entry => entry.ParentProcessId)
                 .ToDictionary(group => group.Key, group => group.ToList());
@@ -873,9 +884,6 @@ namespace ASLM.Services
             }
 
             return results;
-#else
-            return [];
-#endif
         }
 
         /// <summary>
@@ -980,93 +988,6 @@ namespace ASLM.Services
                 }
             }
         }
-
-#if WINDOWS
-        /// <summary>
-        /// Takes one snapshot of the Windows process table.
-        /// </summary>
-        private static List<ProcessSnapshotEntry> TakeProcessSnapshot()
-        {
-            var results = new List<ProcessSnapshotEntry>();
-            var snapshotHandle = CreateToolhelp32Snapshot(Th32csSnapProcess, 0);
-            if (snapshotHandle == IntPtr.Zero || snapshotHandle == InvalidHandleValue)
-            {
-                return results;
-            }
-
-            try
-            {
-                var processEntry = new ProcessEntry32
-                {
-                    dwSize = (uint)Marshal.SizeOf<ProcessEntry32>()
-                };
-
-                if (!Process32First(snapshotHandle, ref processEntry))
-                {
-                    return results;
-                }
-
-                do
-                {
-                    results.Add(new ProcessSnapshotEntry
-                    {
-                        ProcessId = unchecked((int)processEntry.th32ProcessID),
-                        ParentProcessId = unchecked((int)processEntry.th32ParentProcessID),
-                        ExecutableName = processEntry.szExeFile
-                    });
-                }
-                while (Process32Next(snapshotHandle, ref processEntry));
-
-                return results;
-            }
-            finally
-            {
-                CloseHandle(snapshotHandle);
-            }
-        }
-
-        private const uint Th32csSnapProcess = 0x00000002;
-        private static readonly IntPtr InvalidHandleValue = new(-1);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessId);
-
-        [DllImport("kernel32.dll", EntryPoint = "Process32FirstW", SetLastError = true, CharSet = CharSet.Unicode)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool Process32First(IntPtr hSnapshot, ref ProcessEntry32 lppe);
-
-        [DllImport("kernel32.dll", EntryPoint = "Process32NextW", SetLastError = true, CharSet = CharSet.Unicode)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool Process32Next(IntPtr hSnapshot, ref ProcessEntry32 lppe);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool CloseHandle(IntPtr hObject);
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        private struct ProcessEntry32
-        {
-            public uint dwSize;
-            public uint cntUsage;
-            public uint th32ProcessID;
-            public IntPtr th32DefaultHeapID;
-            public uint th32ModuleID;
-            public uint cntThreads;
-            public uint th32ParentProcessID;
-            public int pcPriClassBase;
-            public uint dwFlags;
-
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-            public string szExeFile;
-        }
-
-        private sealed class ProcessSnapshotEntry
-        {
-            public int ProcessId { get; set; }
-            public int ParentProcessId { get; set; }
-            public string ExecutableName { get; set; } = string.Empty;
-        }
-#endif
 
         // Disposal
 
