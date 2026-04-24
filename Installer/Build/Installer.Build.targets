@@ -1,0 +1,278 @@
+<Project>
+
+	<UsingTask TaskName="GenerateInstallerLegalDocuments"
+	           TaskFactory="RoslynCodeTaskFactory"
+	           AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+		<ParameterGroup>
+			<SourceDir ParameterType="System.String" Required="true" />
+			<OutputFile ParameterType="System.String" Required="true" />
+		</ParameterGroup>
+		<Task>
+			<Using Namespace="System" />
+			<Using Namespace="System.Collections.Generic" />
+			<Using Namespace="System.IO" />
+			<Using Namespace="System.Linq" />
+			<Using Namespace="System.Security.Cryptography" />
+			<Using Namespace="System.Text" />
+			<Using Namespace="System.Text.RegularExpressions" />
+			<Code Type="Fragment" Language="cs"><![CDATA[
+string EscapeJson(string value)
+{
+    if (value == null)
+    {
+        return string.Empty;
+    }
+
+    var builder = new StringBuilder(value.Length + 16);
+    foreach (var ch in value)
+    {
+        switch (ch)
+        {
+            case '\\':
+                builder.Append(@"\\");
+                break;
+            case '"':
+                builder.Append("\\\"");
+                break;
+            case '\b':
+                builder.Append(@"\b");
+                break;
+            case '\f':
+                builder.Append(@"\f");
+                break;
+            case '\n':
+                builder.Append(@"\n");
+                break;
+            case '\r':
+                builder.Append(@"\r");
+                break;
+            case '\t':
+                builder.Append(@"\t");
+                break;
+            default:
+                if (ch < ' ')
+                {
+                    builder.Append("\\u");
+                    builder.Append(((int)ch).ToString("x4"));
+                }
+                else
+                {
+                    builder.Append(ch);
+                }
+                break;
+        }
+    }
+
+    return builder.ToString();
+}
+
+var sourceDir = Path.GetFullPath(SourceDir);
+var outputFile = Path.GetFullPath(OutputFile);
+if (!Directory.Exists(sourceDir))
+{
+    Log.LogError($"Legal source directory does not exist: {sourceDir}");
+    return false;
+}
+
+var files = Directory.GetFiles(sourceDir, "*.md", SearchOption.TopDirectoryOnly)
+    .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+if (files.Length == 0)
+{
+    Log.LogError($"No markdown legal documents were found in {sourceDir}");
+    return false;
+}
+
+var documents = new List<Tuple<string, string, string, string, string>>();
+foreach (var file in files)
+{
+    var content = File.ReadAllText(file, Encoding.UTF8);
+    var titleMatch = Regex.Match(content, @"(?m)^\s*#\s+(.+?)\s*$");
+    var title = titleMatch.Success ? titleMatch.Groups[1].Value.Trim() : Path.GetFileNameWithoutExtension(file);
+    var id = Regex.Replace(Path.GetFileNameWithoutExtension(file).ToLowerInvariant(), @"[^a-z0-9]+", "-").Trim('-');
+
+    using var stream = File.OpenRead(file);
+    using var sha = SHA256.Create();
+    var hash = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+
+    documents.Add(Tuple.Create(id, title, Path.GetFileName(file), content, hash));
+}
+
+Directory.CreateDirectory(Path.GetDirectoryName(outputFile)!);
+var jsonBuilder = new StringBuilder();
+jsonBuilder.AppendLine("[");
+for (var index = 0; index < documents.Count; index++)
+{
+    var document = documents[index];
+    jsonBuilder.AppendLine("  {");
+    jsonBuilder.Append("    \"id\": \"").Append(EscapeJson(document.Item1)).AppendLine("\",");
+    jsonBuilder.Append("    \"title\": \"").Append(EscapeJson(document.Item2)).AppendLine("\",");
+    jsonBuilder.Append("    \"fileName\": \"").Append(EscapeJson(document.Item3)).AppendLine("\",");
+    jsonBuilder.Append("    \"markdown\": \"").Append(EscapeJson(document.Item4)).AppendLine("\",");
+    jsonBuilder.Append("    \"sha256\": \"").Append(EscapeJson(document.Item5)).AppendLine("\"");
+    jsonBuilder.AppendLine();
+    jsonBuilder.Append(index == documents.Count - 1 ? "  }" : "  },").AppendLine();
+}
+jsonBuilder.AppendLine("]");
+
+File.WriteAllText(outputFile, jsonBuilder.ToString(), new UTF8Encoding(false));
+Log.LogMessage(MessageImportance.High, $"Generated legal document bundle: {outputFile}");
+]]></Code>
+		</Task>
+	</UsingTask>
+
+	<UsingTask TaskName="ZipInstallerDirectory"
+	           TaskFactory="RoslynCodeTaskFactory"
+	           AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+		<ParameterGroup>
+			<SourceDir ParameterType="System.String" Required="true" />
+			<OutputFile ParameterType="System.String" Required="true" />
+			<CompressionLevel ParameterType="System.String" Required="false" />
+			<ExcludedFileNames ParameterType="System.String" Required="false" />
+			<ExcludedRelativePrefixes ParameterType="System.String" Required="false" />
+			<MaxPayloadSizeGB ParameterType="System.Double" Required="false" />
+			<AllowLargePayload ParameterType="System.Boolean" Required="false" />
+		</ParameterGroup>
+		<Task>
+			<Using Namespace="System" />
+			<Using Namespace="System.Collections.Generic" />
+			<Using Namespace="System.Globalization" />
+			<Using Namespace="System.IO" />
+			<Using Namespace="System.IO.Compression" />
+			<Using Namespace="System.Linq" />
+			<Code Type="Fragment" Language="cs"><![CDATA[
+var sourceDir = Path.GetFullPath(SourceDir);
+var outputFile = Path.GetFullPath(OutputFile);
+if (!Directory.Exists(sourceDir))
+{
+    Log.LogError($"Source directory does not exist: {sourceDir}");
+    return false;
+}
+
+var excludedNames = (ExcludedFileNames ?? string.Empty)
+    .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+    .Select(value => value.Trim())
+    .Where(value => value.Length > 0);
+var excludedNameSet = new HashSet<string>(excludedNames, StringComparer.OrdinalIgnoreCase);
+var excludedPrefixes = (ExcludedRelativePrefixes ?? string.Empty)
+    .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+    .Select(value => value.Trim().Replace('\\', '/').TrimEnd('/') + "/")
+    .Where(value => value.Length > 1)
+    .ToArray();
+
+var sourceRoot = sourceDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+var sourceUri = new Uri(sourceRoot);
+var files = Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories)
+    .Select(path => new
+    {
+        FullPath = path,
+        RelativePath = Uri.UnescapeDataString(sourceUri.MakeRelativeUri(new Uri(Path.GetFullPath(path))).ToString()).Replace('\\', '/')
+    })
+    .Where(file => !excludedNameSet.Contains(Path.GetFileName(file.FullPath)))
+    .Where(file => !excludedPrefixes.Any(prefix => file.RelativePath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
+    .OrderBy(file => file.RelativePath, StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+
+if (files.Length == 0)
+{
+    Log.LogError($"No files were found to zip in {sourceDir}");
+    return false;
+}
+
+var totalBytes = files.Sum(file => new FileInfo(file.FullPath).Length);
+var totalGb = totalBytes / 1024d / 1024d / 1024d;
+var maxPayloadSizeGb = MaxPayloadSizeGB <= 0 ? 8d : MaxPayloadSizeGB;
+Log.LogMessage(MessageImportance.High, $"Packing {files.Length} files into {outputFile}.");
+Log.LogMessage(MessageImportance.High, string.Format(CultureInfo.InvariantCulture, "Payload size before compression: {0:N2} GB", totalGb));
+
+if (!AllowLargePayload && totalGb > maxPayloadSizeGb)
+{
+    Log.LogError(string.Format(
+        CultureInfo.InvariantCulture,
+        "Payload is {0:N2} GB, which is larger than the {1:N2} GB guard limit. Use Release output or set ASLMInstallerAllowLargePayload=true if this is intentional.",
+        totalGb,
+        maxPayloadSizeGb));
+    return false;
+}
+
+var compression = System.IO.Compression.CompressionLevel.Fastest;
+if (!string.IsNullOrWhiteSpace(CompressionLevel) &&
+    Enum.TryParse<System.IO.Compression.CompressionLevel>(CompressionLevel, ignoreCase: true, out var parsedCompression))
+{
+    compression = parsedCompression;
+}
+
+Directory.CreateDirectory(Path.GetDirectoryName(outputFile)!);
+if (File.Exists(outputFile))
+{
+    File.Delete(outputFile);
+}
+
+using var archive = ZipFile.Open(outputFile, ZipArchiveMode.Create);
+for (var index = 0; index < files.Length; index++)
+{
+    var file = files[index];
+    if (index == 0 || (index + 1) % 250 == 0 || index == files.Length - 1)
+    {
+        Log.LogMessage(MessageImportance.High, $"Packed {index + 1} / {files.Length} files...");
+    }
+
+    archive.CreateEntryFromFile(file.FullPath, file.RelativePath, compression);
+}
+
+Log.LogMessage(MessageImportance.High, $"Created zip: {outputFile}");
+]]></Code>
+		</Task>
+	</UsingTask>
+
+	<UsingTask TaskName="CleanSingleFilePublishDirectory"
+	           TaskFactory="RoslynCodeTaskFactory"
+	           AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+		<ParameterGroup>
+			<Directory ParameterType="System.String" Required="true" />
+			<FileName ParameterType="System.String" Required="true" />
+			<BuildRoot ParameterType="System.String" Required="true" />
+		</ParameterGroup>
+		<Task>
+			<Using Namespace="System" />
+			<Using Namespace="System.IO" />
+			<Using Namespace="System.Linq" />
+			<Code Type="Fragment" Language="cs"><![CDATA[
+var buildRoot = Path.GetFullPath(BuildRoot);
+var targetDir = Path.GetFullPath(Directory);
+if (!targetDir.StartsWith(buildRoot, StringComparison.OrdinalIgnoreCase))
+{
+    Log.LogError($"Refusing to clean a directory outside Build: {targetDir}");
+    return false;
+}
+
+var keepPath = Path.GetFullPath(Path.Combine(targetDir, FileName));
+if (!File.Exists(keepPath))
+{
+    Log.LogError($"Expected single-file executable was not found: {keepPath}");
+    return false;
+}
+
+foreach (var entry in new DirectoryInfo(targetDir).EnumerateFileSystemInfos())
+{
+    if (string.Equals(entry.FullName, keepPath, StringComparison.OrdinalIgnoreCase))
+    {
+        continue;
+    }
+
+    if ((entry.Attributes & FileAttributes.Directory) == FileAttributes.Directory)
+    {
+        ((DirectoryInfo)entry).Delete(recursive: true);
+    }
+    else
+    {
+        entry.Delete();
+    }
+}
+
+Log.LogMessage(MessageImportance.High, $"Cleaned publish directory. Kept: {keepPath}");
+]]></Code>
+		</Task>
+	</UsingTask>
+
+</Project>
