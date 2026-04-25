@@ -21,6 +21,7 @@ namespace ASLM.Pages
         private const string IconHome = "icon_home.png";
         private const string IconConsole = "icon_console.png";
         private const string IconModules = "icon_modules.png";
+        private const string IconApi = "icon_api.png";
         private const string IconDownload = "icon_download.png";
         private const string IconSettings = "icon_settings.png";
         private const string IconPage = "icon_page.png";
@@ -28,6 +29,7 @@ namespace ASLM.Pages
         private const string LabelHome = "Home";
         private const string LabelConsoles = "Consoles";
         private const string LabelModules = "Modules";
+        private const string LabelApi = "ASLM API";
         private const string LabelDownload = "Download";
         private const string LabelSettings = "Settings";
         private const int MaxConcurrentModuleStarts = 2;
@@ -50,6 +52,7 @@ namespace ASLM.Pages
         private View? _homeView;
         private View? _consolesView;
         private View? _moduleManagementView;
+        private View? _aslmApiView;
         private View? _downloadModulesView;
         private View? _settingsView;
         private View? _moduleUpdateDialogView;
@@ -82,7 +85,7 @@ namespace ASLM.Pages
             _panelExpanded = Preferences.Default.Get("SidebarExpanded", false);
             SidePanel.WidthRequest = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
 
-            _navButtons = [HomeButton, ConsolesButton, ModuleManagementButton, UploadModulesButton, SettingsButton];
+            _navButtons = [HomeButton, ConsolesButton, ModuleManagementButton, AslmApiButton, UploadModulesButton, SettingsButton];
 
             // Hook alignment updates once so WinUI buttons keep the same content layout.
             CollapseButton.HandlerChanged += (sender, _) => UpdateButtonAlignment((Button)sender!);
@@ -96,6 +99,7 @@ namespace ASLM.Pages
             HomeButton.ImageSource = IconHome;
             ConsolesButton.ImageSource = IconConsole;
             ModuleManagementButton.ImageSource = IconModules;
+            AslmApiButton.ImageSource = IconApi;
             UploadModulesButton.ImageSource = IconDownload;
             SettingsButton.ImageSource = IconSettings;
 
@@ -476,6 +480,17 @@ namespace ASLM.Pages
                 return ContentArea.Content ?? _homeView;
             }
 
+            if (button == AslmApiButton)
+            {
+                _aslmApiView ??= _services.GetRequiredService<AslmApiView>();
+                if (_aslmApiView is AslmApiView aslmApiView)
+                {
+                    _ = aslmApiView.RefreshAsync();
+                }
+
+                return _aslmApiView;
+            }
+
             return new Label { Text = "Unknown page", TextColor = Colors.White };
         }
 
@@ -499,6 +514,11 @@ namespace ASLM.Pages
             if (button == ModuleManagementButton)
             {
                 return LabelModules;
+            }
+
+            if (button == AslmApiButton)
+            {
+                return LabelApi;
             }
 
             if (button == UploadModulesButton)

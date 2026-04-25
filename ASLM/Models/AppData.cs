@@ -23,6 +23,10 @@ namespace ASLM.Models
         [JsonPropertyName("ports")]
         public AppPortConfig Ports { get; set; } = new();
 
+        // Stores the local ASLM API mirror server settings.
+        [JsonPropertyName("api")]
+        public AppApiConfig Api { get; set; } = new();
+
         // Stores ASLM and module update preferences.
         [JsonPropertyName("updates")]
         public AppUpdateSettings Updates { get; set; } = new();
@@ -38,6 +42,10 @@ namespace ASLM.Models
 
             // Recreate the ports section when it is missing from the persisted file.
             Ports ??= new();
+
+            // Recreate and normalize the API server section when it is absent.
+            Api ??= new();
+            Api.Normalize();
 
             // Recreate and normalize update preferences when the section is absent.
             Updates ??= new();
@@ -64,6 +72,27 @@ namespace ASLM.Models
         {
             // Keep string properties safe for UI binding and serialization.
             Name ??= string.Empty;
+        }
+    }
+
+
+    // API mirror server
+
+    /// <summary>
+    /// Stores preferences for the local ASLM API mirror server.
+    /// </summary>
+    public class AppApiConfig
+    {
+        // Indicates whether the local mirror server should start with ASLM.
+        [JsonPropertyName("serverEnabled")]
+        public bool ServerEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Restores safe defaults after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            // The API port is allocated by PortManager from the official module pool.
         }
     }
 

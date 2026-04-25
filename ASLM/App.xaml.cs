@@ -85,6 +85,9 @@ namespace ASLM
 
                 var updateScheduler = _services.GetService<UpdateSchedulerService>();
                 updateScheduler?.Dispose();
+
+                var apiServer = _services.GetService<AslmApiServerService>();
+                apiServer?.Dispose();
             }
             catch (Exception ex)
             {

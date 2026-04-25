@@ -14,6 +14,7 @@ namespace ASLM.Pages
     {
         private readonly AppDataService _appData;
         private readonly UpdateSchedulerService _updateScheduler;
+        private readonly AslmApiServerService _apiServer;
         private readonly IServiceProvider _services;
         private bool _initialized;
 
@@ -25,11 +26,13 @@ namespace ASLM.Pages
         public LoadingPage(
             AppDataService appData,
             UpdateSchedulerService updateScheduler,
+            AslmApiServerService apiServer,
             IServiceProvider services)
         {
             InitializeComponent();
             _appData = appData;
             _updateScheduler = updateScheduler;
+            _apiServer = apiServer;
             _services = services;
         }
 
@@ -49,6 +52,7 @@ namespace ASLM.Pages
 
             _initialized = true;
             await _appData.InitializeAsync();
+            await _apiServer.StartIfEnabledAsync();
             _updateScheduler.Start();
 
             Page nextPage = _appData.IsFirstRun

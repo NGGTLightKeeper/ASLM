@@ -61,6 +61,7 @@ namespace ASLM
             builder.Services.AddSingleton<GitHubUpdateClient>();
             builder.Services.AddSingleton<UpdateService>();
             builder.Services.AddSingleton<UpdateSchedulerService>();
+            builder.Services.AddSingleton<AslmApiServerService>();
 
             // Page registrations
             builder.Services.AddTransient<AppShellPage>();
@@ -71,6 +72,7 @@ namespace ASLM
             builder.Services.AddTransient<HomeView>();
             builder.Services.AddTransient<ConsolesView>();
             builder.Services.AddTransient<ModuleManagementView>();
+            builder.Services.AddTransient<AslmApiView>();
             builder.Services.AddTransient<DownloadModulesView>();
             builder.Services.AddTransient<SettingsView>();
             builder.Services.AddTransient<ModuleUpdateDialogView>();

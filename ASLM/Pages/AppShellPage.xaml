@@ -57,6 +57,13 @@
                         HorizontalOptions="Fill"
                         Clicked="OnNavClicked" />
 
+                <Button x:Name="AslmApiButton"
+                        Style="{StaticResource SidebarButton}"
+                        Text="ASLM API"
+                        HeightRequest="36"
+                        HorizontalOptions="Fill"
+                        Clicked="OnNavClicked" />
+
                 <Button x:Name="UploadModulesButton"
                         Style="{StaticResource SidebarButton}"
                         Text="Download"

@@ -13,6 +13,12 @@ namespace ASLM.Services
     /// </summary>
     public class PortManager
     {
+        // Port-map owner used by the internal ASLM API mirror server.
+        public const string AslmApiServiceId = "__aslm-api";
+
+        // Port key used by the internal ASLM API mirror server.
+        public const string AslmApiPortKey = "server-port";
+
         private readonly AppDataService _appData;
         private readonly string _portMapPath;
         private readonly object _lock = new();
@@ -85,12 +91,12 @@ namespace ASLM.Services
                 // Allocate any missing or invalid ports inside the active range.
                 foreach (var key in portSettings)
                 {
-                    if (existing.TryGetValue(key, out var port) && IsPortValid(module, port))
+                    if (existing.TryGetValue(key, out var port) && IsPortValid(module.Id, port))
                     {
                         continue;
                     }
 
-                    existing[key] = AllocatePort(module);
+                    existing[key] = AllocatePort(module.Id);
                     changed = true;
                 }
 
@@ -100,6 +106,35 @@ namespace ASLM.Services
                 }
 
                 return existing;
+            }
+        }
+
+        /// <summary>
+        /// Returns an official-pool port for an internal ASLM service and allocates it when needed.
+        /// </summary>
+        public int GetOrAssignInternalServicePort(string serviceId, string portKey)
+        {
+            lock (_lock)
+            {
+                EnsureLoaded();
+
+                if (!_portMap.TryGetValue(serviceId, out var existing))
+                {
+                    existing = new Dictionary<string, int>();
+                    _portMap[serviceId] = existing;
+                }
+
+                if (existing.TryGetValue(portKey, out var port) && IsPortValid(serviceId, port))
+                {
+                    return port;
+                }
+
+                // Internal ASLM services use the same official range and still reserve the port
+                // in the shared runtime port map so modules cannot receive it later.
+                port = AllocatePort(serviceId);
+                existing[portKey] = port;
+                SavePortMap();
+                return port;
             }
         }
 
@@ -183,7 +218,9 @@ namespace ASLM.Services
                 EnsureLoaded();
 
                 var activeSet = new HashSet<string>(activeModuleIds);
-                var orphanedIds = _portMap.Keys.Where(id => !activeSet.Contains(id)).ToList();
+                var orphanedIds = _portMap.Keys
+                    .Where(id => !activeSet.Contains(id) && !IsInternalServiceId(id))
+                    .ToList();
 
                 if (orphanedIds.Count == 0)
                 {
@@ -233,10 +270,10 @@ namespace ASLM.Services
         /// <summary>
         /// Checks whether an assigned port is still valid for the current module ranges.
         /// </summary>
-        private bool IsPortValid(ModuleConfig module, int port)
+        private bool IsPortValid(string ownerId, int port)
         {
             var ports = _appData.Data.Ports;
-            var isOfficial = !module.Id.Contains('.');
+            var isOfficial = !ownerId.Contains('.');
 
             var start = isOfficial ? ports.OfficialStart : ports.ThirdPartyStart;
             var count = isOfficial ? ports.OfficialCount : ports.ThirdPartyCount;
@@ -256,10 +293,10 @@ namespace ASLM.Services
         /// <summary>
         /// Allocates the next available port for a module.
         /// </summary>
-        private int AllocatePort(ModuleConfig module)
+        private int AllocatePort(string ownerId)
         {
             var ports = _appData.Data.Ports;
-            var isOfficial = !module.Id.Contains('.');
+            var isOfficial = !ownerId.Contains('.');
 
             var start = isOfficial ? ports.OfficialStart : ports.ThirdPartyStart;
             var count = isOfficial ? ports.OfficialCount : ports.ThirdPartyCount;
@@ -278,7 +315,7 @@ namespace ASLM.Services
             // Fall back to a deterministic high range when the configured range is exhausted.
             const int fallbackStart = 40000;
             const int fallbackCount = 10000;
-            var seed = (int)(uint)module.Id.GetHashCode();
+            var seed = (int)(uint)ownerId.GetHashCode();
 
             for (var offset = 0; offset < fallbackCount; offset++)
             {
@@ -290,6 +327,14 @@ namespace ASLM.Services
             }
 
             throw new InvalidOperationException("No ports are available in the configured or fallback ranges.");
+        }
+
+        /// <summary>
+        /// Returns whether a port map owner is managed by ASLM itself rather than by an installed module folder.
+        /// </summary>
+        private static bool IsInternalServiceId(string ownerId)
+        {
+            return ownerId.StartsWith("__", StringComparison.Ordinal);
         }
 
         // Lazy load

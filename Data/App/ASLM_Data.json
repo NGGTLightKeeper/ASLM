@@ -9,6 +9,9 @@
         "thirdPartyStart": 9000,
         "thirdPartyCount": 1000
     },
+    "api": {
+        "serverEnabled": true
+    },
     "updates": {
         "checkEnabled": true,
         "autoUpdateEnabled": false,
