@@ -115,6 +115,9 @@ namespace ASLM.Models
         [JsonPropertyName("appChannel")]
         public string AppChannel { get; set; } = "release";
 
+        [JsonPropertyName("installedReleaseTag")]
+        public string? InstalledReleaseTag { get; set; }
+
         [JsonPropertyName("moduleDefaultMode")]
         public string ModuleDefaultMode { get; set; } = "release";
 
@@ -129,6 +132,7 @@ namespace ASLM.Models
             AutoCheckPeriodHours = Math.Clamp(AutoCheckPeriodHours <= 0 ? 24 : AutoCheckPeriodHours, 1, 720);
             LastAutoCheckUtc = string.IsNullOrWhiteSpace(LastAutoCheckUtc) ? null : LastAutoCheckUtc;
             AppChannel = NormalizeChannel(AppChannel);
+            InstalledReleaseTag = string.IsNullOrWhiteSpace(InstalledReleaseTag) ? null : InstalledReleaseTag.Trim();
             ModuleDefaultMode = NormalizeMode(ModuleDefaultMode);
             ModuleDefaultChannel = NormalizeChannel(ModuleDefaultChannel);
         }

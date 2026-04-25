@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- Copyright NGGT.LightKeeper. All Rights Reserved. -->
+
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ASLM.Installer.MainPage"
+             BackgroundColor="{StaticResource BackgroundPrimary}"
+             Title="ASLM Installer">
+
+    <Grid Padding="24"
+          RowDefinitions="Auto,*,Auto"
+          RowSpacing="16">
+
+        <VerticalStackLayout Spacing="4">
+            <Label x:Name="TitleLabel"
+                   Text="Install ASLM"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource LabelPrimary}" />
+            <Label x:Name="SubtitleLabel"
+                   Text="This wizard will install ASLM on this computer."
+                   FontSize="14"
+                   TextColor="{StaticResource LabelSecondary}"
+                   LineBreakMode="WordWrap" />
+            <Label x:Name="StepLabel"
+                   Margin="0,6,0,0"
+                   FontSize="12"
+                   TextColor="{StaticResource LabelSecondary}" />
+        </VerticalStackLayout>
+
+        <Grid Grid.Row="1">
+            <VerticalStackLayout x:Name="WelcomeView"
+                                 Spacing="8">
+                <Label Text="Setup will install ASLM to a folder you choose."
+                       FontSize="15"
+                       TextColor="{StaticResource LabelPrimary}"
+                       LineBreakMode="WordWrap" />
+            </VerticalStackLayout>
+
+            <Grid x:Name="LegalView"
+                  IsVisible="False"
+                  RowDefinitions="Auto,*,Auto"
+                  RowSpacing="12">
+                <Label x:Name="LegalDocumentTitleLabel"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource LabelPrimary}" />
+                <Border x:Name="LegalDocumentBorder"
+                        Grid.Row="1"
+                        BackgroundColor="{StaticResource BackgroundSecondary}"
+                        Stroke="{StaticResource Separator}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 8">
+                    <Editor x:Name="LegalDocumentEditor"
+                            Margin="12"
+                            FontFamily="Consolas"
+                            FontSize="13"
+                            TextColor="{StaticResource LabelPrimary}"
+                            BackgroundColor="Transparent"
+                            IsReadOnly="True"
+                            AutoSize="Disabled" />
+                </Border>
+                <HorizontalStackLayout Grid.Row="2"
+                                       Spacing="10"
+                                       VerticalOptions="Center">
+                    <CheckBox x:Name="AcceptLegalCheckBox"
+                              CheckedChanged="OnAcceptLegalChanged"
+                              Color="{StaticResource SystemBlue}" />
+                    <Label x:Name="AcceptLegalLabel"
+                           Text="I have read and accept this document."
+                           FontSize="14"
+                           TextColor="{StaticResource LabelPrimary}"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Grid>
+
+            <VerticalStackLayout x:Name="PathView"
+                                 IsVisible="False"
+                                 Spacing="16">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Installation directory"
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource LabelPrimary}" />
+                    <Grid ColumnDefinitions="*,Auto"
+                          ColumnSpacing="10">
+                        <Entry x:Name="BasePathEntry"
+                               TextChanged="OnInstallPathChanged" />
+                        <Button Grid.Column="1"
+                                Text="Browse"
+                                Clicked="OnBrowseClicked"
+                                BackgroundColor="{StaticResource BackgroundTertiary}"
+                                TextColor="{StaticResource LabelPrimary}" />
+                    </Grid>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Folder name"
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource LabelPrimary}" />
+                    <Entry x:Name="FolderNameEntry"
+                           Text="ASLM"
+                           TextChanged="OnInstallPathChanged" />
+                </VerticalStackLayout>
+
+                <Border BackgroundColor="{StaticResource BackgroundSecondary}"
+                        Stroke="{StaticResource Separator}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 8"
+                        Padding="14">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Final path"
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource LabelPrimary}" />
+                        <Label x:Name="FinalPathLabel"
+                               FontSize="13"
+                               TextColor="{StaticResource LabelSecondary}"
+                               LineBreakMode="CharacterWrap" />
+                        <Label x:Name="PathValidationLabel"
+                               FontSize="13"
+                               TextColor="{StaticResource SystemOrange}"
+                               LineBreakMode="WordWrap" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Grid ColumnDefinitions="*,Auto"
+                      RowDefinitions="Auto,Auto"
+                      ColumnSpacing="12"
+                      RowSpacing="10">
+                    <Label Text="Desktop shortcut"
+                           FontSize="14"
+                           TextColor="{StaticResource LabelPrimary}"
+                           VerticalOptions="Center" />
+                    <Switch x:Name="DesktopShortcutSwitch"
+                            Grid.Column="1"
+                            IsToggled="True"
+                            OnColor="{StaticResource SystemBlue}" />
+
+                    <Label Grid.Row="1"
+                           Text="Start menu shortcut"
+                           FontSize="14"
+                           TextColor="{StaticResource LabelPrimary}"
+                           VerticalOptions="Center" />
+                    <Switch x:Name="StartMenuShortcutSwitch"
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            IsToggled="True"
+                            OnColor="{StaticResource SystemBlue}" />
+                </Grid>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout x:Name="ConfirmView"
+                                 IsVisible="False"
+                                 Spacing="10">
+                <Label Text="Ready to install"
+                       FontSize="15"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource LabelPrimary}" />
+                <Label x:Name="ConfirmPathLabel"
+                       FontSize="13"
+                       TextColor="{StaticResource LabelSecondary}"
+                       LineBreakMode="CharacterWrap" />
+                <Label x:Name="ConfirmLegalLabel"
+                       FontSize="13"
+                       TextColor="{StaticResource LabelSecondary}"
+                       LineBreakMode="WordWrap" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout x:Name="InstallView"
+                                 IsVisible="False"
+                                 Spacing="16">
+                <Border BackgroundColor="{StaticResource BackgroundSecondary}"
+                        Stroke="{StaticResource Separator}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 8"
+                        Padding="16">
+                    <Grid ColumnDefinitions="Auto,*"
+                          RowDefinitions="Auto,Auto"
+                          ColumnSpacing="12"
+                          RowSpacing="10">
+                        <ActivityIndicator x:Name="InstallBusyIndicator"
+                                           IsRunning="False"
+                                           Color="{StaticResource SystemBlue}"
+                                           WidthRequest="28"
+                                           HeightRequest="28" />
+                        <Label x:Name="InstallStatusLabel"
+                               Grid.Column="1"
+                               Text="Waiting to start..."
+                               FontSize="14"
+                               TextColor="{StaticResource LabelPrimary}"
+                               VerticalOptions="Center"
+                               LineBreakMode="WordWrap" />
+                        <ProgressBar x:Name="InstallProgressBar"
+                                     Grid.Row="1"
+                                     Grid.ColumnSpan="2"
+                                     Progress="0"
+                                     ProgressColor="{StaticResource SystemBlue}" />
+                    </Grid>
+                </Border>
+
+                <HorizontalStackLayout x:Name="LaunchAfterInstallPanel"
+                                       Spacing="10"
+                                       IsVisible="False">
+                    <CheckBox x:Name="LaunchAfterInstallCheckBox"
+                              IsChecked="True"
+                              Color="{StaticResource SystemBlue}" />
+                    <Label Text="Launch ASLM when the installer closes"
+                           FontSize="14"
+                           TextColor="{StaticResource LabelPrimary}"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+        </Grid>
+
+        <Grid Grid.Row="2"
+              ColumnDefinitions="*,Auto,Auto,Auto"
+              ColumnSpacing="10">
+            <Label x:Name="FooterLabel"
+                   Text=""
+                   FontSize="12"
+                   TextColor="{StaticResource SystemRed}"
+                   VerticalOptions="Center"
+                   LineBreakMode="WordWrap" />
+            <Button x:Name="BackButton"
+                    Grid.Column="1"
+                    Text="Back"
+                    Clicked="OnBackClicked"
+                    BackgroundColor="{StaticResource BackgroundTertiary}"
+                    TextColor="{StaticResource LabelPrimary}" />
+            <Button x:Name="DeclineButton"
+                    Grid.Column="2"
+                    Text="Decline"
+                    IsVisible="False"
+                    Clicked="OnDeclineClicked"
+                    BackgroundColor="{StaticResource BackgroundTertiary}"
+                    TextColor="{StaticResource LabelPrimary}" />
+            <Button x:Name="NextButton"
+                    Grid.Column="3"
+                    Text="Next"
+                    Clicked="OnNextClicked"
+                    BackgroundColor="{StaticResource SystemBlue}"
+                    TextColor="{StaticResource LabelPrimary}" />
+        </Grid>
+    </Grid>
+</ContentPage>

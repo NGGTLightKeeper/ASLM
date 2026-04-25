@@ -36,6 +36,7 @@ namespace ASLM.Pages
 
         private ModuleViewModel? _module;
         private ModuleUpdateDialogMode _mode;
+        private bool _isSynchronizingPickers;
 
         /// <summary>
         /// Raised when the user asks to close the module update overlay.
@@ -147,7 +148,7 @@ namespace ASLM.Pages
                     return;
                 }
 
-                _module.SelectedBranch = value;
+                _module.ApplyBranchSelection(value);
                 RaiseModuleProperties();
             }
         }
@@ -245,22 +246,23 @@ namespace ASLM.Pages
         /// <summary>
         /// Opens the overlay for the requested module and mode.
         /// </summary>
-        public async Task OpenAsync(ModuleViewModel module, ModuleUpdateDialogMode mode)
+        public Task OpenAsync(ModuleViewModel module, ModuleUpdateDialogMode mode)
         {
             AttachModule(module);
             var selectedModule = _module;
             if (selectedModule == null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             _mode = mode;
             selectedModule.ResetCompletedUpdateSession();
             UpdateDialogSize();
             RaiseDialogProperties();
-            SyncLogView();
-            await EnsureModeOptionsLoadedAsync(forceRefresh: false);
             SyncPickerSelections();
+            SyncLogView();
+            _ = EnsureModeOptionsLoadedAsync(forceRefresh: false);
+            return Task.CompletedTask;
         }
 
 
@@ -375,15 +377,30 @@ namespace ASLM.Pages
         /// </summary>
         private void OnModulePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            // The overlay mirrors one card view model, so a broad refresh keeps the UI simple and consistent.
             RaiseModuleProperties();
-            SyncPickerSelections();
+            if (ShouldSyncPickerSelection(e.PropertyName))
+            {
+                SyncPickerSelections();
+            }
 
             if (e.PropertyName == nameof(ModuleViewModel.UpdateLogText) ||
                 e.PropertyName == nameof(ModuleViewModel.HasUpdateLog))
             {
                 SyncLogView();
             }
+        }
+
+        /// <summary>
+        /// Returns whether a module property change should realign picker selections.
+        /// </summary>
+        private static bool ShouldSyncPickerSelection(string? propertyName)
+        {
+            return string.IsNullOrWhiteSpace(propertyName) ||
+                   propertyName == nameof(ModuleViewModel.SelectedSourceMode) ||
+                   propertyName == nameof(ModuleViewModel.SelectedReleaseOption) ||
+                   propertyName == nameof(ModuleViewModel.SelectedBranch) ||
+                   propertyName == nameof(ModuleViewModel.ReleaseOptions) ||
+                   propertyName == nameof(ModuleViewModel.BranchOptions);
         }
 
 
@@ -398,11 +415,64 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Applies a source mode picker change even when MAUI skips the two-way binding update.
+        /// </summary>
+        private void OnSourceModeSelectionChanged(object? sender, EventArgs e)
+        {
+            if (_isSynchronizingPickers)
+            {
+                return;
+            }
+
+            if (SourceModePicker.SelectedItem is string mode)
+            {
+                SelectedSourceMode = mode;
+            }
+        }
+
+        /// <summary>
+        /// Applies a release picker change even when the selected object was refreshed in-place.
+        /// </summary>
+        private void OnReleaseSelectionChanged(object? sender, EventArgs e)
+        {
+            if (_isSynchronizingPickers)
+            {
+                return;
+            }
+
+            if (ReleasePicker.SelectedItem is UpdateCandidate release)
+            {
+                SelectedReleaseOption = release;
+            }
+        }
+
+        /// <summary>
+        /// Applies a branch picker change without waiting for delayed binding propagation.
+        /// </summary>
+        private void OnBranchSelectionChanged(object? sender, EventArgs e)
+        {
+            if (_isSynchronizingPickers)
+            {
+                return;
+            }
+
+            if (BranchPicker.SelectedItem is string branch)
+            {
+                _module?.ApplyBranchSelection(branch);
+            }
+        }
+
+        /// <summary>
         /// Checks the selected module for updates and refreshes the dialog state.
         /// </summary>
         private async Task CheckForUpdatesAsync(bool forceOptionLoad, bool announceInLog)
         {
             if (_module == null)
+            {
+                return;
+            }
+
+            if (!ApplyPickerSelectionsToModule())
             {
                 return;
             }
@@ -478,7 +548,17 @@ namespace ASLM.Pages
         /// </summary>
         private async Task InstallUpdateAsync()
         {
-            if (_module == null || !_module.HasUpdate || _module.IsUpdating)
+            if (_module == null)
+            {
+                return;
+            }
+
+            if (!ApplyPickerSelectionsToModule())
+            {
+                return;
+            }
+
+            if (!_module.CanInstallSelectedUpdate || _module.IsUpdating)
             {
                 return;
             }
@@ -502,6 +582,69 @@ namespace ASLM.Pages
             RaiseActivityProperties();
         }
 
+        /// <summary>
+        /// Pushes the visible picker values into the module view model before check or install actions run.
+        /// </summary>
+        private bool ApplyPickerSelectionsToModule()
+        {
+            if (_module == null)
+            {
+                return false;
+            }
+
+            var selectedMode = SourceModePicker.SelectedItem as string ?? SelectedSourceMode;
+            if (!string.IsNullOrWhiteSpace(selectedMode))
+            {
+                _module.SelectedSourceMode = selectedMode;
+            }
+
+            if (string.Equals(_module.SelectedSourceMode, "branch", StringComparison.OrdinalIgnoreCase))
+            {
+                var selectedBranch = ResolveSelectedBranchFromPicker();
+                if (string.IsNullOrWhiteSpace(selectedBranch))
+                {
+                    _module.SetUpdateActivityStatus("Select a repository branch before checking updates.");
+                    RaiseActivityProperties();
+                    return false;
+                }
+
+                _module.ApplyBranchSelection(selectedBranch.Trim());
+            }
+
+            if (_module.IsReleaseMode)
+            {
+                var release = ReleasePicker.SelectedItem as UpdateCandidate ?? SelectedReleaseOption;
+                if (release != null)
+                {
+                    _module.SelectedReleaseOption = release;
+                }
+            }
+
+            RaiseModuleProperties();
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves the visible branch picker choice without silently changing it to a default branch.
+        /// </summary>
+        private string? ResolveSelectedBranchFromPicker()
+        {
+            if (BranchPicker.SelectedItem is string selectedBranch &&
+                !string.IsNullOrWhiteSpace(selectedBranch))
+            {
+                return selectedBranch;
+            }
+
+            if (BranchPicker.SelectedIndex >= 0 &&
+                BranchPicker.SelectedIndex < BranchOptions.Count)
+            {
+                return BranchOptions[BranchPicker.SelectedIndex];
+            }
+
+            return BranchOptions.FirstOrDefault(branch =>
+                string.Equals(branch, _module?.SelectedBranch, StringComparison.OrdinalIgnoreCase));
+        }
+
         // Logging
 
         /// <summary>
@@ -518,28 +661,36 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Reapplies the selected branch and release items after picker sources refresh.
+        /// Keeps picker controls aligned with the module view model after option lists are rebuilt.
         /// </summary>
         private void SyncPickerSelections()
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                if (BranchPicker != null)
-                {
-                    var branchIndex = BranchOptions.IndexOf(SelectedBranch);
-                    BranchPicker.SelectedIndex = branchIndex;
-                    BranchPicker.SelectedItem = branchIndex >= 0 ? BranchOptions[branchIndex] : null;
-                }
+                _isSynchronizingPickers = true;
 
-                if (ReleasePicker != null)
+                try
                 {
-                    var releaseIndex = ReleaseOptions.IndexOf(SelectedReleaseOption!);
-                    ReleasePicker.SelectedIndex = releaseIndex;
-                    ReleasePicker.SelectedItem = releaseIndex >= 0 ? ReleaseOptions[releaseIndex] : null;
+                    SourceModePicker.SelectedItem = SourceModeOptions.FirstOrDefault(mode =>
+                        string.Equals(mode, SelectedSourceMode, StringComparison.OrdinalIgnoreCase));
+
+                    ReleasePicker.SelectedItem = SelectedReleaseOption;
+
+                    var selectedBranch = BranchOptions.FirstOrDefault(branch =>
+                        string.Equals(branch, SelectedBranch, StringComparison.OrdinalIgnoreCase));
+
+                    BranchPicker.SelectedItem = selectedBranch;
+                    if (selectedBranch == null)
+                    {
+                        BranchPicker.SelectedIndex = -1;
+                    }
+                }
+                finally
+                {
+                    _isSynchronizingPickers = false;
                 }
             });
         }
-
 
         // Property refresh
 

@@ -65,10 +65,7 @@ namespace ASLM.Services
         /// <summary>
         /// Returns the current ASLM app version.
         /// </summary>
-        public string CurrentAppVersion =>
-            Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-            ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString(3)
-            ?? "0.0.0";
+        public string CurrentAppVersion => ResolveCurrentAppDisplayVersion();
 
 
         // Configuration
@@ -108,43 +105,44 @@ namespace ASLM.Services
                 ? source!.DefaultChannel
                 : _appData.Data.Updates.AppChannel;
             var includePrerelease = IsPrereleaseChannel(channel);
-            var release = await _github.GetLatestReleaseAsync(source!.Source.Repo, includePrerelease, ct);
-            if (release == null)
-            {
-                return null;
-            }
-
-            var assetName = GetConfiguredAppAssetName(source);
+            var appSource = source!;
+            var assetName = GetConfiguredAppAssetName(appSource);
             if (string.IsNullOrWhiteSpace(assetName))
             {
                 return null;
             }
 
-            var asset = release.Assets.FirstOrDefault(candidate =>
-                string.Equals(candidate.Name, assetName, StringComparison.OrdinalIgnoreCase));
-            if (asset == null || string.IsNullOrWhiteSpace(asset.BrowserDownloadUrl))
+            var releases = await _github.GetReleasesAsync(appSource.Source.Repo, includePrerelease, ct);
+            foreach (var release in releases)
             {
-                return null;
+                var asset = release.Assets.FirstOrDefault(candidate =>
+                    string.Equals(candidate.Name, assetName, StringComparison.OrdinalIgnoreCase));
+                if (asset == null || string.IsNullOrWhiteSpace(asset.BrowserDownloadUrl))
+                {
+                    continue;
+                }
+
+                if (!ShouldOfferAppUpdate(release.TagName, includePrerelease))
+                {
+                    continue;
+                }
+
+                return new UpdateCandidate
+                {
+                    TargetKind = "app",
+                    TargetId = "aslm",
+                    Name = "ASLM",
+                    CurrentVersion = ResolveCurrentAppReleaseReference(),
+                    RemoteVersion = release.TagName,
+                    Channel = includePrerelease ? "pre-release" : "release",
+                    Mode = "release",
+                    DownloadUrl = asset.BrowserDownloadUrl,
+                    ReleaseTag = release.TagName,
+                    IsPrerelease = release.Prerelease
+                };
             }
 
-            if (!IsRemoteVersionNewer(release.TagName, CurrentAppVersion))
-            {
-                return null;
-            }
-
-            return new UpdateCandidate
-            {
-                TargetKind = "app",
-                TargetId = "aslm",
-                Name = "ASLM",
-                CurrentVersion = CurrentAppVersion,
-                RemoteVersion = release.TagName,
-                Channel = includePrerelease ? "pre-release" : "release",
-                Mode = "release",
-                DownloadUrl = asset.BrowserDownloadUrl,
-                ReleaseTag = release.TagName,
-                IsPrerelease = release.Prerelease
-            };
+            return null;
         }
 
         /// <summary>
@@ -483,6 +481,7 @@ namespace ASLM.Services
                 RemoteVersion = $"{selected.Name}@{ShortSha(selected.CommitSha)}",
                 Channel = "branch",
                 Mode = "branch",
+                ReferenceName = selected.Name,
                 CommitSha = selected.CommitSha,
                 Module = module
             };
@@ -512,6 +511,7 @@ namespace ASLM.Services
                 RemoteVersion = $"{selected.Name}@{ShortSha(selected.CommitSha)}",
                 Channel = "branch",
                 Mode = "branch",
+                ReferenceName = selected.Name,
                 CommitSha = selected.CommitSha,
                 Module = module
             };
@@ -524,13 +524,36 @@ namespace ASLM.Services
         {
             var currentTag = ResolveInstalledModuleReleaseTag(module);
             var candidates = await GetModuleReleaseCandidatesAsync(module, ct);
+            if (candidates.Count == 0)
+            {
+                return null;
+            }
 
-            // The badge on the card should represent a genuinely newer version,
-            // while the dialog can still expose older versions for rollback.
-            return candidates.FirstOrDefault(candidate =>
-                !string.IsNullOrWhiteSpace(candidate.ReleaseTag) &&
-                !string.Equals(candidate.ReleaseTag, currentTag, StringComparison.OrdinalIgnoreCase) &&
-                IsRemoteVersionNewer(candidate.ReleaseTag, currentTag));
+            if (!IsLatestReleaseSelection(module.Update.SelectedReleaseTag) &&
+                !string.IsNullOrWhiteSpace(module.Update.SelectedReleaseTag))
+            {
+                var selected = candidates.FirstOrDefault(candidate =>
+                    string.Equals(candidate.ReleaseTag, module.Update.SelectedReleaseTag, StringComparison.OrdinalIgnoreCase));
+
+                if (selected == null || string.IsNullOrWhiteSpace(selected.ReleaseTag))
+                {
+                    return null;
+                }
+
+                // Old installations may only know the package version, not the GitHub tag.
+                // A concrete user selection should be installable once so the tag cache can be established.
+                if (string.IsNullOrWhiteSpace(module.Update.InstalledReleaseTag))
+                {
+                    return selected;
+                }
+
+                return !AreEquivalentVersionReferences(selected.ReleaseTag, currentTag) ? selected : null;
+            }
+
+            var latest = candidates[0];
+            return !AreEquivalentVersionReferences(latest.ReleaseTag ?? string.Empty, currentTag)
+                ? latest
+                : null;
         }
 
         /// <summary>
@@ -546,7 +569,8 @@ namespace ASLM.Services
                 return null;
             }
 
-            if (!string.IsNullOrWhiteSpace(module.Update.SelectedReleaseTag))
+            if (!IsLatestReleaseSelection(module.Update.SelectedReleaseTag) &&
+                !string.IsNullOrWhiteSpace(module.Update.SelectedReleaseTag))
             {
                 var selected = candidates.FirstOrDefault(candidate =>
                     string.Equals(candidate.ReleaseTag, module.Update.SelectedReleaseTag, StringComparison.OrdinalIgnoreCase));
@@ -618,7 +642,7 @@ namespace ASLM.Services
             {
                 await _github.DownloadRepositoryZipAsync(
                     module.Source.Repo,
-                    module.Update.Branch,
+                    candidate.ReferenceName ?? module.Update.Branch,
                     archivePath,
                     log,
                     progress,
@@ -780,7 +804,7 @@ namespace ASLM.Services
 
             newConfig.Update.Mode = oldConfig.Update.Mode;
             newConfig.Update.Channel = oldConfig.Update.Channel;
-            newConfig.Update.Branch = oldConfig.Update.Branch;
+            newConfig.Update.Branch = candidate.ReferenceName ?? oldConfig.Update.Branch;
             newConfig.Update.AssetName = oldConfig.Update.AssetName ?? newConfig.Update.AssetName;
             newConfig.Update.RunFirstRunAfterUpdate = oldConfig.Update.RunFirstRunAfterUpdate;
             newConfig.Update.Preserve = oldConfig.Update.Preserve
@@ -789,7 +813,11 @@ namespace ASLM.Services
                 .ToList();
             newConfig.Update.InstalledCommitSha = candidate.CommitSha ?? oldConfig.Update.InstalledCommitSha;
             newConfig.Update.InstalledReleaseTag = candidate.ReleaseTag ?? oldConfig.Update.InstalledReleaseTag;
-            newConfig.Update.SelectedReleaseTag = candidate.ReleaseTag ?? oldConfig.Update.SelectedReleaseTag;
+            newConfig.Update.SelectedReleaseTag =
+                string.IsNullOrWhiteSpace(oldConfig.Update.SelectedReleaseTag) ||
+                IsLatestReleaseSelection(oldConfig.Update.SelectedReleaseTag)
+                    ? ModuleUpdateConfig.LatestReleaseTag
+                    : candidate.ReleaseTag ?? oldConfig.Update.SelectedReleaseTag;
             newConfig.Update.Normalize();
         }
 
@@ -862,6 +890,60 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Resolves the local ASLM version label shown in settings when no GitHub tag is known yet.
+        /// </summary>
+        private static string ResolveCurrentAppDisplayVersion()
+        {
+            var informationalVersion = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion;
+            if (!string.IsNullOrWhiteSpace(informationalVersion))
+            {
+                var buildMetadataIndex = informationalVersion.IndexOf('+');
+                return buildMetadataIndex > 0
+                    ? informationalVersion[..buildMetadataIndex]
+                    : informationalVersion;
+            }
+
+            return Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
+        }
+
+        /// <summary>
+        /// Resolves the best local reference used to compare ASLM against GitHub release tags.
+        /// </summary>
+        private string ResolveCurrentAppReleaseReference()
+        {
+            return _appData.Data.Updates.InstalledReleaseTag ?? CurrentAppVersion;
+        }
+
+        /// <summary>
+        /// Returns whether the current ASLM installation should treat the release tag as an available update.
+        /// </summary>
+        private bool ShouldOfferAppUpdate(string releaseTag, bool includePrerelease)
+        {
+            var currentReference = ResolveCurrentAppReleaseReference();
+            if (AreEquivalentVersionReferences(releaseTag, currentReference))
+            {
+                return false;
+            }
+
+            // Once the app has a persisted GitHub tag, exact tag comparison becomes the source of truth.
+            if (!string.IsNullOrWhiteSpace(_appData.Data.Updates.InstalledReleaseTag))
+            {
+                return true;
+            }
+
+            if (IsRemoteVersionNewer(releaseTag, currentReference))
+            {
+                return true;
+            }
+
+            // Fresh local builds often only carry the base display version plus build metadata.
+            // In the pre-release channel we still want the latest GitHub tag to win when the tags differ.
+            return includePrerelease && !AreEquivalentVersionReferences(releaseTag, CurrentAppVersion);
+        }
+
+        /// <summary>
         /// Returns whether a remote version should be treated as newer than the current version.
         /// </summary>
         private static bool IsRemoteVersionNewer(string remoteVersion, string currentVersion)
@@ -889,6 +971,53 @@ namespace ASLM.Services
 
             var suffixIndex = normalized.IndexOfAny(['-', '+']);
             return suffixIndex > 0 ? normalized[..suffixIndex] : normalized;
+        }
+
+        /// <summary>
+        /// Returns whether two local or remote version references point at the same GitHub tag identity.
+        /// </summary>
+        internal static bool AreEquivalentVersionReferences(string left, string right)
+        {
+            var leftNormalized = NormalizeVersionReference(left);
+            var rightNormalized = NormalizeVersionReference(right);
+
+            // Stable numeric versions should compare semantically so 1.0 and 1.0.0 are treated as the same release.
+            if (!leftNormalized.Contains('-', StringComparison.Ordinal) &&
+                !rightNormalized.Contains('-', StringComparison.Ordinal) &&
+                Version.TryParse(leftNormalized, out var leftVersion) &&
+                Version.TryParse(rightNormalized, out var rightVersion))
+            {
+                return leftVersion == rightVersion;
+            }
+
+            return string.Equals(leftNormalized, rightNormalized, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Normalizes a version or release tag while preserving pre-release identifiers and removing build metadata.
+        /// </summary>
+        private static string NormalizeVersionReference(string value)
+        {
+            var normalized = (value ?? string.Empty).Trim();
+            if (normalized.StartsWith('v') || normalized.StartsWith('V'))
+            {
+                normalized = normalized[1..];
+            }
+
+            var buildMetadataIndex = normalized.IndexOf('+');
+            return buildMetadataIndex > 0 ? normalized[..buildMetadataIndex] : normalized;
+        }
+
+        /// <summary>
+        /// Returns whether the selected release marker points at the moving latest target.
+        /// </summary>
+        internal static bool IsLatestReleaseSelection(string? selectedReleaseTag)
+        {
+            return string.IsNullOrWhiteSpace(selectedReleaseTag) ||
+                   string.Equals(
+                       selectedReleaseTag.Trim(),
+                       ModuleUpdateConfig.LatestReleaseTag,
+                       StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

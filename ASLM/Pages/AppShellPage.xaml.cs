@@ -314,10 +314,10 @@ namespace ASLM.Pages
 
             moduleUpdateDialogView.CloseRequested -= OnModuleUpdateCloseRequested;
             moduleUpdateDialogView.CloseRequested += OnModuleUpdateCloseRequested;
-            await moduleUpdateDialogView.OpenAsync(module, mode);
-
             OverlayContainer.Content = _moduleUpdateDialogView;
             OverlayContainer.IsVisible = true;
+
+            await moduleUpdateDialogView.OpenAsync(module, mode);
         }
 
         /// <summary>

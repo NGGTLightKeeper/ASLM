@@ -73,3 +73,7 @@ venv/
 !ASLM_*.json
 *.csproj.user
 Launcher.log
+Installer/Installer/Resources/Raw/aslm-payload.zip
+Installer/Installer/Resources/Raw/legal-documents.json
+Installer/Bootstrapper/Resources/installer-ui.zip
+Installer/Bootstrapper/Resources/aslm-payload.zip

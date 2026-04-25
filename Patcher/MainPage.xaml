@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- Copyright NGGT.LightKeeper. All Rights Reserved. -->
+
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Patcher.MainPage"
+             BackgroundColor="{StaticResource BackgroundPrimary}"
+             Title="ASLM Patcher">
+
+    <Grid Padding="26"
+          RowDefinitions="Auto,Auto,*,Auto"
+          RowSpacing="18">
+        <VerticalStackLayout Spacing="6">
+            <Label Text="ASLM Patcher"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource LabelPrimary}" />
+            <Label Text="Applying update"
+                   x:Name="SubtitleLabel"
+                   FontSize="13"
+                   TextColor="{StaticResource LabelSecondary}" />
+        </VerticalStackLayout>
+
+        <Border Grid.Row="1"
+                BackgroundColor="{StaticResource BackgroundSecondary}"
+                Stroke="{StaticResource Separator}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 8"
+                Padding="16,14">
+            <Grid ColumnDefinitions="Auto,*"
+                  ColumnSpacing="12">
+                <ActivityIndicator x:Name="BusyIndicator"
+                                   IsRunning="True"
+                                   Color="{StaticResource SystemBlue}"
+                                   WidthRequest="28"
+                                   HeightRequest="28"
+                                   VerticalOptions="Center" />
+                <Label x:Name="StatusLabel"
+                       Grid.Column="1"
+                       Text="Starting patcher..."
+                       FontSize="14"
+                       TextColor="{StaticResource LabelPrimary}"
+                       VerticalOptions="Center"
+                       LineBreakMode="WordWrap" />
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2"
+                BackgroundColor="{StaticResource BackgroundSecondary}"
+                Stroke="{StaticResource Separator}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 8"
+                Padding="0">
+            <ScrollView x:Name="LogScroll">
+                <Editor x:Name="LogEditor"
+                        Text=""
+                        FontSize="12"
+                        FontFamily="Consolas"
+                        TextColor="{StaticResource LabelPrimary}"
+                        BackgroundColor="Transparent"
+                        IsReadOnly="True"
+                        AutoSize="TextChanges"
+                        Margin="12" />
+            </ScrollView>
+        </Border>
+
+        <Label x:Name="FooterLabel"
+               Grid.Row="3"
+               Text="ASLM will start automatically when the update is finished."
+               FontSize="12"
+               TextColor="{StaticResource LabelSecondary}" />
+    </Grid>
+</ContentPage>

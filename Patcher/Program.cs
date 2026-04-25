@@ -3,28 +3,45 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
-// External patcher entry point.
+namespace Patcher;
+
+/// <summary>
+/// Carries one status update from the patcher runner to the UI.
+/// </summary>
+internal sealed record PatcherProgress(string Message);
 
 /// <summary>
 /// Applies a pending ASLM self-update while the main launcher is not running.
 /// </summary>
-internal static class Program
+internal static class PatcherRunner
 {
     private const string PendingRelativePath = ".aslm-update/pending.json";
     private const string LogRelativePath = ".aslm-update/logs/Patcher.log";
     private const string LauncherExeName = "ASLM.exe";
+    private const string WaitProcessArgument = "--wait-process";
 
     private static string _logPath = string.Empty;
+    private static IProgress<PatcherProgress>? _progress;
 
 
     // Process startup
 
     /// <summary>
+    /// Runs the patch operation on a background thread.
+    /// </summary>
+    public static Task<int> RunAsync(string[] args, IProgress<PatcherProgress>? progress)
+    {
+        _progress = progress;
+        return Task.Run(() => RunCore(args));
+    }
+
+    /// <summary>
     /// Loads the pending update, applies it, and restarts the launcher.
     /// </summary>
-    private static int Main(string[] args)
+    private static int RunCore(string[] args)
     {
         var root = ResolveRoot(args);
         _logPath = Path.Combine(root, LogRelativePath.Replace('/', Path.DirectorySeparatorChar));
@@ -33,6 +50,7 @@ internal static class Program
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_logPath)!);
             Log("Patcher started.");
+            WaitForRequestedProcessExit(args);
 
             var pendingPath = Path.Combine(root, PendingRelativePath.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(pendingPath))
@@ -47,40 +65,34 @@ internal static class Program
 
             var targetRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(pending.TargetRoot) ? root : pending.TargetRoot);
             var stagingPath = Path.GetFullPath(pending.StagingPath);
-            var backupPath = Path.GetFullPath(pending.BackupPath);
+            var backupPath = Path.GetFullPath(string.IsNullOrWhiteSpace(pending.BackupPath)
+                ? Path.Combine(root, ".aslm-update", "backup", DateTime.UtcNow.ToString("yyyyMMddHHmmss"))
+                : pending.BackupPath);
             if (!Directory.Exists(stagingPath))
             {
                 throw new DirectoryNotFoundException($"Staging path does not exist: {stagingPath}");
             }
 
-            var externalStaging = Path.Combine(Path.GetTempPath(), "Patcher_Staging_" + Guid.NewGuid().ToString("N"));
-            var preservePath = Path.Combine(Path.GetTempPath(), "Patcher_Preserve_" + Guid.NewGuid().ToString("N"));
+            var preservePatterns = NormalizePreservePatterns(pending.Preserve);
 
             try
             {
                 Log($"Target root: {targetRoot}");
                 Log($"Staging path: {stagingPath}");
 
-                // Copy staging out of the managed update folder first so the final cleanup can remove that folder safely.
-                CopyDirectory(stagingPath, externalStaging);
                 Directory.CreateDirectory(backupPath);
-                Directory.CreateDirectory(preservePath);
 
-                Log("Creating backup...");
-                CopyDirectory(targetRoot, backupPath, relativePath => !IsInternalUpdatePath(relativePath));
-
-                Log("Saving preserved files...");
-                CopyPreservedEntries(targetRoot, preservePath, pending.Preserve);
+                Log("Creating backup of replaceable application files...");
+                CopyDirectory(targetRoot, backupPath, relativePath => ShouldReplacePath(relativePath, preservePatterns));
 
                 Log("Replacing application files...");
-                ClearDirectory(targetRoot, relativePath => !IsInternalUpdatePath(relativePath));
-                CopyDirectory(externalStaging, targetRoot);
+                ClearDirectory(targetRoot, relativePath => ShouldReplacePath(relativePath, preservePatterns));
+                CopyDirectory(stagingPath, targetRoot, relativePath => ShouldReplacePath(relativePath, preservePatterns));
 
-                Log("Restoring preserved files...");
-                CopyDirectory(preservePath, targetRoot);
-
+                PersistInstalledReleaseTag(targetRoot, pending.Version);
                 File.Delete(pendingPath);
                 TryDeleteDirectory(Path.GetDirectoryName(stagingPath) ?? stagingPath);
+                TryDeleteDirectory(backupPath);
                 Log($"Update {pending.Version} applied successfully.");
                 StartLauncher(targetRoot);
                 return 0;
@@ -91,16 +103,11 @@ internal static class Program
 
                 if (Directory.Exists(backupPath))
                 {
-                    ClearDirectory(targetRoot, relativePath => !IsInternalUpdatePath(relativePath));
+                    ClearDirectory(targetRoot, relativePath => ShouldReplacePath(relativePath, preservePatterns));
                     CopyDirectory(backupPath, targetRoot);
                 }
 
                 throw;
-            }
-            finally
-            {
-                TryDeleteDirectory(externalStaging);
-                TryDeleteDirectory(preservePath);
             }
         }
         catch (Exception ex)
@@ -114,6 +121,41 @@ internal static class Program
 
 
     // Pending update loading
+
+    /// <summary>
+    /// Waits for the previous ASLM process before replacing application files.
+    /// </summary>
+    private static void WaitForRequestedProcessExit(string[] args)
+    {
+        for (var index = 0; index < args.Length - 1; index++)
+        {
+            if (!string.Equals(args[index], WaitProcessArgument, StringComparison.OrdinalIgnoreCase) ||
+                !int.TryParse(args[index + 1], out var processId))
+            {
+                continue;
+            }
+
+            try
+            {
+                using var process = Process.GetProcessById(processId);
+                Log($"Waiting for ASLM process {processId} to exit...");
+                if (!process.WaitForExit(30000))
+                {
+                    Log($"ASLM process {processId} did not exit within 30 seconds.");
+                }
+            }
+            catch (ArgumentException)
+            {
+                // The process already exited.
+            }
+            catch (Exception ex)
+            {
+                Log("Failed while waiting for previous ASLM process: " + ex.Message);
+            }
+
+            return;
+        }
+    }
 
     /// <summary>
     /// Loads the pending update manifest from disk.
@@ -175,52 +217,16 @@ internal static class Program
     // Preserve handling
 
     /// <summary>
-    /// Copies preserved files and directories into a temporary location before replacement.
+    /// Normalizes preserved path patterns once before replacement begins.
     /// </summary>
-    private static void CopyPreservedEntries(
-        string sourceRoot,
-        string preserveRoot,
-        IEnumerable<string> preservePatterns)
+    private static List<string> NormalizePreservePatterns(IEnumerable<string> preservePatterns)
     {
-        var patterns = preservePatterns
+        return preservePatterns
             .Where(pattern => !string.IsNullOrWhiteSpace(pattern))
             .Select(pattern => NormalizeRelativePattern(pattern))
+            .Where(pattern => pattern.Length > 0 && pattern != "." && !pattern.Contains("..", StringComparison.Ordinal))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
-
-        if (patterns.Count == 0)
-        {
-            return;
-        }
-
-        var matchedEntries = Directory
-            .EnumerateFileSystemEntries(sourceRoot, "*", SearchOption.AllDirectories)
-            .Select(entry => new
-            {
-                FullPath = entry,
-                RelativePath = Path.GetRelativePath(sourceRoot, entry).Replace('\\', '/')
-            })
-            .Where(entry => patterns.Any(pattern => IsPatternMatch(pattern, entry.RelativePath)))
-            .OrderBy(entry => entry.RelativePath.Length)
-            .Where(entry => !HasPreservedAncestor(entry.RelativePath, patterns))
-            .ToList();
-
-        // Copy only the top-most matching entries so preserved directories are not redundantly recopied file-by-file.
-        foreach (var entry in matchedEntries)
-        {
-            var destination = ResolveChildPath(preserveRoot, entry.RelativePath);
-            if (File.Exists(entry.FullPath))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-                File.Copy(entry.FullPath, destination, overwrite: true);
-                continue;
-            }
-
-            if (Directory.Exists(entry.FullPath))
-            {
-                CopyDirectory(entry.FullPath, destination);
-            }
-        }
     }
 
     /// <summary>
@@ -232,32 +238,20 @@ internal static class Program
     }
 
     /// <summary>
-    /// Returns whether the current entry is already covered by a preserved parent pattern.
+    /// Returns whether a relative path should be replaced by the new application payload.
     /// </summary>
-    private static bool HasPreservedAncestor(string relativePath, IEnumerable<string> patterns)
+    private static bool ShouldReplacePath(string relativePath, IReadOnlyCollection<string> preservePatterns)
     {
-        var parent = GetParentRelativePath(relativePath);
-        while (!string.IsNullOrWhiteSpace(parent))
-        {
-            if (patterns.Any(pattern => IsPatternMatch(pattern, parent)))
-            {
-                return true;
-            }
-
-            parent = GetParentRelativePath(parent);
-        }
-
-        return false;
+        return !IsInternalUpdatePath(relativePath) && !IsPreservedPath(relativePath, preservePatterns);
     }
 
     /// <summary>
-    /// Returns the parent portion of one relative path, or an empty string when none exists.
+    /// Returns whether the relative path belongs to a preserved file or directory.
     /// </summary>
-    private static string GetParentRelativePath(string relativePath)
+    private static bool IsPreservedPath(string relativePath, IReadOnlyCollection<string> preservePatterns)
     {
         var normalized = relativePath.Replace('\\', '/').Trim('/');
-        var slashIndex = normalized.LastIndexOf('/');
-        return slashIndex > 0 ? normalized[..slashIndex] : string.Empty;
+        return preservePatterns.Any(pattern => IsPatternMatch(pattern, normalized));
     }
 
     /// <summary>
@@ -287,28 +281,44 @@ internal static class Program
         Func<string, bool>? includeRelative = null)
     {
         Directory.CreateDirectory(destDir);
-        var sourceRoot = EnsureTrailingSeparator(Path.GetFullPath(sourceDir));
+        var sourceRoot = Path.GetFullPath(sourceDir);
+        CopyDirectoryContents(sourceRoot, destDir, string.Empty, includeRelative);
+    }
 
-        foreach (var directory in Directory.EnumerateDirectories(sourceDir, "*", SearchOption.AllDirectories))
+    /// <summary>
+    /// Copies directory contents recursively while pruning filtered directories before descent.
+    /// </summary>
+    private static void CopyDirectoryContents(
+        string sourceRoot,
+        string destRoot,
+        string relativeDirectory,
+        Func<string, bool>? includeRelative)
+    {
+        var sourceDirectory = string.IsNullOrWhiteSpace(relativeDirectory)
+            ? sourceRoot
+            : ResolveChildPath(sourceRoot, relativeDirectory);
+
+        foreach (var directory in Directory.EnumerateDirectories(sourceDirectory))
         {
-            var relative = Path.GetRelativePath(sourceRoot, directory);
+            var relative = CombineRelativePath(relativeDirectory, Path.GetFileName(directory));
             if (includeRelative?.Invoke(relative) == false)
             {
                 continue;
             }
 
-            Directory.CreateDirectory(ResolveChildPath(destDir, relative));
+            Directory.CreateDirectory(ResolveChildPath(destRoot, relative));
+            CopyDirectoryContents(sourceRoot, destRoot, relative, includeRelative);
         }
 
-        foreach (var file in Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories))
+        foreach (var file in Directory.EnumerateFiles(sourceDirectory))
         {
-            var relative = Path.GetRelativePath(sourceRoot, file);
+            var relative = CombineRelativePath(relativeDirectory, Path.GetFileName(file));
             if (includeRelative?.Invoke(relative) == false)
             {
                 continue;
             }
 
-            var destination = ResolveChildPath(destDir, relative);
+            var destination = ResolveChildPath(destRoot, relative);
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             File.Copy(file, destination, overwrite: true);
         }
@@ -323,12 +333,24 @@ internal static class Program
     private static void ClearDirectory(string directory, Func<string, bool>? deleteRelative = null)
     {
         Directory.CreateDirectory(directory);
-        var root = EnsureTrailingSeparator(Path.GetFullPath(directory));
+        ClearDirectoryContents(Path.GetFullPath(directory), string.Empty, deleteRelative);
+    }
 
-        foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
-                     .OrderByDescending(path => path.Length))
+    /// <summary>
+    /// Deletes directory contents recursively while pruning preserved directories before descent.
+    /// </summary>
+    private static void ClearDirectoryContents(
+        string root,
+        string relativeDirectory,
+        Func<string, bool>? deleteRelative)
+    {
+        var currentDirectory = string.IsNullOrWhiteSpace(relativeDirectory)
+            ? root
+            : ResolveChildPath(root, relativeDirectory);
+
+        foreach (var file in Directory.EnumerateFiles(currentDirectory))
         {
-            var relative = Path.GetRelativePath(root, file);
+            var relative = CombineRelativePath(relativeDirectory, Path.GetFileName(file));
             if (deleteRelative?.Invoke(relative) == false)
             {
                 continue;
@@ -338,15 +360,15 @@ internal static class Program
             File.Delete(file);
         }
 
-        foreach (var subdir in Directory.EnumerateDirectories(directory, "*", SearchOption.AllDirectories)
-                     .OrderByDescending(path => path.Length))
+        foreach (var subdir in Directory.EnumerateDirectories(currentDirectory))
         {
-            var relative = Path.GetRelativePath(root, subdir);
+            var relative = CombineRelativePath(relativeDirectory, Path.GetFileName(subdir));
             if (deleteRelative?.Invoke(relative) == false || !Directory.Exists(subdir))
             {
                 continue;
             }
 
+            ClearDirectoryContents(root, relative, deleteRelative);
             if (!Directory.EnumerateFileSystemEntries(subdir).Any())
             {
                 Directory.Delete(subdir);
@@ -356,6 +378,16 @@ internal static class Program
 
 
     // Path helpers
+
+    /// <summary>
+    /// Combines relative path segments using the platform separator.
+    /// </summary>
+    private static string CombineRelativePath(string parent, string child)
+    {
+        return string.IsNullOrWhiteSpace(parent)
+            ? child
+            : Path.Combine(parent, child);
+    }
 
     /// <summary>
     /// Resolves one child path and rejects directory traversal outside the requested root.
@@ -456,6 +488,35 @@ internal static class Program
         }
     }
 
+    /// <summary>
+    /// Writes the installed GitHub release tag into the preserved application settings after a successful patch.
+    /// </summary>
+    private static void PersistInstalledReleaseTag(string root, string releaseTag)
+    {
+        if (string.IsNullOrWhiteSpace(releaseTag))
+        {
+            return;
+        }
+
+        var appDataPath = Path.Combine(root, "Data", "App", "ASLM_Data.json");
+        if (!File.Exists(appDataPath))
+        {
+            Log("ASLM_Data.json was not found while persisting the installed release tag.");
+            return;
+        }
+
+        var rootNode = JsonNode.Parse(File.ReadAllText(appDataPath)) as JsonObject ?? new JsonObject();
+        var updatesNode = rootNode["updates"] as JsonObject ?? new JsonObject();
+
+        updatesNode["installedReleaseTag"] = releaseTag.Trim();
+        rootNode["updates"] = updatesNode;
+
+        File.WriteAllText(
+            appDataPath,
+            rootNode.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        Log($"Persisted installed release tag: {releaseTag}");
+    }
+
 
     // Logging
 
@@ -464,6 +525,8 @@ internal static class Program
     /// </summary>
     private static void Log(string message)
     {
+        _progress?.Report(new PatcherProgress(message));
+
         try
         {
             File.AppendAllText(_logPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}");

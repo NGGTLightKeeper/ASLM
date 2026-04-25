@@ -257,6 +257,7 @@ namespace ASLM.Pages
     public class ModuleViewModel : INotifyPropertyChanged
     {
         private static readonly IReadOnlyList<string> SharedSourceModeOptions = ["release", "pre-release", "branch"];
+        private const string LatestReleaseSelection = ModuleUpdateConfig.LatestReleaseTag;
 
         private readonly ModuleConfig _config;
         private readonly ModuleInstaller _installer;
@@ -480,6 +481,9 @@ namespace ASLM.Pages
 
                 _selectedSourceMode = normalized;
                 _config.Update.Mode = _selectedSourceMode;
+                _config.Update.Channel = string.Equals(_selectedSourceMode, "pre-release", StringComparison.OrdinalIgnoreCase)
+                    ? "pre-release"
+                    : "release";
                 PersistUpdatePreferences();
                 _updateCandidate = null;
                 HasUpdate = false;
@@ -505,28 +509,7 @@ namespace ASLM.Pages
             get => _selectedBranch;
             set
             {
-                if (_isRefreshingBranchOptions)
-                {
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(value) ||
-                    string.Equals(_selectedBranch, value, StringComparison.OrdinalIgnoreCase))
-                {
-                    return;
-                }
-
-                _selectedBranch = value;
-                _config.Update.Branch = _selectedBranch;
-                PersistUpdatePreferences();
-                _updateCandidate = null;
-                HasUpdate = false;
-                UpdateStatus = "Ready to check.";
-                SetUpdateActivityStatus(UpdateStatus);
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(UpdateCandidate));
-                OnPropertyChanged(nameof(AvailableUpdateLabel));
-                OnPropertyChanged(nameof(UpdateTrackingSummary));
+                SetBranchSelection(value, ignoreRefreshGuard: false);
             }
         }
 
@@ -543,14 +526,17 @@ namespace ASLM.Pages
                     return;
                 }
 
-                var selectedTag = value?.ReleaseTag;
-                if (string.Equals(_selectedReleaseOption?.ReleaseTag, selectedTag, StringComparison.OrdinalIgnoreCase))
+                var selectedKey = ResolveReleaseSelectionKey(value);
+                if (string.Equals(
+                    ResolveReleaseSelectionKey(_selectedReleaseOption),
+                    selectedKey,
+                    StringComparison.OrdinalIgnoreCase))
                 {
                     return;
                 }
 
                 _selectedReleaseOption = value;
-                _config.Update.SelectedReleaseTag = string.IsNullOrWhiteSpace(selectedTag) ? null : selectedTag;
+                _config.Update.SelectedReleaseTag = selectedKey;
                 PersistUpdatePreferences();
 
                 OnPropertyChanged();
@@ -640,8 +626,7 @@ namespace ASLM.Pages
         /// </summary>
         public string SelectedTargetLabel => IsBranchMode
             ? SelectedBranch
-            : _selectedReleaseOption?.DisplayName
-                ?? _selectedReleaseOption?.RemoteVersion
+            : FormatSelectedReleaseTarget(_selectedReleaseOption)
                 ?? "No version selected";
 
         /// <summary>
@@ -652,7 +637,9 @@ namespace ASLM.Pages
         /// <summary>
         /// Gets whether the current selection can be installed.
         /// </summary>
-        public bool CanInstallSelectedUpdate => ResolveSelectedInstallCandidate() != null && !IsBusy;
+        public bool CanInstallSelectedUpdate => IsBranchMode
+            ? !IsBusy && !string.IsNullOrWhiteSpace(SelectedBranch)
+            : ResolveSelectedReleaseInstallCandidate() != null && !IsBusy;
 
         /// <summary>
         /// Gets whether update checking is in progress.
@@ -1012,6 +999,87 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Synchronizes the latest UI selection into the backing update config before check or install operations.
+        /// </summary>
+        private void SynchronizeSelectionForUpdateOperation()
+        {
+            _config.Update.Mode = _selectedSourceMode;
+            _config.Update.Channel = string.Equals(_selectedSourceMode, "pre-release", StringComparison.OrdinalIgnoreCase)
+                ? "pre-release"
+                : "release";
+
+            if (string.Equals(_selectedSourceMode, "branch", StringComparison.OrdinalIgnoreCase))
+            {
+                _config.Update.Branch = string.IsNullOrWhiteSpace(_selectedBranch)
+                    ? _config.Update.Branch
+                    : _selectedBranch.Trim();
+            }
+            else if (_selectedReleaseOption != null)
+            {
+                _config.Update.SelectedReleaseTag = ResolveReleaseSelectionKey(_selectedReleaseOption);
+            }
+
+            // Normalize validates and cleans the config, but may reset Branch to "main" if it was empty.
+            // We preserve the user's selected branch to avoid losing their choice during subsequent operations.
+            var branchBeforeNormalize = _config.Update.Branch;
+            _config.Update.Normalize();
+            
+            // Restore the user's selected branch if Normalize() changed it due to empty/whitespace validation
+            if (string.Equals(_selectedSourceMode, "branch", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(_selectedBranch) &&
+                !string.Equals(branchBeforeNormalize, _config.Update.Branch, StringComparison.OrdinalIgnoreCase))
+            {
+                _config.Update.Branch = _selectedBranch.Trim();
+            }
+            
+            _selectedSourceMode = _config.Update.Mode;
+            _selectedBranch = _config.Update.Branch;
+        }
+
+        /// <summary>
+        /// Applies the branch selection from a dialog picker without the list-refresh guard so the
+        /// backing config is guaranteed to carry the user's choice before a check or install runs.
+        /// </summary>
+        internal void ApplyBranchSelection(string branch)
+        {
+            SetBranchSelection(branch, ignoreRefreshGuard: true);
+        }
+
+        /// <summary>
+        /// Stores the selected repository branch and invalidates stale update candidates.
+        /// </summary>
+        private void SetBranchSelection(string branch, bool ignoreRefreshGuard)
+        {
+            if (!ignoreRefreshGuard && _isRefreshingBranchOptions)
+            {
+                return;
+            }
+
+            var normalized = string.IsNullOrWhiteSpace(branch) ? "main" : branch.Trim();
+            if (string.Equals(_selectedBranch, normalized, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(_config.Update.Branch, normalized, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            _selectedBranch = normalized;
+            _config.Update.Branch = normalized;
+            PersistUpdatePreferences();
+            _updateCandidate = null;
+            HasUpdate = false;
+            UpdateStatus = "Ready to check.";
+            SetUpdateActivityStatus(UpdateStatus);
+            OnPropertyChanged(nameof(SelectedBranch));
+            OnPropertyChanged(nameof(UpdateCandidate));
+            OnPropertyChanged(nameof(AvailableUpdateLabel));
+            OnPropertyChanged(nameof(SelectedTargetLabel));
+            OnPropertyChanged(nameof(UpdateTrackingSummary));
+            OnPropertyChanged(nameof(CanInstallSelectedUpdate));
+            OnPropertyChanged(nameof(ShowInstallAction));
+            RefreshCommandStates();
+        }
+
+        /// <summary>
         /// Bridges the check-update command into the asynchronous workflow.
         /// </summary>
         private async void ExecuteCheckUpdateCommand()
@@ -1045,6 +1113,7 @@ namespace ASLM.Pages
             try
             {
                 await EnsureSelectionOptionsLoadedAsync(forceOptionLoad);
+                SynchronizeSelectionForUpdateOperation();
 
                 _updateCandidate = await _updateService.CheckModuleUpdateAsync(_config);
                 HasUpdate = _updateCandidate != null;
@@ -1101,41 +1170,79 @@ namespace ASLM.Pages
         /// </summary>
         private async Task LoadBranchesAsync()
         {
+            if (_isRefreshingBranchOptions)
+            {
+                return;
+            }
+
+            _isRefreshingBranchOptions = true;
+
             try
             {
                 var branches = await _updateService.GetModuleBranchesAsync(_config);
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    var selectedBranch = _selectedBranch;
-                    _isRefreshingBranchOptions = true;
+                    var selectedBranch = string.IsNullOrWhiteSpace(_selectedBranch)
+                        ? _config.Update.Branch
+                        : _selectedBranch;
+
+                    selectedBranch = string.IsNullOrWhiteSpace(selectedBranch)
+                        ? "main"
+                        : selectedBranch.Trim();
+
                     BranchOptions.Clear();
-                    foreach (var branch in branches)
+                    BranchOptions.Add(selectedBranch);
+
+                    foreach (var branch in branches
+                                 .Where(branch => !string.IsNullOrWhiteSpace(branch.Name))
+                                 .Select(branch => branch.Name.Trim())
+                                 .Where(branch => !string.Equals(branch, selectedBranch, StringComparison.OrdinalIgnoreCase))
+                                 .Distinct(StringComparer.OrdinalIgnoreCase)
+                                 .OrderBy(branch => branch, StringComparer.OrdinalIgnoreCase))
                     {
-                        BranchOptions.Add(branch.Name);
+                        BranchOptions.Add(branch);
                     }
 
-                    // Keep the persisted branch selectable even when the remote list changed or failed before.
-                    if (!BranchOptions.Contains(selectedBranch))
-                    {
-                        BranchOptions.Insert(0, selectedBranch);
-                    }
-
+                    _selectedBranch = selectedBranch;
+                    _config.Update.Branch = selectedBranch;
                     _hasLoadedBranchOptions = true;
-                    _isRefreshingBranchOptions = false;
                     OnPropertyChanged(nameof(SelectedBranch));
+                    OnPropertyChanged(nameof(SelectedTargetLabel));
                     OnPropertyChanged(nameof(BranchOptions));
+                    OnPropertyChanged(nameof(UpdateTrackingSummary));
                 });
             }
             catch
             {
-                if (!BranchOptions.Contains(_selectedBranch))
+                await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    BranchOptions.Add(_selectedBranch);
-                }
+                    var selectedBranch = string.IsNullOrWhiteSpace(_selectedBranch)
+                        ? _config.Update.Branch
+                        : _selectedBranch;
 
-                _hasLoadedBranchOptions = true;
-                OnPropertyChanged(nameof(SelectedBranch));
-                OnPropertyChanged(nameof(BranchOptions));
+                    selectedBranch = string.IsNullOrWhiteSpace(selectedBranch)
+                        ? "main"
+                        : selectedBranch.Trim();
+
+                    if (!BranchOptions.Any(branch =>
+                            string.Equals(branch, selectedBranch, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        BranchOptions.Add(selectedBranch);
+                    }
+
+                    _selectedBranch = selectedBranch;
+                    _config.Update.Branch = selectedBranch;
+                    // A failed load should stay retryable the next time the dialog opens.
+                    _hasLoadedBranchOptions = false;
+                    OnPropertyChanged(nameof(SelectedBranch));
+                    OnPropertyChanged(nameof(SelectedTargetLabel));
+                    OnPropertyChanged(nameof(BranchOptions));
+                    OnPropertyChanged(nameof(UpdateTrackingSummary));
+                });
+            }
+            finally
+            {
+                _isRefreshingBranchOptions = false;
             }
         }
 
@@ -1144,80 +1251,118 @@ namespace ASLM.Pages
         /// </summary>
         private async Task LoadReleaseOptionsAsync()
         {
-            var releases = await _updateService.GetModuleReleaseCandidatesAsync(_config);
-
-            await MainThread.InvokeOnMainThreadAsync(() =>
+            if (_isRefreshingReleaseOptions)
             {
-                var preferredTag = ResolvePreferredReleaseTag(releases);
-                _isRefreshingReleaseOptions = true;
-                ReleaseOptions.Clear();
+                return;
+            }
 
-                foreach (var release in releases)
+            _isRefreshingReleaseOptions = true;
+
+            try
+            {
+                var releases = await _updateService.GetModuleReleaseCandidatesAsync(_config);
+                var releaseOptions = BuildReleaseOptions(releases);
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    ReleaseOptions.Add(release);
-                }
+                    var preferredKey = ResolvePreferredReleaseSelectionKey(releaseOptions);
+                    ReleaseOptions.Clear();
 
-                _selectedReleaseOption = ReleaseOptions.FirstOrDefault(candidate =>
-                    string.Equals(candidate.ReleaseTag, preferredTag, StringComparison.OrdinalIgnoreCase));
+                    foreach (var release in releaseOptions)
+                    {
+                        ReleaseOptions.Add(release);
+                    }
 
-                _hasLoadedReleaseOptions = true;
-                _loadedReleaseMode = _selectedSourceMode;
+                    _selectedReleaseOption = ReleaseOptions.FirstOrDefault(candidate =>
+                        string.Equals(
+                            ResolveReleaseSelectionKey(candidate),
+                            preferredKey,
+                            StringComparison.OrdinalIgnoreCase));
+
+                    _hasLoadedReleaseOptions = true;
+                    _loadedReleaseMode = _selectedSourceMode;
+                    OnPropertyChanged(nameof(ReleaseOptions));
+                    OnPropertyChanged(nameof(SelectedReleaseOption));
+                    OnPropertyChanged(nameof(SelectedTargetLabel));
+                    OnPropertyChanged(nameof(UpdateTrackingSummary));
+                    OnPropertyChanged(nameof(CanInstallSelectedUpdate));
+                    OnPropertyChanged(nameof(ShowInstallAction));
+                    RefreshCommandStates();
+                });
+            }
+            finally
+            {
                 _isRefreshingReleaseOptions = false;
-                OnPropertyChanged(nameof(ReleaseOptions));
-                OnPropertyChanged(nameof(SelectedReleaseOption));
-                OnPropertyChanged(nameof(SelectedTargetLabel));
-                OnPropertyChanged(nameof(UpdateTrackingSummary));
-                OnPropertyChanged(nameof(CanInstallSelectedUpdate));
-                OnPropertyChanged(nameof(ShowInstallAction));
-                RefreshCommandStates();
-            });
+            }
         }
 
         /// <summary>
-        /// Picks the release tag that should stay selected after a version list refresh.
+        /// Builds picker options and prepends the virtual latest target when releases are available.
         /// </summary>
-        private string? ResolvePreferredReleaseTag(IEnumerable<UpdateCandidate> releases)
+        private static List<UpdateCandidate> BuildReleaseOptions(IReadOnlyList<UpdateCandidate> releases)
+        {
+            if (releases.Count == 0)
+            {
+                return [];
+            }
+
+            var options = new List<UpdateCandidate>
+            {
+                BuildLatestReleaseOption(releases[0])
+            };
+            options.AddRange(releases);
+            return options;
+        }
+
+        /// <summary>
+        /// Creates the virtual latest option while keeping the concrete release tag for installation.
+        /// </summary>
+        private static UpdateCandidate BuildLatestReleaseOption(UpdateCandidate latest)
+        {
+            return new UpdateCandidate
+            {
+                TargetKind = latest.TargetKind,
+                TargetId = latest.TargetId,
+                Name = latest.Name,
+                DisplayName = LatestReleaseSelection,
+                CurrentVersion = latest.CurrentVersion,
+                RemoteVersion = latest.RemoteVersion,
+                Channel = latest.Channel,
+                Mode = latest.Mode,
+                DownloadUrl = latest.DownloadUrl,
+                ReferenceName = latest.ReferenceName,
+                ReleaseTag = latest.ReleaseTag,
+                CommitSha = latest.CommitSha,
+                IsVirtualLatest = true,
+                IsPrerelease = latest.IsPrerelease,
+                PublishedAt = latest.PublishedAt,
+                Module = latest.Module
+            };
+        }
+
+        /// <summary>
+        /// Picks the release selection key that should stay selected after a version list refresh.
+        /// </summary>
+        private string ResolvePreferredReleaseSelectionKey(IEnumerable<UpdateCandidate> releases)
         {
             if (!string.IsNullOrWhiteSpace(_config.Update.SelectedReleaseTag) &&
                 releases.Any(candidate =>
-                    string.Equals(candidate.ReleaseTag, _config.Update.SelectedReleaseTag, StringComparison.OrdinalIgnoreCase)))
+                    string.Equals(
+                        ResolveReleaseSelectionKey(candidate),
+                        _config.Update.SelectedReleaseTag,
+                        StringComparison.OrdinalIgnoreCase)))
             {
                 return _config.Update.SelectedReleaseTag;
             }
 
-            if (!string.IsNullOrWhiteSpace(_config.Update.InstalledReleaseTag) &&
-                releases.Any(candidate =>
-                    string.Equals(candidate.ReleaseTag, _config.Update.InstalledReleaseTag, StringComparison.OrdinalIgnoreCase)))
-            {
-                return _config.Update.InstalledReleaseTag;
-            }
-
-            return releases.FirstOrDefault()?.ReleaseTag;
+            return LatestReleaseSelection;
         }
 
         /// <summary>
-        /// Aligns the selected release target with the newest update when the user has not pinned a version.
+        /// Refreshes release action state after an update check.
         /// </summary>
         private void ApplyCheckResultSelection()
         {
-            if (IsBranchMode || _updateCandidate == null || !string.IsNullOrWhiteSpace(_config.Update.SelectedReleaseTag))
-            {
-                OnPropertyChanged(nameof(CanInstallSelectedUpdate));
-                OnPropertyChanged(nameof(ShowInstallAction));
-                RefreshCommandStates();
-                return;
-            }
-
-            var matchingRelease = ReleaseOptions.FirstOrDefault(candidate =>
-                string.Equals(candidate.ReleaseTag, _updateCandidate.ReleaseTag, StringComparison.OrdinalIgnoreCase));
-            if (matchingRelease != null)
-            {
-                _selectedReleaseOption = matchingRelease;
-                OnPropertyChanged(nameof(SelectedReleaseOption));
-                OnPropertyChanged(nameof(SelectedTargetLabel));
-                OnPropertyChanged(nameof(UpdateTrackingSummary));
-            }
-
             OnPropertyChanged(nameof(CanInstallSelectedUpdate));
             OnPropertyChanged(nameof(ShowInstallAction));
             RefreshCommandStates();
@@ -1230,8 +1375,13 @@ namespace ASLM.Pages
             IProgress<string>? log = null,
             IProgress<DownloadProgress>? progress = null)
         {
-            var installCandidate = ResolveSelectedInstallCandidate();
-            if (installCandidate == null || IsUpdating)
+            if (IsUpdating)
+            {
+                return false;
+            }
+
+            var installCandidate = await ResolveSelectedInstallCandidateAsync();
+            if (installCandidate == null)
             {
                 return false;
             }
@@ -1528,22 +1678,93 @@ namespace ASLM.Pages
         /// <summary>
         /// Returns the update candidate represented by the current UI selection.
         /// </summary>
-        private UpdateCandidate? ResolveSelectedInstallCandidate()
+        private async Task<UpdateCandidate?> ResolveSelectedInstallCandidateAsync()
         {
+            SynchronizeSelectionForUpdateOperation();
+
             if (IsBranchMode)
             {
-                return _updateCandidate;
+                return await _updateService.ResolveModuleInstallCandidateAsync(_config);
             }
 
+            return ResolveSelectedReleaseInstallCandidate();
+        }
+
+        /// <summary>
+        /// Returns the release candidate represented by the current picker selection.
+        /// </summary>
+        private UpdateCandidate? ResolveSelectedReleaseInstallCandidate()
+        {
             if (_selectedReleaseOption == null || string.IsNullOrWhiteSpace(_selectedReleaseOption.ReleaseTag))
             {
                 return null;
             }
 
-            var currentTag = _config.Update.InstalledReleaseTag ?? _config.Status.InstalledVersion ?? _config.Version;
-            return string.Equals(currentTag, _selectedReleaseOption.ReleaseTag, StringComparison.OrdinalIgnoreCase)
+            if (!string.IsNullOrWhiteSpace(_config.Update.InstalledReleaseTag))
+            {
+                return UpdateService.AreEquivalentVersionReferences(
+                    _config.Update.InstalledReleaseTag,
+                    _selectedReleaseOption.ReleaseTag)
+                        ? null
+                        : _selectedReleaseOption;
+            }
+
+            if (!IsLatestReleaseOption(_selectedReleaseOption))
+            {
+                // Legacy installs may not have an installedReleaseTag yet.
+                // Allow a concrete tag selection so the first successful install records it.
+                return _selectedReleaseOption;
+            }
+
+            var currentVersion = _config.Status.InstalledVersion ?? _config.Version;
+            return UpdateService.AreEquivalentVersionReferences(currentVersion, _selectedReleaseOption.ReleaseTag)
                 ? null
                 : _selectedReleaseOption;
+        }
+
+        /// <summary>
+        /// Returns the persisted selection key for a release picker option.
+        /// </summary>
+        private static string? ResolveReleaseSelectionKey(UpdateCandidate? candidate)
+        {
+            if (candidate == null)
+            {
+                return null;
+            }
+
+            return IsLatestReleaseOption(candidate)
+                ? LatestReleaseSelection
+                : candidate.ReleaseTag;
+        }
+
+        /// <summary>
+        /// Returns whether the release picker option represents the moving latest target.
+        /// </summary>
+        private static bool IsLatestReleaseOption(UpdateCandidate? candidate)
+        {
+            return candidate?.IsVirtualLatest == true;
+        }
+
+        /// <summary>
+        /// Formats the selected release target without losing the concrete tag behind latest.
+        /// </summary>
+        private static string? FormatSelectedReleaseTarget(UpdateCandidate? candidate)
+        {
+            if (candidate == null)
+            {
+                return null;
+            }
+
+            if (candidate.IsVirtualLatest)
+            {
+                return string.IsNullOrWhiteSpace(candidate.RemoteVersion)
+                    ? LatestReleaseSelection
+                    : $"{LatestReleaseSelection} ({candidate.RemoteVersion})";
+            }
+
+            return !string.IsNullOrWhiteSpace(candidate.DisplayName)
+                ? candidate.DisplayName
+                : candidate.RemoteVersion;
         }
 
         /// <summary>
