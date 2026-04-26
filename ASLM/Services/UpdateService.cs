@@ -25,6 +25,7 @@ namespace ASLM.Services
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly GitHubUpdateClient _github;
+        private readonly NotificationService _notifications;
         private readonly ILogger<UpdateService> _logger;
 
         private readonly JsonSerializerOptions _jsonOptions = new()
@@ -45,12 +46,14 @@ namespace ASLM.Services
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
             GitHubUpdateClient github,
+            NotificationService notifications,
             ILogger<UpdateService> logger)
         {
             _appData = appData;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             _github = github;
+            _notifications = notifications;
             _logger = logger;
         }
 
@@ -127,7 +130,7 @@ namespace ASLM.Services
                     continue;
                 }
 
-                return new UpdateCandidate
+                var candidate = new UpdateCandidate
                 {
                     TargetKind = "app",
                     TargetId = "aslm",
@@ -140,6 +143,9 @@ namespace ASLM.Services
                     ReleaseTag = release.TagName,
                     IsPrerelease = release.Prerelease
                 };
+
+                _notifications.PublishUpdateCandidate(candidate);
+                return candidate;
             }
 
             return null;
@@ -159,10 +165,22 @@ namespace ASLM.Services
 
             if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase))
             {
-                return await CheckModuleBranchUpdateAsync(module, ct);
+                var branchCandidate = await CheckModuleBranchUpdateAsync(module, ct);
+                if (branchCandidate != null)
+                {
+                    _notifications.PublishUpdateCandidate(branchCandidate);
+                }
+
+                return branchCandidate;
             }
 
-            return await CheckModuleReleaseUpdateAsync(module, ct);
+            var releaseCandidate = await CheckModuleReleaseUpdateAsync(module, ct);
+            if (releaseCandidate != null)
+            {
+                _notifications.PublishUpdateCandidate(releaseCandidate);
+            }
+
+            return releaseCandidate;
         }
 
         /// <summary>
@@ -292,10 +310,19 @@ namespace ASLM.Services
             IProgress<DownloadProgress>? progress = null,
             CancellationToken ct = default)
         {
+            var operationKey = NotificationService.BuildOperationKey("app-update", candidate.TargetId);
+            _notifications.StartDownload(
+                operationKey,
+                "Preparing ASLM update",
+                $"{candidate.Name} {candidate.RemoteVersion}",
+                candidate.TargetKind,
+                candidate.TargetId);
+
             var source = await LoadAppUpdateSourceAsync(ct);
             if (source == null)
             {
                 log?.Report("ASLM update source is not configured.");
+                _notifications.FailDownload(operationKey, "ASLM update source is not configured.");
                 return false;
             }
 
@@ -309,29 +336,45 @@ namespace ASLM.Services
             TryDeleteDirectory(stagingRoot);
             Directory.CreateDirectory(extractDir);
 
-            await _github.DownloadFileAsync(candidate.DownloadUrl, archivePath, log, progress, ct);
-            var payloadDir = await Task.Run(() =>
-            {
-                // Archive extraction and payload inspection can touch a lot of files, so keep it off the UI thread.
-                ExtractZipSafe(archivePath, extractDir);
-                return ResolveSinglePayloadDirectory(extractDir);
-            }, ct);
+            var notificationProgress = _notifications.CreateDownloadProgressBridge(operationKey, progress);
 
-            var pending = new PendingAppUpdate
+            try
             {
-                Version = candidate.RemoteVersion,
-                StagingPath = payloadDir,
-                TargetRoot = rootDir,
-                BackupPath = backupPath,
-                Preserve = source.Preserve,
-                CreatedUtc = DateTime.UtcNow.ToString("o")
-            };
+                await _github.DownloadFileAsync(candidate.DownloadUrl, archivePath, log, notificationProgress, ct);
+                var payloadDir = await Task.Run(() =>
+                {
+                    // Archive extraction and payload inspection can touch a lot of files, so keep it off the UI thread.
+                    ExtractZipSafe(archivePath, extractDir);
+                    return ResolveSinglePayloadDirectory(extractDir);
+                }, ct);
 
-            Directory.CreateDirectory(workDir);
-            var pendingJson = JsonSerializer.Serialize(pending, _jsonOptions);
-            await File.WriteAllTextAsync(GetPendingUpdatePath(), pendingJson, ct);
-            log?.Report("ASLM update prepared. It will be applied on restart.");
-            return true;
+                var pending = new PendingAppUpdate
+                {
+                    Version = candidate.RemoteVersion,
+                    StagingPath = payloadDir,
+                    TargetRoot = rootDir,
+                    BackupPath = backupPath,
+                    Preserve = source.Preserve,
+                    CreatedUtc = DateTime.UtcNow.ToString("o")
+                };
+
+                Directory.CreateDirectory(workDir);
+                var pendingJson = JsonSerializer.Serialize(pending, _jsonOptions);
+                await File.WriteAllTextAsync(GetPendingUpdatePath(), pendingJson, ct);
+                log?.Report("ASLM update prepared. It will be applied on restart.");
+                _notifications.CompleteDownload(operationKey, "ASLM update prepared.");
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                _notifications.FailDownload(operationKey, "ASLM update download canceled.");
+                throw;
+            }
+            catch
+            {
+                _notifications.FailDownload(operationKey, "ASLM update download failed.");
+                throw;
+            }
         }
 
 
@@ -348,9 +391,18 @@ namespace ASLM.Services
         {
             var module = candidate.Module ?? throw new InvalidOperationException(
                 "Module update candidate does not contain module metadata.");
+            var operationKey = NotificationService.BuildOperationKey("module-update", module.Id);
+            _notifications.StartDownload(
+                operationKey,
+                "Updating module",
+                $"{module.Name} {candidate.RemoteVersion}",
+                candidate.TargetKind,
+                candidate.TargetId);
+
             var moduleDir = Path.GetDirectoryName(module.SourcePath);
             if (string.IsNullOrWhiteSpace(moduleDir))
             {
+                _notifications.FailDownload(operationKey, "Module update target could not be resolved.");
                 return false;
             }
 
@@ -371,7 +423,8 @@ namespace ASLM.Services
                 Directory.CreateDirectory(backupDir);
                 Directory.CreateDirectory(preserveDir);
 
-                await DownloadModuleArchiveAsync(module, candidate, archivePath, log, progress, ct);
+                var notificationProgress = _notifications.CreateDownloadProgressBridge(operationKey, progress);
+                await DownloadModuleArchiveAsync(module, candidate, archivePath, log, notificationProgress, ct);
                 var preparedUpdate = await Task.Run(() =>
                 {
                     // Extraction and manifest validation are local filesystem work and should not block the UI thread.
@@ -402,7 +455,7 @@ namespace ASLM.Services
                     _moduleInstaller.SaveModuleConfig(module);
                 }
 
-                return await ApplyPreparedModuleUpdateAsync(
+                var success = await ApplyPreparedModuleUpdateAsync(
                     module,
                     candidate,
                     preparedUpdate,
@@ -412,11 +465,27 @@ namespace ASLM.Services
                     wasEnabled,
                     log,
                     ct);
+                if (success)
+                {
+                    _notifications.CompleteDownload(operationKey, $"{module.Name} updated successfully.");
+                }
+                else
+                {
+                    _notifications.FailDownload(operationKey, $"{module.Name} update failed.");
+                }
+
+                return success;
+            }
+            catch (OperationCanceledException)
+            {
+                _notifications.FailDownload(operationKey, $"{module.Name} update canceled.");
+                throw;
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 _logger.LogError(ex, "Module update failed for {ModuleId}.", module.Id);
                 log?.Report($"Module update failed: {ex.Message}");
+                _notifications.FailDownload(operationKey, $"Module update failed: {ex.Message}");
                 return false;
             }
             finally

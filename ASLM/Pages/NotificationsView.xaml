@@ -1,0 +1,161 @@
+<!-- Copyright NGGT.LightKeeper. All Rights Reserved. -->
+
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ASLM.Pages.NotificationsView"
+             BackgroundColor="Transparent">
+
+    <Grid>
+        <Grid.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnBackgroundTapped" />
+        </Grid.GestureRecognizers>
+
+        <Border x:Name="NotificationsPopup"
+                WidthRequest="450"
+                HeightRequest="520"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"
+                BackgroundColor="#252526"
+                Stroke="#454548"
+                StrokeThickness="1"
+                Padding="0"
+                StrokeShape="RoundRectangle 14">
+
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnDialogTapped" />
+            </Border.GestureRecognizers>
+
+            <Grid RowDefinitions="Auto,Auto,*,Auto"
+                  RowSpacing="0">
+                <Grid Grid.Row="0"
+                      ColumnDefinitions="*,Auto"
+                      Padding="16,14,12,10">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Notifications"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource LabelPrimary}" />
+                        <Label Text="{Binding SummaryText}"
+                               FontSize="11"
+                               TextColor="{StaticResource LabelSecondary}" />
+                    </VerticalStackLayout>
+
+                    <Button Grid.Column="1"
+                            Text="&#x2715;"
+                            FontSize="17"
+                            WidthRequest="30"
+                            HeightRequest="30"
+                            Padding="0"
+                            Margin="0"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource LabelSecondary}"
+                            CornerRadius="6"
+                            VerticalOptions="Center"
+                            Clicked="OnCloseClicked" />
+                </Grid>
+
+                <Grid Grid.Row="1"
+                      ColumnDefinitions="*"
+                      Padding="12,4,12,8">
+                    <Label Text="{Binding SectionTitle}"
+                           FontSize="12"
+                           TextColor="{StaticResource LabelPrimary}" />
+                </Grid>
+
+                <Grid Grid.Row="2">
+                    <CollectionView ItemsSource="{Binding VisibleNotifications}"
+                                    SelectionMode="None"
+                                    VerticalScrollBarVisibility="Never"
+                                    IsVisible="{Binding HasVisibleNotifications}">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical"
+                                               ItemSpacing="0" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid RowDefinitions="Auto,Auto">
+                                    <Grid Padding="12,9"
+                                          ColumnDefinitions="4,*,Auto"
+                                          ColumnSpacing="10">
+                                        <BoxView BackgroundColor="{Binding AccentColor}"
+                                                 WidthRequest="4"
+                                                 HeightRequest="22"
+                                                 VerticalOptions="Start"
+                                                 Margin="0,3,0,0" />
+
+                                        <VerticalStackLayout Grid.Column="1"
+                                                             Spacing="2">
+                                            <Label Text="{Binding Title}"
+                                                   FontSize="12"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{StaticResource LabelPrimary}"
+                                                   MaxLines="1"
+                                                   LineBreakMode="TailTruncation" />
+
+                                            <Label Text="{Binding Message}"
+                                                   FontSize="11"
+                                                   TextColor="{StaticResource LabelPrimary}"
+                                                   MaxLines="1"
+                                                   LineBreakMode="TailTruncation" />
+
+                                            <ProgressBar Progress="{Binding ProgressFraction}"
+                                                         IsVisible="{Binding HasProgress}"
+                                                         HeightRequest="3"
+                                                         ProgressColor="{StaticResource ActionBlue}"
+                                                         Margin="0,4,0,0" />
+                                        </VerticalStackLayout>
+
+                                        <Button Grid.Column="2"
+                                                Text="Dismiss"
+                                                FontSize="11"
+                                                WidthRequest="70"
+                                                HeightRequest="28"
+                                                Padding="0"
+                                                CornerRadius="6"
+                                                BackgroundColor="#333334"
+                                                TextColor="{StaticResource LabelPrimary}"
+                                                VerticalOptions="Start"
+                                                Clicked="OnDismissClicked" />
+                                    </Grid>
+
+                                    <BoxView Grid.Row="1"
+                                             HeightRequest="1"
+                                             Color="#343436"
+                                             Margin="12,0,0,0" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <VerticalStackLayout IsVisible="{Binding IsEmptyVisible}"
+                                         VerticalOptions="Center"
+                                         HorizontalOptions="Center"
+                                         Spacing="5"
+                                         Margin="24">
+                        <Label Text="No notifications"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource LabelPrimary}"
+                               HorizontalOptions="Center" />
+                        <Label Text="New ASLM events will appear here."
+                               FontSize="12"
+                               TextColor="{StaticResource LabelSecondary}"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <Grid Grid.Row="3"
+                      ColumnDefinitions="*"
+                      Padding="12,8"
+                      BackgroundColor="#222223">
+                    <Label Text="{Binding SummaryText}"
+                           FontSize="10"
+                           TextColor="{StaticResource LabelSecondary}"
+                           HorizontalTextAlignment="End"
+                           VerticalTextAlignment="Center" />
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</ContentView>

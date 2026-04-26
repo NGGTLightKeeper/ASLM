@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using ASLM.Models;
 using ASLM.Services;
+using Microsoft.Maui.Controls.Shapes;
 
 namespace ASLM.Pages
 {
@@ -22,6 +23,7 @@ namespace ASLM.Pages
         private const string IconConsole = "icon_console.png";
         private const string IconModules = "icon_modules.png";
         private const string IconApi = "icon_api.png";
+        private const string IconNotifications = "icon_notifications.png";
         private const string IconDownload = "icon_download.png";
         private const string IconSettings = "icon_settings.png";
         private const string IconPage = "icon_page.png";
@@ -30,6 +32,7 @@ namespace ASLM.Pages
         private const string LabelConsoles = "Consoles";
         private const string LabelModules = "Modules";
         private const string LabelApi = "ASLM API";
+        private const string LabelNotifications = "Notifications";
         private const string LabelDownload = "Download";
         private const string LabelSettings = "Settings";
         private const int MaxConcurrentModuleStarts = 2;
@@ -42,6 +45,8 @@ namespace ASLM.Pages
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly PortManager _portManager;
+        private readonly NotificationService _notificationService;
+        private readonly UpdateService _updateService;
         private readonly IServiceProvider _services;
 
         private List<ModuleConfig> _allModules = [];
@@ -53,6 +58,7 @@ namespace ASLM.Pages
         private View? _consolesView;
         private View? _moduleManagementView;
         private View? _aslmApiView;
+        private View? _notificationsView;
         private View? _downloadModulesView;
         private View? _settingsView;
         private View? _moduleUpdateDialogView;
@@ -70,22 +76,27 @@ namespace ASLM.Pages
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
             PortManager portManager,
+            NotificationService notificationService,
+            UpdateService updateService,
             IServiceProvider services)
         {
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             _portManager = portManager;
+            _notificationService = notificationService;
+            _updateService = updateService;
             _services = services;
 
             InitializeComponent();
             BindingContext = this;
             Loaded += OnPageLoaded;
+            Unloaded += OnPageUnloaded;
 
             // Restore the sidebar width before the first render so the shell opens in the saved state.
             _panelExpanded = Preferences.Default.Get("SidebarExpanded", false);
             SidePanel.WidthRequest = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
 
-            _navButtons = [HomeButton, ConsolesButton, ModuleManagementButton, AslmApiButton, UploadModulesButton, SettingsButton];
+            _navButtons = [HomeButton, ConsolesButton, ModuleManagementButton, AslmApiButton, NotificationsButton, UploadModulesButton, SettingsButton];
 
             // Hook alignment updates once so WinUI buttons keep the same content layout.
             CollapseButton.HandlerChanged += (sender, _) => UpdateButtonAlignment((Button)sender!);
@@ -100,6 +111,7 @@ namespace ASLM.Pages
             ConsolesButton.ImageSource = IconConsole;
             ModuleManagementButton.ImageSource = IconModules;
             AslmApiButton.ImageSource = IconApi;
+            NotificationsButton.ImageSource = IconNotifications;
             UploadModulesButton.ImageSource = IconDownload;
             SettingsButton.ImageSource = IconSettings;
 
@@ -143,7 +155,33 @@ namespace ASLM.Pages
             _hasLoaded = true;
             await RefreshModulesAsync();
             NavigateTo(HomeButton);
+            _notificationService.NotificationPublished += OnNotificationPublished;
             _ = StartEnabledModulesAsync();
+            _ = CheckStartupUpdatesAsync();
+            _ = _notificationService.PublishStartupTestNotificationsAsync();
+        }
+
+        /// <summary>
+        /// Unhooks shell-level notification events when the page leaves the visual tree.
+        /// </summary>
+        private void OnPageUnloaded(object? sender, EventArgs e)
+        {
+            _notificationService.NotificationPublished -= OnNotificationPublished;
+        }
+
+        /// <summary>
+        /// Checks ASLM and modules for updates once after the main shell opens.
+        /// </summary>
+        private async Task CheckStartupUpdatesAsync()
+        {
+            try
+            {
+                await _updateService.CheckAllUpdatesAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[StartupUpdates] Check failed: {ex.Message}");
+            }
         }
 
         // Module refresh
@@ -251,6 +289,12 @@ namespace ASLM.Pages
                     return;
                 }
 
+                if (button == NotificationsButton)
+                {
+                    OpenNotificationsOverlay();
+                    return;
+                }
+
                 if (button == SettingsButton)
                 {
                     OpenSettingsOverlay();
@@ -277,6 +321,24 @@ namespace ASLM.Pages
             }
 
             OverlayContainer.Content = _settingsView;
+            OverlayContainer.IsVisible = true;
+        }
+
+        /// <summary>
+        /// Opens the shared notifications overlay and refreshes it before showing.
+        /// </summary>
+        private void OpenNotificationsOverlay()
+        {
+            _notificationsView ??= _services.GetRequiredService<NotificationsView>();
+            if (_notificationsView is NotificationsView notificationsView)
+            {
+                notificationsView.CloseRequested -= OnNotificationsCloseRequested;
+                notificationsView.CloseRequested += OnNotificationsCloseRequested;
+                var anchorBounds = GetElementBoundsInShell(NotificationsButton);
+                _ = notificationsView.OpenAtAsync(anchorBounds, Width, Height);
+            }
+
+            OverlayContainer.Content = _notificationsView;
             OverlayContainer.IsVisible = true;
         }
 
@@ -333,6 +395,15 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Hides the overlay container when the notifications view requests close.
+        /// </summary>
+        private void OnNotificationsCloseRequested(object? sender, EventArgs e)
+        {
+            OverlayContainer.IsVisible = false;
+            OverlayContainer.Content = null;
+        }
+
+        /// <summary>
         /// Hides the overlay container when the download view requests close.
         /// </summary>
         private void OnDownloadCloseRequested(object? sender, EventArgs e)
@@ -346,6 +417,161 @@ namespace ASLM.Pages
         private void OnModuleUpdateCloseRequested(object? sender, EventArgs e)
         {
             OverlayContainer.IsVisible = false;
+        }
+
+        // Toast notifications
+
+        /// <summary>
+        /// Shows an in-app toast when a new notification is published.
+        /// </summary>
+        private void OnNotificationPublished(object? sender, AppNotification notification)
+        {
+            MainThread.BeginInvokeOnMainThread(() => ShowToast(notification));
+        }
+
+        /// <summary>
+        /// Adds one toast card to the bottom-right stack for a short fixed lifetime.
+        /// </summary>
+        private void ShowToast(AppNotification notification)
+        {
+            var toast = CreateToast(notification);
+            ToastPanel.Children.Insert(0, toast);
+
+            while (ToastPanel.Children.Count > 4)
+            {
+                ToastPanel.Children.RemoveAt(ToastPanel.Children.Count - 1);
+            }
+
+            toast.Opacity = 0;
+            _ = toast.FadeToAsync(1, 120, Easing.CubicOut);
+            _ = RemoveToastAfterDelayAsync(toast, TimeSpan.FromSeconds(10));
+        }
+
+        /// <summary>
+        /// Builds the compact visual toast card for one notification.
+        /// </summary>
+        private Border CreateToast(AppNotification notification)
+        {
+            var title = new Label
+            {
+                Text = notification.Title,
+                FontSize = 13,
+                FontAttributes = FontAttributes.Bold,
+                TextColor = Colors.White,
+                MaxLines = 1,
+                LineBreakMode = LineBreakMode.TailTruncation
+            };
+
+            var message = new Label
+            {
+                Text = notification.Message,
+                FontSize = 11,
+                TextColor = Color.FromArgb("#D8D8DC"),
+                MaxLines = 2,
+                LineBreakMode = LineBreakMode.TailTruncation
+            };
+
+            var detail = new Label
+            {
+                Text = notification.DetailLine,
+                FontSize = 10,
+                TextColor = Color.FromArgb("#9A9AA0"),
+                MaxLines = 1,
+                LineBreakMode = LineBreakMode.TailTruncation
+            };
+
+            var content = new Grid
+            {
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition(new GridLength(4)),
+                    new ColumnDefinition(GridLength.Star)
+                },
+                ColumnSpacing = 10
+            };
+
+            content.Children.Add(new BoxView
+            {
+                BackgroundColor = notification.AccentColor,
+                WidthRequest = 4,
+                VerticalOptions = LayoutOptions.Fill
+            });
+
+            var textStack = new VerticalStackLayout { Spacing = 2 };
+            textStack.Children.Add(title);
+            textStack.Children.Add(message);
+            textStack.Children.Add(detail);
+            content.Children.Add(textStack);
+            Grid.SetColumn(textStack, 1);
+
+            var toast = new Border
+            {
+                BindingContext = notification,
+                BackgroundColor = Color.FromArgb("#28282A"),
+                Stroke = Color.FromArgb("#454548"),
+                StrokeThickness = 1,
+                StrokeShape = new RoundRectangle { CornerRadius = 8 },
+                Padding = new Thickness(10),
+                Content = content,
+                Shadow = new Shadow
+                {
+                    Brush = Brush.Black,
+                    Opacity = 0.35f,
+                    Radius = 12,
+                    Offset = new Point(0, 4)
+                }
+            };
+
+            var tap = new TapGestureRecognizer();
+            tap.Tapped += (_, _) =>
+            {
+                RemoveToast(toast);
+            };
+            toast.GestureRecognizers.Add(tap);
+            return toast;
+        }
+
+        /// <summary>
+        /// Removes a toast after the requested delay unless it has already been dismissed.
+        /// </summary>
+        private async Task RemoveToastAfterDelayAsync(Border toast, TimeSpan delay)
+        {
+            await Task.Delay(delay);
+            await MainThread.InvokeOnMainThreadAsync(() => RemoveToast(toast));
+        }
+
+        /// <summary>
+        /// Animates and removes one toast from the stack.
+        /// </summary>
+        private void RemoveToast(Border toast)
+        {
+            if (!ToastPanel.Children.Contains(toast))
+            {
+                return;
+            }
+
+            _ = toast.FadeToAsync(0, 120, Easing.CubicIn).ContinueWith(_ =>
+                MainThread.BeginInvokeOnMainThread(() => ToastPanel.Children.Remove(toast)));
+        }
+
+        /// <summary>
+        /// Calculates one child element's bounds in the shell coordinate space.
+        /// </summary>
+        private Rect GetElementBoundsInShell(VisualElement element)
+        {
+            var x = element.Bounds.X;
+            var y = element.Bounds.Y;
+            var parent = element.Parent;
+
+            // Walk the MAUI visual parent chain so popovers can anchor to controls inside nested layouts.
+            while (parent is VisualElement parentElement && parentElement != this)
+            {
+                x += parentElement.Bounds.X;
+                y += parentElement.Bounds.Y;
+                parent = parentElement.Parent;
+            }
+
+            return new Rect(x, y, element.Bounds.Width, element.Bounds.Height);
         }
 
         // View activation
@@ -480,6 +706,18 @@ namespace ASLM.Pages
                 return ContentArea.Content ?? _homeView;
             }
 
+            if (button == NotificationsButton)
+            {
+                if (_homeView == null)
+                {
+                    var homeView = _services.GetRequiredService<HomeView>();
+                    homeView.Initialize(this);
+                    _homeView = homeView;
+                }
+
+                return ContentArea.Content ?? _homeView;
+            }
+
             if (button == AslmApiButton)
             {
                 _aslmApiView ??= _services.GetRequiredService<AslmApiView>();
@@ -519,6 +757,11 @@ namespace ASLM.Pages
             if (button == AslmApiButton)
             {
                 return LabelApi;
+            }
+
+            if (button == NotificationsButton)
+            {
+                return LabelNotifications;
             }
 
             if (button == UploadModulesButton)

@@ -64,6 +64,13 @@
                         HorizontalOptions="Fill"
                         Clicked="OnNavClicked" />
 
+                <Button x:Name="NotificationsButton"
+                        Style="{StaticResource SidebarButton}"
+                        Text="Notifications"
+                        HeightRequest="36"
+                        HorizontalOptions="Fill"
+                        Clicked="OnNavClicked" />
+
                 <Button x:Name="UploadModulesButton"
                         Style="{StaticResource SidebarButton}"
                         Text="Download"
@@ -95,6 +102,16 @@
                      Grid.ColumnSpan="2"
                      IsVisible="False"
                      BackgroundColor="Transparent" />
+
+        <!-- In-app toast notifications -->
+        <VerticalStackLayout x:Name="ToastPanel"
+                             Grid.ColumnSpan="2"
+                             Spacing="8"
+                             Margin="0,0,18,18"
+                             WidthRequest="360"
+                             HorizontalOptions="End"
+                             VerticalOptions="End"
+                             InputTransparent="False" />
 
     </Grid>
 

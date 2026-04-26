@@ -25,6 +25,7 @@ namespace ASLM.Services
         private readonly EngineInstaller _engineInstaller;
         private readonly ModuleEnvironmentService _moduleEnvironmentService;
         private readonly DownloadCatalogStateService _stateService;
+        private readonly NotificationService _notifications;
         private readonly ILogger<DownloadInstallService> _logger;
         private readonly HttpClient _httpClient = new();
 
@@ -43,6 +44,7 @@ namespace ASLM.Services
             EngineInstaller engineInstaller,
             ModuleEnvironmentService moduleEnvironmentService,
             DownloadCatalogStateService stateService,
+            NotificationService notifications,
             ILogger<DownloadInstallService> logger)
         {
             _moduleInstaller = moduleInstaller;
@@ -50,6 +52,7 @@ namespace ASLM.Services
             _engineInstaller = engineInstaller;
             _moduleEnvironmentService = moduleEnvironmentService;
             _stateService = stateService;
+            _notifications = notifications;
             _logger = logger;
         }
 
@@ -78,6 +81,13 @@ namespace ASLM.Services
             var selectedVersion = !string.IsNullOrWhiteSpace(selectedVariant?.Version)
                 ? selectedVariant!.Version
                 : item.Version;
+            var operationKey = NotificationService.BuildOperationKey("download-install", selectedResourceKey);
+            _notifications.StartDownload(
+                operationKey,
+                "Installing download",
+                selectedTitle,
+                "download",
+                selectedResourceKey);
 
             var lastError = "No module source produced an install manifest.";
 
@@ -122,7 +132,7 @@ namespace ASLM.Services
                     var effectiveTitle = !string.IsNullOrWhiteSpace(manifest.Title) ? manifest.Title : selectedTitle;
                     log?.Report($"Installing {effectiveTitle} via {module.Name}...");
 
-                    await ExecuteManifestAsync(module, manifest, log, ct);
+                    await ExecuteManifestAsync(module, manifest, operationKey, log, ct);
 
                     var version = !string.IsNullOrWhiteSpace(manifest.Version)
                         ? manifest.Version
@@ -135,10 +145,12 @@ namespace ASLM.Services
                         : $"{effectiveTitle} {version} installed successfully.";
 
                     log?.Report(message);
+                    _notifications.CompleteDownload(operationKey, message);
                     return new DownloadInstallResult(true, message);
                 }
                 catch (OperationCanceledException)
                 {
+                    _notifications.FailDownload(operationKey, $"Installation canceled for {selectedTitle}.");
                     throw;
                 }
                 catch (Exception ex)
@@ -146,9 +158,11 @@ namespace ASLM.Services
                     _logger.LogError(ex, "Install manifest execution failed for resource {ResourceKey} via module {ModuleId}.", selectedResourceKey, module.Id);
                     lastError = ex.Message;
                     log?.Report($"Install failed via {module.Name}: {ex.Message}");
+                    _notifications.FailDownload(operationKey, $"Install failed: {ex.Message}");
                 }
             }
 
+            _notifications.FailDownload(operationKey, lastError);
             return new DownloadInstallResult(false, lastError);
         }
 
@@ -174,6 +188,13 @@ namespace ASLM.Services
             var selectedTitle = !string.IsNullOrWhiteSpace(selectedVariant?.Title)
                 ? selectedVariant!.Title
                 : item.Title;
+            var operationKey = NotificationService.BuildOperationKey("download-remove", selectedResourceKey);
+            _notifications.StartDownload(
+                operationKey,
+                "Removing download",
+                selectedTitle,
+                "download",
+                selectedResourceKey);
 
             var lastError = "No module source produced an uninstall manifest.";
 
@@ -218,15 +239,17 @@ namespace ASLM.Services
                     var effectiveTitle = !string.IsNullOrWhiteSpace(manifest.Title) ? manifest.Title : selectedTitle;
                     log?.Report($"Removing {effectiveTitle} via {module.Name}...");
 
-                    await ExecuteManifestAsync(module, manifest, log, ct);
+                    await ExecuteManifestAsync(module, manifest, operationKey, log, ct);
                     await _stateService.MarkUninstalledAsync(selectedResourceKey);
 
                     var message = $"{effectiveTitle} removed successfully.";
                     log?.Report(message);
+                    _notifications.CompleteDownload(operationKey, message);
                     return new DownloadInstallResult(true, message);
                 }
                 catch (OperationCanceledException)
                 {
+                    _notifications.FailDownload(operationKey, $"Removal canceled for {selectedTitle}.");
                     throw;
                 }
                 catch (Exception ex)
@@ -234,9 +257,11 @@ namespace ASLM.Services
                     _logger.LogError(ex, "Uninstall manifest execution failed for resource {ResourceKey} via module {ModuleId}.", selectedResourceKey, module.Id);
                     lastError = ex.Message;
                     log?.Report($"Remove failed via {module.Name}: {ex.Message}");
+                    _notifications.FailDownload(operationKey, $"Removal failed: {ex.Message}");
                 }
             }
 
+            _notifications.FailDownload(operationKey, lastError);
             return new DownloadInstallResult(false, lastError);
         }
 
@@ -246,6 +271,7 @@ namespace ASLM.Services
         private async Task ExecuteManifestAsync(
             ModuleConfig module,
             ModuleDownloadInstallManifest manifest,
+            string operationKey,
             IProgress<string>? log,
             CancellationToken ct)
         {
@@ -266,7 +292,7 @@ namespace ASLM.Services
                     switch (action.Type.Trim().ToLowerInvariant())
                     {
                         case "download_file":
-                            await ExecuteDownloadFileAsync(module, manifest, action, context, log, ct);
+                            await ExecuteDownloadFileAsync(module, manifest, action, context, operationKey, log, ct);
                             break;
 
                         case "extract_zip":
@@ -304,6 +330,7 @@ namespace ASLM.Services
             ModuleDownloadInstallManifest manifest,
             ModuleDownloadInstallAction action,
             InstallExecutionContext context,
+            string operationKey,
             IProgress<string>? log,
             CancellationToken ct)
         {
@@ -333,13 +360,44 @@ namespace ASLM.Services
 
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
             log?.Report($"Downloading {action.Url}");
+            var downloadTitle = !string.IsNullOrWhiteSpace(action.Title)
+                ? action.Title
+                : Path.GetFileName(new Uri(action.Url).LocalPath);
+            _notifications.ReportDownloadStatus(operationKey, $"Downloading {downloadTitle}");
 
             using var response = await _httpClient.GetAsync(action.Url, HttpCompletionOption.ResponseHeadersRead, ct);
             response.EnsureSuccessStatusCode();
 
+            var totalBytes = response.Content.Headers.ContentLength ?? 0;
             await using var contentStream = await response.Content.ReadAsStreamAsync(ct);
             await using var fileStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 65536, true);
-            await contentStream.CopyToAsync(fileStream, ct);
+            var buffer = new byte[65536];
+            long downloadedBytes = 0;
+            int bytesRead;
+            var throttle = Stopwatch.StartNew();
+
+            _notifications.ReportDownloadProgress(operationKey, new DownloadProgress(0, 0, totalBytes));
+
+            while ((bytesRead = await contentStream.ReadAsync(buffer, ct)) > 0)
+            {
+                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
+                downloadedBytes += bytesRead;
+
+                if (throttle.ElapsedMilliseconds < 75)
+                {
+                    continue;
+                }
+
+                throttle.Restart();
+                var fraction = totalBytes > 0 ? (double)downloadedBytes / totalBytes : 0;
+                _notifications.ReportDownloadProgress(
+                    operationKey,
+                    new DownloadProgress(fraction, downloadedBytes, totalBytes));
+            }
+
+            _notifications.ReportDownloadProgress(
+                operationKey,
+                new DownloadProgress(1.0, downloadedBytes, totalBytes > 0 ? totalBytes : downloadedBytes));
 
             if (!string.IsNullOrWhiteSpace(action.Sha256))
             {

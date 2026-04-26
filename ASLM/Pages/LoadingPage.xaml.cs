@@ -13,6 +13,7 @@ namespace ASLM.Pages
     public partial class LoadingPage : ContentPage
     {
         private readonly AppDataService _appData;
+        private readonly NotificationService _notifications;
         private readonly UpdateSchedulerService _updateScheduler;
         private readonly AslmApiServerService _apiServer;
         private readonly IServiceProvider _services;
@@ -25,12 +26,14 @@ namespace ASLM.Pages
         /// </summary>
         public LoadingPage(
             AppDataService appData,
+            NotificationService notifications,
             UpdateSchedulerService updateScheduler,
             AslmApiServerService apiServer,
             IServiceProvider services)
         {
             InitializeComponent();
             _appData = appData;
+            _notifications = notifications;
             _updateScheduler = updateScheduler;
             _apiServer = apiServer;
             _services = services;
@@ -52,6 +55,7 @@ namespace ASLM.Pages
 
             _initialized = true;
             await _appData.InitializeAsync();
+            await _notifications.InitializeAsync();
             await _apiServer.StartIfEnabledAsync();
             _updateScheduler.Start();
 

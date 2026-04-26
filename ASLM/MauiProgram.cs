@@ -57,6 +57,7 @@ namespace ASLM
             builder.Services.AddSingleton<DownloadCatalogStateService>();
             builder.Services.AddSingleton<DownloadCatalogService>();
             builder.Services.AddSingleton<DownloadInstallService>();
+            builder.Services.AddSingleton<NotificationService>();
             builder.Services.AddSingleton<OllamaSettingsService>();
             builder.Services.AddSingleton<GitHubUpdateClient>();
             builder.Services.AddSingleton<UpdateService>();
@@ -73,6 +74,7 @@ namespace ASLM
             builder.Services.AddTransient<ConsolesView>();
             builder.Services.AddTransient<ModuleManagementView>();
             builder.Services.AddTransient<AslmApiView>();
+            builder.Services.AddTransient<NotificationsView>();
             builder.Services.AddTransient<DownloadModulesView>();
             builder.Services.AddTransient<SettingsView>();
             builder.Services.AddTransient<ModuleUpdateDialogView>();
