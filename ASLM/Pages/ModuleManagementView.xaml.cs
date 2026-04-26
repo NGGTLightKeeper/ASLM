@@ -1115,7 +1115,7 @@ namespace ASLM.Pages
                 await EnsureSelectionOptionsLoadedAsync(forceOptionLoad);
                 SynchronizeSelectionForUpdateOperation();
 
-                _updateCandidate = await _updateService.CheckModuleUpdateAsync(_config);
+                _updateCandidate = await Task.Run(() => _updateService.CheckModuleUpdateAsync(_config));
                 HasUpdate = _updateCandidate != null;
                 OnPropertyChanged(nameof(UpdateCandidate));
                 OnPropertyChanged(nameof(AvailableUpdateLabel));
@@ -1179,7 +1179,7 @@ namespace ASLM.Pages
 
             try
             {
-                var branches = await _updateService.GetModuleBranchesAsync(_config);
+                var branches = await Task.Run(() => _updateService.GetModuleBranchesAsync(_config));
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     var selectedBranch = string.IsNullOrWhiteSpace(_selectedBranch)
@@ -1260,7 +1260,7 @@ namespace ASLM.Pages
 
             try
             {
-                var releases = await _updateService.GetModuleReleaseCandidatesAsync(_config);
+                var releases = await Task.Run(() => _updateService.GetModuleReleaseCandidatesAsync(_config));
                 var releaseOptions = BuildReleaseOptions(releases);
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
@@ -1421,11 +1421,11 @@ namespace ASLM.Pages
                     progressSink?.Report(download);
                 });
 
-                var success = await _updateService.ApplyModuleUpdateAsync(
+                var success = await Task.Run(() => _updateService.ApplyModuleUpdateAsync(
                     installCandidate,
                     combinedLog,
                     combinedProgress,
-                    CancellationToken.None);
+                    CancellationToken.None));
 
                 if (success)
                 {
@@ -1485,11 +1485,11 @@ namespace ASLM.Pages
                     }
 
                     _config.Status.FirstRunCompleted = true;
-                    _installer.SaveModuleConfig(_config);
+                    await Task.Run(() => _installer.SaveConfigAsync(_config));
                 }
 
                 _config.Status.Enabled = true;
-                _installer.SaveModuleConfig(_config);
+                await Task.Run(() => _installer.SaveConfigAsync(_config));
                 NotifyStateChanged();
                 _onStateChanged?.Invoke();
 
@@ -1519,10 +1519,10 @@ namespace ASLM.Pages
                 return;
             }
 
-            await _runner.StopModuleAsync(_config.SourcePath);
+            await Task.Run(() => _runner.StopModuleAsync(_config.SourcePath));
 
             _config.Status.Enabled = false;
-            _installer.SaveModuleConfig(_config);
+            await Task.Run(() => _installer.SaveConfigAsync(_config));
             NotifyStateChanged();
             _onStateChanged?.Invoke();
         }
@@ -1546,7 +1546,7 @@ namespace ASLM.Pages
 
             try
             {
-                await _runner.StopModuleAsync(_config.SourcePath);
+                await Task.Run(() => _runner.StopModuleAsync(_config.SourcePath));
                 await Task.Delay(1000);
 
                 var restartLog = new Progress<string>(message => Debug.WriteLine($"[Restart] {message}"));
@@ -1684,7 +1684,7 @@ namespace ASLM.Pages
 
             if (IsBranchMode)
             {
-                return await _updateService.ResolveModuleInstallCandidateAsync(_config);
+                return await Task.Run(() => _updateService.ResolveModuleInstallCandidateAsync(_config));
             }
 
             return ResolveSelectedReleaseInstallCandidate();

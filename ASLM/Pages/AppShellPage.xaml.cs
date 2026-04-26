@@ -176,7 +176,7 @@ namespace ASLM.Pages
         {
             try
             {
-                await _updateService.CheckAllUpdatesAsync();
+                await Task.Run(() => _updateService.CheckAllUpdatesAsync());
             }
             catch (Exception ex)
             {
@@ -191,7 +191,7 @@ namespace ASLM.Pages
         /// </summary>
         private async Task RefreshModulesAsync()
         {
-            _allModules = await _moduleInstaller.DiscoverModulesAsync();
+            _allModules = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync());
             BuildPageButtons();
 
             if (_moduleManagementView is ModuleManagementView moduleManagementView)
@@ -933,7 +933,7 @@ namespace ASLM.Pages
                 {
                     var logProgress = new Progress<string>(message => System.Diagnostics.Debug.WriteLine($"[ModuleStart:{module.Name}] {message}"));
 
-                    await _moduleRunner.ExecuteRunAsync(module, logProgress, CancellationToken.None);
+                    await Task.Run(() => _moduleRunner.ExecuteRunAsync(module, logProgress, CancellationToken.None));
                 }
                 finally
                 {

@@ -450,7 +450,7 @@ namespace ASLM.Pages
             var previousCategoryId = _activeCategory?.Id;
 
             LoadAslmDraftsFromAppData();
-            LoadOllamaDraftsFromService();
+            await Task.Run(LoadOllamaDraftsFromService);
             await LoadModuleDraftsAsync(reloadModules: true, reloadRuntimeValues: false);
 
             _categories = CreateOrderedCategories();
@@ -577,7 +577,7 @@ namespace ASLM.Pages
         {
             if (reloadModules || _loadedModules.Count == 0)
             {
-                _loadedModules = await _moduleInstaller.DiscoverModulesAsync();
+                _loadedModules = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync());
                 _runtimeLoadedModuleIds.Clear();
                 _settingBaselines.Clear();
             }
@@ -590,7 +590,7 @@ namespace ASLM.Pages
 
             foreach (var module in _loadedModules)
             {
-                await LoadModuleDraftAsync(module, reloadRuntimeValues);
+                await Task.Run(() => LoadModuleDraftAsync(module, reloadRuntimeValues));
                 if (reloadRuntimeValues)
                 {
                     _runtimeLoadedModuleIds.Add(GetModuleRuntimeKey(module));
@@ -610,7 +610,7 @@ namespace ASLM.Pages
             }
 
             var loaded = reloadRuntimeValues
-                ? await Task.WhenAll(settings.Select(setting => LoadSettingValueAsync(module, setting)))
+                ? await Task.WhenAll(settings.Select(setting => Task.Run(() => LoadSettingValueAsync(module, setting))))
                 : settings.Select(setting => new LoadedSetting(setting, GetFallbackValue(module, setting))).ToArray();
 
             UpdateSettingBaselines(module, loaded);
@@ -875,7 +875,7 @@ namespace ASLM.Pages
                     return;
                 }
 
-                var loaded = await Task.WhenAll(settings.Select(setting => LoadSettingValueAsync(module, setting)));
+                var loaded = await Task.WhenAll(settings.Select(setting => Task.Run(() => LoadSettingValueAsync(module, setting))));
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
@@ -1267,7 +1267,7 @@ namespace ASLM.Pages
                     _updateStatusLabel.Text = "Checking GitHub repositories...";
                 }
 
-                var updates = await _updateService.CheckAllUpdatesAsync();
+                var updates = await Task.Run(() => _updateService.CheckAllUpdatesAsync());
                 _pendingAppUpdateCandidate = updates.FirstOrDefault(update =>
                     string.Equals(update.TargetKind, "app", StringComparison.OrdinalIgnoreCase));
 
@@ -1334,7 +1334,7 @@ namespace ASLM.Pages
                     }
                 });
 
-                var success = await _updateService.PrepareAppUpdateAsync(_pendingAppUpdateCandidate, log);
+                var success = await Task.Run(() => _updateService.PrepareAppUpdateAsync(_pendingAppUpdateCandidate, log));
                 if (_updateStatusLabel != null)
                 {
                     _updateStatusLabel.Text = success
@@ -1378,8 +1378,8 @@ namespace ASLM.Pages
                     _updateStatusLabel.Text = "Restarting ASLM...";
                 }
 
-                await _moduleRunner.StopAllModulesAsync();
-                StartLauncherForSelfUpdate();
+                await Task.Run(() => _moduleRunner.StopAllModulesAsync());
+                await Task.Run(StartLauncherForSelfUpdate);
                 Application.Current?.Quit();
             }
             catch (Exception ex)
@@ -2053,7 +2053,7 @@ namespace ASLM.Pages
                             return;
                         }
 
-                        var moduleSaveResult = await SaveActiveModuleAsync(_activeCategory.Module!);
+                        var moduleSaveResult = await Task.Run(() => SaveActiveModuleAsync(_activeCategory.Module!));
                         if (moduleSaveResult.TouchedModules.Count > 0)
                         {
                             await ReloadModuleRuntimeValuesAsync(_activeCategory.Module!);
@@ -2127,12 +2127,12 @@ namespace ASLM.Pages
 
                 try
                 {
-                    var applyResult = await _moduleRunner.ExecuteSettingCommandAsync(
+                    var applyResult = await Task.Run(() => _moduleRunner.ExecuteSettingCommandAsync(
                         module,
                         setting,
                         isSet: true,
                         newValue: displayValue,
-                        CancellationToken.None);
+                        CancellationToken.None));
 
                     if (applyResult == null)
                     {
@@ -2148,7 +2148,7 @@ namespace ASLM.Pages
 
             foreach (var touchedModule in touchedModules)
             {
-                _moduleInstaller.SaveModuleConfig(touchedModule);
+                await Task.Run(() => _moduleInstaller.SaveConfigAsync(touchedModule));
             }
 
             return new ModuleSaveResult(touchedModules, deferredSettings);
@@ -2189,14 +2189,14 @@ namespace ASLM.Pages
         /// </summary>
         private async Task RestartModuleAsync(ModuleConfig module)
         {
-            var freshConfig = await _moduleInstaller.LoadModuleConfig(module.SourcePath);
+            var freshConfig = await Task.Run(() => _moduleInstaller.LoadModuleConfig(module.SourcePath));
             if (freshConfig != null)
             {
                 module.Settings = freshConfig.Settings;
                 module.Commands = freshConfig.Commands;
             }
 
-            await _moduleRunner.StopModuleAsync(module.SourcePath);
+            await Task.Run(() => _moduleRunner.StopModuleAsync(module.SourcePath));
             await Task.Delay(1000);
 
             var restartLog = new Progress<string>(message => Debug.WriteLine($"[Restart] {message}"));
@@ -2208,7 +2208,7 @@ namespace ASLM.Pages
         /// </summary>
         private async Task RestartApplicationAsync()
         {
-            await _moduleRunner.StopAllModulesAsync();
+            await Task.Run(() => _moduleRunner.StopAllModulesAsync());
 
             if (Application.Current is not App application || application.Windows.Count == 0)
             {
@@ -2415,8 +2415,8 @@ namespace ASLM.Pages
             try
             {
                 var refreshed = queryLiveStatus
-                    ? await _ollamaSettingsService.RefreshSettingsAsync(ct)
-                    : _ollamaSettingsService.LoadSettings();
+                    ? await Task.Run(() => _ollamaSettingsService.RefreshSettingsAsync(ct), ct)
+                    : await Task.Run(() => _ollamaSettingsService.LoadSettings(), ct);
                 ApplyOllamaRuntimeMetadata(refreshed);
             }
             catch (OperationCanceledException)
@@ -2774,7 +2774,7 @@ namespace ASLM.Pages
 
             try
             {
-                var rawValue = await _moduleRunner.ExecuteSettingCommandAsync(module, setting, false, null, CancellationToken.None);
+                var rawValue = await Task.Run(() => _moduleRunner.ExecuteSettingCommandAsync(module, setting, false, null, CancellationToken.None));
                 return rawValue == null
                     ? new LoadedSetting(setting, fallbackValue)
                     : new LoadedSetting(setting, setting.ParseSerializedValue(rawValue));

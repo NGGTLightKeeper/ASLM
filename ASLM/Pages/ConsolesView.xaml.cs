@@ -471,13 +471,15 @@ namespace ASLM.Pages
             {
                 if (forceModuleReload || _knownModules.Count == 0)
                 {
-                    _knownModules = await _moduleInstaller.DiscoverModulesAsync();
+                    _knownModules = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync());
                 }
 
-                _consoleService.EnsureModules(_knownModules);
-
-                var snapshots = _consoleService.GetSnapshot();
-                var state = BuildState(snapshots);
+                var state = await Task.Run(() =>
+                {
+                    _consoleService.EnsureModules(_knownModules);
+                    var snapshots = _consoleService.GetSnapshot();
+                    return BuildState(snapshots);
+                });
 
                 await MainThread.InvokeOnMainThreadAsync(() => _view.Render(state));
             }

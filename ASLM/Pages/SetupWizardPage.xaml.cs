@@ -30,6 +30,9 @@ namespace ASLM.Pages
         private CancellationTokenSource? _cts;
         private bool _logVisible;
         private bool _moduleListLoaded;
+        private readonly object _logLock = new();
+        private int _logFlushQueued;
+        private int _logFlushRequested;
 
         private long _lastDownloadedBytes;
         private DateTime _lastSpeedUpdate = DateTime.UtcNow;
@@ -76,7 +79,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Populates the module selection list once after the page is ready.
         /// </summary>
-        private void OnLoaded(object? sender, EventArgs e)
+        private async void OnLoaded(object? sender, EventArgs e)
         {
             if (_moduleListLoaded)
             {
@@ -84,7 +87,7 @@ namespace ASLM.Pages
             }
 
             _moduleListLoaded = true;
-            PopulateModuleList();
+            await PopulateModuleListAsync();
         }
 
 
@@ -122,12 +125,27 @@ namespace ASLM.Pages
         /// <summary>
         /// Builds the selectable module list shown on the last setup step.
         /// </summary>
-        private async void PopulateModuleList()
+        private async Task PopulateModuleListAsync()
         {
             ModuleList.Children.Clear();
             _moduleChecks.Clear();
 
-            var modules = await _moduleInstaller.DiscoverModulesAsync();
+            List<ModuleConfig> modules;
+            try
+            {
+                modules = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync());
+            }
+            catch (Exception ex)
+            {
+                ModuleList.Children.Add(new Label
+                {
+                    Text = $"Failed to load module list: {ex.Message}",
+                    FontSize = 14,
+                    TextColor = Color.FromArgb("#FF453A")
+                });
+                return;
+            }
+
             foreach (var module in modules)
             {
                 var check = new CheckBox { IsChecked = true, Color = Colors.White };
@@ -336,7 +354,7 @@ namespace ASLM.Pages
             StepLabel.Text = "Installing...";
 
             _cts = new CancellationTokenSource();
-            var logProgress = new Progress<string>(AddLog);
+            var logProgress = new InlineProgress<string>(AddLog);
 
             var totalSteps = 0;
             var completedSteps = 0;
@@ -348,7 +366,7 @@ namespace ASLM.Pages
                 .Distinct()
                 .ToList();
 
-            var allEngines = _engineInstaller.DiscoverEngines();
+            var allEngines = await Task.Run(() => _engineInstaller.DiscoverEngines(), _cts.Token);
             totalSteps += requiredEngineIds.Count;
             totalSteps += selectedModules.Sum(GetModuleInstallStepCount);
 
@@ -453,10 +471,12 @@ namespace ASLM.Pages
                     ResetFileProgress();
                     ResetDownloadMetrics();
 
-                    var downloaded = await _moduleInstaller.DownloadSourceAsync(
-                        module,
-                        logProgress,
-                        downloadProgress,
+                    var downloaded = await Task.Run(
+                        () => _moduleInstaller.DownloadSourceAsync(
+                            module,
+                            logProgress,
+                            downloadProgress,
+                            _cts.Token),
                         _cts.Token);
                     completedSteps++;
                     UpdateOverallProgress(completedSteps, totalSteps);
@@ -472,7 +492,9 @@ namespace ASLM.Pages
                     }
 
                     UpdateInstallStatus($"Setting up {module.Name}...");
-                    var success = await _moduleRunner.ExecuteFirstRunAsync(module, logProgress, _cts.Token);
+                    var success = await Task.Run(
+                        () => _moduleRunner.ExecuteFirstRunAsync(module, logProgress, _cts.Token),
+                        _cts.Token);
                     completedSteps++;
                     UpdateOverallProgress(completedSteps, totalSteps);
 
@@ -677,7 +699,9 @@ namespace ASLM.Pages
             CancellationToken ct)
         {
             // Setup should resolve the same branch or release candidate the normal updater would use.
-            var candidate = await _updateService.ResolveModuleInstallCandidateAsync(module, ct);
+            var candidate = await Task.Run(
+                () => _updateService.ResolveModuleInstallCandidateAsync(module, ct),
+                ct);
             if (candidate == null)
             {
                 logProgress.Report($"[Error] Could not resolve install source for {module.Name}");
@@ -685,7 +709,9 @@ namespace ASLM.Pages
             }
 
             // Reuse the full module update pipeline so preserve rules and first-run behavior stay consistent.
-            return await _updateService.ApplyModuleUpdateAsync(candidate, logProgress, downloadProgress, ct);
+            return await Task.Run(
+                () => _updateService.ApplyModuleUpdateAsync(candidate, logProgress, downloadProgress, ct),
+                ct);
         }
 
         // Byte formatting
@@ -746,13 +772,81 @@ namespace ASLM.Pages
         /// </summary>
         private void AddLog(string message)
         {
-            _logBuffer.AppendLine(message);
-
-            MainThread.BeginInvokeOnMainThread(async () =>
+            lock (_logLock)
             {
-                LogEditor.Text = _logBuffer.ToString();
+                _logBuffer.AppendLine(message);
+            }
+
+            Interlocked.Exchange(ref _logFlushRequested, 1);
+            if (Interlocked.Exchange(ref _logFlushQueued, 1) == 1)
+            {
+                return;
+            }
+
+            _ = FlushLogAsync();
+        }
+
+        /// <summary>
+        /// Flushes buffered log lines at a steady cadence while installers keep streaming output.
+        /// </summary>
+        private async Task FlushLogAsync()
+        {
+            try
+            {
+                do
+                {
+                    Interlocked.Exchange(ref _logFlushRequested, 0);
+                    await Task.Delay(75);
+
+                    string text;
+                    lock (_logLock)
+                    {
+                        text = _logBuffer.ToString();
+                    }
+
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        LogEditor.Text = text;
+                        _ = ScrollLogToEndAsync();
+                    });
+                }
+                while (Interlocked.CompareExchange(ref _logFlushRequested, 0, 0) == 1);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _logFlushQueued, 0);
+                if (Interlocked.CompareExchange(ref _logFlushRequested, 0, 0) == 1 &&
+                    Interlocked.Exchange(ref _logFlushQueued, 1) == 0)
+                {
+                    _ = FlushLogAsync();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Scrolls the setup log without blocking the streaming flush loop.
+        /// </summary>
+        private async Task ScrollLogToEndAsync()
+        {
+            try
+            {
                 await LogScroll.ScrollToAsync(0, LogScroll.ContentSize.Height, false);
-            });
+            }
+            catch
+            {
+                // Best-effort scroll only; log streaming must keep flowing even if WinUI skips a scroll pass.
+            }
+        }
+
+        /// <summary>
+        /// Reports progress synchronously on the producer thread so UI updates can be throttled explicitly.
+        /// </summary>
+        private sealed class InlineProgress<T>(Action<T> handler) : IProgress<T>
+        {
+            public void Report(T value)
+            {
+                handler(value);
+            }
         }
     }
 }

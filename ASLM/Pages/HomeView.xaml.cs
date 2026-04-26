@@ -644,7 +644,7 @@ namespace ASLM.Pages
                 {
                     if (shouldForceReload || _knownModules.Count == 0)
                     {
-                        _knownModules = await _moduleInstaller.DiscoverModulesAsync();
+                        _knownModules = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync());
                     }
 
                     var modules = _knownModules.ToList();
@@ -1076,11 +1076,11 @@ namespace ASLM.Pages
                     }
 
                     module.Status.FirstRunCompleted = true;
-                    _moduleInstaller.SaveModuleConfig(module);
+                    await Task.Run(() => _moduleInstaller.SaveConfigAsync(module));
                 }
 
                 module.Status.Enabled = true;
-                _moduleInstaller.SaveModuleConfig(module);
+                await Task.Run(() => _moduleInstaller.SaveConfigAsync(module));
                 _consoleService.EnsureModule(module);
                 _consoleService.UpdateModuleEnabledState(module.SourcePath, true);
                 NotifyShellModuleStateChanged();
@@ -1114,7 +1114,7 @@ namespace ASLM.Pages
 
             try
             {
-                await _moduleRunner.StopModuleAsync(sourcePath);
+                await Task.Run(() => _moduleRunner.StopModuleAsync(sourcePath));
 
                 var module = await ReloadModuleAsync(sourcePath);
                 if (module == null)
@@ -1123,7 +1123,7 @@ namespace ASLM.Pages
                 }
 
                 module.Status.Enabled = false;
-                _moduleInstaller.SaveModuleConfig(module);
+                await Task.Run(() => _moduleInstaller.SaveConfigAsync(module));
                 _consoleService.UpdateModuleEnabledState(module.SourcePath, false);
                 NotifyShellModuleStateChanged();
             }
@@ -1156,11 +1156,11 @@ namespace ASLM.Pages
                     return;
                 }
 
-                await _moduleRunner.StopModuleAsync(sourcePath);
+                await Task.Run(() => _moduleRunner.StopModuleAsync(sourcePath));
                 await Task.Delay(1000);
 
                 module.Status.Enabled = true;
-                _moduleInstaller.SaveModuleConfig(module);
+                await Task.Run(() => _moduleInstaller.SaveConfigAsync(module));
                 _consoleService.EnsureModule(module);
                 _consoleService.UpdateModuleEnabledState(module.SourcePath, true);
 
@@ -1184,7 +1184,7 @@ namespace ASLM.Pages
         /// </summary>
         private async Task<ModuleConfig?> ReloadModuleAsync(string sourcePath)
         {
-            var module = await _moduleInstaller.LoadModuleConfig(sourcePath);
+            var module = await Task.Run(() => _moduleInstaller.LoadModuleConfig(sourcePath));
             if (module == null)
             {
                 return null;

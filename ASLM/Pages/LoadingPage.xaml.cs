@@ -54,10 +54,10 @@ namespace ASLM.Pages
             }
 
             _initialized = true;
-            await _appData.InitializeAsync();
-            await _notifications.InitializeAsync();
-            await _apiServer.StartIfEnabledAsync();
-            _updateScheduler.Start();
+            await Task.Run(() => _appData.InitializeAsync());
+            await Task.Run(() => _notifications.InitializeAsync());
+            await Task.Run(() => _apiServer.StartIfEnabledAsync());
+            await Task.Run(_updateScheduler.Start);
 
             Page nextPage = _appData.IsFirstRun
                 ? _services.GetRequiredService<SetupWizardPage>()

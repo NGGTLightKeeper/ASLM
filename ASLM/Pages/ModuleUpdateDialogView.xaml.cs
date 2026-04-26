@@ -37,6 +37,9 @@ namespace ASLM.Pages
         private ModuleViewModel? _module;
         private ModuleUpdateDialogMode _mode;
         private bool _isSynchronizingPickers;
+        private CancellationTokenSource? _logSyncCts;
+        private int _logSyncQueued;
+        private int _logSyncRequested;
 
         /// <summary>
         /// Raised when the user asks to close the module update overlay.
@@ -298,6 +301,10 @@ namespace ASLM.Pages
         private void RequestClose()
         {
             CloseRequested?.Invoke(this, EventArgs.Empty);
+            _logSyncCts?.Cancel();
+            _logSyncCts = null;
+            Interlocked.Exchange(ref _logSyncQueued, 0);
+            Interlocked.Exchange(ref _logSyncRequested, 0);
             DetachModule();
         }
 
@@ -386,7 +393,7 @@ namespace ASLM.Pages
             if (e.PropertyName == nameof(ModuleViewModel.UpdateLogText) ||
                 e.PropertyName == nameof(ModuleViewModel.HasUpdateLog))
             {
-                SyncLogView();
+                QueueLogViewSync();
             }
         }
 
@@ -652,12 +659,90 @@ namespace ASLM.Pages
         /// </summary>
         private void SyncLogView()
         {
+            _logSyncCts?.Cancel();
+            _logSyncCts = null;
+            Interlocked.Exchange(ref _logSyncQueued, 0);
+            Interlocked.Exchange(ref _logSyncRequested, 0);
+            var text = LogText;
+
             MainThread.BeginInvokeOnMainThread(async () =>
             {
-                LogEditor.Text = LogText;
+                LogEditor.Text = text;
                 await Task.Yield();
-                await LogScroll.ScrollToAsync(0, LogScroll.ContentSize.Height, false);
+                _ = ScrollLogToEndAsync();
             });
+        }
+
+        /// <summary>
+        /// Coalesces rapid log updates so verbose installers do not saturate the UI thread.
+        /// </summary>
+        private void QueueLogViewSync()
+        {
+            Interlocked.Exchange(ref _logSyncRequested, 1);
+            if (Interlocked.Exchange(ref _logSyncQueued, 1) == 1)
+            {
+                return;
+            }
+
+            _logSyncCts ??= new CancellationTokenSource();
+            _ = FlushLogViewAsync(_logSyncCts.Token);
+        }
+
+        /// <summary>
+        /// Flushes cached update log text regularly while update output is still arriving.
+        /// </summary>
+        private async Task FlushLogViewAsync(CancellationToken ct)
+        {
+            try
+            {
+                do
+                {
+                    Interlocked.Exchange(ref _logSyncRequested, 0);
+                    await Task.Delay(75, ct);
+
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        if (ct.IsCancellationRequested)
+                        {
+                            return;
+                        }
+
+                        var text = LogText;
+                        LogEditor.Text = text;
+                        _ = ScrollLogToEndAsync();
+                    });
+                }
+                while (!ct.IsCancellationRequested &&
+                       Interlocked.CompareExchange(ref _logSyncRequested, 0, 0) == 1);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _logSyncQueued, 0);
+                if (!ct.IsCancellationRequested &&
+                    Interlocked.CompareExchange(ref _logSyncRequested, 0, 0) == 1 &&
+                    Interlocked.Exchange(ref _logSyncQueued, 1) == 0)
+                {
+                    _ = FlushLogViewAsync(ct);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Scrolls the update log without blocking subsequent text flushes.
+        /// </summary>
+        private async Task ScrollLogToEndAsync()
+        {
+            try
+            {
+                await LogScroll.ScrollToAsync(0, LogScroll.ContentSize.Height, false);
+            }
+            catch
+            {
+                // Best-effort scroll only; log text must continue updating if a scroll pass fails.
+            }
         }
 
         /// <summary>

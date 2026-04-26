@@ -799,7 +799,9 @@ namespace ASLM.Pages
 
             try
             {
-                var result = await _installService.InstallAsync(_selectedItem.Item, _selectedVariant.Variant, progress);
+                var item = _selectedItem.Item;
+                var variant = _selectedVariant.Variant;
+                var result = await Task.Run(() => _installService.InstallAsync(item, variant, progress));
                 StatusText = result.Message;
                 if (result.Success)
                 {
@@ -833,7 +835,9 @@ namespace ASLM.Pages
 
             try
             {
-                var result = await _installService.UninstallAsync(_selectedItem.Item, _selectedVariant.Variant, progress);
+                var item = _selectedItem.Item;
+                var variant = _selectedVariant.Variant;
+                var result = await Task.Run(() => _installService.UninstallAsync(item, variant, progress));
                 StatusText = result.Message;
                 if (result.Success)
                 {

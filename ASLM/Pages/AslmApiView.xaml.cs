@@ -173,7 +173,7 @@ namespace ASLM.Pages
                 return;
             }
 
-            await _apiServer.SetEnabledAsync(e.Value);
+            await Task.Run(() => _apiServer.SetEnabledAsync(e.Value));
             await RefreshAsync();
         }
 
@@ -200,7 +200,7 @@ namespace ASLM.Pages
             ApplyCurrentStateToToggle();
             ApplyServerStatus();
 
-            var hosts = await _apiServer.GetHostsWithAvailabilityAsync();
+            var hosts = await Task.Run(() => _apiServer.GetHostsWithAvailabilityAsync());
             SynchronizeHostRows(hosts);
 
             HostsCaption = hosts.Count == 0
