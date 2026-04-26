@@ -89,7 +89,8 @@
 
         <!-- Main Content Area -->
         <Grid Grid.Column="1">
-            <ContentView x:Name="ContentArea" />
+            <ContentView x:Name="ContentArea"
+                         Padding="8"/>
 
             <!-- WebView (visible when a module page is selected) -->
             <WebView x:Name="Browser"

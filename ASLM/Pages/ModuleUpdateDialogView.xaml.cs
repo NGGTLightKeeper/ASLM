@@ -55,6 +55,9 @@ namespace ASLM.Pages
         public ModuleUpdateDialogView()
         {
             InitializeComponent();
+            ApplyBorderlessPickerStyle(SourceModePicker);
+            ApplyBorderlessPickerStyle(ReleasePicker);
+            ApplyBorderlessPickerStyle(BranchPicker);
             BindingContext = this;
             SizeChanged += OnViewSizeChanged;
         }
@@ -165,11 +168,6 @@ namespace ASLM.Pages
         /// Gets whether release-related controls should be visible.
         /// </summary>
         public bool IsReleaseMode => _module?.IsReleaseMode ?? true;
-
-        /// <summary>
-        /// Gets the short summary of the current update tracking mode.
-        /// </summary>
-        public string TrackingSummary => _module?.UpdateTrackingSummary ?? string.Empty;
 
         /// <summary>
         /// Gets whether the current module has a pending update candidate.
@@ -777,6 +775,31 @@ namespace ASLM.Pages
             });
         }
 
+        /// <summary>
+        /// Removes the native WinUI picker chrome while keeping the surrounding MAUI border intact.
+        /// </summary>
+        private static void ApplyBorderlessPickerStyle(Picker picker)
+        {
+            void ApplyPlatformStyle()
+            {
+#if WINDOWS
+                if (picker.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.ComboBox comboBox)
+                {
+                    var transparentBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                    comboBox.Background = transparentBrush;
+                    comboBox.BorderBrush = transparentBrush;
+                    comboBox.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
+                    comboBox.Padding = new Microsoft.UI.Xaml.Thickness(0);
+                    comboBox.CornerRadius = new Microsoft.UI.Xaml.CornerRadius(0);
+                    comboBox.UseSystemFocusVisuals = false;
+                }
+#endif
+            }
+
+            picker.HandlerChanged += (_, _) => ApplyPlatformStyle();
+            ApplyPlatformStyle();
+        }
+
         // Property refresh
 
         /// <summary>
@@ -805,7 +828,6 @@ namespace ASLM.Pages
             OnPropertyChanged(nameof(SelectedBranch));
             OnPropertyChanged(nameof(IsBranchMode));
             OnPropertyChanged(nameof(IsReleaseMode));
-            OnPropertyChanged(nameof(TrackingSummary));
             OnPropertyChanged(nameof(HasUpdate));
             OnPropertyChanged(nameof(CanInstallUpdate));
             OnPropertyChanged(nameof(CanCheckUpdates));

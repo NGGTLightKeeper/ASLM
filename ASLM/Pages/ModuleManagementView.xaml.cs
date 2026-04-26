@@ -494,7 +494,6 @@ namespace ASLM.Pages
                 OnPropertyChanged(nameof(AvailableUpdateLabel));
                 OnPropertyChanged(nameof(IsBranchMode));
                 OnPropertyChanged(nameof(IsReleaseMode));
-                OnPropertyChanged(nameof(UpdateTrackingSummary));
                 OnPropertyChanged(nameof(SelectedTargetLabel));
                 OnPropertyChanged(nameof(CanInstallSelectedUpdate));
                 OnPropertyChanged(nameof(ShowInstallAction));
@@ -541,7 +540,6 @@ namespace ASLM.Pages
 
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SelectedTargetLabel));
-                OnPropertyChanged(nameof(UpdateTrackingSummary));
                 OnPropertyChanged(nameof(CanInstallSelectedUpdate));
                 OnPropertyChanged(nameof(ShowInstallAction));
                 RefreshCommandStates();
@@ -557,14 +555,6 @@ namespace ASLM.Pages
         /// Gets whether release channel controls should be visible.
         /// </summary>
         public bool IsReleaseMode => !IsBranchMode;
-
-        /// <summary>
-        /// Gets a short text description of the active update tracking mode.
-        /// </summary>
-        public string UpdateTrackingSummary => IsBranchMode
-            ? $"Tracking branch '{SelectedBranch}'"
-            : $"Selected {SelectedSourceMode} version: {SelectedTargetLabel}";
-
 
         // Update state
 
@@ -1073,7 +1063,6 @@ namespace ASLM.Pages
             OnPropertyChanged(nameof(UpdateCandidate));
             OnPropertyChanged(nameof(AvailableUpdateLabel));
             OnPropertyChanged(nameof(SelectedTargetLabel));
-            OnPropertyChanged(nameof(UpdateTrackingSummary));
             OnPropertyChanged(nameof(CanInstallSelectedUpdate));
             OnPropertyChanged(nameof(ShowInstallAction));
             RefreshCommandStates();
@@ -1209,7 +1198,6 @@ namespace ASLM.Pages
                     OnPropertyChanged(nameof(SelectedBranch));
                     OnPropertyChanged(nameof(SelectedTargetLabel));
                     OnPropertyChanged(nameof(BranchOptions));
-                    OnPropertyChanged(nameof(UpdateTrackingSummary));
                 });
             }
             catch
@@ -1237,7 +1225,6 @@ namespace ASLM.Pages
                     OnPropertyChanged(nameof(SelectedBranch));
                     OnPropertyChanged(nameof(SelectedTargetLabel));
                     OnPropertyChanged(nameof(BranchOptions));
-                    OnPropertyChanged(nameof(UpdateTrackingSummary));
                 });
             }
             finally
@@ -1284,7 +1271,6 @@ namespace ASLM.Pages
                     OnPropertyChanged(nameof(ReleaseOptions));
                     OnPropertyChanged(nameof(SelectedReleaseOption));
                     OnPropertyChanged(nameof(SelectedTargetLabel));
-                    OnPropertyChanged(nameof(UpdateTrackingSummary));
                     OnPropertyChanged(nameof(CanInstallSelectedUpdate));
                     OnPropertyChanged(nameof(ShowInstallAction));
                     RefreshCommandStates();
@@ -1668,7 +1654,6 @@ namespace ASLM.Pages
             OnPropertyChanged(nameof(IsBranchMode));
             OnPropertyChanged(nameof(IsReleaseMode));
             OnPropertyChanged(nameof(SelectedTargetLabel));
-            OnPropertyChanged(nameof(UpdateTrackingSummary));
             OnPropertyChanged(nameof(CanInstallSelectedUpdate));
             OnPropertyChanged(nameof(ShowInstallAction));
             OnPropertyChanged(nameof(ShowCardUpdateAction));

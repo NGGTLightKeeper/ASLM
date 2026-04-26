@@ -9,7 +9,6 @@
     </ContentView.GestureRecognizers>
 
     <CollectionView x:Name="DashboardView"
-                    Margin="8,8"
                     ItemsSource="{Binding Modules}"
                     SelectionMode="None">
 
@@ -21,7 +20,9 @@
         </CollectionView.ItemsLayout>
 
         <CollectionView.Header>
-            <VerticalStackLayout Spacing="8" Margin="4,0,4,8">
+            <VerticalStackLayout Spacing="0"
+                                 Margin="0,0,0,8"
+                                 Padding="4">
                 <Label Text="Modules"
                        FontSize="24"
                        FontAttributes="Bold"
@@ -30,7 +31,7 @@
                        Text="Manage your installed modules"
                        FontSize="14"
                        TextColor="{StaticResource LabelSecondary}"
-                       Margin="0,0,0,8" />
+                       Margin="0" />
             </VerticalStackLayout>
         </CollectionView.Header>
 
@@ -70,12 +71,14 @@
 
                             <Grid Grid.Column="1"
                                   RowDefinitions="Auto,*,Auto"
-                                  Padding="8">
+                                  HeightRequest="164"
+                                  Margin="8">
                                 <Grid Grid.Row="0"
                                       ColumnDefinitions="*,Auto,Auto,Auto"
-                                      ColumnSpacing="0">
+                                      ColumnSpacing="4">
                                     <Label Text="{Binding Name}"
                                            FontSize="16"
+                                           HeightRequest="24"
                                            FontAttributes="Bold"
                                            TextColor="{StaticResource LabelPrimary}"
                                            VerticalOptions="Center"
@@ -85,8 +88,8 @@
                                     <ActivityIndicator Grid.Column="1"
                                                        IsRunning="{Binding ShowHeaderBusyIndicator}"
                                                        IsVisible="{Binding ShowHeaderBusyIndicator}"
-                                                       WidthRequest="16"
-                                                       HeightRequest="16"
+                                                       WidthRequest="24"
+                                                       HeightRequest="24"
                                                        VerticalOptions="Center"
                                                        Color="{StaticResource LabelSecondary}" />
 
@@ -94,27 +97,29 @@
                                             IsVisible="{Binding ShowCardUpdateAction}"
                                             Background="{SolidColorBrush {StaticResource SystemGreen}}"
                                             StrokeThickness="0"
-                                            StrokeShape="RoundRectangle 4"
-                                            MinimumWidthRequest="64"
+                                            StrokeShape="RoundRectangle 2"
+                                            MinimumWidthRequest="50"
                                             HeightRequest="24"
-                                            Padding="8,0"
+                                            Padding="0"
                                             VerticalOptions="Center">
                                         <Grid ColumnDefinitions="Auto,Auto"
-                                              ColumnSpacing="2">
+                                              ColumnSpacing="0"
+                                              Padding="4,0">
                                             <Grid.GestureRecognizers>
                                                 <TapGestureRecognizer Command="{Binding OpenUpdateDialogCommand}" />
                                             </Grid.GestureRecognizers>
 
                                             <Image Source="icon_update.png"
-                                                   WidthRequest="16"
-                                                   HeightRequest="16"
+                                                   WidthRequest="20"
+                                                   HeightRequest="20"
                                                    HorizontalOptions="Center"
                                                    VerticalOptions="Center" />
                                             <Label Grid.Column="1"
                                                    Text="Update"
                                                    FontSize="14"
                                                    TextColor="{StaticResource LabelPrimary}"
-                                                   VerticalOptions="Center" />
+                                                   VerticalOptions="Center"
+                                                   Padding="4,0,0,0" />
                                         </Grid>
                                     </Border>
 
@@ -122,8 +127,8 @@
                                             BackgroundColor="{StaticResource BackgroundSecondary}"
                                             StrokeThickness="0"
                                             StrokeShape="RoundRectangle 4"
-                                            WidthRequest="16"
-                                            HeightRequest="16"
+                                            WidthRequest="24"
+                                            HeightRequest="24"
                                             Padding="0"
                                             VerticalOptions="Center">
                                         <Grid>
@@ -132,8 +137,8 @@
                                             </Grid.GestureRecognizers>
 
                                             <Image Source="icon_more.png"
-                                                   WidthRequest="16"
-                                                   HeightRequest="16"
+                                                   WidthRequest="24"
+                                                   HeightRequest="24"
                                                    HorizontalOptions="Center"
                                                    VerticalOptions="Center" />
                                         </Grid>
@@ -142,9 +147,9 @@
 
                                 <VerticalStackLayout Grid.Row="1"
                                                      Spacing="4"
-                                                     Margin="0,8,0,10">
+                                                     Margin="0,4">
                                     <Label Text="{Binding VersionString}"
-                                           FontSize="13"
+                                           FontSize="14"
                                            TextColor="{StaticResource LabelSecondary}" />
                                 </VerticalStackLayout>
 
@@ -286,13 +291,13 @@
                                     Stroke="{StaticResource Separator}"
                                     StrokeThickness="1"
                                     StrokeShape="RoundRectangle 8"
-                                    Padding="6"
+                                    Padding="4"
                                     HorizontalOptions="End"
                                     VerticalOptions="Start"
-                                    Margin="0,44,10,0">
+                                    Margin="0,40,16,0">
                                 <VerticalStackLayout Spacing="0">
                                     <Grid HeightRequest="32"
-                                          Padding="10,0">
+                                          Padding="4">
                                         <Grid.GestureRecognizers>
                                             <TapGestureRecognizer Command="{Binding CheckUpdateCommand}" />
                                         </Grid.GestureRecognizers>
@@ -303,7 +308,7 @@
                                                VerticalOptions="Center" />
                                     </Grid>
                                     <Grid HeightRequest="32"
-                                          Padding="10,0">
+                                          Padding="4">
                                         <Grid.GestureRecognizers>
                                             <TapGestureRecognizer Command="{Binding OpenConfigureUpdatesCommand}" />
                                         </Grid.GestureRecognizers>

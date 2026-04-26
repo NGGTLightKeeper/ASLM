@@ -27,18 +27,18 @@
 
         <Grid RowDefinitions="Auto,*,Auto"
               RowSpacing="0"
-              Padding="18,16,16,14">
+              Padding="12">
 
             <Grid Grid.Row="0"
                   ColumnDefinitions="*,Auto"
-                  Margin="0,0,0,14">
+                  Margin="0,0,0,8">
                 <VerticalStackLayout Spacing="4">
                     <Label Text="{Binding DialogTitle, Source={x:Reference RootView}}"
-                           FontSize="18"
+                           FontSize="20"
                            FontAttributes="Bold"
                            TextColor="{StaticResource LabelPrimary}" />
                     <Label Text="{Binding DialogSubtitle, Source={x:Reference RootView}}"
-                           FontSize="12"
+                           FontSize="14"
                            TextColor="{StaticResource LabelSecondary}"
                            MaxLines="2"
                            LineBreakMode="TailTruncation" />
@@ -59,23 +59,24 @@
                         Clicked="OnCloseClicked" />
             </Grid>
 
-            <ScrollView Grid.Row="1"
-                        VerticalScrollBarVisibility="Never">
-                <VerticalStackLayout Spacing="14"
-                                     Padding="0,0,4,0">
-                    <Border BackgroundColor="{StaticResource BackgroundTertiary}"
+            <Grid Grid.Row="1"
+                  RowDefinitions="Auto,Auto,*"
+                  RowSpacing="8"
+                  Padding="0">
+                    <Border Grid.Row="0"
+                            BackgroundColor="{StaticResource BackgroundTertiary}"
                             Stroke="{StaticResource Separator}"
                             StrokeThickness="1"
-                            StrokeShape="RoundRectangle 8"
-                            Padding="14,12">
+                            StrokeShape="RoundRectangle 6"
+                            Padding="8">
                         <Grid ColumnDefinitions="*,*"
-                              ColumnSpacing="12">
+                              ColumnSpacing="8">
                             <VerticalStackLayout Spacing="4">
                                 <Label Text="Current version"
-                                       FontSize="12"
+                                       FontSize="13"
                                        TextColor="{StaticResource LabelSecondary}" />
                                 <Label Text="{Binding CurrentVersionLabel, Source={x:Reference RootView}}"
-                                       FontSize="16"
+                                       FontSize="14"
                                        FontAttributes="Bold"
                                        TextColor="{StaticResource LabelPrimary}" />
                             </VerticalStackLayout>
@@ -83,29 +84,30 @@
                             <VerticalStackLayout Grid.Column="1"
                                                  Spacing="4">
                                 <Label Text="Selected target"
-                                       FontSize="12"
+                                       FontSize="13"
                                        TextColor="{StaticResource LabelSecondary}" />
                                 <Label Text="{Binding TargetVersionLabel, Source={x:Reference RootView}}"
-                                       FontSize="16"
+                                       FontSize="14"
                                        FontAttributes="Bold"
                                        TextColor="{StaticResource LabelPrimary}" />
                             </VerticalStackLayout>
                         </Grid>
                     </Border>
 
-                    <Border BackgroundColor="{StaticResource BackgroundTertiary}"
+                    <Border Grid.Row="1"
+                            BackgroundColor="{StaticResource BackgroundTertiary}"
                             Stroke="{StaticResource Separator}"
-                            StrokeThickness="1"
-                            StrokeShape="RoundRectangle 8"
-                            Padding="14,12">
-                        <VerticalStackLayout Spacing="12">
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 0"
+                            Padding="0,8,0,0">
+                        <VerticalStackLayout Spacing="8">
                             <VerticalStackLayout Spacing="4">
                                 <Label Text="Update source"
-                                       FontSize="15"
+                                       FontSize="16"
                                        FontAttributes="Bold"
                                        TextColor="{StaticResource LabelPrimary}" />
-                                <Label Text="Preferences are saved automatically and restored after restart."
-                                       FontSize="12"
+                                <Label Text="Preferences are saved automatically."
+                                       FontSize="13"
                                        TextColor="{StaticResource LabelSecondary}" />
                             </VerticalStackLayout>
 
@@ -113,13 +115,13 @@
                                   ColumnSpacing="12">
                                 <VerticalStackLayout Spacing="6">
                                     <Label Text="Search mode"
-                                           FontSize="12"
+                                           FontSize="13"
                                            TextColor="{StaticResource LabelSecondary}" />
                                     <Border BackgroundColor="#19191C"
                                             Stroke="{StaticResource Separator}"
                                             StrokeThickness="1"
-                                            StrokeShape="RoundRectangle 8"
-                                            Padding="12,0">
+                                            StrokeShape="RoundRectangle 6"
+                                            Padding="8,0">
                                         <Picker x:Name="SourceModePicker"
                                                 ItemsSource="{Binding SourceModeOptions, Source={x:Reference RootView}}"
                                                 SelectedItem="{Binding SelectedSourceMode, Source={x:Reference RootView}, Mode=TwoWay}"
@@ -136,7 +138,7 @@
                                                      Spacing="6"
                                                      IsVisible="{Binding IsReleaseMode, Source={x:Reference RootView}}">
                                     <Label Text="Release version"
-                                           FontSize="12"
+                                           FontSize="13"
                                            TextColor="{StaticResource LabelSecondary}" />
                                     <Border BackgroundColor="#19191C"
                                             Stroke="{StaticResource Separator}"
@@ -165,8 +167,8 @@
                                     <Border BackgroundColor="#19191C"
                                             Stroke="{StaticResource Separator}"
                                             StrokeThickness="1"
-                                            StrokeShape="RoundRectangle 8"
-                                            Padding="12,0">
+                                            StrokeShape="RoundRectangle 6"
+                                            Padding="8,0">
                                         <Picker x:Name="BranchPicker"
                                                 ItemsSource="{Binding BranchOptions, Source={x:Reference RootView}}"
                                                 SelectedItem="{Binding SelectedBranch, Source={x:Reference RootView}, Mode=TwoWay}"
@@ -179,27 +181,25 @@
                                     </Border>
                                 </VerticalStackLayout>
                             </Grid>
-
-                            <Label Text="{Binding TrackingSummary, Source={x:Reference RootView}}"
-                                   FontSize="12"
-                                   TextColor="{StaticResource LabelSecondary}" />
                         </VerticalStackLayout>
                     </Border>
 
-                    <Border BackgroundColor="{StaticResource BackgroundTertiary}"
+                    <Border Grid.Row="2"
+                            BackgroundColor="{StaticResource BackgroundTertiary}"
                             Stroke="{StaticResource Separator}"
-                            StrokeThickness="1"
-                            StrokeShape="RoundRectangle 8"
-                            Padding="14,12">
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 0"
+                            Padding="0,8,0,0"
+                            VerticalOptions="Fill">
                         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*"
-                              RowSpacing="8">
+                              RowSpacing="1">
                             <VerticalStackLayout Spacing="4">
                                 <Label Text="{Binding ActivityTitle, Source={x:Reference RootView}}"
-                                       FontSize="15"
+                                       FontSize="16"
                                        FontAttributes="Bold"
                                        TextColor="{StaticResource LabelPrimary}" />
                                 <Label Text="{Binding ActivityStatus, Source={x:Reference RootView}}"
-                                       FontSize="12"
+                                       FontSize="13"
                                        TextColor="{StaticResource LabelSecondary}"
                                        MaxLines="2"
                                        LineBreakMode="TailTruncation" />
@@ -232,21 +232,23 @@
                             <ScrollView x:Name="LogScroll"
                                         Grid.Row="5"
                                         IsVisible="{Binding HasLog, Source={x:Reference RootView}}"
-                                        MinimumHeightRequest="180">
-                                <Editor x:Name="LogEditor"
-                                        Text="{Binding LogText, Source={x:Reference RootView}}"
-                                        FontSize="12"
-                                        FontFamily="Consolas"
-                                        TextColor="{StaticResource LabelPrimary}"
+                                        Orientation="Vertical"
+                                        VerticalScrollBarVisibility="Always"
+                                        VerticalOptions="Fill"
                                         BackgroundColor="#19191C"
-                                        IsReadOnly="True"
-                                        AutoSize="TextChanges"
-                                        Margin="0,4,0,0" />
+                                        Margin="0,4,0,0">
+                                <Label x:Name="LogEditor"
+                                       Text="{Binding LogText, Source={x:Reference RootView}}"
+                                       FontSize="12"
+                                       FontFamily="Consolas"
+                                       TextColor="{StaticResource LabelPrimary}"
+                                       BackgroundColor="#19191C"
+                                       LineBreakMode="WordWrap"
+                                       Padding="8" />
                             </ScrollView>
                         </Grid>
                     </Border>
-                </VerticalStackLayout>
-            </ScrollView>
+            </Grid>
 
             <Grid Grid.Row="2"
                   ColumnDefinitions="*,Auto,Auto,Auto"
@@ -263,7 +265,7 @@
                         HeightRequest="36"
                         MinimumHeightRequest="36"
                         CornerRadius="6"
-                        Padding="14,0"
+                        Padding="8,0"
                         BackgroundColor="{StaticResource SystemGray4}"
                         TextColor="{StaticResource LabelPrimary}"
                         IsEnabled="{Binding CanCheckUpdates, Source={x:Reference RootView}}"
@@ -274,7 +276,7 @@
                         HeightRequest="36"
                         MinimumHeightRequest="36"
                         CornerRadius="6"
-                        Padding="14,0"
+                        Padding="8,0"
                         BackgroundColor="{StaticResource ActionBlue}"
                         TextColor="{StaticResource LabelPrimary}"
                         IsVisible="{Binding ShowInstallAction, Source={x:Reference RootView}}"
