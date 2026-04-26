@@ -100,7 +100,7 @@
                        FontSize="13"
                        TextColor="{StaticResource LabelSecondary}" />
                 <Entry x:Name="OfficialPortEntry"
-                       Text="8000"
+                       Text="20000"
                        Keyboard="Numeric"
                        FontSize="16"
                        TextColor="{StaticResource LabelPrimary}"
@@ -109,7 +109,7 @@
                        FontSize="13"
                        TextColor="{StaticResource LabelSecondary}" />
                 <Entry x:Name="ThirdPartyPortEntry"
-                       Text="9000"
+                       Text="21000"
                        Keyboard="Numeric"
                        FontSize="16"
                        TextColor="{StaticResource LabelPrimary}"

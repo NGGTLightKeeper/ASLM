@@ -106,7 +106,7 @@ namespace ASLM.Models
     {
         // First port in the range reserved for official modules.
         [JsonPropertyName("officialStart")]
-        public int OfficialStart { get; set; } = 8000;
+        public int OfficialStart { get; set; } = 20000;
 
         // Number of ports reserved for official modules.
         [JsonPropertyName("officialCount")]
@@ -114,7 +114,7 @@ namespace ASLM.Models
 
         // First port in the range reserved for third-party modules.
         [JsonPropertyName("thirdPartyStart")]
-        public int ThirdPartyStart { get; set; } = 9000;
+        public int ThirdPartyStart { get; set; } = 21000;
 
         // Number of ports reserved for third-party modules.
         [JsonPropertyName("thirdPartyCount")]

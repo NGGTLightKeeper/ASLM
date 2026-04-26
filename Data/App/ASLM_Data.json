@@ -4,9 +4,9 @@
         "name": ""
     },
     "ports": {
-        "officialStart": 8000,
+        "officialStart": 20000,
         "officialCount": 100,
-        "thirdPartyStart": 9000,
+        "thirdPartyStart": 21000,
         "thirdPartyCount": 1000
     },
     "api": {

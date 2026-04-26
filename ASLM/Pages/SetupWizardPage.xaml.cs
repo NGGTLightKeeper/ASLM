@@ -111,8 +111,8 @@ namespace ASLM.Pages
         {
             // Fast setup uses the Windows username and the default port ranges.
             _appData.Data.User.Name = Environment.UserName;
-            _appData.Data.Ports.OfficialStart = 8000;
-            _appData.Data.Ports.ThirdPartyStart = 9000;
+            _appData.Data.Ports.OfficialStart = 20000;
+            _appData.Data.Ports.ThirdPartyStart = 21000;
             await _appData.SaveAsync();
 
             _currentStep = 3;
