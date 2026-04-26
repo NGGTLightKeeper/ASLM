@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Diagnostics;
 using ASLM.Models;
 using Microsoft.Extensions.Logging;
 
@@ -455,6 +456,8 @@ namespace ASLM.Services
                     _moduleInstaller.SaveModuleConfig(module);
                 }
 
+                await StopProcessesRunningFromDirectoryAsync(moduleDir, log, ct);
+
                 var success = await ApplyPreparedModuleUpdateAsync(
                     module,
                     candidate,
@@ -773,14 +776,14 @@ namespace ASLM.Services
         {
             try
             {
-                await Task.Run(() =>
+                await Task.Run(async () =>
                 {
                     // Copy out the previous installation state before replacing the module files.
                     CopyDirectory(moduleDir, backupDir);
                     CopyPreservedPaths(moduleDir, preserveDir, module.Update.Preserve, log);
 
                     // Replace the whole module directory so stale files disappear instead of silently lingering.
-                    ClearDirectory(moduleDir);
+                    await ClearDirectoryForUpdateAsync(moduleDir, log, ct);
                     CopyDirectory(preparedUpdate.ModuleSourceDir, moduleDir);
                     RestorePreservedPaths(preserveDir, moduleDir, log);
                 }, ct);
@@ -831,11 +834,8 @@ namespace ASLM.Services
             {
                 log?.Report("Update failed. Restoring previous module files...");
 
-                await Task.Run(() =>
-                {
-                    ClearDirectory(moduleDir);
-                    CopyDirectory(backupDir, moduleDir);
-                }, ct);
+                await ClearDirectoryForUpdateAsync(moduleDir, log, ct);
+                await Task.Run(() => CopyDirectory(backupDir, moduleDir), ct);
 
                 throw;
             }
@@ -1257,6 +1257,154 @@ namespace ASLM.Services
             foreach (var subdir in Directory.EnumerateDirectories(directory))
             {
                 Directory.Delete(subdir, recursive: true);
+            }
+        }
+
+        /// <summary>
+        /// Clears a module directory with retries for Windows file locks from recently stopped processes.
+        /// </summary>
+        private static async Task ClearDirectoryForUpdateAsync(
+            string directory,
+            IProgress<string>? log,
+            CancellationToken ct)
+        {
+            const int maxAttempts = 6;
+
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    await Task.Run(() => ClearDirectory(directory), ct);
+                    return;
+                }
+                catch (Exception ex) when (IsTransientFileAccessException(ex) && attempt < maxAttempts)
+                {
+                    log?.Report($"Module files are still in use. Retrying cleanup ({attempt}/{maxAttempts - 1})...");
+                    await StopProcessesRunningFromDirectoryAsync(directory, log, ct);
+                    await Task.Delay(TimeSpan.FromMilliseconds(250 * attempt), ct);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns whether a failed delete may succeed after process cleanup or a short retry delay.
+        /// </summary>
+        private static bool IsTransientFileAccessException(Exception ex)
+        {
+            return ex is IOException or UnauthorizedAccessException;
+        }
+
+        /// <summary>
+        /// Stops untracked or orphaned processes whose executable lives under one module directory.
+        /// </summary>
+        private static async Task<int> StopProcessesRunningFromDirectoryAsync(
+            string directory,
+            IProgress<string>? log,
+            CancellationToken ct)
+        {
+            var moduleRoot = EnsureTrailingSeparator(Path.GetFullPath(directory));
+            var currentProcessId = Environment.ProcessId;
+            var stoppedCount = 0;
+
+            foreach (var process in Process.GetProcesses())
+            {
+                try
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    if (process.Id == currentProcessId || process.HasExited)
+                    {
+                        continue;
+                    }
+
+                    var executablePath = TryGetProcessExecutablePath(process);
+                    if (!IsPathUnderDirectory(executablePath, moduleRoot))
+                    {
+                        continue;
+                    }
+
+                    log?.Report(
+                        $"Stopping process using module files: {Path.GetFileName(executablePath)} (PID {process.Id}).");
+
+                    process.Kill(entireProcessTree: true);
+                    stoppedCount++;
+                    await WaitForProcessExitAsync(process, TimeSpan.FromSeconds(5), ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch
+                {
+                    // Best effort only. The following delete retry will surface persistent blockers.
+                }
+                finally
+                {
+                    process.Dispose();
+                }
+            }
+
+            return stoppedCount;
+        }
+
+        /// <summary>
+        /// Returns the full executable path for a process when the OS allows it.
+        /// </summary>
+        private static string? TryGetProcessExecutablePath(Process process)
+        {
+            try
+            {
+                return process.MainModule?.FileName;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Returns whether one path is inside a normalized directory root.
+        /// </summary>
+        private static bool IsPathUnderDirectory(string? path, string normalizedRoot)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return false;
+            }
+
+            try
+            {
+                return Path.GetFullPath(path).StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Waits briefly after killing a process tree so Windows can release executable file handles.
+        /// </summary>
+        private static async Task WaitForProcessExitAsync(
+            Process process,
+            TimeSpan timeout,
+            CancellationToken ct)
+        {
+            if (process.HasExited)
+            {
+                return;
+            }
+
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(timeout);
+
+            try
+            {
+                await process.WaitForExitAsync(timeoutCts.Token);
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                // Continue to the delete retry; it will report a real blocker if the process survived.
             }
         }
 
