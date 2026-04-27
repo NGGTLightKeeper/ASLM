@@ -229,7 +229,6 @@ public partial class MainPage : ContentPage
         _isInstalling = true;
         BackButton.IsEnabled = false;
         NextButton.IsEnabled = false;
-        InstallBusyIndicator.IsRunning = true;
 
         try
         {
@@ -243,7 +242,6 @@ public partial class MainPage : ContentPage
             _manifest = await _installerService.InstallAsync(options, progress, _installCancellation.Token);
 
             _isInstalled = true;
-            InstallBusyIndicator.IsRunning = false;
             LaunchAfterInstallPanel.IsVisible = true;
             NextButton.Text = "Finish";
             NextButton.IsEnabled = true;
@@ -252,7 +250,6 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            InstallBusyIndicator.IsRunning = false;
             FooterLabel.Text = ex.Message;
             NextButton.Text = "Retry";
             NextButton.IsEnabled = true;
@@ -432,7 +429,6 @@ public partial class MainPage : ContentPage
         ConfirmPathLabel.Text = validation.IsValid
             ? $"Install path: {validation.InstallPath}"
             : $"Install path: {validation.Message}";
-        ConfirmLegalLabel.Text = $"Accepted documents: {_acceptedLegalDocumentIds.Count}";
     }
 
 

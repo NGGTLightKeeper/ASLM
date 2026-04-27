@@ -8,9 +8,9 @@
              BackgroundColor="{StaticResource BackgroundPrimary}"
              Title="ASLM Installer">
 
-    <Grid Padding="24"
+    <Grid Padding="12"
           RowDefinitions="Auto,*,Auto"
-          RowSpacing="16">
+          RowSpacing="8">
 
         <VerticalStackLayout Spacing="4">
             <Label x:Name="TitleLabel"
@@ -20,20 +20,20 @@
                    TextColor="{StaticResource LabelPrimary}" />
             <Label x:Name="SubtitleLabel"
                    Text="This wizard will install ASLM on this computer."
-                   FontSize="14"
+                   FontSize="13"
                    TextColor="{StaticResource LabelSecondary}"
                    LineBreakMode="WordWrap" />
             <Label x:Name="StepLabel"
-                   Margin="0,6,0,0"
-                   FontSize="12"
+                   Margin="0,4,0,0"
+                   FontSize="13"
                    TextColor="{StaticResource LabelSecondary}" />
         </VerticalStackLayout>
 
         <Grid Grid.Row="1">
             <VerticalStackLayout x:Name="WelcomeView"
-                                 Spacing="8">
+                                 Spacing="4">
                 <Label Text="Setup will install ASLM to a folder you choose."
-                       FontSize="15"
+                       FontSize="16"
                        TextColor="{StaticResource LabelPrimary}"
                        LineBreakMode="WordWrap" />
             </VerticalStackLayout>
@@ -53,7 +53,7 @@
                         StrokeThickness="1"
                         StrokeShape="RoundRectangle 8">
                     <Editor x:Name="LegalDocumentEditor"
-                            Margin="12"
+                            Margin="0"
                             FontFamily="Consolas"
                             FontSize="13"
                             TextColor="{StaticResource LabelPrimary}"
@@ -62,11 +62,15 @@
                             AutoSize="Disabled" />
                 </Border>
                 <HorizontalStackLayout Grid.Row="2"
-                                       Spacing="10"
+                                       Spacing="4"
                                        VerticalOptions="Center">
                     <CheckBox x:Name="AcceptLegalCheckBox"
                               CheckedChanged="OnAcceptLegalChanged"
-                              Color="{StaticResource SystemBlue}" />
+                              Color="{StaticResource SystemBlue}"
+                              WidthRequest="24"
+                              HeightRequest="24"
+                              HorizontalOptions="Center"
+                              VerticalOptions="Center" />
                     <Label x:Name="AcceptLegalLabel"
                            Text="I have read and accept this document."
                            FontSize="14"
@@ -77,10 +81,10 @@
 
             <VerticalStackLayout x:Name="PathView"
                                  IsVisible="False"
-                                 Spacing="16">
+                                 Spacing="8">
                 <VerticalStackLayout Spacing="6">
                     <Label Text="Installation directory"
-                           FontSize="13"
+                           FontSize="16"
                            FontAttributes="Bold"
                            TextColor="{StaticResource LabelPrimary}" />
                     <Grid ColumnDefinitions="*,Auto"
@@ -97,7 +101,7 @@
 
                 <VerticalStackLayout Spacing="6">
                     <Label Text="Folder name"
-                           FontSize="13"
+                           FontSize="16"
                            FontAttributes="Bold"
                            TextColor="{StaticResource LabelPrimary}" />
                     <Entry x:Name="FolderNameEntry"
@@ -108,19 +112,20 @@
                 <Border BackgroundColor="{StaticResource BackgroundSecondary}"
                         Stroke="{StaticResource Separator}"
                         StrokeThickness="1"
-                        StrokeShape="RoundRectangle 8"
-                        Padding="14">
+                        StrokeShape="RoundRectangle 6"
+                        Padding="8"
+                        Margin="0,8,0,0">
                     <VerticalStackLayout Spacing="8">
                         <Label Text="Final path"
-                               FontSize="13"
+                               FontSize="14"
                                FontAttributes="Bold"
                                TextColor="{StaticResource LabelPrimary}" />
                         <Label x:Name="FinalPathLabel"
-                               FontSize="13"
+                               FontSize="14"
                                TextColor="{StaticResource LabelSecondary}"
                                LineBreakMode="CharacterWrap" />
                         <Label x:Name="PathValidationLabel"
-                               FontSize="13"
+                               FontSize="14"
                                TextColor="{StaticResource SystemOrange}"
                                LineBreakMode="WordWrap" />
                     </VerticalStackLayout>
@@ -128,8 +133,8 @@
 
                 <Grid ColumnDefinitions="*,Auto"
                       RowDefinitions="Auto,Auto"
-                      ColumnSpacing="12"
-                      RowSpacing="10">
+                      ColumnSpacing="4"
+                      RowSpacing="0">
                     <Label Text="Desktop shortcut"
                            FontSize="14"
                            TextColor="{StaticResource LabelPrimary}"
@@ -137,7 +142,8 @@
                     <Switch x:Name="DesktopShortcutSwitch"
                             Grid.Column="1"
                             IsToggled="True"
-                            OnColor="{StaticResource SystemBlue}" />
+                            OnColor="{StaticResource SystemBlue}"
+                            WidthRequest="40" />
 
                     <Label Grid.Row="1"
                            Text="Start menu shortcut"
@@ -148,7 +154,8 @@
                             Grid.Row="1"
                             Grid.Column="1"
                             IsToggled="True"
-                            OnColor="{StaticResource SystemBlue}" />
+                            OnColor="{StaticResource SystemBlue}"
+                            WidthRequest="40" />
                 </Grid>
             </VerticalStackLayout>
 
@@ -163,10 +170,6 @@
                        FontSize="13"
                        TextColor="{StaticResource LabelSecondary}"
                        LineBreakMode="CharacterWrap" />
-                <Label x:Name="ConfirmLegalLabel"
-                       FontSize="13"
-                       TextColor="{StaticResource LabelSecondary}"
-                       LineBreakMode="WordWrap" />
             </VerticalStackLayout>
 
             <VerticalStackLayout x:Name="InstallView"
@@ -176,18 +179,10 @@
                         Stroke="{StaticResource Separator}"
                         StrokeThickness="1"
                         StrokeShape="RoundRectangle 8"
-                        Padding="16">
-                    <Grid ColumnDefinitions="Auto,*"
-                          RowDefinitions="Auto,Auto"
-                          ColumnSpacing="12"
+                        Padding="8">
+                    <Grid RowDefinitions="Auto,Auto"
                           RowSpacing="10">
-                        <ActivityIndicator x:Name="InstallBusyIndicator"
-                                           IsRunning="False"
-                                           Color="{StaticResource SystemBlue}"
-                                           WidthRequest="28"
-                                           HeightRequest="28" />
                         <Label x:Name="InstallStatusLabel"
-                               Grid.Column="1"
                                Text="Waiting to start..."
                                FontSize="14"
                                TextColor="{StaticResource LabelPrimary}"
@@ -195,7 +190,6 @@
                                LineBreakMode="WordWrap" />
                         <ProgressBar x:Name="InstallProgressBar"
                                      Grid.Row="1"
-                                     Grid.ColumnSpan="2"
                                      Progress="0"
                                      ProgressColor="{StaticResource SystemBlue}" />
                     </Grid>
@@ -206,7 +200,11 @@
                                        IsVisible="False">
                     <CheckBox x:Name="LaunchAfterInstallCheckBox"
                               IsChecked="True"
-                              Color="{StaticResource SystemBlue}" />
+                              Color="{StaticResource SystemBlue}"
+                              WidthRequest="24"
+                              HeightRequest="24"
+                              HorizontalOptions="Center"
+                              VerticalOptions="Center" />
                     <Label Text="Launch ASLM when the installer closes"
                            FontSize="14"
                            TextColor="{StaticResource LabelPrimary}"
@@ -217,10 +215,10 @@
 
         <Grid Grid.Row="2"
               ColumnDefinitions="*,Auto,Auto,Auto"
-              ColumnSpacing="10">
+              ColumnSpacing="8">
             <Label x:Name="FooterLabel"
                    Text=""
-                   FontSize="12"
+                   FontSize="14"
                    TextColor="{StaticResource SystemRed}"
                    VerticalOptions="Center"
                    LineBreakMode="WordWrap" />
