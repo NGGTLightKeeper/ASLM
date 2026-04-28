@@ -58,7 +58,7 @@
 	</Target>
 
 	<Target Name="ValidateInstallerPayload" BeforeTargets="BeforeBuild" Condition="'$(ASLMInstallerRequirePayload)' == 'true'">
-		<Error Condition="!Exists('$(ASLMPayloadFile)')" Text="aslm-payload.zip was not found. Build Installer/Bootstrapper so MSBuild packs the ASLM payload before publishing the installer." />
+		<Error Condition="!Exists('$(ASLMPayloadFile)')" Text="aslm-payload.zip was not found. Build Installer/Installer-Bootstrapper so MSBuild packs the ASLM payload before publishing the installer." />
 	</Target>
 
 </Project>

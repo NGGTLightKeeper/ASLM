@@ -284,7 +284,7 @@ public sealed class InstallerService
             : string.Join(Environment.NewLine, candidates.Select(path => $" - {path}"));
 
         return new FileNotFoundException(
-            $"ASLM payload archive was not found. Build Installer/Bootstrapper in Visual Studio so {PayloadFileName} is generated and included.{Environment.NewLine}{searchedPaths}",
+            $"ASLM payload archive was not found. Build Installer/Installer-Bootstrapper in Visual Studio so {PayloadFileName} is generated and included.{Environment.NewLine}{searchedPaths}",
             PayloadFileName);
     }
 

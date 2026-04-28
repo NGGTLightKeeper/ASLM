@@ -36,7 +36,7 @@
 		<ASLMInstallerRuntimeIdentifier Condition="'$(ASLMInstallerRuntimeIdentifier)' == ''">win-x64</ASLMInstallerRuntimeIdentifier>
 		<ASLMInstallerMaxPayloadSizeGB Condition="'$(ASLMInstallerMaxPayloadSizeGB)' == ''">8</ASLMInstallerMaxPayloadSizeGB>
 		<ASLMInstallerAllowLargePayload Condition="'$(ASLMInstallerAllowLargePayload)' == ''">false</ASLMInstallerAllowLargePayload>
-		<OutputPath>$(MSBuildProjectDirectory)\obj\$(Configuration)\bootstrapper-build\</OutputPath>
+		<OutputPath>$(MSBuildProjectDirectory)\obj\$(Configuration)\installer-bootstrapper-build\</OutputPath>
 		<PublishDir Condition="'$(PublishDir)' == ''">$(ASLMBootstrapperPublishRoot)</PublishDir>
 	</PropertyGroup>
 
@@ -92,8 +92,8 @@
 	</Target>
 
 	<Target Name="ValidateInstallerBootstrapperResources" BeforeTargets="BeforeBuild" DependsOnTargets="PrepareBootstrapperResources">
-		<Error Condition="!Exists('Resources\installer-ui.zip')" Text="installer-ui.zip was not found. Build Installer/Bootstrapper so MSBuild can publish the MAUI installer UI before embedding it." />
-		<Error Condition="!Exists('Resources\aslm-payload.zip')" Text="aslm-payload.zip was not found. Build Installer/Bootstrapper so MSBuild can pack the ASLM payload before embedding it." />
+		<Error Condition="!Exists('Resources\installer-ui.zip')" Text="installer-ui.zip was not found. Build Installer/Installer-Bootstrapper so MSBuild can publish the MAUI installer UI before embedding it." />
+		<Error Condition="!Exists('Resources\aslm-payload.zip')" Text="aslm-payload.zip was not found. Build Installer/Installer-Bootstrapper so MSBuild can pack the ASLM payload before embedding it." />
 	</Target>
 
 	<Target Name="CopyBootstrapperExecutableToBuild" AfterTargets="Publish" Condition="'$(ASLMSkipBootstrapperFinalCopy)' != 'true'">
