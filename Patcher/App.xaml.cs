@@ -1,6 +1,6 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
-namespace Patcher;
+namespace ASLM.Patcher;
 
 /// <summary>
 /// Hosts the patcher status window.
@@ -20,11 +20,20 @@ public partial class App : Application
     /// </summary>
     protected override Window CreateWindow(IActivationState? activationState)
     {
+        const int width = 720;
+        const int height = 540;
+
         var window = new Window(new MainPage());
-        window.Width = 620;
-        window.Height = 440;
-        window.MinimumWidth = 520;
-        window.MinimumHeight = 360;
+        window.Title = "ASLM Patcher";
+
+        window.Width = width;
+        window.Height = height;
+
+        window.MinimumWidth = width;
+        window.MaximumWidth = width;
+        window.MinimumHeight = height;
+        window.MaximumHeight = height;
+
         return window;
     }
 }

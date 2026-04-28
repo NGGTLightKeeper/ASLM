@@ -2,7 +2,7 @@
 
 using Microsoft.UI.Xaml;
 
-namespace Patcher.WinUI;
+namespace ASLM.Patcher.WinUI;
 
 /// <summary>
 /// Hosts the WinUI application wrapper for the MAUI patcher.
