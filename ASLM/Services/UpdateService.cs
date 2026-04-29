@@ -415,14 +415,10 @@ namespace ASLM.Services
                 Guid.NewGuid().ToString("N"));
             var archivePath = Path.Combine(updateRoot, "module.zip");
             var extractDir = Path.Combine(updateRoot, "extract");
-            var backupDir = Path.Combine(updateRoot, "backup");
-            var preserveDir = Path.Combine(updateRoot, "preserve");
 
             try
             {
                 Directory.CreateDirectory(extractDir);
-                Directory.CreateDirectory(backupDir);
-                Directory.CreateDirectory(preserveDir);
 
                 var notificationProgress = _notifications.CreateDownloadProgressBridge(operationKey, progress);
                 await DownloadModuleArchiveAsync(module, candidate, archivePath, log, notificationProgress, ct);
@@ -463,8 +459,6 @@ namespace ASLM.Services
                     candidate,
                     preparedUpdate,
                     moduleDir,
-                    backupDir,
-                    preserveDir,
                     wasEnabled,
                     log,
                     ct);
@@ -768,8 +762,6 @@ namespace ASLM.Services
             UpdateCandidate candidate,
             PreparedModuleUpdate preparedUpdate,
             string moduleDir,
-            string backupDir,
-            string preserveDir,
             bool wasEnabled,
             IProgress<string>? log,
             CancellationToken ct)
@@ -778,14 +770,12 @@ namespace ASLM.Services
             {
                 await Task.Run(async () =>
                 {
-                    // Copy out the previous installation state before replacing the module files.
-                    CopyDirectory(moduleDir, backupDir);
-                    CopyPreservedPaths(moduleDir, preserveDir, module.Update.Preserve, log);
+                    var preservePaths = BuildPreservePathSet(module.Update.Preserve);
+                    ReportPreservedPaths(moduleDir, preservePaths, log);
 
-                    // Replace the whole module directory so stale files disappear instead of silently lingering.
-                    await ClearDirectoryForUpdateAsync(moduleDir, log, ct);
-                    CopyDirectory(preparedUpdate.ModuleSourceDir, moduleDir);
-                    RestorePreservedPaths(preserveDir, moduleDir, log);
+                    // Replace stale module files while leaving declared local state in place.
+                    await ClearDirectoryForUpdateAsync(moduleDir, preservePaths, log, ct);
+                    CopyDirectory(preparedUpdate.ModuleSourceDir, moduleDir, preservePaths);
                 }, ct);
 
                 var installedPath = Path.Combine(moduleDir, "ASLM_Module.json");
@@ -832,11 +822,7 @@ namespace ASLM.Services
             }
             catch
             {
-                log?.Report("Update failed. Restoring previous module files...");
-
-                await ClearDirectoryForUpdateAsync(moduleDir, log, ct);
-                await Task.Run(() => CopyDirectory(backupDir, moduleDir), ct);
-
+                log?.Report("Update failed. Module backup restoration is disabled.");
                 throw;
             }
         }
@@ -1162,100 +1148,144 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Copies the requested preserved files and directories out of one module before replacement.
+        /// Builds the normalized set of paths that must stay in place during module replacement.
         /// </summary>
-        private static void CopyPreservedPaths(
-            string sourceRoot,
-            string preserveRoot,
-            IEnumerable<string> relativePaths,
-            IProgress<string>? log)
+        private static HashSet<string> BuildPreservePathSet(IEnumerable<string> relativePaths)
         {
+            var preservePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             foreach (var relativePath in relativePaths)
             {
-                var sourcePath = ResolveChildPath(sourceRoot, relativePath);
-                if (File.Exists(sourcePath))
+                if (string.IsNullOrWhiteSpace(relativePath) || Path.IsPathRooted(relativePath))
                 {
-                    var destinationPath = ResolveChildPath(preserveRoot, relativePath);
-                    Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
-                    File.Copy(sourcePath, destinationPath, overwrite: true);
-                    log?.Report($"Preserved file: {relativePath}");
                     continue;
                 }
 
-                if (Directory.Exists(sourcePath))
+                var normalized = NormalizeRelativePath(relativePath);
+                if (normalized.Length == 0 ||
+                    normalized == "." ||
+                    normalized.Contains("..", StringComparison.Ordinal))
                 {
-                    var destinationPath = ResolveChildPath(preserveRoot, relativePath);
-                    CopyDirectory(sourcePath, destinationPath);
-                    log?.Report($"Preserved directory: {relativePath}");
+                    continue;
                 }
+
+                preservePaths.Add(normalized);
             }
+
+            return preservePaths;
         }
 
         /// <summary>
-        /// Restores preserved files and directories back into one replaced module directory.
+        /// Logs preserved paths without traversing their contents.
         /// </summary>
-        private static void RestorePreservedPaths(string preserveRoot, string targetRoot, IProgress<string>? log)
+        private static void ReportPreservedPaths(
+            string moduleRoot,
+            IReadOnlySet<string> preservePaths,
+            IProgress<string>? log)
         {
-            if (!Directory.Exists(preserveRoot))
+            foreach (var relativePath in preservePaths)
             {
-                return;
-            }
-
-            foreach (var entry in Directory.EnumerateFileSystemEntries(preserveRoot))
-            {
-                var relativePath = Path.GetRelativePath(preserveRoot, entry);
-                var targetPath = ResolveChildPath(targetRoot, relativePath);
-
-                if (File.Exists(entry))
+                var fullPath = ResolveChildPath(moduleRoot, relativePath);
+                if (File.Exists(fullPath))
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-                    File.Copy(entry, targetPath, overwrite: true);
-                    log?.Report($"Restored file: {relativePath}");
+                    log?.Report($"Preserving file in place: {relativePath}");
                     continue;
                 }
 
-                if (Directory.Exists(entry))
+                if (Directory.Exists(fullPath))
                 {
-                    CopyDirectory(entry, targetPath);
-                    log?.Report($"Restored directory: {relativePath}");
+                    log?.Report($"Preserving directory in place: {relativePath}");
                 }
             }
         }
 
         /// <summary>
-        /// Recursively copies one directory into another.
+        /// Recursively copies one directory into another while skipping preserved module paths.
         /// </summary>
-        private static void CopyDirectory(string sourceDir, string destDir)
+        private static void CopyDirectory(
+            string sourceDir,
+            string destDir,
+            IReadOnlySet<string> preservePaths,
+            string relativeRoot = "")
         {
             Directory.CreateDirectory(destDir);
 
             foreach (var file in Directory.EnumerateFiles(sourceDir))
             {
+                var relativePath = CombineRelativePath(relativeRoot, Path.GetFileName(file));
+                if (IsPreservedPath(relativePath, preservePaths))
+                {
+                    continue;
+                }
+
                 var destFile = Path.Combine(destDir, Path.GetFileName(file));
                 File.Copy(file, destFile, overwrite: true);
             }
 
             foreach (var subdir in Directory.EnumerateDirectories(sourceDir))
             {
-                CopyDirectory(subdir, Path.Combine(destDir, Path.GetFileName(subdir)));
+                var relativePath = CombineRelativePath(relativeRoot, Path.GetFileName(subdir));
+                if (IsPreservedPath(relativePath, preservePaths))
+                {
+                    continue;
+                }
+
+                CopyDirectory(
+                    subdir,
+                    Path.Combine(destDir, Path.GetFileName(subdir)),
+                    preservePaths,
+                    relativePath);
             }
         }
 
         /// <summary>
-        /// Removes every file and directory inside one root directory.
+        /// Removes every non-preserved file and directory inside one root directory.
         /// </summary>
-        private static void ClearDirectory(string directory)
+        private static void ClearDirectory(string directory, IReadOnlySet<string> preservePaths)
         {
             Directory.CreateDirectory(directory);
+            ClearDirectory(directory, directory, preservePaths);
+        }
 
-            foreach (var file in Directory.EnumerateFiles(directory))
+        /// <summary>
+        /// Removes non-preserved contents from one directory while preserving declared descendants.
+        /// </summary>
+        private static void ClearDirectory(
+            string currentDir,
+            string rootDir,
+            IReadOnlySet<string> preservePaths)
+        {
+            foreach (var file in Directory.EnumerateFiles(currentDir))
             {
+                var relativePath = NormalizeRelativePath(Path.GetRelativePath(rootDir, file));
+                if (IsPreservedPath(relativePath, preservePaths))
+                {
+                    continue;
+                }
+
                 File.SetAttributes(file, FileAttributes.Normal);
                 File.Delete(file);
             }
 
-            foreach (var subdir in Directory.EnumerateDirectories(directory))
+            foreach (var subdir in Directory.EnumerateDirectories(currentDir))
             {
+                var relativePath = NormalizeRelativePath(Path.GetRelativePath(rootDir, subdir));
+                if (IsPreservedPath(relativePath, preservePaths))
+                {
+                    continue;
+                }
+
+                if (HasPreservedDescendant(relativePath, preservePaths))
+                {
+                    ClearDirectory(subdir, rootDir, preservePaths);
+                    if (!Directory.EnumerateFileSystemEntries(subdir).Any())
+                    {
+                        Directory.Delete(subdir);
+                    }
+
+                    continue;
+                }
+
                 Directory.Delete(subdir, recursive: true);
             }
         }
@@ -1265,6 +1295,7 @@ namespace ASLM.Services
         /// </summary>
         private static async Task ClearDirectoryForUpdateAsync(
             string directory,
+            IReadOnlySet<string> preservePaths,
             IProgress<string>? log,
             CancellationToken ct)
         {
@@ -1274,7 +1305,7 @@ namespace ASLM.Services
             {
                 try
                 {
-                    await Task.Run(() => ClearDirectory(directory), ct);
+                    await Task.Run(() => ClearDirectory(directory, preservePaths), ct);
                     return;
                 }
                 catch (Exception ex) when (IsTransientFileAccessException(ex) && attempt < maxAttempts)
@@ -1414,6 +1445,45 @@ namespace ASLM.Services
         private string GetPendingUpdatePath()
         {
             return Path.Combine(GetRootDirectory(), UpdateWorkDirName, PendingFileName);
+        }
+
+        /// <summary>
+        /// Combines relative path segments for module path comparisons.
+        /// </summary>
+        private static string CombineRelativePath(string basePath, string childName)
+        {
+            return string.IsNullOrWhiteSpace(basePath)
+                ? NormalizeRelativePath(childName)
+                : NormalizeRelativePath($"{basePath}/{childName}");
+        }
+
+        /// <summary>
+        /// Returns whether one relative module path is preserved or lives inside a preserved directory.
+        /// </summary>
+        private static bool IsPreservedPath(string relativePath, IReadOnlySet<string> preservePaths)
+        {
+            var normalized = NormalizeRelativePath(relativePath);
+            return preservePaths.Contains(normalized) ||
+                   preservePaths.Any(path =>
+                       normalized.StartsWith(path + "/", StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Returns whether one relative directory contains a preserved descendant.
+        /// </summary>
+        private static bool HasPreservedDescendant(string relativePath, IReadOnlySet<string> preservePaths)
+        {
+            var normalized = NormalizeRelativePath(relativePath);
+            var prefix = normalized.Length == 0 ? string.Empty : normalized + "/";
+            return preservePaths.Any(path => path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Normalizes relative paths for cross-platform module path comparisons.
+        /// </summary>
+        private static string NormalizeRelativePath(string relativePath)
+        {
+            return relativePath.Trim().Replace('\\', '/').Trim('/');
         }
 
         /// <summary>
