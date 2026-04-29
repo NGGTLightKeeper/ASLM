@@ -8,6 +8,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using ASLM.Models;
 using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
@@ -25,6 +26,7 @@ namespace ASLM.Services
 
         private readonly AppDataService _appData;
         private readonly PortManager _portManager;
+        private readonly ModuleInstaller _moduleInstaller;
         private readonly ILogger<AslmApiServerService> _logger;
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
@@ -53,10 +55,12 @@ namespace ASLM.Services
         public AslmApiServerService(
             AppDataService appData,
             PortManager portManager,
+            ModuleInstaller moduleInstaller,
             ILogger<AslmApiServerService> logger)
         {
             _appData = appData;
             _portManager = portManager;
+            _moduleInstaller = moduleInstaller;
             _logger = logger;
 
             var rootDir = GetRootDirectory();
@@ -94,7 +98,9 @@ namespace ASLM.Services
             {
                 lock (_stateLock)
                 {
-                    return _activePort ?? GetAssignedPort();
+                    return _activePort ??
+                           _portManager.TryGetInternalServicePort(PortManager.AslmApiServiceId, PortManager.AslmApiPortKey) ??
+                           _appData.Data.Ports.OfficialStart;
                 }
             }
         }
@@ -128,9 +134,11 @@ namespace ASLM.Services
         {
             if (!IsEnabled)
             {
+                _portManager.RedistributePorts(reserveAslmApiServer: false);
                 return;
             }
 
+            _portManager.RedistributePorts(reserveAslmApiServer: true);
             await StartAsync();
         }
 
@@ -149,11 +157,13 @@ namespace ASLM.Services
 
             if (enabled)
             {
+                _portManager.RedistributePorts(reserveAslmApiServer: true);
                 await StartAsync();
             }
             else
             {
                 await StopAsync();
+                _portManager.RedistributePorts(reserveAslmApiServer: false);
             }
         }
 
@@ -321,7 +331,7 @@ namespace ASLM.Services
                         await WriteModulePageAsync(context, route.ModuleId, route.Hosts, statusCode: 404, message: $"Host '{route.HostKey}' was not found for '{route.ModuleId}'.", ct);
                         return;
                     case ProxyRouteKind.RedirectToSlash:
-                        RedirectToRouteRoot(context, route.ModuleId, route.HostKey);
+                        RedirectToRouteRoot(context, route.ModuleId, route.RouteHostKey);
                         return;
                     case ProxyRouteKind.Proxy:
                         await ProxyRequestAsync(context, route, ct);
@@ -366,20 +376,20 @@ namespace ASLM.Services
                 return ProxyRoute.ModuleIndex(moduleId, hosts);
             }
 
-            var hostKey = pathSegments[1];
-            if (!hosts.TryGetValue(hostKey, out var port))
+            var routeHostKey = pathSegments[1];
+            if (!TryResolveHostRoute(hosts, routeHostKey, out var hostKey, out var port))
             {
-                return ProxyRoute.HostNotFound(moduleId, hostKey, hosts);
+                return ProxyRoute.HostNotFound(moduleId, routeHostKey, hosts);
             }
 
             if (pathSegments.Count == 2 && request.Url?.AbsolutePath.EndsWith('/') == false)
             {
-                return ProxyRoute.RedirectToSlash(moduleId, hostKey);
+                return ProxyRoute.RedirectToSlash(moduleId, hostKey, BuildHostRouteKey(hostKey));
             }
 
             var preserveTrailingSlash = request.Url?.AbsolutePath.EndsWith("/", StringComparison.Ordinal) == true;
             var targetPath = BuildTargetPath(pathSegments.Skip(2), preserveTrailingSlash);
-            return ProxyRoute.Proxy(moduleId, hostKey, port, targetPath, hosts);
+            return ProxyRoute.Proxy(moduleId, hostKey, BuildHostRouteKey(hostKey), port, targetPath, hosts);
         }
 
         /// <summary>
@@ -406,15 +416,50 @@ namespace ASLM.Services
             }
 
             var moduleId = refererSegments[0];
-            var hostKey = refererSegments[1];
-            if (!portMap.TryGetValue(moduleId, out var hosts) || !hosts.TryGetValue(hostKey, out var port))
+            var routeHostKey = refererSegments[1];
+            if (!portMap.TryGetValue(moduleId, out var hosts) ||
+                !TryResolveHostRoute(hosts, routeHostKey, out var hostKey, out var port))
             {
                 return false;
             }
 
             var preserveTrailingSlash = request.Url?.AbsolutePath.EndsWith("/", StringComparison.Ordinal) == true;
-            route = ProxyRoute.Proxy(moduleId, hostKey, port, BuildTargetPath(requestSegments, preserveTrailingSlash), hosts);
+            route = ProxyRoute.Proxy(moduleId, hostKey, BuildHostRouteKey(hostKey), port, BuildTargetPath(requestSegments, preserveTrailingSlash), hosts);
             return true;
+        }
+
+        /// <summary>
+        /// Resolves a public host route segment back to the underlying port-map host key.
+        /// </summary>
+        private static bool TryResolveHostRoute(
+            IReadOnlyDictionary<string, int> hosts,
+            string routeHostKey,
+            out string hostKey,
+            out int port)
+        {
+            if (hosts.TryGetValue(routeHostKey, out port))
+            {
+                hostKey = routeHostKey;
+                return true;
+            }
+
+            foreach (var host in hosts
+                         .OrderBy(static pair => pair.Value)
+                         .ThenBy(static pair => pair.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                if (!string.Equals(BuildHostRouteKey(host.Key), routeHostKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                hostKey = host.Key;
+                port = host.Value;
+                return true;
+            }
+
+            hostKey = routeHostKey;
+            port = 0;
+            return false;
         }
 
         /// <summary>
@@ -1289,6 +1334,7 @@ namespace ASLM.Services
             body.Append("<h1>ASLM API</h1>");
             body.Append("<p>Available module hosts from Data/App/ASLM_Ports.json.</p>");
             AppendMessage(body, message);
+            var moduleStates = await LoadModuleDisplayStatesAsync();
 
             if (portMap.Count == 0)
             {
@@ -1300,9 +1346,9 @@ namespace ASLM.Services
                              .OrderBy(static pair => pair.Value.Values.DefaultIfEmpty(int.MaxValue).Min())
                              .ThenBy(static pair => pair.Key, StringComparer.OrdinalIgnoreCase))
                 {
-                    body.Append("<section><h2>");
-                    body.Append(HtmlEncode(module.Key));
-                    body.Append("</h2><ul>");
+                    body.Append("<section>");
+                    AppendModuleHeading(body, module.Key, moduleStates);
+                    body.Append("<ul>");
 
                     foreach (var host in module.Value
                                  .OrderBy(static pair => pair.Value)
@@ -1332,6 +1378,8 @@ namespace ASLM.Services
             var body = new StringBuilder();
             body.Append("<h1>");
             body.Append(HtmlEncode(moduleId));
+            var moduleStates = await LoadModuleDisplayStatesAsync();
+            AppendDisabledBadge(body, moduleId, moduleStates);
             body.Append("</h1>");
             body.Append("<p>Available hosts for this module.</p>");
             AppendMessage(body, message);
@@ -1388,6 +1436,9 @@ namespace ASLM.Services
                         a { color: #64d2ff; text-decoration: none; }
                         a:hover { text-decoration: underline; }
                         code { color: #ebebf5; background: #2c2c2e; border-radius: 4px; padding: 2px 6px; }
+                        .module-heading { display: flex; gap: 8px; align-items: center; }
+                        .badge { display: inline-block; color: #b8b8c0; background: #2c2c2e; border: 1px solid #38383a; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: 600; vertical-align: middle; margin-left: 8px; }
+                        .module-heading .badge { margin-left: 0; }
                         .message { border: 1px solid #ff9f0a; background: #2b2112; color: #ffd60a; border-radius: 8px; padding: 10px 12px; margin: 14px 0; }
                         .target { color: #8e8e93; font-size: 13px; }
                     </style>
@@ -1443,10 +1494,65 @@ namespace ASLM.Services
             body.Append("<li><a href=\"");
             body.Append(HtmlEncode(hostInfo.MirrorUrl));
             body.Append("\"><code>");
-            body.Append(HtmlEncode($"{moduleId}/{hostKey}/"));
+            body.Append(HtmlEncode($"{moduleId}/{BuildHostRouteKey(hostKey)}/"));
             body.Append("</code></a><span class=\"target\">127.0.0.1:");
             body.Append(port);
             body.Append("</span></li>");
+        }
+
+        /// <summary>
+        /// Appends a module heading and disabled status marker for the generated index page.
+        /// </summary>
+        private static void AppendModuleHeading(
+            StringBuilder body,
+            string moduleId,
+            IReadOnlyDictionary<string, bool> moduleStates)
+        {
+            body.Append("<h2 class=\"module-heading\"><span>");
+            body.Append(HtmlEncode(moduleId));
+            body.Append("</span>");
+            AppendDisabledBadge(body, moduleId, moduleStates);
+            body.Append("</h2>");
+        }
+
+        /// <summary>
+        /// Appends a compact disabled badge when the module manifest says the module is off.
+        /// </summary>
+        private static void AppendDisabledBadge(
+            StringBuilder body,
+            string moduleId,
+            IReadOnlyDictionary<string, bool> moduleStates)
+        {
+            if (!moduleStates.TryGetValue(moduleId, out var isEnabled) || isEnabled)
+            {
+                return;
+            }
+
+            body.Append("<span class=\"badge\">Disabled</span>");
+        }
+
+        /// <summary>
+        /// Loads enabled states from installed module manifests for the generated API index.
+        /// </summary>
+        private async Task<IReadOnlyDictionary<string, bool>> LoadModuleDisplayStatesAsync()
+        {
+            try
+            {
+                var modules = await _moduleInstaller.DiscoverModulesAsync();
+                return modules
+                    .Where(static module => !string.IsNullOrWhiteSpace(module.Id))
+                    .GroupBy(static module => module.Id, StringComparer.OrdinalIgnoreCase)
+                    .Select(static group => group.First())
+                    .ToDictionary(
+                        static module => module.Id,
+                        static module => module.Status.Enabled,
+                        StringComparer.OrdinalIgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to load module enabled states for ASLM API index.");
+                return new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            }
         }
 
 
@@ -1528,7 +1634,7 @@ namespace ASLM.Services
         /// </summary>
         private AslmApiHostInfo CreateHostInfo(string moduleId, string hostKey, int port, bool? isOnline)
         {
-            var route = ProxyRoute.Proxy(moduleId, hostKey, port, "/", new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase));
+            var route = ProxyRoute.Proxy(moduleId, hostKey, BuildHostRouteKey(hostKey), port, "/", new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase));
             return new AslmApiHostInfo(
                 moduleId,
                 hostKey,
@@ -1541,11 +1647,29 @@ namespace ASLM.Services
         /// <summary>
         /// Redirects a module host route to its slash-terminated root.
         /// </summary>
-        private static void RedirectToRouteRoot(HttpListenerContext context, string moduleId, string hostKey)
+        private static void RedirectToRouteRoot(HttpListenerContext context, string moduleId, string routeHostKey)
         {
             context.Response.StatusCode = 302;
-            context.Response.RedirectLocation = ProxyRoute.BuildRouteRoot(moduleId, hostKey);
+            context.Response.RedirectLocation = ProxyRoute.BuildRouteRoot(moduleId, routeHostKey);
             context.Response.Close();
+        }
+
+        /// <summary>
+        /// Builds the public route key used for one port-map host.
+        /// </summary>
+        private static string BuildHostRouteKey(string hostKey)
+        {
+            var value = (hostKey ?? string.Empty).Trim();
+            foreach (var suffix in new[] { "-port", "_port", " port" })
+            {
+                if (value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) &&
+                    value.Length > suffix.Length)
+                {
+                    return value[..^suffix.Length];
+                }
+            }
+
+            return value;
         }
 
         /// <summary>
@@ -1724,6 +1848,7 @@ namespace ASLM.Services
             ProxyRouteKind Kind,
             string ModuleId,
             string HostKey,
+            string RouteHostKey,
             int Port,
             string TargetPath,
             IReadOnlyDictionary<string, int> Hosts)
@@ -1731,7 +1856,7 @@ namespace ASLM.Services
             /// <summary>
             /// Gets the mounted mirror route prefix without a trailing slash.
             /// </summary>
-            public string RoutePrefix => $"/{Uri.EscapeDataString(ModuleId)}/{Uri.EscapeDataString(HostKey)}";
+            public string RoutePrefix => $"/{Uri.EscapeDataString(ModuleId)}/{Uri.EscapeDataString(RouteHostKey)}";
 
             /// <summary>
             /// Gets the mounted mirror route root with a trailing slash.
@@ -1742,37 +1867,37 @@ namespace ASLM.Services
             /// Creates the root-index route.
             /// </summary>
             public static ProxyRoute RootIndex() =>
-                new(ProxyRouteKind.RootIndex, string.Empty, string.Empty, 0, "/", new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase));
+                new(ProxyRouteKind.RootIndex, string.Empty, string.Empty, string.Empty, 0, "/", new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase));
 
             /// <summary>
             /// Creates the module-index route.
             /// </summary>
             public static ProxyRoute ModuleIndex(string moduleId, IReadOnlyDictionary<string, int> hosts) =>
-                new(ProxyRouteKind.ModuleIndex, moduleId, string.Empty, 0, "/", hosts);
+                new(ProxyRouteKind.ModuleIndex, moduleId, string.Empty, string.Empty, 0, "/", hosts);
 
             /// <summary>
             /// Creates the module-not-found route.
             /// </summary>
             public static ProxyRoute ModuleNotFound(string moduleId) =>
-                new(ProxyRouteKind.ModuleNotFound, moduleId, string.Empty, 0, "/", new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase));
+                new(ProxyRouteKind.ModuleNotFound, moduleId, string.Empty, string.Empty, 0, "/", new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase));
 
             /// <summary>
             /// Creates the host-not-found route.
             /// </summary>
             public static ProxyRoute HostNotFound(string moduleId, string hostKey, IReadOnlyDictionary<string, int> hosts) =>
-                new(ProxyRouteKind.HostNotFound, moduleId, hostKey, 0, "/", hosts);
+                new(ProxyRouteKind.HostNotFound, moduleId, hostKey, hostKey, 0, "/", hosts);
 
             /// <summary>
             /// Creates the slash-normalization redirect route.
             /// </summary>
-            public static ProxyRoute RedirectToSlash(string moduleId, string hostKey) =>
-                new(ProxyRouteKind.RedirectToSlash, moduleId, hostKey, 0, "/", new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase));
+            public static ProxyRoute RedirectToSlash(string moduleId, string hostKey, string routeHostKey) =>
+                new(ProxyRouteKind.RedirectToSlash, moduleId, hostKey, routeHostKey, 0, "/", new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase));
 
             /// <summary>
             /// Creates a backend proxy route.
             /// </summary>
-            public static ProxyRoute Proxy(string moduleId, string hostKey, int port, string targetPath, IReadOnlyDictionary<string, int> hosts) =>
-                new(ProxyRouteKind.Proxy, moduleId, hostKey, port, NormalizeBackendPath(targetPath), hosts);
+            public static ProxyRoute Proxy(string moduleId, string hostKey, string routeHostKey, int port, string targetPath, IReadOnlyDictionary<string, int> hosts) =>
+                new(ProxyRouteKind.Proxy, moduleId, hostKey, routeHostKey, port, NormalizeBackendPath(targetPath), hosts);
 
             /// <summary>
             /// Builds the slash-terminated route root for a module host.

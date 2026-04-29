@@ -34,6 +34,11 @@ namespace ASLM.Services
         private bool _loaded;
         private DateTimeOffset _lastOrphanCleanupUtc = DateTimeOffset.MinValue;
 
+        /// <summary>
+        /// Raised after runtime port assignments are redistributed and persisted.
+        /// </summary>
+        public event EventHandler? PortsRedistributed;
+
         // Initialization
 
         /// <summary>
@@ -136,6 +141,79 @@ namespace ASLM.Services
                 SavePortMap();
                 return port;
             }
+        }
+
+        /// <summary>
+        /// Returns an existing internal service port without allocating a new one.
+        /// </summary>
+        public int? TryGetInternalServicePort(string serviceId, string portKey)
+        {
+            lock (_lock)
+            {
+                EnsureLoaded();
+
+                return _portMap.TryGetValue(serviceId, out var existing) &&
+                       existing.TryGetValue(portKey, out var port)
+                    ? port
+                    : null;
+            }
+        }
+
+        /// <summary>
+        /// Rebuilds persisted port assignments and optionally reserves the ASLM API server port.
+        /// </summary>
+        public bool RedistributePorts(bool reserveAslmApiServer)
+        {
+            var changed = false;
+
+            lock (_lock)
+            {
+                EnsureLoaded();
+
+                if (reserveAslmApiServer)
+                {
+                    if (!_portMap.TryGetValue(AslmApiServiceId, out var apiPorts))
+                    {
+                        apiPorts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                        _portMap[AslmApiServiceId] = apiPorts;
+                    }
+
+                    apiPorts.TryAdd(AslmApiPortKey, 0);
+                }
+                else
+                {
+                    _portMap.Remove(AslmApiServiceId);
+                }
+
+                var nextMap = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
+                var usedPorts = new HashSet<int>();
+
+                foreach (var owner in GetRedistributionOwners(reserveAslmApiServer))
+                {
+                    if (!nextMap.TryGetValue(owner.Id, out var ports))
+                    {
+                        ports = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                        nextMap[owner.Id] = ports;
+                    }
+
+                    foreach (var portKey in owner.PortKeys)
+                    {
+                        ports[portKey] = AllocatePort(owner.Id, usedPorts);
+                    }
+                }
+
+                if (PortMapsEqual(_portMap, nextMap))
+                {
+                    return false;
+                }
+
+                _portMap = nextMap;
+                SavePortMap();
+                changed = true;
+            }
+
+            PortsRedistributed?.Invoke(this, EventArgs.Empty);
+            return changed;
         }
 
         // Single port
@@ -302,12 +380,34 @@ namespace ASLM.Services
             var count = isOfficial ? ports.OfficialCount : ports.ThirdPartyCount;
             var usedPorts = new HashSet<int>(_portMap.Values.SelectMany(value => value.Values));
 
+            return AllocatePort(ownerId, usedPorts, start, count);
+        }
+
+        /// <summary>
+        /// Allocates the next available port for a module using an explicit used-port set.
+        /// </summary>
+        private int AllocatePort(string ownerId, HashSet<int> usedPorts)
+        {
+            var ports = _appData.Data.Ports;
+            var isOfficial = !ownerId.Contains('.');
+
+            var start = isOfficial ? ports.OfficialStart : ports.ThirdPartyStart;
+            var count = isOfficial ? ports.OfficialCount : ports.ThirdPartyCount;
+            return AllocatePort(ownerId, usedPorts, start, count);
+        }
+
+        /// <summary>
+        /// Allocates the next available port inside the requested range or deterministic fallback.
+        /// </summary>
+        private static int AllocatePort(string ownerId, HashSet<int> usedPorts, int start, int count)
+        {
             // Try the configured range first so assignments stay predictable.
             for (var offset = 0; offset < count; offset++)
             {
                 var candidate = start + offset;
                 if (!usedPorts.Contains(candidate))
                 {
+                    usedPorts.Add(candidate);
                     return candidate;
                 }
             }
@@ -322,11 +422,86 @@ namespace ASLM.Services
                 var candidate = fallbackStart + ((seed + offset) % fallbackCount);
                 if (!usedPorts.Contains(candidate))
                 {
+                    usedPorts.Add(candidate);
                     return candidate;
                 }
             }
 
             throw new InvalidOperationException("No ports are available in the configured or fallback ranges.");
+        }
+
+        /// <summary>
+        /// Returns the owners and port keys in stable redistribution order.
+        /// </summary>
+        private List<RedistributionOwner> GetRedistributionOwners(bool reserveAslmApiServer)
+        {
+            return _portMap
+                .Where(pair => reserveAslmApiServer || !pair.Key.Equals(AslmApiServiceId, StringComparison.OrdinalIgnoreCase))
+                .Where(static pair => pair.Value.Count > 0)
+                .Select(pair => new RedistributionOwner(
+                    pair.Key,
+                    pair.Value
+                        .OrderBy(static port => port.Value)
+                        .ThenBy(static port => port.Key, StringComparer.OrdinalIgnoreCase)
+                        .Select(static port => port.Key)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList(),
+                    pair.Value.Values.DefaultIfEmpty(int.MaxValue).Min()))
+                .OrderBy(static owner => GetRedistributionOwnerRank(owner.Id))
+                .ThenBy(static owner => owner.FirstPort)
+                .ThenBy(static owner => owner.Id, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Sorts internal and official owners before third-party owners during redistribution.
+        /// </summary>
+        private static int GetRedistributionOwnerRank(string ownerId)
+        {
+            if (ownerId.Equals(AslmApiServiceId, StringComparison.OrdinalIgnoreCase))
+            {
+                return 0;
+            }
+
+            if (IsInternalServiceId(ownerId))
+            {
+                return 1;
+            }
+
+            return ownerId.Contains('.') ? 3 : 2;
+        }
+
+        /// <summary>
+        /// Compares two port maps without relying on dictionary insertion order.
+        /// </summary>
+        private static bool PortMapsEqual(
+            Dictionary<string, Dictionary<string, int>> left,
+            Dictionary<string, Dictionary<string, int>> right)
+        {
+            if (left.Count != right.Count)
+            {
+                return false;
+            }
+
+            foreach (var owner in left)
+            {
+                if (!right.TryGetValue(owner.Key, out var rightPorts) ||
+                    owner.Value.Count != rightPorts.Count)
+                {
+                    return false;
+                }
+
+                foreach (var port in owner.Value)
+                {
+                    if (!rightPorts.TryGetValue(port.Key, out var rightPort) ||
+                        rightPort != port.Value)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -336,6 +511,11 @@ namespace ASLM.Services
         {
             return ownerId.StartsWith("__", StringComparison.Ordinal);
         }
+
+        /// <summary>
+        /// Stores one owner and its port keys while rebuilding the runtime map.
+        /// </summary>
+        private sealed record RedistributionOwner(string Id, List<string> PortKeys, int FirstPort);
 
         // Lazy load
 

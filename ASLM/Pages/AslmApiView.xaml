@@ -5,34 +5,33 @@
              x:Class="ASLM.Pages.AslmApiView">
 
     <Grid RowDefinitions="Auto,Auto,*"
-          RowSpacing="8"
-          Margin="12,16">
+          RowSpacing="12"
+          Padding="4">
 
         <Grid Grid.Row="0"
               ColumnDefinitions="*,Auto"
-              ColumnSpacing="12"
-              Margin="4,0,4,0">
-            <VerticalStackLayout Spacing="4">
+              ColumnSpacing="12">
+            <VerticalStackLayout>
                 <Label Text="ASLM API"
                        FontSize="24"
                        FontAttributes="Bold"
                        TextColor="{StaticResource LabelPrimary}" />
-                <Label Text="{Binding Subtitle}"
+                <Label Text="{Binding StatusText}"
                        FontSize="14"
                        TextColor="{StaticResource LabelSecondary}" />
             </VerticalStackLayout>
 
-            <HorizontalStackLayout Grid.Column="1"
-                                   Spacing="10"
-                                   VerticalOptions="Center">
-                <Label Text="{Binding ToggleLabel}"
-                       FontSize="13"
-                       TextColor="{StaticResource LabelSecondary}"
-                       VerticalOptions="Center" />
-                <Switch x:Name="ServerSwitch"
-                        Toggled="OnServerToggled"
-                        VerticalOptions="Center" />
-            </HorizontalStackLayout>
+            <Button Grid.Column="1"
+                    Text="Open"
+                    HeightRequest="34"
+                    CornerRadius="6"
+                    Padding="14,0"
+                    FontSize="13"
+                    IsEnabled="{Binding CanOpenServer}"
+                    BackgroundColor="{StaticResource ActionBlue}"
+                    TextColor="{StaticResource LabelPrimary}"
+                    VerticalOptions="Center"
+                    Clicked="OnOpenServerClicked" />
         </Grid>
 
         <Border Grid.Row="1"
@@ -40,147 +39,104 @@
                 Stroke="{StaticResource Separator}"
                 StrokeThickness="1"
                 StrokeShape="RoundRectangle 8"
-                Padding="12"
-                Margin="4,0">
-            <Grid ColumnDefinitions="*,Auto"
-                  ColumnSpacing="8"
-                  RowDefinitions="Auto,Auto"
-                  RowSpacing="6">
-                <Grid ColumnDefinitions="Auto,*"
-                      ColumnSpacing="8">
-                    <Border BackgroundColor="{Binding StatusBadgeBackground}"
-                            StrokeThickness="0"
-                            StrokeShape="RoundRectangle 5"
-                            Padding="8,3"
-                            VerticalOptions="Center">
-                        <Label Text="{Binding StatusBadgeText}"
-                               FontSize="12"
-                               FontAttributes="Bold"
-                               TextColor="{StaticResource LabelPrimary}" />
-                    </Border>
-
-                    <Label Grid.Column="1"
-                           Text="{Binding StatusText}"
-                           FontSize="13"
-                           TextColor="{StaticResource LabelSecondary}"
-                           VerticalOptions="Center"
-                           LineBreakMode="TailTruncation" />
-                </Grid>
-
-                <Button Grid.Column="1"
-                        Text="Open"
-                        HeightRequest="34"
-                        CornerRadius="6"
-                        Padding="14,0"
-                        FontSize="13"
-                        IsEnabled="{Binding CanOpenServer}"
-                        BackgroundColor="{StaticResource ActionBlue}"
-                        TextColor="{StaticResource LabelPrimary}"
-                        Clicked="OnOpenServerClicked" />
-
-                <Label Grid.Row="1"
-                       Grid.ColumnSpan="2"
-                       Text="{Binding ServerUrl}"
-                       FontSize="13"
-                       TextColor="{StaticResource LabelPrimary}"
-                       LineBreakMode="TailTruncation" />
-            </Grid>
+                Padding="8"
+                Margin="0,4,0,0">
+            <Label Text="{Binding ServerUrl}"
+                   FontSize="13"
+                   TextColor="{StaticResource LabelPrimary}"
+                   LineBreakMode="TailTruncation" />
         </Border>
 
-        <CollectionView Grid.Row="2"
-                        Margin="4,0"
-                        ItemsSource="{Binding Hosts}"
-                        SelectionMode="None">
-            <CollectionView.Header>
-                <VerticalStackLayout Spacing="2"
-                                     Margin="0,8,0,8">
-                    <Label Text="Available Hosts"
-                           FontSize="16"
-                           FontAttributes="Bold"
-                           TextColor="{StaticResource LabelPrimary}" />
-                    <Label Text="{Binding HostsCaption}"
-                           FontSize="12"
-                           TextColor="{StaticResource LabelSecondary}" />
-                </VerticalStackLayout>
-            </CollectionView.Header>
+        <Grid Grid.Row="2"
+              RowDefinitions="Auto,*"
+              RowSpacing="8"
+              Margin="0">
+            <Label Text="Hosts"
+                   FontSize="16"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource LabelPrimary}"
+                   Margin="0,4,0,0" />
 
-            <CollectionView.EmptyView>
-                <VerticalStackLayout HorizontalOptions="Center"
-                                     VerticalOptions="Center"
-                                     Spacing="6"
-                                     Margin="24">
-                    <Label Text="No hosts"
-                           FontSize="18"
-                           FontAttributes="Bold"
-                           TextColor="{StaticResource LabelPrimary}"
-                           HorizontalOptions="Center" />
-                    <Label Text="Start a module so ASLM can populate Data/App/ASLM_Ports.json."
-                           FontSize="13"
-                           TextColor="{StaticResource LabelSecondary}"
-                           HorizontalTextAlignment="Center" />
-                </VerticalStackLayout>
-            </CollectionView.EmptyView>
-
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Border BackgroundColor="{StaticResource BackgroundSecondary}"
-                            Stroke="{StaticResource Separator}"
-                            StrokeThickness="1"
-                            StrokeShape="RoundRectangle 8"
-                            Padding="12"
-                            Margin="0,0,0,4">
-                        <Grid ColumnDefinitions="*,Auto"
-                              ColumnSpacing="12"
-                              RowDefinitions="Auto,Auto,Auto"
-                              RowSpacing="6">
-                            <Grid ColumnDefinitions="*,Auto"
-                                  ColumnSpacing="8">
-                                <Label Text="{Binding Title}"
-                                       FontSize="15"
-                                       FontAttributes="Bold"
-                                       TextColor="{StaticResource LabelPrimary}"
-                                       LineBreakMode="TailTruncation" />
-
-                                <Border Grid.Column="1"
-                                        BackgroundColor="{Binding StatusBackground}"
-                                        StrokeThickness="0"
-                                        StrokeShape="RoundRectangle 5"
-                                        Padding="8,3"
-                                        VerticalOptions="Center">
-                                    <Label Text="{Binding StatusText}"
-                                           FontSize="11"
-                                           FontAttributes="Bold"
-                                           TextColor="{StaticResource LabelPrimary}" />
-                                </Border>
-                            </Grid>
-
-                            <Button Grid.Column="1"
-                                    Grid.RowSpan="3"
-                                    Text="Open"
-                                    HeightRequest="32"
-                                    CornerRadius="6"
-                                    Padding="14,0"
-                                    FontSize="13"
-                                    Command="{Binding OpenCommand}"
-                                    BackgroundColor="{StaticResource BackgroundTertiary}"
-                                    TextColor="{StaticResource LabelPrimary}"
-                                    VerticalOptions="Center" />
-
-                            <Label Grid.Row="1"
-                                   Text="{Binding MirrorUrl}"
-                                   FontSize="12"
+            <Border Grid.Row="1"
+                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                    Stroke="{StaticResource Separator}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="0">
+                <CollectionView ItemsSource="{Binding Hosts}"
+                                SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout HorizontalOptions="Center"
+                                             VerticalOptions="Center"
+                                             Spacing="6"
+                                             Margin="24">
+                            <Label Text="No hosts"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
                                    TextColor="{StaticResource LabelPrimary}"
-                                   LineBreakMode="TailTruncation" />
+                                   HorizontalOptions="Center" />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
 
-                            <Label Grid.Row="2"
-                                   Text="{Binding TargetText}"
-                                   FontSize="12"
-                                   TextColor="{StaticResource LabelSecondary}"
-                                   LineBreakMode="TailTruncation" />
-                        </Grid>
-                    </Border>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid RowDefinitions="Auto,Auto,Auto"
+                                  RowSpacing="4"
+                                  Padding="8">
+                                <HorizontalStackLayout Spacing="8">
+                                    <Label Text="{Binding Title}"
+                                           FontSize="14"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource LabelPrimary}"
+                                           LineBreakMode="TailTruncation"
+                                           VerticalTextAlignment="Center" />
+
+                                    <Border BackgroundColor="{StaticResource BackgroundTertiary}"
+                                            Stroke="{StaticResource Separator}"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 4"
+                                            Padding="4,1"
+                                            IsVisible="{Binding IsModuleDisabled}"
+                                            VerticalOptions="Center">
+                                        <Label Text="{Binding ModuleStatusText}"
+                                               FontSize="12"
+                                               TextColor="{StaticResource LabelSecondary}" />
+                                    </Border>
+                                </HorizontalStackLayout>
+
+                                <Grid Grid.Row="1"
+                                      ColumnDefinitions="Auto,*"
+                                      ColumnSpacing="8">
+                                    <ImageButton Source="icon_copy.png"
+                                                 WidthRequest="24"
+                                                 HeightRequest="24"
+                                                 MinimumWidthRequest="24"
+                                                 MinimumHeightRequest="24"
+                                                 Padding="4"
+                                                 CornerRadius="4"
+                                                 Command="{Binding CopyCommand}"
+                                                 ToolTipProperties.Text="Copy address"
+                                                 BackgroundColor="{StaticResource BackgroundTertiary}"
+                                                 VerticalOptions="Center" />
+
+                                    <Label Grid.Column="1"
+                                           Text="{Binding MirrorUrl}"
+                                           FontSize="12"
+                                           TextColor="{StaticResource LabelSecondary}"
+                                           VerticalTextAlignment="Center"
+                                           LineBreakMode="TailTruncation" />
+                                </Grid>
+
+                                <BoxView Grid.Row="2"
+                                         HeightRequest="1"
+                                         Color="{StaticResource Separator}"
+                                         Opacity="0.5"
+                                         Margin="0,2,0,-8" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </Border>
+        </Grid>
     </Grid>
 </ContentView>

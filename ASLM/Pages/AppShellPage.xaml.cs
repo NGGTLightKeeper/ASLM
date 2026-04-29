@@ -47,6 +47,7 @@ namespace ASLM.Pages
         private readonly PortManager _portManager;
         private readonly NotificationService _notificationService;
         private readonly UpdateService _updateService;
+        private readonly AslmApiServerService _apiServer;
         private readonly IServiceProvider _services;
 
         private List<ModuleConfig> _allModules = [];
@@ -78,6 +79,7 @@ namespace ASLM.Pages
             PortManager portManager,
             NotificationService notificationService,
             UpdateService updateService,
+            AslmApiServerService apiServer,
             IServiceProvider services)
         {
             _moduleInstaller = moduleInstaller;
@@ -85,6 +87,7 @@ namespace ASLM.Pages
             _portManager = portManager;
             _notificationService = notificationService;
             _updateService = updateService;
+            _apiServer = apiServer;
             _services = services;
 
             InitializeComponent();
@@ -121,6 +124,8 @@ namespace ASLM.Pages
                 button.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
                 button.Text = _panelExpanded ? GetButtonLabel(button) : string.Empty;
             }
+
+            ApplyAslmApiNavigationState();
         }
 
 
@@ -156,6 +161,8 @@ namespace ASLM.Pages
             await RefreshModulesAsync();
             NavigateTo(HomeButton);
             _notificationService.NotificationPublished += OnNotificationPublished;
+            _apiServer.StateChanged += OnApiServerStateChanged;
+            ApplyAslmApiNavigationState();
             _ = StartEnabledModulesAsync();
             _ = CheckStartupUpdatesAsync();
             _ = _notificationService.PublishStartupTestNotificationsAsync();
@@ -167,6 +174,7 @@ namespace ASLM.Pages
         private void OnPageUnloaded(object? sender, EventArgs e)
         {
             _notificationService.NotificationPublished -= OnNotificationPublished;
+            _apiServer.StateChanged -= OnApiServerStateChanged;
         }
 
         /// <summary>
@@ -227,6 +235,28 @@ namespace ASLM.Pages
 
 
         // Sidebar
+
+        /// <summary>
+        /// Refreshes ASLM API sidebar visibility when the server setting changes.
+        /// </summary>
+        private void OnApiServerStateChanged(object? sender, EventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(ApplyAslmApiNavigationState);
+        }
+
+        /// <summary>
+        /// Shows the ASLM API navigation item only when the API server is enabled.
+        /// </summary>
+        private void ApplyAslmApiNavigationState()
+        {
+            var isVisible = _apiServer.IsEnabled;
+            AslmApiButton.IsVisible = isVisible;
+
+            if (!isVisible && _activeNavButton == AslmApiButton)
+            {
+                NavigateTo(HomeButton);
+            }
+        }
 
         /// <summary>
         /// Expands or collapses the sidebar and updates every visible button.

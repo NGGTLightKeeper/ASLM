@@ -40,6 +40,7 @@ namespace ASLM.Pages
         private readonly ModuleRunner _moduleRunner;
         private readonly OllamaSettingsService _ollamaSettingsService;
         private readonly UpdateService _updateService;
+        private readonly AslmApiServerService _apiServer;
         private readonly List<SettingControlMapping> _settingMappings = [];
         private readonly Dictionary<string, SettingBaseline> _settingBaselines = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Border> _categoryButtons = new(StringComparer.OrdinalIgnoreCase);
@@ -48,7 +49,7 @@ namespace ASLM.Pages
         private List<SettingsCategory> _categories = [];
         private SettingsCategory? _activeCategory;
         private SettingsCategoryGroup _activeGroup = SettingsCategoryGroup.Aslm;
-        private AslmBaseline _aslmBaseline = new(string.Empty, string.Empty, string.Empty);
+        private AslmBaseline _aslmBaseline = new(string.Empty, string.Empty, string.Empty, true);
         private UpdateBaseline _updateBaseline = new(true, false, "24", "release", "release", "release");
         private OllamaPersistentSettings _ollamaDraft = new();
         private string _userNameDraft = string.Empty;
@@ -74,6 +75,7 @@ namespace ASLM.Pages
         private Button? _prepareAppUpdateButton;
         private Button? _restartAppUpdateButton;
         private UpdateCandidate? _pendingAppUpdateCandidate;
+        private CompactToggle? _apiServerToggle;
         private CancellationTokenSource? _ollamaMetadataRefreshCts;
         private CancellationTokenSource? _ollamaStatusPollingCts;
 
@@ -98,6 +100,7 @@ namespace ASLM.Pages
         {
             AslmProfile,
             AslmPorts,
+            AslmApi,
             Updates,
             Ollama,
             Module
@@ -326,7 +329,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Stores the initial ASLM values loaded for the current page session.
         /// </summary>
-        private record AslmBaseline(string UserName, string OfficialPort, string ThirdPartyPort);
+        private record AslmBaseline(string UserName, string OfficialPort, string ThirdPartyPort, bool ApiServerEnabled);
 
         /// <summary>
         /// Stores the initial update settings loaded for the current page session.
@@ -366,7 +369,8 @@ namespace ASLM.Pages
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
             OllamaSettingsService ollamaSettingsService,
-            UpdateService updateService)
+            UpdateService updateService,
+            AslmApiServerService apiServer)
         {
             _appData = appData;
             _engineInstaller = engineInstaller;
@@ -374,6 +378,7 @@ namespace ASLM.Pages
             _moduleRunner = moduleRunner;
             _ollamaSettingsService = ollamaSettingsService;
             _updateService = updateService;
+            _apiServer = apiServer;
             InitializeComponent();
             ApplyFlatEntryStyle(UsernameEntry);
             ApplyFlatEntryStyle(OfficialPortEntry);
@@ -540,7 +545,7 @@ namespace ASLM.Pages
             _userNameDraft = _appData.Data.User.Name ?? string.Empty;
             _officialPortDraft = _appData.Data.Ports.OfficialStart.ToString(CultureInfo.InvariantCulture);
             _thirdPartyPortDraft = _appData.Data.Ports.ThirdPartyStart.ToString(CultureInfo.InvariantCulture);
-            _aslmBaseline = new AslmBaseline(_userNameDraft, _officialPortDraft, _thirdPartyPortDraft);
+            _aslmBaseline = new AslmBaseline(_userNameDraft, _officialPortDraft, _thirdPartyPortDraft, _appData.Data.Api.ServerEnabled);
             _appData.Data.Updates.Normalize();
             _updateBaseline = new UpdateBaseline(
                 _appData.Data.Updates.CheckEnabled,
@@ -647,6 +652,13 @@ namespace ASLM.Pages
                     SettingsCategoryKind.AslmPorts,
                     null,
                     true),
+                new(
+                    "aslm-api",
+                    "ASLM API",
+                    "Local API mirror server.",
+                    SettingsCategoryKind.AslmApi,
+                    null,
+                    false),
                 new(
                     "aslm-updates",
                     "Updates",
@@ -832,6 +844,9 @@ namespace ASLM.Pages
                     break;
                 case SettingsCategoryKind.AslmPorts:
                     RenderAslmCategory(showProfile: false, showPorts: true);
+                    break;
+                case SettingsCategoryKind.AslmApi:
+                    RenderAslmApiCategory();
                     break;
                 case SettingsCategoryKind.Updates:
                     RenderUpdatesCategory();
@@ -1065,6 +1080,7 @@ namespace ASLM.Pages
             _settingMappings.Clear();
             ResetOllamaControlReferences();
             ResetUpdateControlReferences();
+            ResetAslmApiControlReferences();
 
             AslmSettingsContainer.IsVisible = true;
             UserProfileSection.IsVisible = showProfile;
@@ -1075,6 +1091,35 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Rebuilds the ASLM API settings category.
+        /// </summary>
+        private void RenderAslmApiCategory()
+        {
+            _settingMappings.Clear();
+            ResetOllamaControlReferences();
+            ResetUpdateControlReferences();
+            ResetAslmApiControlReferences();
+            ModuleSettingsContainer.Children.Clear();
+
+            AslmSettingsContainer.IsVisible = false;
+            ModuleSettingsContainer.IsVisible = true;
+            EmptyCategoryState.IsVisible = false;
+
+            var section = CreateModuleSectionBorder();
+            var content = new VerticalStackLayout { Spacing = 12 };
+
+            _apiServerToggle = CreateCompactToggle(_apiServer.IsEnabled);
+            _apiServerToggle.Toggled += (_, _) => QueueActionButtonUpdate();
+            content.Children.Add(CreateUpdateCard(
+                "API server",
+                "Start the local mirror server with ASLM.",
+                _apiServerToggle.View));
+
+            section.Content = content;
+            ModuleSettingsContainer.Children.Add(section);
+        }
+
+        /// <summary>
         /// Rebuilds the update settings category and its action controls.
         /// </summary>
         private void RenderUpdatesCategory()
@@ -1082,6 +1127,7 @@ namespace ASLM.Pages
             _settingMappings.Clear();
             ResetOllamaControlReferences();
             ResetUpdateControlReferences();
+            ResetAslmApiControlReferences();
             ModuleSettingsContainer.Children.Clear();
 
             AslmSettingsContainer.IsVisible = false;
@@ -1157,6 +1203,7 @@ namespace ASLM.Pages
             _settingMappings.Clear();
             ResetOllamaControlReferences();
             ResetUpdateControlReferences();
+            ResetAslmApiControlReferences();
             ModuleSettingsContainer.Children.Clear();
 
             AslmSettingsContainer.IsVisible = false;
@@ -1514,6 +1561,7 @@ namespace ASLM.Pages
             _settingMappings.Clear();
             ResetOllamaControlReferences();
             ResetUpdateControlReferences();
+            ResetAslmApiControlReferences();
             ModuleSettingsContainer.Children.Clear();
 
             var settings = module.Settings?.Where(ShouldDisplaySetting).ToList() ?? [];
@@ -1566,6 +1614,7 @@ namespace ASLM.Pages
         {
             ResetOllamaControlReferences();
             ResetUpdateControlReferences();
+            ResetAslmApiControlReferences();
             AslmSettingsContainer.IsVisible = false;
             ModuleSettingsContainer.IsVisible = false;
             ModuleSettingsContainer.Children.Clear();
@@ -1707,12 +1756,20 @@ namespace ASLM.Pages
                 SettingsCategoryKind.AslmProfile => !string.Equals(UsernameEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.UserName, StringComparison.Ordinal),
                 SettingsCategoryKind.AslmPorts => !string.Equals(OfficialPortEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.OfficialPort, StringComparison.Ordinal) ||
                                                   !string.Equals(ThirdPartyPortEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.ThirdPartyPort, StringComparison.Ordinal),
+                SettingsCategoryKind.AslmApi => HasUnsavedAslmApiChanges(),
                 SettingsCategoryKind.Updates => HasUnsavedUpdateChanges(),
                 SettingsCategoryKind.Ollama => false,
                 SettingsCategoryKind.Module => HasUnsavedModuleChanges(),
                 _ => false
             };
         }
+
+        /// <summary>
+        /// Determines whether the ASLM API setting differs from the last saved baseline.
+        /// </summary>
+        private bool HasUnsavedAslmApiChanges() =>
+            _apiServerToggle != null &&
+            _apiServerToggle.IsToggled != _aslmBaseline.ApiServerEnabled;
 
         /// <summary>
         /// Determines whether the visible module editors differ from the last saved baseline.
@@ -1887,6 +1944,12 @@ namespace ASLM.Pages
                     PortErrorLabel.IsVisible = false;
                     RenderAslmCategory(showProfile: false, showPorts: true);
                     break;
+                case SettingsCategoryKind.AslmApi:
+                    if (_apiServerToggle != null)
+                    {
+                        _apiServerToggle.IsToggled = new AppApiConfig().ServerEnabled;
+                    }
+                    break;
                 case SettingsCategoryKind.Updates:
                     ApplyUpdateDefaultsToControls();
                     break;
@@ -2006,6 +2069,22 @@ namespace ASLM.Pages
                             return;
                         }
 
+                        await ShowSuccessAsync(BuildSaveMessage(hasChanges, false, []));
+                        break;
+                    }
+
+                    case SettingsCategoryKind.AslmApi:
+                    {
+                        if (_apiServerToggle == null)
+                        {
+                            await ShowErrorAsync("ASLM API settings controls are not ready.");
+                            return;
+                        }
+
+                        var hasChanges = HasUnsavedAslmApiChanges();
+                        await _apiServer.SetEnabledAsync(_apiServerToggle.IsToggled);
+                        _aslmBaseline = _aslmBaseline with { ApiServerEnabled = _apiServer.IsEnabled };
+                        RenderAslmApiCategory();
                         await ShowSuccessAsync(BuildSaveMessage(hasChanges, false, []));
                         break;
                     }
@@ -2556,6 +2635,14 @@ namespace ASLM.Pages
             _prepareAppUpdateButton = null;
             _restartAppUpdateButton = null;
             _pendingAppUpdateCandidate = null;
+        }
+
+        /// <summary>
+        /// Clears the dynamically created ASLM API setting controls before the page is rebuilt.
+        /// </summary>
+        private void ResetAslmApiControlReferences()
+        {
+            _apiServerToggle = null;
         }
 
         /// <summary>

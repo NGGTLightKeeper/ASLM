@@ -105,6 +105,33 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Publishes a short-lived system toast without adding it to the persisted notification list.
+        /// </summary>
+        public void PublishSystemToast(string title, string message, string statusText, string sourceId)
+        {
+            RunOnMainThread(() =>
+            {
+                var notification = new AppNotification(
+                    $"toast:system:{sourceId}:{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                    AppNotificationCategory.System,
+                    AppNotificationSeverity.Success,
+                    title,
+                    message,
+                    "system",
+                    sourceId);
+
+                notification.UpdateContent(
+                    AppNotificationSeverity.Success,
+                    title,
+                    message,
+                    statusText,
+                    string.Empty);
+
+                NotificationPublished?.Invoke(this, notification);
+            });
+        }
+
+        /// <summary>
         /// Publishes ten sample notifications with a fixed delay between arrivals.
         /// </summary>
         public async Task PublishStartupTestNotificationsAsync(CancellationToken ct = default)

@@ -2,9 +2,11 @@
 
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
+using ASLM.Models;
 using ASLM.Services;
+using Microsoft.Maui.ApplicationModel.DataTransfer;
 
 namespace ASLM.Pages
 {
@@ -16,17 +18,21 @@ namespace ASLM.Pages
     public partial class AslmApiView : ContentView, INotifyPropertyChanged
     {
         private readonly AslmApiServerService _apiServer;
+        private readonly NotificationService _notifications;
+        private readonly ModuleInstaller _moduleInstaller;
         private readonly Dictionary<string, AslmApiHostViewModel> _hostRows = new(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, AslmApiModuleDisplayState> _moduleDisplayStates = new(StringComparer.OrdinalIgnoreCase);
+        private Task? _moduleDisplayStatesLoadTask;
+        private int _moduleDisplayStateLoadVersion;
+        private bool _moduleDisplayStatesLoaded;
+        private DateTime _moduleDisplayStatesLoadedAt = DateTime.MinValue;
         private CancellationTokenSource? _refreshLoopCts;
-        private bool _suppressToggleEvent;
-        private string _subtitle = string.Empty;
-        private string _toggleLabel = string.Empty;
+        private bool _isVisible;
         private string _statusText = string.Empty;
-        private string _statusBadgeText = string.Empty;
         private string _serverUrl = string.Empty;
-        private string _hostsCaption = string.Empty;
-        private Color _statusBadgeBackground = Color.FromArgb("#3A3A3C");
         private bool _canOpenServer;
+
+        private static readonly TimeSpan ModuleStateRefreshInterval = TimeSpan.FromSeconds(15);
 
         /// <summary>
         /// Stores the host rows displayed by the page.
@@ -38,9 +44,14 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the ASLM API page and hooks service state notifications.
         /// </summary>
-        public AslmApiView(AslmApiServerService apiServer)
+        public AslmApiView(
+            AslmApiServerService apiServer,
+            NotificationService notifications,
+            ModuleInstaller moduleInstaller)
         {
             _apiServer = apiServer;
+            _notifications = notifications;
+            _moduleInstaller = moduleInstaller;
 
             InitializeComponent();
             BindingContext = this;
@@ -48,7 +59,7 @@ namespace ASLM.Pages
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
             _apiServer.StateChanged += OnServerStateChanged;
-            ApplyCurrentStateToToggle();
+            _moduleInstaller.ModulesChanged += OnModulesChanged;
         }
 
 
@@ -69,24 +80,6 @@ namespace ASLM.Pages
         // Bound state
 
         /// <summary>
-        /// Gets the page subtitle shown below the header.
-        /// </summary>
-        public string Subtitle
-        {
-            get => _subtitle;
-            private set => SetProperty(ref _subtitle, value);
-        }
-
-        /// <summary>
-        /// Gets the text shown beside the enable switch.
-        /// </summary>
-        public string ToggleLabel
-        {
-            get => _toggleLabel;
-            private set => SetProperty(ref _toggleLabel, value);
-        }
-
-        /// <summary>
         /// Gets the detailed server status line.
         /// </summary>
         public string StatusText
@@ -96,39 +89,12 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Gets the compact server status badge text.
-        /// </summary>
-        public string StatusBadgeText
-        {
-            get => _statusBadgeText;
-            private set => SetProperty(ref _statusBadgeText, value);
-        }
-
-        /// <summary>
-        /// Gets the compact server status badge background.
-        /// </summary>
-        public Color StatusBadgeBackground
-        {
-            get => _statusBadgeBackground;
-            private set => SetProperty(ref _statusBadgeBackground, value);
-        }
-
-        /// <summary>
         /// Gets the mirror server root URL.
         /// </summary>
         public string ServerUrl
         {
             get => _serverUrl;
             private set => SetProperty(ref _serverUrl, value);
-        }
-
-        /// <summary>
-        /// Gets the host list caption.
-        /// </summary>
-        public string HostsCaption
-        {
-            get => _hostsCaption;
-            private set => SetProperty(ref _hostsCaption, value);
         }
 
         /// <summary>
@@ -146,9 +112,10 @@ namespace ASLM.Pages
         /// <summary>
         /// Starts the lightweight host refresh loop when the page becomes visible.
         /// </summary>
-        private async void OnLoaded(object? sender, EventArgs e)
+        private void OnLoaded(object? sender, EventArgs e)
         {
-            await RefreshAsync();
+            _isVisible = true;
+            _ = RefreshAsync();
             StartRefreshLoop();
         }
 
@@ -157,25 +124,12 @@ namespace ASLM.Pages
         /// </summary>
         private void OnUnloaded(object? sender, EventArgs e)
         {
+            _isVisible = false;
             StopRefreshLoop();
         }
 
 
         // Actions
-
-        /// <summary>
-        /// Enables or disables the ASLM API mirror server.
-        /// </summary>
-        private async void OnServerToggled(object? sender, ToggledEventArgs e)
-        {
-            if (_suppressToggleEvent)
-            {
-                return;
-            }
-
-            await Task.Run(() => _apiServer.SetEnabledAsync(e.Value));
-            await RefreshAsync();
-        }
 
         /// <summary>
         /// Opens the ASLM API mirror root in the system browser.
@@ -197,21 +151,19 @@ namespace ASLM.Pages
         /// </summary>
         internal async Task RefreshAsync()
         {
-            ApplyCurrentStateToToggle();
             ApplyServerStatus();
+            EnsureModuleDisplayStatesLoading();
 
-            var hosts = await Task.Run(() => _apiServer.GetHostsWithAvailabilityAsync());
-            SynchronizeHostRows(hosts);
-
-            HostsCaption = hosts.Count == 0
-                ? "No hosts are declared in the runtime port map."
-                : $"{hosts.Count} host{(hosts.Count == 1 ? string.Empty : "s")} declared in the runtime port map.";
+            var hosts = await Task.Run(_apiServer.GetHosts);
+            SynchronizeHostRows(hosts, _moduleDisplayStates);
         }
 
         /// <summary>
         /// Updates host rows in place so periodic refreshes do not recreate the list visual tree.
         /// </summary>
-        private void SynchronizeHostRows(IReadOnlyList<AslmApiHostInfo> hosts)
+        private void SynchronizeHostRows(
+            IReadOnlyList<AslmApiHostInfo> hosts,
+            IReadOnlyDictionary<string, AslmApiModuleDisplayState> moduleStates)
         {
             var activeKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -226,15 +178,16 @@ namespace ASLM.Pages
                 var host = orderedHosts[desiredIndex];
                 var rowKey = AslmApiHostViewModel.BuildKey(host.ModuleId, host.HostKey);
                 activeKeys.Add(rowKey);
+                var moduleState = ResolveModuleDisplayState(host.ModuleId, moduleStates);
 
                 if (_hostRows.TryGetValue(rowKey, out var existingRow))
                 {
-                    existingRow.Update(host);
+                    existingRow.Update(host, moduleState);
                     MoveHostRowIfNeeded(existingRow, desiredIndex);
                     continue;
                 }
 
-                var newRow = new AslmApiHostViewModel(host);
+                var newRow = new AslmApiHostViewModel(host, moduleState, _notifications);
                 _hostRows[rowKey] = newRow;
                 Hosts.Insert(Math.Min(desiredIndex, Hosts.Count), newRow);
             }
@@ -253,6 +206,39 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Loads the current module display state keyed by stable module id.
+        /// </summary>
+        private static Dictionary<string, AslmApiModuleDisplayState> BuildModuleDisplayStates(IEnumerable<ModuleConfig> modules)
+        {
+            return modules
+                .Where(static module => !string.IsNullOrWhiteSpace(module.Id))
+                .GroupBy(static module => module.Id, StringComparer.OrdinalIgnoreCase)
+                .Select(static group => group.First())
+                .ToDictionary(
+                    static module => module.Id,
+                    static module => new AslmApiModuleDisplayState(
+                        string.IsNullOrWhiteSpace(module.Name) ? module.Id : module.Name.Trim(),
+                        module.Status.Enabled),
+                    StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Resolves the human-readable module state used by the host list.
+        /// </summary>
+        private static AslmApiModuleDisplayState ResolveModuleDisplayState(
+            string moduleId,
+            IReadOnlyDictionary<string, AslmApiModuleDisplayState> moduleStates)
+        {
+            if (moduleStates.TryGetValue(moduleId, out var moduleState) &&
+                !string.IsNullOrWhiteSpace(moduleState.Name))
+            {
+                return moduleState;
+            }
+
+            return new AslmApiModuleDisplayState(AslmApiHostViewModel.NormalizeDisplayName(moduleId), true);
+        }
+
+        /// <summary>
         /// Keeps the displayed host list sorted by port without recreating existing row views.
         /// </summary>
         private void MoveHostRowIfNeeded(AslmApiHostViewModel row, int desiredIndex)
@@ -262,6 +248,60 @@ namespace ASLM.Pages
             {
                 Hosts.Move(currentIndex, Math.Min(desiredIndex, Hosts.Count - 1));
             }
+        }
+
+        /// <summary>
+        /// Starts a background module-state refresh when the cached display state is stale.
+        /// </summary>
+        private void EnsureModuleDisplayStatesLoading()
+        {
+            var isLoadActive = _moduleDisplayStatesLoadTask is { IsCompleted: false };
+            var isCacheFresh =
+                _moduleDisplayStatesLoaded &&
+                DateTime.UtcNow - _moduleDisplayStatesLoadedAt < ModuleStateRefreshInterval;
+
+            if (isLoadActive || isCacheFresh)
+            {
+                return;
+            }
+
+            var loadVersion = ++_moduleDisplayStateLoadVersion;
+            _moduleDisplayStatesLoadTask = LoadModuleDisplayStatesAsync(loadVersion);
+        }
+
+        /// <summary>
+        /// Loads module display state without blocking initial page rendering.
+        /// </summary>
+        private async Task LoadModuleDisplayStatesAsync(int loadVersion)
+        {
+            Dictionary<string, AslmApiModuleDisplayState> moduleStates;
+
+            try
+            {
+                var modules = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync());
+                moduleStates = BuildModuleDisplayStates(modules);
+            }
+            catch
+            {
+                return;
+            }
+
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                if (loadVersion != _moduleDisplayStateLoadVersion)
+                {
+                    return;
+                }
+
+                _moduleDisplayStates = moduleStates;
+                _moduleDisplayStatesLoaded = true;
+                _moduleDisplayStatesLoadedAt = DateTime.UtcNow;
+
+                foreach (var row in Hosts)
+                {
+                    row.UpdateModuleState(ResolveModuleDisplayState(row.ModuleId, _moduleDisplayStates));
+                }
+            });
         }
 
         /// <summary>
@@ -285,7 +325,7 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Refreshes host availability at a modest interval while the view is visible.
+        /// Refreshes host rows at a modest interval while the view is visible.
         /// </summary>
         private async Task RunRefreshLoopAsync(CancellationToken ct)
         {
@@ -312,13 +352,22 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Updates the switch without re-entering the toggle handler.
+        /// Invalidates cached module status after module manifests are saved.
         /// </summary>
-        private void ApplyCurrentStateToToggle()
+        private void OnModulesChanged(object? sender, EventArgs e)
         {
-            _suppressToggleEvent = true;
-            ServerSwitch.IsToggled = _apiServer.IsEnabled;
-            _suppressToggleEvent = false;
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                _moduleDisplayStatesLoaded = false;
+                _moduleDisplayStatesLoadedAt = DateTime.MinValue;
+                _moduleDisplayStatesLoadTask = null;
+                _moduleDisplayStateLoadVersion++;
+
+                if (_isVisible)
+                {
+                    await RefreshAsync();
+                }
+            });
         }
 
         /// <summary>
@@ -330,31 +379,23 @@ namespace ASLM.Pages
             var isRunning = _apiServer.IsRunning;
             var lastError = _apiServer.LastError;
 
-            Subtitle = "Mirror and open module hosts routed from Data/App/ASLM_Ports.json.";
-            ToggleLabel = isEnabled ? "Enabled" : "Disabled";
             ServerUrl = _apiServer.BaseUrl;
             CanOpenServer = isRunning;
 
             if (!isEnabled)
             {
-                StatusBadgeText = "Off";
-                StatusBadgeBackground = Color.FromArgb("#3A3A3C");
-                StatusText = "The local mirror server is disabled.";
+                StatusText = "Server disabled in Settings";
                 return;
             }
 
             if (isRunning)
             {
-                StatusBadgeText = "Running";
-                StatusBadgeBackground = Color.FromArgb("#2032D74B");
-                StatusText = "The local mirror server is listening on localhost.";
+                StatusText = "Running on localhost";
                 return;
             }
 
-            StatusBadgeText = "Error";
-            StatusBadgeBackground = Color.FromArgb("#4C1F24");
             StatusText = string.IsNullOrWhiteSpace(lastError)
-                ? "The local mirror server is enabled but not running."
+                ? "Server enabled, but not running"
                 : lastError;
         }
 
@@ -375,7 +416,13 @@ namespace ASLM.Pages
             OnPropertyChanged(propertyName);
             return true;
         }
+
     }
+
+    /// <summary>
+    /// Stores the lightweight module metadata needed by ASLM API host rows.
+    /// </summary>
+    public sealed record AslmApiModuleDisplayState(string Name, bool IsEnabled);
 
     // ASLM API host row
 
@@ -385,19 +432,25 @@ namespace ASLM.Pages
     public class AslmApiHostViewModel : INotifyPropertyChanged
     {
         private string _moduleId = string.Empty;
+        private string _moduleName = string.Empty;
         private string _hostKey = string.Empty;
+        private string _hostName = string.Empty;
         private int _port;
         private string _mirrorUrl = string.Empty;
-        private string _targetUrl = string.Empty;
-        private bool _isOnline;
-        private Command? _openCommand;
+        private bool _isModuleDisabled;
+        private Command? _copyCommand;
+        private readonly NotificationService _notifications;
 
         /// <summary>
         /// Creates a host row from the current service host info.
         /// </summary>
-        public AslmApiHostViewModel(AslmApiHostInfo host)
+        public AslmApiHostViewModel(
+            AslmApiHostInfo host,
+            AslmApiModuleDisplayState moduleState,
+            NotificationService notifications)
         {
-            Update(host);
+            _notifications = notifications;
+            Update(host, moduleState);
         }
 
         /// <inheritdoc />
@@ -413,12 +466,30 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Gets the human-readable module name for display.
+        /// </summary>
+        public string ModuleName
+        {
+            get => _moduleName;
+            private set => SetProperty(ref _moduleName, value);
+        }
+
+        /// <summary>
         /// Gets the port key declared under the module in the port map.
         /// </summary>
         public string HostKey
         {
             get => _hostKey;
             private set => SetProperty(ref _hostKey, value);
+        }
+
+        /// <summary>
+        /// Gets the normalized host name for display.
+        /// </summary>
+        public string HostName
+        {
+            get => _hostName;
+            private set => SetProperty(ref _hostName, value);
         }
 
         /// <summary>
@@ -440,36 +511,13 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Gets the direct localhost target URL behind this host.
+        /// Gets whether the module that owns this host is disabled.
         /// </summary>
-        public string TargetUrl
+        public bool IsModuleDisabled
         {
-            get => _targetUrl;
-            private set => SetProperty(ref _targetUrl, value);
+            get => _isModuleDisabled;
+            private set => SetProperty(ref _isModuleDisabled, value);
         }
-
-        /// <summary>
-        /// Gets whether the target port accepted a connection during the latest refresh.
-        /// </summary>
-        public bool IsOnline
-        {
-            get => _isOnline;
-            private set
-            {
-                if (!SetProperty(ref _isOnline, value))
-                {
-                    return;
-                }
-
-                OnPropertyChanged(nameof(StatusText));
-                OnPropertyChanged(nameof(StatusBackground));
-            }
-        }
-
-        /// <summary>
-        /// Gets the command that opens this host in the system browser.
-        /// </summary>
-        public ICommand OpenCommand => _openCommand ??= new Command(async () => await Launcher.Default.OpenAsync(MirrorUrl));
 
         /// <summary>
         /// Gets the stable key used to diff host rows across refreshes.
@@ -479,40 +527,55 @@ namespace ASLM.Pages
         /// <summary>
         /// Gets the compact title shown in the host row.
         /// </summary>
-        public string Title => $"{ModuleId} / {HostKey}";
+        public string Title => $"{ModuleName} / {HostName}";
 
         /// <summary>
-        /// Gets the direct target text shown below the mirror URL.
+        /// Gets the compact status badge text for disabled modules.
         /// </summary>
-        public string TargetText => $"Target: {TargetUrl}";
+        public string ModuleStatusText => IsModuleDisabled ? "Disabled" : string.Empty;
 
         /// <summary>
-        /// Gets the current availability badge text.
+        /// Gets the command that copies this host URL to the system clipboard.
         /// </summary>
-        public string StatusText => IsOnline ? "Online" : "Offline";
+        public Command CopyCommand => _copyCommand ??= new Command(async () => await CopyMirrorUrlAsync());
 
         /// <summary>
-        /// Gets the current availability badge background.
+        /// Copies the host URL and publishes a shared toast confirmation.
         /// </summary>
-        public Color StatusBackground => IsOnline
-            ? Color.FromArgb("#2032D74B")
-            : Color.FromArgb("#3A3A3C");
+        private async Task CopyMirrorUrlAsync()
+        {
+            await Clipboard.Default.SetTextAsync(MirrorUrl);
+            _notifications.PublishSystemToast(
+                "Address copied",
+                MirrorUrl,
+                "Copied",
+                $"aslm-api:{Key.GetHashCode(StringComparison.OrdinalIgnoreCase)}");
+        }
 
         /// <summary>
         /// Updates the row from fresh service data without recreating the row object.
         /// </summary>
-        public void Update(AslmApiHostInfo host)
+        public void Update(AslmApiHostInfo host, AslmApiModuleDisplayState moduleState)
         {
             ModuleId = host.ModuleId;
+            UpdateModuleState(moduleState);
             HostKey = host.HostKey;
+            HostName = NormalizeHostName(host.HostKey);
             Port = host.Port;
             MirrorUrl = host.MirrorUrl;
-            TargetUrl = host.TargetUrl;
-            IsOnline = host.IsOnline == true;
 
             OnPropertyChanged(nameof(Key));
+        }
+
+        /// <summary>
+        /// Updates only the displayed module state after the background cache refreshes.
+        /// </summary>
+        public void UpdateModuleState(AslmApiModuleDisplayState moduleState)
+        {
+            ModuleName = moduleState.Name;
+            IsModuleDisabled = !moduleState.IsEnabled;
             OnPropertyChanged(nameof(Title));
-            OnPropertyChanged(nameof(TargetText));
+            OnPropertyChanged(nameof(ModuleStatusText));
         }
 
         /// <summary>
@@ -521,6 +584,64 @@ namespace ASLM.Pages
         public static string BuildKey(string moduleId, string hostKey)
         {
             return $"{moduleId}\n{hostKey}";
+        }
+
+        /// <summary>
+        /// Normalizes a technical identifier into a compact display name.
+        /// </summary>
+        public static string NormalizeDisplayName(string value)
+        {
+            var words = (value ?? string.Empty)
+                .Replace('-', ' ')
+                .Replace('_', ' ')
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            if (words.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            return string.Join(' ', words.Select(FormatDisplayWord));
+        }
+
+        /// <summary>
+        /// Normalizes a host port-map key into a user-facing host name.
+        /// </summary>
+        private static string NormalizeHostName(string hostKey)
+        {
+            var trimmed = TrimHostPortSuffix(hostKey?.Trim() ?? string.Empty);
+            return NormalizeDisplayName(trimmed);
+        }
+
+        /// <summary>
+        /// Removes the conventional trailing port marker from host keys.
+        /// </summary>
+        private static string TrimHostPortSuffix(string value)
+        {
+            foreach (var suffix in new[] { "-port", "_port", " port" })
+            {
+                if (value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) &&
+                    value.Length > suffix.Length)
+                {
+                    return value[..^suffix.Length];
+                }
+            }
+
+            return value;
+        }
+
+        /// <summary>
+        /// Formats one identifier word while preserving common technical acronyms.
+        /// </summary>
+        private static string FormatDisplayWord(string word)
+        {
+            var lower = word.ToLowerInvariant();
+            if (lower is "api" or "ui")
+            {
+                return lower.ToUpperInvariant();
+            }
+
+            return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(lower);
         }
 
         /// <summary>

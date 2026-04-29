@@ -31,6 +31,7 @@ namespace ASLM.Services
         /// Tracks running processes by module source path.
         /// </summary>
         private readonly ConcurrentDictionary<string, List<Process>> _runningProcesses = new();
+        private readonly ConcurrentDictionary<string, ModuleConfig> _runningModules = new();
         private readonly object _processLock = new();
 
         // Initialization
@@ -60,6 +61,7 @@ namespace ASLM.Services
             _consoleService = consoleService;
             _processSnapshotService = processSnapshotService;
             _logger = logger;
+            _portManager.PortsRedistributed += OnPortsRedistributed;
         }
 
         // Setup execution
@@ -213,6 +215,8 @@ namespace ASLM.Services
             {
                 if (!_runningProcesses.TryRemove(moduleSourcePath, out processes!))
                     return;
+
+                _runningModules.TryRemove(moduleSourcePath, out _);
             }
 
             _logger.LogInformation("Stopping {Count} process(es) for module '{ModulePath}'", processes.Count, moduleSourcePath);
@@ -223,6 +227,98 @@ namespace ASLM.Services
             }
 
             _consoleService.AppendOverviewLine(moduleSourcePath, "Module processes stopped.");
+        }
+
+        /// <summary>
+        /// Returns the source paths of modules that currently have tracked running processes.
+        /// </summary>
+        public IReadOnlyList<string> GetRunningModuleSourcePaths()
+        {
+            lock (_processLock)
+            {
+                var runningPaths = new List<string>();
+
+                foreach (var pair in _runningProcesses)
+                {
+                    var hasLiveProcess = pair.Value.Any(static process =>
+                    {
+                        try
+                        {
+                            return !process.HasExited;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    });
+
+                    if (hasLiveProcess)
+                    {
+                        runningPaths.Add(pair.Key);
+                    }
+                }
+
+                return runningPaths;
+            }
+        }
+
+        /// <summary>
+        /// Restarts currently running modules after the shared port map changes.
+        /// </summary>
+        private void OnPortsRedistributed(object? sender, EventArgs e)
+        {
+            _ = RestartRunningModulesAfterPortRedistributionAsync();
+        }
+
+        /// <summary>
+        /// Restarts live modules so their injected port settings match the redistributed port map.
+        /// </summary>
+        private async Task RestartRunningModulesAfterPortRedistributionAsync()
+        {
+            try
+            {
+                var modulesToRestart = GetRunningModuleSnapshots();
+                foreach (var module in modulesToRestart)
+                {
+                    _logger.LogInformation("Restarting module '{ModuleName}' after port redistribution.", module.Name);
+                    await StopModuleAsync(module.SourcePath);
+                    await Task.Delay(500);
+
+                    var restartLog = new Progress<string>(message =>
+                        Debug.WriteLine($"[Port Redistribution:{module.Name}] {message}"));
+                    _ = Task.Run(() => ExecuteRunAsync(module, restartLog, CancellationToken.None));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to restart modules after port redistribution.");
+            }
+        }
+
+        /// <summary>
+        /// Returns tracked module configs that still have live process roots.
+        /// </summary>
+        private List<ModuleConfig> GetRunningModuleSnapshots()
+        {
+            lock (_processLock)
+            {
+                return _runningProcesses
+                    .Where(static pair => pair.Value.Any(static process =>
+                    {
+                        try
+                        {
+                            return !process.HasExited;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    }))
+                    .Select(pair => _runningModules.TryGetValue(pair.Key, out var module) ? module : null)
+                    .OfType<ModuleConfig>()
+                    .Where(static module => module.Commands.Run.Count > 0)
+                    .ToList();
+            }
         }
 
         // Global stop
@@ -237,6 +333,7 @@ namespace ASLM.Services
             {
                 allEntries = _runningProcesses.ToList();
                 _runningProcesses.Clear();
+                _runningModules.Clear();
             }
 
             _logger.LogInformation("Stopping all module processes ({Count} modules)...", allEntries.Count);
@@ -611,6 +708,7 @@ namespace ASLM.Services
                     {
                         var list = _runningProcesses.GetOrAdd(module.SourcePath, _ => new List<Process>());
                         list.Add(process);
+                        _runningModules[module.SourcePath] = module;
                     }
 
                     _ = MonitorObservedProcessesAsync(module, sessionHandle, process.Id, ct);
@@ -984,6 +1082,7 @@ namespace ASLM.Services
                     if (list.Count == 0)
                     {
                         _runningProcesses.TryRemove(moduleSourcePath, out _);
+                        _runningModules.TryRemove(moduleSourcePath, out _);
                     }
                 }
             }
@@ -996,6 +1095,7 @@ namespace ASLM.Services
         {
             if (_disposed) return;
             _disposed = true;
+            _portManager.PortsRedistributed -= OnPortsRedistributed;
 
             // Kill all tracked processes before the runner is disposed.
             lock (_processLock)
@@ -1017,6 +1117,7 @@ namespace ASLM.Services
                     }
                 }
                 _runningProcesses.Clear();
+                _runningModules.Clear();
             }
         }
 
