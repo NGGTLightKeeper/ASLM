@@ -50,6 +50,7 @@ namespace ASLM.Pages
         private SettingsCategory? _activeCategory;
         private SettingsCategoryGroup _activeGroup = SettingsCategoryGroup.Aslm;
         private AslmBaseline _aslmBaseline = new(string.Empty, string.Empty, string.Empty, true);
+        private ConsoleBaseline _consoleBaseline = new(true, true, true);
         private UpdateBaseline _updateBaseline = new(true, false, "24", "release", "release", "release");
         private OllamaPersistentSettings _ollamaDraft = new();
         private string _userNameDraft = string.Empty;
@@ -76,6 +77,9 @@ namespace ASLM.Pages
         private Button? _restartAppUpdateButton;
         private UpdateCandidate? _pendingAppUpdateCandidate;
         private CompactToggle? _apiServerToggle;
+        private CompactToggle? _consoleSidebarToggle;
+        private CompactToggle? _consoleCompletedToggle;
+        private CompactToggle? _consoleIndividualToggle;
         private CancellationTokenSource? _ollamaMetadataRefreshCts;
         private CancellationTokenSource? _ollamaStatusPollingCts;
 
@@ -101,6 +105,7 @@ namespace ASLM.Pages
             AslmProfile,
             AslmPorts,
             AslmApi,
+            Consoles,
             Updates,
             Ollama,
             Module
@@ -332,6 +337,11 @@ namespace ASLM.Pages
         private record AslmBaseline(string UserName, string OfficialPort, string ThirdPartyPort, bool ApiServerEnabled);
 
         /// <summary>
+        /// Stores the initial console preferences loaded for the current page session.
+        /// </summary>
+        private record ConsoleBaseline(bool SidebarVisible, bool ShowCompletedProcesses, bool ShowIndividualModuleConsoles);
+
+        /// <summary>
         /// Stores the initial update settings loaded for the current page session.
         /// </summary>
         private record UpdateBaseline(
@@ -546,6 +556,11 @@ namespace ASLM.Pages
             _officialPortDraft = _appData.Data.Ports.OfficialStart.ToString(CultureInfo.InvariantCulture);
             _thirdPartyPortDraft = _appData.Data.Ports.ThirdPartyStart.ToString(CultureInfo.InvariantCulture);
             _aslmBaseline = new AslmBaseline(_userNameDraft, _officialPortDraft, _thirdPartyPortDraft, _appData.Data.Api.ServerEnabled);
+            _appData.Data.Consoles.Normalize();
+            _consoleBaseline = new ConsoleBaseline(
+                _appData.Data.Consoles.SidebarVisible,
+                _appData.Data.Consoles.ShowCompletedProcesses,
+                _appData.Data.Consoles.ShowIndividualModuleConsoles);
             _appData.Data.Updates.Normalize();
             _updateBaseline = new UpdateBaseline(
                 _appData.Data.Updates.CheckEnabled,
@@ -657,6 +672,13 @@ namespace ASLM.Pages
                     "ASLM API",
                     "Local API mirror server.",
                     SettingsCategoryKind.AslmApi,
+                    null,
+                    false),
+                new(
+                    "aslm-consoles",
+                    "Consoles Page",
+                    "Built-in console page visibility and output scope.",
+                    SettingsCategoryKind.Consoles,
                     null,
                     false),
                 new(
@@ -847,6 +869,9 @@ namespace ASLM.Pages
                     break;
                 case SettingsCategoryKind.AslmApi:
                     RenderAslmApiCategory();
+                    break;
+                case SettingsCategoryKind.Consoles:
+                    RenderConsolesCategory();
                     break;
                 case SettingsCategoryKind.Updates:
                     RenderUpdatesCategory();
@@ -1114,6 +1139,52 @@ namespace ASLM.Pages
                 "API server",
                 "Start the local mirror server with ASLM.",
                 _apiServerToggle.View));
+
+            section.Content = content;
+            ModuleSettingsContainer.Children.Add(section);
+        }
+
+        /// <summary>
+        /// Rebuilds the consoles settings category.
+        /// </summary>
+        private void RenderConsolesCategory()
+        {
+            _settingMappings.Clear();
+            ResetOllamaControlReferences();
+            ResetUpdateControlReferences();
+            ResetAslmApiControlReferences();
+            ModuleSettingsContainer.Children.Clear();
+
+            AslmSettingsContainer.IsVisible = false;
+            ModuleSettingsContainer.IsVisible = true;
+            EmptyCategoryState.IsVisible = false;
+
+            _appData.Data.Consoles.Normalize();
+            var settings = _appData.Data.Consoles;
+
+            var section = CreateModuleSectionBorder();
+            var content = new VerticalStackLayout { Spacing = 12 };
+
+            _consoleSidebarToggle = CreateCompactToggle(settings.SidebarVisible);
+            _consoleSidebarToggle.Toggled += (_, _) => QueueActionButtonUpdate();
+            content.Children.Add(CreateUpdateCard(
+                "Consoles Page",
+                "Show the built-in consoles page in the sidebar.",
+                _consoleSidebarToggle.View));
+
+            _consoleIndividualToggle = CreateCompactToggle(settings.ShowIndividualModuleConsoles);
+            _consoleIndividualToggle.Toggled += (_, _) => QueueActionButtonUpdate();
+            content.Children.Add(CreateUpdateCard(
+                "Individual consoles",
+                "Show per-process consoles alongside unified module output.",
+                _consoleIndividualToggle.View));
+
+            _consoleCompletedToggle = CreateCompactToggle(settings.ShowCompletedProcesses);
+            _consoleCompletedToggle.Toggled += (_, _) => QueueActionButtonUpdate();
+            content.Children.Add(CreateUpdateCard(
+                "Completed process consoles",
+                "Keep finished process consoles visible when individual consoles are enabled.",
+                _consoleCompletedToggle.View));
 
             section.Content = content;
             ModuleSettingsContainer.Children.Add(section);
@@ -1757,6 +1828,7 @@ namespace ASLM.Pages
                 SettingsCategoryKind.AslmPorts => !string.Equals(OfficialPortEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.OfficialPort, StringComparison.Ordinal) ||
                                                   !string.Equals(ThirdPartyPortEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.ThirdPartyPort, StringComparison.Ordinal),
                 SettingsCategoryKind.AslmApi => HasUnsavedAslmApiChanges(),
+                SettingsCategoryKind.Consoles => HasUnsavedConsoleChanges(),
                 SettingsCategoryKind.Updates => HasUnsavedUpdateChanges(),
                 SettingsCategoryKind.Ollama => false,
                 SettingsCategoryKind.Module => HasUnsavedModuleChanges(),
@@ -1770,6 +1842,17 @@ namespace ASLM.Pages
         private bool HasUnsavedAslmApiChanges() =>
             _apiServerToggle != null &&
             _apiServerToggle.IsToggled != _aslmBaseline.ApiServerEnabled;
+
+        /// <summary>
+        /// Determines whether console preferences differ from the last saved baseline.
+        /// </summary>
+        private bool HasUnsavedConsoleChanges() =>
+            _consoleSidebarToggle != null &&
+            _consoleCompletedToggle != null &&
+            _consoleIndividualToggle != null &&
+            (_consoleSidebarToggle.IsToggled != _consoleBaseline.SidebarVisible ||
+             _consoleCompletedToggle.IsToggled != _consoleBaseline.ShowCompletedProcesses ||
+             _consoleIndividualToggle.IsToggled != _consoleBaseline.ShowIndividualModuleConsoles);
 
         /// <summary>
         /// Determines whether the visible module editors differ from the last saved baseline.
@@ -1950,6 +2033,17 @@ namespace ASLM.Pages
                         _apiServerToggle.IsToggled = new AppApiConfig().ServerEnabled;
                     }
                     break;
+                case SettingsCategoryKind.Consoles:
+                    if (_consoleSidebarToggle != null &&
+                        _consoleCompletedToggle != null &&
+                        _consoleIndividualToggle != null)
+                    {
+                        var defaults = new AppConsoleConfig();
+                        _consoleSidebarToggle.IsToggled = defaults.SidebarVisible;
+                        _consoleCompletedToggle.IsToggled = defaults.ShowCompletedProcesses;
+                        _consoleIndividualToggle.IsToggled = defaults.ShowIndividualModuleConsoles;
+                    }
+                    break;
                 case SettingsCategoryKind.Updates:
                     ApplyUpdateDefaultsToControls();
                     break;
@@ -2085,6 +2179,30 @@ namespace ASLM.Pages
                         await _apiServer.SetEnabledAsync(_apiServerToggle.IsToggled);
                         _aslmBaseline = _aslmBaseline with { ApiServerEnabled = _apiServer.IsEnabled };
                         RenderAslmApiCategory();
+                        await ShowSuccessAsync(BuildSaveMessage(hasChanges, false, []));
+                        break;
+                    }
+
+                    case SettingsCategoryKind.Consoles:
+                    {
+                        if (_consoleSidebarToggle == null ||
+                            _consoleCompletedToggle == null ||
+                            _consoleIndividualToggle == null)
+                        {
+                            await ShowErrorAsync("Console settings controls are not ready.");
+                            return;
+                        }
+
+                        var hasChanges = HasUnsavedConsoleChanges();
+                        _appData.Data.Consoles.SidebarVisible = _consoleSidebarToggle.IsToggled;
+                        _appData.Data.Consoles.ShowCompletedProcesses = _consoleCompletedToggle.IsToggled;
+                        _appData.Data.Consoles.ShowIndividualModuleConsoles = _consoleIndividualToggle.IsToggled;
+                        await _appData.SaveAsync();
+                        _consoleBaseline = new ConsoleBaseline(
+                            _appData.Data.Consoles.SidebarVisible,
+                            _appData.Data.Consoles.ShowCompletedProcesses,
+                            _appData.Data.Consoles.ShowIndividualModuleConsoles);
+                        RenderConsolesCategory();
                         await ShowSuccessAsync(BuildSaveMessage(hasChanges, false, []));
                         break;
                     }
@@ -2638,11 +2756,14 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Clears the dynamically created ASLM API setting controls before the page is rebuilt.
+        /// Clears the dynamically created built-in ASLM setting controls before the page is rebuilt.
         /// </summary>
         private void ResetAslmApiControlReferences()
         {
             _apiServerToggle = null;
+            _consoleSidebarToggle = null;
+            _consoleCompletedToggle = null;
+            _consoleIndividualToggle = null;
         }
 
         /// <summary>

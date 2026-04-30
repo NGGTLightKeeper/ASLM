@@ -27,6 +27,10 @@ namespace ASLM.Models
         [JsonPropertyName("api")]
         public AppApiConfig Api { get; set; } = new();
 
+        // Stores console page preferences.
+        [JsonPropertyName("consoles")]
+        public AppConsoleConfig Consoles { get; set; } = new();
+
         // Stores ASLM and module update preferences.
         [JsonPropertyName("updates")]
         public AppUpdateSettings Updates { get; set; } = new();
@@ -46,6 +50,10 @@ namespace ASLM.Models
             // Recreate and normalize the API server section when it is absent.
             Api ??= new();
             Api.Normalize();
+
+            // Recreate and normalize console preferences when the section is absent.
+            Consoles ??= new();
+            Consoles.Normalize();
 
             // Recreate and normalize update preferences when the section is absent.
             Updates ??= new();
@@ -93,6 +101,35 @@ namespace ASLM.Models
         public void Normalize()
         {
             // The API port is allocated by PortManager from the official module pool.
+        }
+    }
+
+
+    // Console page settings
+
+    /// <summary>
+    /// Stores preferences for the built-in consoles page.
+    /// </summary>
+    public class AppConsoleConfig
+    {
+        // Indicates whether the consoles page is shown in the sidebar.
+        [JsonPropertyName("sidebarVisible")]
+        public bool SidebarVisible { get; set; } = true;
+
+        // Indicates whether completed process sessions remain visible in per-module console lists.
+        [JsonPropertyName("showCompletedProcesses")]
+        public bool ShowCompletedProcesses { get; set; } = true;
+
+        // Indicates whether per-process consoles are available in addition to unified module consoles.
+        [JsonPropertyName("showIndividualModuleConsoles")]
+        public bool ShowIndividualModuleConsoles { get; set; } = true;
+
+        /// <summary>
+        /// Restores safe defaults after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            // Boolean properties already carry their default values.
         }
     }
 

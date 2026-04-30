@@ -12,6 +12,11 @@
     "api": {
         "serverEnabled": true
     },
+    "consoles": {
+        "sidebarVisible": true,
+        "showCompletedProcesses": true,
+        "showIndividualModuleConsoles": true
+    },
     "updates": {
         "checkEnabled": true,
         "autoUpdateEnabled": false,

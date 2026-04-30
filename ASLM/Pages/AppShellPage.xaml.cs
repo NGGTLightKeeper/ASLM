@@ -44,6 +44,7 @@ namespace ASLM.Pages
 
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
+        private readonly AppDataService _appData;
         private readonly PortManager _portManager;
         private readonly NotificationService _notificationService;
         private readonly UpdateService _updateService;
@@ -76,6 +77,7 @@ namespace ASLM.Pages
         public AppShellPage(
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
+            AppDataService appData,
             PortManager portManager,
             NotificationService notificationService,
             UpdateService updateService,
@@ -84,6 +86,7 @@ namespace ASLM.Pages
         {
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
+            _appData = appData;
             _portManager = portManager;
             _notificationService = notificationService;
             _updateService = updateService;
@@ -126,6 +129,7 @@ namespace ASLM.Pages
             }
 
             ApplyAslmApiNavigationState();
+            ApplyConsoleNavigationState();
         }
 
 
@@ -163,6 +167,7 @@ namespace ASLM.Pages
             _notificationService.NotificationPublished += OnNotificationPublished;
             _apiServer.StateChanged += OnApiServerStateChanged;
             ApplyAslmApiNavigationState();
+            ApplyConsoleNavigationState();
             _ = StartEnabledModulesAsync();
             _ = CheckStartupUpdatesAsync();
             _ = _notificationService.PublishStartupTestNotificationsAsync();
@@ -253,6 +258,21 @@ namespace ASLM.Pages
             AslmApiButton.IsVisible = isVisible;
 
             if (!isVisible && _activeNavButton == AslmApiButton)
+            {
+                NavigateTo(HomeButton);
+            }
+        }
+
+        /// <summary>
+        /// Shows the consoles navigation item according to the saved user preference.
+        /// </summary>
+        private void ApplyConsoleNavigationState()
+        {
+            _appData.Data.Consoles.Normalize();
+            var isVisible = _appData.Data.Consoles.SidebarVisible;
+            ConsolesButton.IsVisible = isVisible;
+
+            if (!isVisible && _activeNavButton == ConsolesButton)
             {
                 NavigateTo(HomeButton);
             }
@@ -422,6 +442,12 @@ namespace ASLM.Pages
         private void OnSettingsCloseRequested(object? sender, EventArgs e)
         {
             OverlayContainer.IsVisible = false;
+            ApplyConsoleNavigationState();
+
+            if (_consolesView is ConsolesView consolesView)
+            {
+                _ = consolesView.RefreshAsync();
+            }
         }
 
         /// <summary>
