@@ -68,6 +68,9 @@ namespace ASLM.Pages
         private Button? _activeNavButton;
         private Button[] _navButtons = [];
         private CancellationTokenSource? _pageButtonLayoutCts;
+        private readonly SemaphoreSlim _moduleRefreshLock = new(1, 1);
+        private bool _shellEventsHooked;
+        private int _moduleRefreshQueued;
 
         // Initialization
 
@@ -156,6 +159,8 @@ namespace ASLM.Pages
         /// </summary>
         private async void OnPageLoaded(object? sender, EventArgs e)
         {
+            HookShellEvents();
+
             if (_hasLoaded)
             {
                 return;
@@ -164,8 +169,6 @@ namespace ASLM.Pages
             _hasLoaded = true;
             await RefreshModulesAsync();
             NavigateTo(HomeButton);
-            _notificationService.NotificationPublished += OnNotificationPublished;
-            _apiServer.StateChanged += OnApiServerStateChanged;
             ApplyAslmApiNavigationState();
             ApplyConsoleNavigationState();
             _ = StartEnabledModulesAsync();
@@ -178,8 +181,39 @@ namespace ASLM.Pages
         /// </summary>
         private void OnPageUnloaded(object? sender, EventArgs e)
         {
+            UnhookShellEvents();
+        }
+
+        /// <summary>
+        /// Hooks shell-wide service events once per visual lifetime.
+        /// </summary>
+        private void HookShellEvents()
+        {
+            if (_shellEventsHooked)
+            {
+                return;
+            }
+
+            _notificationService.NotificationPublished += OnNotificationPublished;
+            _apiServer.StateChanged += OnApiServerStateChanged;
+            _moduleInstaller.ModulesChanged += OnModulesChanged;
+            _shellEventsHooked = true;
+        }
+
+        /// <summary>
+        /// Unhooks shell-wide service events when the page leaves the visual tree.
+        /// </summary>
+        private void UnhookShellEvents()
+        {
+            if (!_shellEventsHooked)
+            {
+                return;
+            }
+
             _notificationService.NotificationPublished -= OnNotificationPublished;
             _apiServer.StateChanged -= OnApiServerStateChanged;
+            _moduleInstaller.ModulesChanged -= OnModulesChanged;
+            _shellEventsHooked = false;
         }
 
         /// <summary>
@@ -204,28 +238,53 @@ namespace ASLM.Pages
         /// </summary>
         private async Task RefreshModulesAsync()
         {
-            _allModules = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync());
+            Interlocked.Exchange(ref _moduleRefreshQueued, 1);
+            if (!await _moduleRefreshLock.WaitAsync(0))
+            {
+                return;
+            }
+
+            try
+            {
+                do
+                {
+                    Interlocked.Exchange(ref _moduleRefreshQueued, 0);
+                    var modules = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync());
+                    await MainThread.InvokeOnMainThreadAsync(() => ApplyModules(modules));
+                }
+                while (Interlocked.Exchange(ref _moduleRefreshQueued, 0) == 1);
+            }
+            finally
+            {
+                _moduleRefreshLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// Applies the latest module API snapshot to the sidebar and loaded module-backed views.
+        /// </summary>
+        private void ApplyModules(List<ModuleConfig> modules)
+        {
+            var activeModuleSourcePath = _activeModule?.SourcePath;
+            _allModules = modules;
+
+            if (!string.IsNullOrWhiteSpace(activeModuleSourcePath))
+            {
+                _activeModule = _allModules.FirstOrDefault(module =>
+                    string.Equals(module.SourcePath, activeModuleSourcePath, StringComparison.OrdinalIgnoreCase));
+            }
+
             BuildPageButtons();
+
+            if (_activeModule is { HasPage: true, Status.Enabled: false })
+            {
+                NavigateTo(HomeButton);
+            }
 
             if (_moduleManagementView is ModuleManagementView moduleManagementView)
             {
                 moduleManagementView.RefreshModules(_allModules, _moduleInstaller, _moduleRunner);
             }
-
-            if (_homeView is HomeView homeView)
-            {
-                _ = homeView.RefreshAsync();
-            }
-        }
-
-        // Module state callback
-
-        /// <summary>
-        /// Refreshes module page buttons after a module changes state.
-        /// </summary>
-        internal void OnModuleStateChanged()
-        {
-            BuildPageButtons();
 
             if (_consolesView is ConsolesView consolesView)
             {
@@ -236,6 +295,29 @@ namespace ASLM.Pages
             {
                 _ = homeView.RefreshAsync();
             }
+
+            if (_aslmApiView is AslmApiView aslmApiView)
+            {
+                _ = aslmApiView.RefreshAsync();
+            }
+        }
+
+        /// <summary>
+        /// Refreshes module-backed UI after a module manifest is saved.
+        /// </summary>
+        private void OnModulesChanged(object? sender, EventArgs e)
+        {
+            _ = RefreshModulesAsync();
+        }
+
+        // Module state callback
+
+        /// <summary>
+        /// Refreshes module page buttons after a module changes state.
+        /// </summary>
+        internal void OnModuleStateChanged()
+        {
+            _ = RefreshModulesAsync();
         }
 
 
@@ -447,6 +529,11 @@ namespace ASLM.Pages
             if (_consolesView is ConsolesView consolesView)
             {
                 _ = consolesView.RefreshAsync();
+            }
+
+            if (_homeView is HomeView homeView)
+            {
+                _ = homeView.RefreshAsync();
             }
         }
 

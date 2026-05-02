@@ -25,21 +25,10 @@ namespace ASLM.Pages
     {
         private const double MinSummaryCardWidth = 400;
         private const double CompactBreakpoint = 1480;
-        private const double MinProcessNameColumnWidth = 280;
-        private const double MinProcessMetricColumnWidth = 72;
-        private const double MinProcessDetailsColumnWidth = 140;
-        private const double MinModulesNameColumnWidth = 220;
-        private const double MinModulesActionsColumnWidth = 148;
 
         private readonly HomeDashboardPageViewModel _viewModel = new();
         private readonly HomeDashboardPresenter _presenter;
         private IDispatcherTimer? _refreshTimer;
-        private bool _hasCustomProcessColumnWidths;
-        private bool _hasCustomModulesColumnWidths;
-        private string? _activeProcessResizeColumnKey;
-        private double _activeProcessResizeStartWidth;
-        private string? _activeModulesResizeColumnKey;
-        private double _activeModulesResizeStartWidth;
 
         /// <summary>
         /// Creates the home dashboard and prepares the presenter-driven lifecycle.
@@ -48,13 +37,14 @@ namespace ASLM.Pages
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
             ModuleConsoleService consoleService,
-            ProcessSnapshotService processSnapshotService)
+            ProcessSnapshotService processSnapshotService,
+            AppDataService appData)
         {
             InitializeComponent();
 
             BindingContext = _viewModel;
 
-            _presenter = new HomeDashboardPresenter(this, moduleInstaller, moduleRunner, consoleService, processSnapshotService);
+            _presenter = new HomeDashboardPresenter(this, moduleInstaller, moduleRunner, consoleService, processSnapshotService, appData);
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
@@ -130,7 +120,8 @@ namespace ASLM.Pages
                 _viewModel.ProcessNodes,
                 state.ProcessNodes,
                 static item => item.Key,
-                static (target, source) => target.CopyFrom(source));
+                static (target, source) => target.CopyFrom(source),
+                removeMissingItemsBeforeReorder: true);
 
             SyncKeyedItems(
                 _viewModel.Modules,
@@ -154,7 +145,6 @@ namespace ASLM.Pages
             }
 
             var isCompact = availableWidth < CompactBreakpoint;
-            ApplyTableLayout(availableWidth, isCompact);
 
             WorkspaceLayout.ColumnDefinitions.Clear();
             WorkspaceLayout.RowDefinitions.Clear();
@@ -181,229 +171,6 @@ namespace ASLM.Pages
                 Grid.SetRow(ModulesPanel, 0);
                 Grid.SetColumn(ModulesPanel, 1);
             }
-        }
-
-        /// <summary>
-        /// Applies the responsive table-column presets used by the process and module panels.
-        /// </summary>
-        private void ApplyTableLayout(double availableWidth, bool isCompact)
-        {
-            _viewModel.ProcessTableColumnSpacing = 10;
-            _viewModel.ModulesTableColumnSpacing = 10;
-
-            if (!_hasCustomProcessColumnWidths)
-            {
-                var processNameWidth = isCompact
-                    ? 340
-                    : availableWidth < 1700
-                        ? 420
-                        : 520;
-
-                _viewModel.ProcessNameColumnWidth = new GridLength(processNameWidth);
-                _viewModel.ProcessCpuColumnWidth = new GridLength(78);
-                _viewModel.ProcessGpuColumnWidth = new GridLength(78);
-                _viewModel.ProcessMemoryColumnWidth = new GridLength(92);
-                _viewModel.ProcessDiskColumnWidth = new GridLength(92);
-                _viewModel.ProcessNetworkColumnWidth = new GridLength(80);
-                _viewModel.ProcessDetailsColumnWidth = new GridLength(isCompact ? 160 : 210);
-            }
-
-            if (!_hasCustomModulesColumnWidths)
-            {
-                _viewModel.ModulesNameColumnWidth = new GridLength(isCompact ? 260 : 320);
-                _viewModel.ModulesActionsColumnWidth = new GridLength(isCompact ? 160 : 172);
-            }
-
-            UpdateTableWidths();
-        }
-
-        /// <summary>
-        /// Handles runtime resizing of process-table columns from the header drag handles.
-        /// </summary>
-        private void OnProcessColumnResizePanUpdated(object? sender, PanUpdatedEventArgs e)
-        {
-            if (sender is not VisualElement { ClassId: { Length: > 0 } columnKey })
-            {
-                return;
-            }
-
-            switch (e.StatusType)
-            {
-                case GestureStatus.Started:
-                    _activeProcessResizeColumnKey = columnKey;
-                    _activeProcessResizeStartWidth = GetProcessColumnWidth(columnKey);
-                    break;
-
-                case GestureStatus.Running when string.Equals(_activeProcessResizeColumnKey, columnKey, StringComparison.Ordinal):
-                    _hasCustomProcessColumnWidths = true;
-                    // `TotalX` is measured from gesture start, so we keep the initial width
-                    // and apply the running delta on top to avoid cumulative drift.
-                    SetProcessColumnWidth(columnKey, _activeProcessResizeStartWidth + e.TotalX);
-                    UpdateTableWidths();
-                    break;
-
-                case GestureStatus.Canceled:
-                case GestureStatus.Completed:
-                    _activeProcessResizeColumnKey = null;
-                    _activeProcessResizeStartWidth = 0;
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Handles runtime resizing of module-table columns from the header drag handles.
-        /// </summary>
-        private void OnModulesColumnResizePanUpdated(object? sender, PanUpdatedEventArgs e)
-        {
-            if (sender is not VisualElement { ClassId: { Length: > 0 } columnKey })
-            {
-                return;
-            }
-
-            switch (e.StatusType)
-            {
-                case GestureStatus.Started:
-                    _activeModulesResizeColumnKey = columnKey;
-                    _activeModulesResizeStartWidth = GetModulesColumnWidth(columnKey);
-                    break;
-
-                case GestureStatus.Running when string.Equals(_activeModulesResizeColumnKey, columnKey, StringComparison.Ordinal):
-                    _hasCustomModulesColumnWidths = true;
-                    // Reuse the same delta-based resize behavior as the process grid so the
-                    // header splitter stays predictable during long drags.
-                    SetModulesColumnWidth(columnKey, _activeModulesResizeStartWidth + e.TotalX);
-                    UpdateTableWidths();
-                    break;
-
-                case GestureStatus.Canceled:
-                case GestureStatus.Completed:
-                    _activeModulesResizeColumnKey = null;
-                    _activeModulesResizeStartWidth = 0;
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Recomputes the minimum widths required by the horizontally scrollable tables.
-        /// </summary>
-        private void UpdateTableWidths()
-        {
-            // The scrollable table uses fixed column widths plus the horizontal grid padding.
-            _viewModel.ProcessTableWidth =
-                24 +
-                (_viewModel.ProcessTableColumnSpacing * 6) +
-                _viewModel.ProcessNameColumnWidth.Value +
-                _viewModel.ProcessCpuColumnWidth.Value +
-                _viewModel.ProcessGpuColumnWidth.Value +
-                _viewModel.ProcessMemoryColumnWidth.Value +
-                _viewModel.ProcessDiskColumnWidth.Value +
-                _viewModel.ProcessNetworkColumnWidth.Value +
-                _viewModel.ProcessDetailsColumnWidth.Value;
-
-            _viewModel.ModulesTableWidth =
-                24 +
-                _viewModel.ModulesTableColumnSpacing +
-                _viewModel.ModulesNameColumnWidth.Value +
-                _viewModel.ModulesActionsColumnWidth.Value;
-        }
-
-        /// <summary>
-        /// Returns the current width of one process-table column.
-        /// </summary>
-        private double GetProcessColumnWidth(string columnKey)
-        {
-            return columnKey switch
-            {
-                "Name" => _viewModel.ProcessNameColumnWidth.Value,
-                "Cpu" => _viewModel.ProcessCpuColumnWidth.Value,
-                "Gpu" => _viewModel.ProcessGpuColumnWidth.Value,
-                "Memory" => _viewModel.ProcessMemoryColumnWidth.Value,
-                "Disk" => _viewModel.ProcessDiskColumnWidth.Value,
-                "Network" => _viewModel.ProcessNetworkColumnWidth.Value,
-                "Details" => _viewModel.ProcessDetailsColumnWidth.Value,
-                _ => 0
-            };
-        }
-
-        /// <summary>
-        /// Updates one process-table column width while respecting per-column minimums.
-        /// </summary>
-        private void SetProcessColumnWidth(string columnKey, double width)
-        {
-            var clampedWidth = Math.Max(GetMinimumProcessColumnWidth(columnKey), width);
-
-            switch (columnKey)
-            {
-                case "Name":
-                    _viewModel.ProcessNameColumnWidth = new GridLength(clampedWidth);
-                    break;
-                case "Cpu":
-                    _viewModel.ProcessCpuColumnWidth = new GridLength(clampedWidth);
-                    break;
-                case "Gpu":
-                    _viewModel.ProcessGpuColumnWidth = new GridLength(clampedWidth);
-                    break;
-                case "Memory":
-                    _viewModel.ProcessMemoryColumnWidth = new GridLength(clampedWidth);
-                    break;
-                case "Disk":
-                    _viewModel.ProcessDiskColumnWidth = new GridLength(clampedWidth);
-                    break;
-                case "Network":
-                    _viewModel.ProcessNetworkColumnWidth = new GridLength(clampedWidth);
-                    break;
-                case "Details":
-                    _viewModel.ProcessDetailsColumnWidth = new GridLength(clampedWidth);
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Returns the current width of one modules-table column.
-        /// </summary>
-        private double GetModulesColumnWidth(string columnKey)
-        {
-            return columnKey switch
-            {
-                "Name" => _viewModel.ModulesNameColumnWidth.Value,
-                "Actions" => _viewModel.ModulesActionsColumnWidth.Value,
-                _ => 0
-            };
-        }
-
-        /// <summary>
-        /// Updates one modules-table column width while respecting per-column minimums.
-        /// </summary>
-        private void SetModulesColumnWidth(string columnKey, double width)
-        {
-            var clampedWidth = Math.Max(
-                string.Equals(columnKey, "Actions", StringComparison.Ordinal)
-                    ? MinModulesActionsColumnWidth
-                    : MinModulesNameColumnWidth,
-                width);
-
-            switch (columnKey)
-            {
-                case "Name":
-                    _viewModel.ModulesNameColumnWidth = new GridLength(clampedWidth);
-                    break;
-                case "Actions":
-                    _viewModel.ModulesActionsColumnWidth = new GridLength(clampedWidth);
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Returns the minimum allowed width of one process-table column.
-        /// </summary>
-        private static double GetMinimumProcessColumnWidth(string columnKey)
-        {
-            return columnKey switch
-            {
-                "Name" => MinProcessNameColumnWidth,
-                "Details" => MinProcessDetailsColumnWidth,
-                _ => MinProcessMetricColumnWidth
-            };
         }
 
         // Timed refresh
@@ -462,9 +229,15 @@ namespace ASLM.Pages
             ObservableCollection<T> target,
             IReadOnlyList<T> source,
             Func<T, string> keySelector,
-            Action<T, T> updateExisting)
+            Action<T, T> updateExisting,
+            bool removeMissingItemsBeforeReorder = false)
             where T : class
         {
+            if (removeMissingItemsBeforeReorder)
+            {
+                RemoveMissingItems(target, source, keySelector);
+            }
+
             var indexByKey = BuildIndex(target, keySelector);
 
             for (var index = 0; index < source.Count; index++)
@@ -498,6 +271,30 @@ namespace ASLM.Pages
             while (target.Count > source.Count)
             {
                 target.RemoveAt(target.Count - 1);
+            }
+        }
+
+        /// <summary>
+        /// Removes no-longer-visible items before reordering to avoid redundant collapse animations.
+        /// </summary>
+        private static void RemoveMissingItems<T>(
+            ObservableCollection<T> target,
+            IReadOnlyList<T> source,
+            Func<T, string> keySelector)
+            where T : class
+        {
+            var sourceKeys = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var sourceItem in source)
+            {
+                sourceKeys.Add(keySelector(sourceItem));
+            }
+
+            for (var index = target.Count - 1; index >= 0; index--)
+            {
+                if (!sourceKeys.Contains(keySelector(target[index])))
+                {
+                    target.RemoveAt(index);
+                }
             }
         }
 
@@ -540,6 +337,7 @@ namespace ASLM.Pages
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly ModuleConsoleService _consoleService;
+        private readonly AppDataService _appData;
         private readonly HomeDiagnosticsCollector _diagnosticsCollector;
         private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
@@ -567,12 +365,14 @@ namespace ASLM.Pages
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
             ModuleConsoleService consoleService,
-            ProcessSnapshotService processSnapshotService)
+            ProcessSnapshotService processSnapshotService,
+            AppDataService appData)
         {
             _view = view;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             _consoleService = consoleService;
+            _appData = appData;
             _diagnosticsCollector = new HomeDiagnosticsCollector(processSnapshotService);
         }
 
@@ -873,6 +673,8 @@ namespace ASLM.Pages
             HomeDiagnosticsSnapshot diagnostics)
         {
             var rows = new List<HomeModuleCardViewModel>();
+            _appData.Data.Normalize();
+            var canShowConsoleActions = _appData.Data.Consoles.SidebarVisible;
 
             foreach (var module in modules)
             {
@@ -886,11 +688,7 @@ namespace ASLM.Pages
 
                 var secondaryParts = new List<string> { statusText };
 
-                if (moduleDiagnostics?.LastActivityUtc.HasValue == true)
-                {
-                    secondaryParts.Add($"last {moduleDiagnostics.LastActivityUtc.Value.ToLocalTime():HH:mm:ss}");
-                }
-                else if (!module.Status.Enabled)
+                if (!module.Status.Enabled)
                 {
                     secondaryParts.Add(BuildModuleSecondaryText(module));
                 }
@@ -900,7 +698,7 @@ namespace ASLM.Pages
                     SourcePath = module.SourcePath,
                     Name = module.Name,
                     SecondaryText = string.Join(" | ", secondaryParts),
-                    CanOpenConsole = module.Status.Enabled || hasConsole,
+                    CanOpenConsole = canShowConsoleActions && (module.Status.Enabled || hasConsole),
                     IsBusy = operationState.IsBusy,
                     BusyText = operationState.BusyText,
                     IsRunningAndIdle = module.Status.Enabled && !operationState.IsBusy,
@@ -954,11 +752,11 @@ namespace ASLM.Pages
                 DetailsText = node.DetailsText,
                 IndentMargin = new Thickness(depth * 18, 0, 0, 0),
                 CanExpand = node.Children.Count > 0 && !IsFixedRootNode(node.Key),
-                ExpanderText = node.Children.Count == 0 || IsFixedRootNode(node.Key)
+                ExpanderIconSource = node.Children.Count == 0 || IsFixedRootNode(node.Key)
                     ? string.Empty
                     : isExpanded
-                        ? "▾"
-                        : "▸",
+                        ? "icon_arrow_down.png"
+                        : "icon_arrow_right.png",
                 ToggleCommand = new Command(() =>
                 {
                     if (node.Children.Count > 0 && !IsFixedRootNode(node.Key))
@@ -1083,7 +881,6 @@ namespace ASLM.Pages
                 await Task.Run(() => _moduleInstaller.SaveConfigAsync(module));
                 _consoleService.EnsureModule(module);
                 _consoleService.UpdateModuleEnabledState(module.SourcePath, true);
-                NotifyShellModuleStateChanged();
 
                 if (module.Commands.Run.Count > 0)
                 {
@@ -1125,7 +922,6 @@ namespace ASLM.Pages
                 module.Status.Enabled = false;
                 await Task.Run(() => _moduleInstaller.SaveConfigAsync(module));
                 _consoleService.UpdateModuleEnabledState(module.SourcePath, false);
-                NotifyShellModuleStateChanged();
             }
             finally
             {
@@ -1170,7 +966,6 @@ namespace ASLM.Pages
                     _ = Task.Run(() => _moduleRunner.ExecuteRunAsync(module, restartLog, CancellationToken.None));
                 }
 
-                NotifyShellModuleStateChanged();
             }
             finally
             {
@@ -1219,14 +1014,6 @@ namespace ASLM.Pages
         private void OpenModuleConsole(string sourcePath)
         {
             MainThread.BeginInvokeOnMainThread(() => _shell?.OpenConsoles(sourcePath));
-        }
-
-        /// <summary>
-        /// Notifies the shell that module state changed so shared navigation and related pages can refresh.
-        /// </summary>
-        private void NotifyShellModuleStateChanged()
-        {
-            MainThread.BeginInvokeOnMainThread(() => _shell?.OnModuleStateChanged());
         }
 
         // Formatting helpers
@@ -1349,7 +1136,7 @@ namespace ASLM.Pages
 
             if (processCount > 0)
             {
-                badges.Add(CreateBadge($"Proc {processCount}", Color.FromArgb("#220A84FF")));
+                badges.Add(CreateBadge($"Processes {processCount}", Color.FromArgb("#220A84FF")));
             }
 
             if (sessionCount > 0)
@@ -1564,22 +1351,20 @@ namespace ASLM.Pages
         private string _processTreeCaption = string.Empty;
         private string _modulesCaption = string.Empty;
         private int _summaryGridSpan = 1;
-        private double _processTableColumnSpacing = 10;
-        private double _processTableWidth = 920;
-        private GridLength _processNameColumnWidth = new(520);
-        private GridLength _processCpuColumnWidth = new(60);
-        private GridLength _processGpuColumnWidth = new(60);
-        private GridLength _processMemoryColumnWidth = new(86);
-        private GridLength _processDiskColumnWidth = new(82);
-        private GridLength _processNetworkColumnWidth = new(74);
-        private GridLength _processDetailsColumnWidth = new(140);
-        private double _modulesTableColumnSpacing = 8;
-        private double _modulesTableWidth = 520;
-        private GridLength _modulesNameColumnWidth = new(320);
-        private GridLength _modulesActionsColumnWidth = new(132);
 
         /// <inheritdoc />
         public event PropertyChangedEventHandler? PropertyChanged;
+
+        /// <summary>
+        /// Creates the bindable home dashboard state with a stable initial skeleton.
+        /// </summary>
+        public HomeDashboardPageViewModel()
+        {
+            Subtitle = "Loading dashboard...";
+            ProcessTreeCaption = "Managed process data is loading.";
+            ModulesCaption = "Module controls are loading.";
+            SeedSummaryCards();
+        }
 
         /// <summary>
         /// Gets the summary cards shown at the top of the dashboard.
@@ -1633,121 +1418,36 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Gets or sets the spacing used by the process table.
+        /// Adds placeholder summary cards so the top dashboard block does not pop in late.
         /// </summary>
-        public double ProcessTableColumnSpacing
+        private void SeedSummaryCards()
         {
-            get => _processTableColumnSpacing;
-            set => SetProperty(ref _processTableColumnSpacing, value);
+            SummaryCards.Add(CreateLoadingCard("system", "System", "Host machine load", "Loading"));
+            SummaryCards.Add(CreateLoadingCard("runtime", "ASLM Runtime", "App process and managed child tree", "Loading"));
+            SummaryCards.Add(CreateLoadingCard("modules", "Managed Modules", "Lifecycle and console activity", "Loading"));
         }
 
         /// <summary>
-        /// Gets or sets the minimum width of the horizontally scrollable process table.
+        /// Creates one stable summary placeholder while the first diagnostics refresh runs.
         /// </summary>
-        public double ProcessTableWidth
-        {
-            get => _processTableWidth;
-            set => SetProperty(ref _processTableWidth, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the name column width in the process table.
-        /// </summary>
-        public GridLength ProcessNameColumnWidth
-        {
-            get => _processNameColumnWidth;
-            set => SetProperty(ref _processNameColumnWidth, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the CPU column width in the process table.
-        /// </summary>
-        public GridLength ProcessCpuColumnWidth
-        {
-            get => _processCpuColumnWidth;
-            set => SetProperty(ref _processCpuColumnWidth, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the GPU column width in the process table.
-        /// </summary>
-        public GridLength ProcessGpuColumnWidth
-        {
-            get => _processGpuColumnWidth;
-            set => SetProperty(ref _processGpuColumnWidth, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the memory column width in the process table.
-        /// </summary>
-        public GridLength ProcessMemoryColumnWidth
-        {
-            get => _processMemoryColumnWidth;
-            set => SetProperty(ref _processMemoryColumnWidth, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the disk column width in the process table.
-        /// </summary>
-        public GridLength ProcessDiskColumnWidth
-        {
-            get => _processDiskColumnWidth;
-            set => SetProperty(ref _processDiskColumnWidth, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the network column width in the process table.
-        /// </summary>
-        public GridLength ProcessNetworkColumnWidth
-        {
-            get => _processNetworkColumnWidth;
-            set => SetProperty(ref _processNetworkColumnWidth, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the details column width in the process table.
-        /// </summary>
-        public GridLength ProcessDetailsColumnWidth
-        {
-            get => _processDetailsColumnWidth;
-            set => SetProperty(ref _processDetailsColumnWidth, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the spacing used by the modules table.
-        /// </summary>
-        public double ModulesTableColumnSpacing
-        {
-            get => _modulesTableColumnSpacing;
-            set => SetProperty(ref _modulesTableColumnSpacing, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the minimum width of the horizontally scrollable modules table.
-        /// </summary>
-        public double ModulesTableWidth
-        {
-            get => _modulesTableWidth;
-            set => SetProperty(ref _modulesTableWidth, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the name column width in the modules table.
-        /// </summary>
-        public GridLength ModulesNameColumnWidth
-        {
-            get => _modulesNameColumnWidth;
-            set => SetProperty(ref _modulesNameColumnWidth, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the actions column width in the modules table.
-        /// </summary>
-        public GridLength ModulesActionsColumnWidth
-        {
-            get => _modulesActionsColumnWidth;
-            set => SetProperty(ref _modulesActionsColumnWidth, value);
-        }
+        private static HomeSummaryCardViewModel CreateLoadingCard(
+            string key,
+            string title,
+            string subtitle,
+            string statusText) =>
+            new()
+            {
+                Key = key,
+                Title = title,
+                Subtitle = subtitle,
+                StatusText = statusText,
+                Metrics =
+                [
+                    new HomeSummaryMetricViewModel { Name = "CPU", ValueText = "...", DetailText = "Waiting for sample" },
+                    new HomeSummaryMetricViewModel { Name = "RAM", ValueText = "...", DetailText = "Waiting for sample" },
+                    new HomeSummaryMetricViewModel { Name = "Disk", ValueText = "...", DetailText = "Waiting for sample" }
+                ]
+            };
 
         /// <summary>
         /// Updates a bindable field and raises <see cref="PropertyChanged"/> when the value changes.
@@ -2107,7 +1807,7 @@ namespace ASLM.Pages
         private string _detailsText = string.Empty;
         private Thickness _indentMargin;
         private bool _canExpand;
-        private string _expanderText = string.Empty;
+        private string _expanderIconSource = string.Empty;
         private ICommand _toggleCommand = new Command(() => { });
 
         /// <summary>
@@ -2219,12 +1919,12 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Gets or sets the current expander button text.
+        /// Gets or sets the current expander icon source.
         /// </summary>
-        public string ExpanderText
+        public string ExpanderIconSource
         {
-            get => _expanderText;
-            set => SetProperty(ref _expanderText, value);
+            get => _expanderIconSource;
+            set => SetProperty(ref _expanderIconSource, value);
         }
 
         /// <summary>
@@ -2253,7 +1953,7 @@ namespace ASLM.Pages
             DetailsText = source.DetailsText;
             IndentMargin = source.IndentMargin;
             CanExpand = source.CanExpand;
-            ExpanderText = source.ExpanderText;
+            ExpanderIconSource = source.ExpanderIconSource;
             ToggleCommand = source.ToggleCommand;
         }
     }
@@ -2314,7 +2014,6 @@ namespace ASLM.Pages
             _busyText = string.Empty;
         }
     }
-
 
     // Diagnostics collector
 
@@ -2684,7 +2383,7 @@ namespace ASLM.Pages
                     MemoryText = HomeDashboardPresenter.FormatBytes(internalUsage.MemoryBytes),
                     DiskText = HomeDashboardPresenter.FormatRate(internalUsage.DiskIoBytesPerSec),
                     NetworkText = HomeDashboardPresenter.FormatCompactCount(internalUsage.ConnectionCount),
-                    DetailsText = internalProcessIds.Count == 1 ? "1 proc" : $"{internalProcessIds.Count} proc",
+                    DetailsText = FormatProcessCount(internalProcessIds.Count),
                     Children = internalRoots,
                     DefaultExpanded = false
                 });
@@ -2764,9 +2463,7 @@ namespace ASLM.Pages
                 NetworkText = HomeDashboardPresenter.FormatCompactCount(moduleDiagnostics.Usage.ConnectionCount),
                 DetailsText = moduleDiagnostics.ProcessIds.Count == 0
                     ? "Module"
-                    : moduleDiagnostics.ProcessIds.Count == 1
-                        ? "1 proc"
-                        : $"{moduleDiagnostics.ProcessIds.Count} proc",
+                    : FormatProcessCount(moduleDiagnostics.ProcessIds.Count),
                 Children = childNodes,
                 DefaultExpanded = false
             };
@@ -2817,7 +2514,7 @@ namespace ASLM.Pages
             }
             else if (isObservedService)
             {
-                detailsText += " - svc";
+                detailsText += " - service";
             }
             else if (session != null && !string.IsNullOrWhiteSpace(session.Stage))
             {
@@ -2841,6 +2538,16 @@ namespace ASLM.Pages
                 Children = childNodes,
                 DefaultExpanded = false
             };
+        }
+
+        /// <summary>
+        /// Formats a process count without abbreviations for the details column.
+        /// </summary>
+        private static string FormatProcessCount(int processCount)
+        {
+            return processCount == 1
+                ? "1 process"
+                : $"{processCount} processes";
         }
 
         // Process sampling
