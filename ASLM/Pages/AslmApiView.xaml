@@ -16,16 +16,14 @@
                        FontSize="24"
                        FontAttributes="Bold"
                        TextColor="{StaticResource LabelPrimary}" />
-                <Label Text="{Binding StatusText}"
-                       FontSize="14"
-                       TextColor="{StaticResource LabelSecondary}" />
             </VerticalStackLayout>
 
             <Button Grid.Column="1"
                     Text="Open"
-                    HeightRequest="34"
+                    HeightRequest="31"
+                    MinimumHeightRequest="31"
                     CornerRadius="6"
-                    Padding="14,0"
+                    Padding="12,0"
                     FontSize="13"
                     IsEnabled="{Binding CanOpenServer}"
                     BackgroundColor="{StaticResource ActionBlue}"

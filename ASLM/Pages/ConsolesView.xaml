@@ -15,9 +15,6 @@
                        FontSize="24"
                        FontAttributes="Bold"
                        TextColor="{StaticResource LabelPrimary}" />
-                <Label Text="{Binding Subtitle}"
-                       FontSize="14"
-                       TextColor="{StaticResource LabelSecondary}" />
             </VerticalStackLayout>
         </Grid>
 

@@ -131,9 +131,6 @@ namespace ASLM.Pages
         {
             _suppressSelection = true;
 
-            _viewModel.Subtitle = state.Subtitle;
-            _viewModel.ModuleListCaption = state.ModuleListCaption;
-            _viewModel.SessionListCaption = state.SessionListCaption;
             _viewModel.SelectedSessionId = state.SelectedSessionId;
             _viewModel.SelectedSessionKey = state.SelectedSessionKey;
             _viewModel.SelectedSessionTitle = state.SelectedSessionTitle;
@@ -690,22 +687,8 @@ namespace ASLM.Pages
                 }
             }
 
-            var activeProcesses = activeModules.Sum(module => module.ActiveProcessCount);
-            var totalSessions = activeModules.Sum(module => module.Sessions.Count(session => !session.IsObservedProcess));
-
             return new ConsolesDashboardState
             {
-                Subtitle = activeModules.Count == 0
-                    ? "No module consoles are available yet."
-                    : $"{activeModules.Count} active modules - {activeProcesses} active subprocesses - {totalSessions} sessions",
-                ModuleListCaption = activeModules.Count == 0
-                    ? "No active modules"
-                    : $"{activeModules.Count} active modules",
-                SessionListCaption = isGlobalModule
-                    ? "Unified output across active modules."
-                    : selectedModule == null
-                        ? "Select a module to inspect its output."
-                        : $"{sessionItems.Count} visible consoles for {selectedModule.Name}",
                 Modules = moduleItems,
                 SelectedModuleSourcePath = _selectedModuleSourcePath,
                 Sessions = sessionItems,
@@ -827,21 +810,6 @@ namespace ASLM.Pages
     internal sealed class ConsolesDashboardState
     {
         /// <summary>
-        /// Gets or sets the page subtitle summarizing active modules and sessions.
-        /// </summary>
-        public string Subtitle { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the caption shown above the module list.
-        /// </summary>
-        public string ModuleListCaption { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the caption shown above the session list.
-        /// </summary>
-        public string SessionListCaption { get; set; } = string.Empty;
-
-        /// <summary>
         /// Gets or sets the rendered module items.
         /// </summary>
         public IReadOnlyList<ConsoleModuleItemViewModel> Modules { get; set; } = [];
@@ -909,9 +877,6 @@ namespace ASLM.Pages
     /// </summary>
     public sealed class ConsolesPageViewModel : INotifyPropertyChanged
     {
-        private string _subtitle = string.Empty;
-        private string _moduleListCaption = string.Empty;
-        private string _sessionListCaption = string.Empty;
         private string? _selectedSessionId;
         private string _selectedSessionKey = string.Empty;
         private string _selectedSessionTitle = "No console selected";
@@ -933,33 +898,6 @@ namespace ASLM.Pages
         /// Gets the session items shown in the session list.
         /// </summary>
         public ObservableCollection<ConsoleSessionItemViewModel> Sessions { get; } = new();
-
-        /// <summary>
-        /// Gets or sets the page subtitle.
-        /// </summary>
-        public string Subtitle
-        {
-            get => _subtitle;
-            set => SetProperty(ref _subtitle, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the caption shown above the module list.
-        /// </summary>
-        public string ModuleListCaption
-        {
-            get => _moduleListCaption;
-            set => SetProperty(ref _moduleListCaption, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the caption shown above the session list.
-        /// </summary>
-        public string SessionListCaption
-        {
-            get => _sessionListCaption;
-            set => SetProperty(ref _sessionListCaption, value);
-        }
 
         /// <summary>
         /// Gets or sets the selected session identifier.

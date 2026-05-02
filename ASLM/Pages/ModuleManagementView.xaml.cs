@@ -64,6 +64,8 @@ namespace ASLM.Pages
             _updateService = updateService;
             InitializeComponent();
             BindingContext = this;
+            DashboardView.HandlerChanged += OnDashboardViewHandlerChanged;
+            Loaded += OnLoaded;
             SizeChanged += OnSizeChanged;
         }
 
@@ -224,6 +226,22 @@ namespace ASLM.Pages
             RecalculateGridSpan();
         }
 
+        /// <summary>
+        /// Reapplies native list behavior after the platform view enters the visual tree.
+        /// </summary>
+        private void OnLoaded(object? sender, EventArgs e)
+        {
+            DisableDashboardItemTransitions();
+        }
+
+        /// <summary>
+        /// Removes native list entrance transitions as soon as the dashboard list is materialized.
+        /// </summary>
+        private void OnDashboardViewHandlerChanged(object? sender, EventArgs e)
+        {
+            DisableDashboardItemTransitions();
+        }
+
 
         // Layout calculation
 
@@ -246,6 +264,45 @@ namespace ASLM.Pages
         {
             CloseAllMenus();
         }
+
+        // Native list behavior
+
+        /// <summary>
+        /// Disables platform item transitions for the module dashboard.
+        /// </summary>
+        private void DisableDashboardItemTransitions()
+        {
+#if WINDOWS
+            if (DashboardView.Handler?.PlatformView is not Microsoft.UI.Xaml.DependencyObject platformView)
+            {
+                return;
+            }
+
+            DisableWinUiItemTransitions(platformView);
+#endif
+        }
+
+#if WINDOWS
+        /// <summary>
+        /// Clears WinUI item transitions from the native collection surface and its visual children.
+        /// </summary>
+        private static void DisableWinUiItemTransitions(Microsoft.UI.Xaml.DependencyObject element)
+        {
+            if (element is Microsoft.UI.Xaml.Controls.ListViewBase listView)
+            {
+                listView.ItemContainerTransitions = new Microsoft.UI.Xaml.Media.Animation.TransitionCollection();
+            }
+
+            var childrenCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(element);
+            for (var index = 0; index < childrenCount; index++)
+            {
+                if (Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(element, index) is Microsoft.UI.Xaml.DependencyObject child)
+                {
+                    DisableWinUiItemTransitions(child);
+                }
+            }
+        }
+#endif
     }
 
 

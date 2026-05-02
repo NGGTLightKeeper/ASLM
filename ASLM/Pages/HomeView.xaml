@@ -14,12 +14,6 @@
             <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
         </Style>
 
-        <Style x:Key="HomeHeaderDescriptionLabel" TargetType="Label">
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="MaxLines" Value="1" />
-            <Setter Property="LineBreakMode" Value="TailTruncation" />
-            <Setter Property="TextColor" Value="{StaticResource LabelSecondary}" />
-        </Style>
     </ContentView.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*"
@@ -32,8 +26,6 @@
                              Padding="4">
             <Label Text="Home"
                    Style="{StaticResource HomeHeaderTitleLabel}" />
-            <Label Text="{Binding Subtitle}"
-                   Style="{StaticResource HomeHeaderDescriptionLabel}" />
         </VerticalStackLayout>
 
         <CollectionView Grid.Row="1"

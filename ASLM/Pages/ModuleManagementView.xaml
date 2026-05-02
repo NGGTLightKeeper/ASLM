@@ -27,11 +27,6 @@
                        FontSize="24"
                        FontAttributes="Bold"
                        TextColor="{StaticResource LabelPrimary}" />
-                <Label x:Name="DashboardSubtitle"
-                       Text="Manage your installed modules"
-                       FontSize="14"
-                       TextColor="{StaticResource LabelSecondary}"
-                       Margin="0" />
             </VerticalStackLayout>
         </CollectionView.Header>
 

@@ -28,7 +28,6 @@ namespace ASLM.Pages
         private DateTime _moduleDisplayStatesLoadedAt = DateTime.MinValue;
         private CancellationTokenSource? _refreshLoopCts;
         private bool _isVisible;
-        private string _statusText = string.Empty;
         private string _serverUrl = string.Empty;
         private bool _canOpenServer;
 
@@ -78,15 +77,6 @@ namespace ASLM.Pages
 
 
         // Bound state
-
-        /// <summary>
-        /// Gets the detailed server status line.
-        /// </summary>
-        public string StatusText
-        {
-            get => _statusText;
-            private set => SetProperty(ref _statusText, value);
-        }
 
         /// <summary>
         /// Gets the mirror server root URL.
@@ -151,7 +141,7 @@ namespace ASLM.Pages
         /// </summary>
         internal async Task RefreshAsync()
         {
-            ApplyServerStatus();
+            ApplyServerState();
             EnsureModuleDisplayStatesLoading();
 
             var hosts = await Task.Run(_apiServer.GetHosts);
@@ -371,32 +361,14 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Updates bound server status fields from the service state.
+        /// Updates bound server fields from the service state.
         /// </summary>
-        private void ApplyServerStatus()
+        private void ApplyServerState()
         {
-            var isEnabled = _apiServer.IsEnabled;
             var isRunning = _apiServer.IsRunning;
-            var lastError = _apiServer.LastError;
 
             ServerUrl = _apiServer.BaseUrl;
             CanOpenServer = isRunning;
-
-            if (!isEnabled)
-            {
-                StatusText = "Server disabled in Settings";
-                return;
-            }
-
-            if (isRunning)
-            {
-                StatusText = "Running on localhost";
-                return;
-            }
-
-            StatusText = string.IsNullOrWhiteSpace(lastError)
-                ? "Server enabled, but not running"
-                : lastError;
         }
 
 

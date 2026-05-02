@@ -106,10 +106,6 @@ namespace ASLM.Pages
         /// </summary>
         void IHomeDashboardView.Render(HomeDashboardState state)
         {
-            _viewModel.Subtitle = state.Subtitle;
-            _viewModel.ProcessTreeCaption = state.ProcessTreeCaption;
-            _viewModel.ModulesCaption = state.ModulesCaption;
-
             SyncKeyedItems(
                 _viewModel.SummaryCards,
                 state.SummaryCards,
@@ -513,22 +509,8 @@ namespace ASLM.Pages
             IReadOnlyList<ModuleConsoleModuleSnapshot> consoleSnapshots,
             HomeDiagnosticsSnapshot diagnostics)
         {
-            var activeSessionCount = consoleSnapshots.Sum(module => module.Sessions.Count(session => session.IsRunning && !session.IsObservedProcess));
-            var totalSessionCount = consoleSnapshots.Sum(module => module.Sessions.Count(session => !session.IsObservedProcess));
-            var runningModuleCount = modules.Count(module => module.Status.Enabled);
-            var updatedAt = diagnostics.CapturedUtc.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
-
             return new HomeDashboardState
             {
-                Subtitle = modules.Count == 0
-                    ? "No modules installed yet."
-                    : $"{runningModuleCount} running modules - {diagnostics.ActiveProcessCount} live subprocesses - updated {updatedAt}",
-                ProcessTreeCaption = diagnostics.ActiveProcessCount == 0
-                    ? "ASLM is idle. Start a module to populate the managed tree."
-                    : $"{diagnostics.ActiveProcessCount} live processes across {diagnostics.ActiveModuleCount} active modules.",
-                ModulesCaption = modules.Count == 0
-                    ? "Install a module to begin."
-                    : $"{modules.Count} installed - {runningModuleCount} enabled - {activeSessionCount} active sessions - {totalSessionCount} total sessions",
                 SummaryCards = BuildSummaryCards(modules, consoleSnapshots, diagnostics),
                 ProcessNodes = FlattenTree(diagnostics.RootNode),
                 Modules = BuildModuleCards(modules, diagnostics)
@@ -1288,21 +1270,6 @@ namespace ASLM.Pages
     internal sealed class HomeDashboardState
     {
         /// <summary>
-        /// Gets or sets the page subtitle.
-        /// </summary>
-        public string Subtitle { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the caption shown above the managed process tree.
-        /// </summary>
-        public string ProcessTreeCaption { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the caption shown above the modules panel.
-        /// </summary>
-        public string ModulesCaption { get; set; } = string.Empty;
-
-        /// <summary>
         /// Gets or sets the summary cards shown above the main workspace.
         /// </summary>
         public IReadOnlyList<HomeSummaryCardViewModel> SummaryCards { get; set; } = [];
@@ -1347,9 +1314,6 @@ namespace ASLM.Pages
     /// </summary>
     public sealed class HomeDashboardPageViewModel : INotifyPropertyChanged
     {
-        private string _subtitle = string.Empty;
-        private string _processTreeCaption = string.Empty;
-        private string _modulesCaption = string.Empty;
         private int _summaryGridSpan = 1;
 
         /// <inheritdoc />
@@ -1360,9 +1324,6 @@ namespace ASLM.Pages
         /// </summary>
         public HomeDashboardPageViewModel()
         {
-            Subtitle = "Loading dashboard...";
-            ProcessTreeCaption = "Managed process data is loading.";
-            ModulesCaption = "Module controls are loading.";
             SeedSummaryCards();
         }
 
@@ -1380,33 +1341,6 @@ namespace ASLM.Pages
         /// Gets the module rows shown in the modules panel.
         /// </summary>
         public ObservableCollection<HomeModuleCardViewModel> Modules { get; } = new();
-
-        /// <summary>
-        /// Gets or sets the page subtitle.
-        /// </summary>
-        public string Subtitle
-        {
-            get => _subtitle;
-            set => SetProperty(ref _subtitle, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the caption shown above the managed process tree.
-        /// </summary>
-        public string ProcessTreeCaption
-        {
-            get => _processTreeCaption;
-            set => SetProperty(ref _processTreeCaption, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the caption shown above the modules panel.
-        /// </summary>
-        public string ModulesCaption
-        {
-            get => _modulesCaption;
-            set => SetProperty(ref _modulesCaption, value);
-        }
 
         /// <summary>
         /// Gets or sets the number of columns used by the summary-card grid.
