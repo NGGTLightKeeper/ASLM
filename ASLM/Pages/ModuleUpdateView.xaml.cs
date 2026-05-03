@@ -11,7 +11,7 @@ namespace ASLM.Pages
     /// <summary>
     /// Distinguishes the supported module update dialog modes.
     /// </summary>
-    public enum ModuleUpdateDialogMode
+    public enum ModuleUpdateMode
     {
         Configure,
         Update
@@ -22,7 +22,7 @@ namespace ASLM.Pages
     /// <summary>
     /// Displays module update configuration and installation progress inside the shell overlay.
     /// </summary>
-    public partial class ModuleUpdateDialogView : ContentView, INotifyPropertyChanged
+    public partial class ModuleUpdateView : ContentView, INotifyPropertyChanged
     {
         private const double DialogWidthFactor = 0.78;
         private const double DialogHeightFactor = 0.82;
@@ -35,7 +35,7 @@ namespace ASLM.Pages
         private readonly ObservableCollection<UpdateCandidate> _emptyReleases = [];
 
         private ModuleViewModel? _module;
-        private ModuleUpdateDialogMode _mode;
+        private ModuleUpdateMode _mode;
         private bool _isSynchronizingPickers;
         private CancellationTokenSource? _logSyncCts;
         private int _logSyncQueued;
@@ -52,7 +52,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the module update overlay and hooks layout updates.
         /// </summary>
-        public ModuleUpdateDialogView()
+        public ModuleUpdateView()
         {
             InitializeComponent();
             ApplyBorderlessPickerStyle(SourceModePicker);
@@ -68,7 +68,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Gets the title shown in the dialog header.
         /// </summary>
-        public string DialogTitle => _mode == ModuleUpdateDialogMode.Update
+        public string DialogTitle => _mode == ModuleUpdateMode.Update
             ? "Module Update"
             : "Configure Module Updates";
 
@@ -197,7 +197,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Gets the title shown above the activity panel.
         /// </summary>
-        public string ActivityTitle => _mode == ModuleUpdateDialogMode.Update
+        public string ActivityTitle => _mode == ModuleUpdateMode.Update
             ? "Update Activity"
             : "Update Status";
 
@@ -247,7 +247,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Opens the overlay for the requested module and mode.
         /// </summary>
-        public Task OpenAsync(ModuleViewModel module, ModuleUpdateDialogMode mode)
+        public Task OpenAsync(ModuleViewModel module, ModuleUpdateMode mode)
         {
             AttachModule(module);
             var selectedModule = _module;

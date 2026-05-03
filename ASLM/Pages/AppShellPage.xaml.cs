@@ -58,12 +58,12 @@ namespace ASLM.Pages
 
         private View? _homeView;
         private View? _consolesView;
-        private View? _moduleManagementView;
+        private View? _modulesView;
         private View? _aslmApiView;
         private View? _notificationsView;
-        private View? _downloadModulesView;
+        private View? _downloadsView;
         private View? _settingsView;
-        private View? _moduleUpdateDialogView;
+        private View? _moduleUpdateView;
 
         private Button? _activeNavButton;
         private Button[] _navButtons = [];
@@ -105,7 +105,7 @@ namespace ASLM.Pages
             _panelExpanded = Preferences.Default.Get("SidebarExpanded", false);
             SidePanel.WidthRequest = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
 
-            _navButtons = [HomeButton, ConsolesButton, ModuleManagementButton, AslmApiButton, NotificationsButton, UploadModulesButton, SettingsButton];
+            _navButtons = [HomeButton, ConsolesButton, ModulesButton, AslmApiButton, NotificationsButton, DownloadsButton, SettingsButton];
 
             // Hook alignment updates once so WinUI buttons keep the same content layout.
             CollapseButton.HandlerChanged += (sender, _) => UpdateButtonAlignment((Button)sender!);
@@ -118,10 +118,10 @@ namespace ASLM.Pages
             CollapseButton.ImageSource = IconMenu;
             HomeButton.ImageSource = IconHome;
             ConsolesButton.ImageSource = IconConsole;
-            ModuleManagementButton.ImageSource = IconModules;
+            ModulesButton.ImageSource = IconModules;
             AslmApiButton.ImageSource = IconApi;
             NotificationsButton.ImageSource = IconNotifications;
-            UploadModulesButton.ImageSource = IconDownload;
+            DownloadsButton.ImageSource = IconDownload;
             SettingsButton.ImageSource = IconSettings;
 
             // Initialize button labels and image layout based on the current sidebar width.
@@ -281,9 +281,9 @@ namespace ASLM.Pages
                 NavigateTo(HomeButton);
             }
 
-            if (_moduleManagementView is ModuleManagementView moduleManagementView)
+            if (_modulesView is ModulesView modulesView)
             {
-                moduleManagementView.RefreshModules(_allModules, _moduleInstaller, _moduleRunner);
+                modulesView.RefreshModules(_allModules, _moduleInstaller, _moduleRunner);
             }
 
             if (_consolesView is ConsolesView consolesView)
@@ -415,7 +415,7 @@ namespace ASLM.Pages
         {
             if (sender is Button button)
             {
-                if (button == UploadModulesButton)
+                if (button == DownloadsButton)
                 {
                     OpenDownloadOverlay();
                     return;
@@ -479,22 +479,22 @@ namespace ASLM.Pages
         /// </summary>
         private void OpenDownloadOverlay()
         {
-            _downloadModulesView ??= _services.GetRequiredService<DownloadModulesView>();
-            if (_downloadModulesView is DownloadModulesView downloadModulesView)
+            _downloadsView ??= _services.GetRequiredService<DownloadsView>();
+            if (_downloadsView is DownloadsView downloadsView)
             {
-                downloadModulesView.CloseRequested -= OnDownloadCloseRequested;
-                downloadModulesView.CloseRequested += OnDownloadCloseRequested;
-                _ = downloadModulesView.OpenAsync();
+                downloadsView.CloseRequested -= OnDownloadCloseRequested;
+                downloadsView.CloseRequested += OnDownloadCloseRequested;
+                _ = downloadsView.OpenAsync();
             }
 
-            OverlayContainer.Content = _downloadModulesView;
+            OverlayContainer.Content = _downloadsView;
             OverlayContainer.IsVisible = true;
         }
 
         /// <summary>
         /// Opens the shared module update overlay for the selected module.
         /// </summary>
-        internal void OpenModuleUpdateOverlay(ModuleViewModel module, ModuleUpdateDialogMode mode)
+        internal void OpenModuleUpdateOverlay(ModuleViewModel module, ModuleUpdateMode mode)
         {
             _ = OpenModuleUpdateOverlayAsync(module, mode);
         }
@@ -502,20 +502,20 @@ namespace ASLM.Pages
         /// <summary>
         /// Loads and shows the module update overlay before binding it to the selected module.
         /// </summary>
-        private async Task OpenModuleUpdateOverlayAsync(ModuleViewModel module, ModuleUpdateDialogMode mode)
+        private async Task OpenModuleUpdateOverlayAsync(ModuleViewModel module, ModuleUpdateMode mode)
         {
-            _moduleUpdateDialogView ??= _services.GetRequiredService<ModuleUpdateDialogView>();
-            if (_moduleUpdateDialogView is not ModuleUpdateDialogView moduleUpdateDialogView)
+            _moduleUpdateView ??= _services.GetRequiredService<ModuleUpdateView>();
+            if (_moduleUpdateView is not ModuleUpdateView moduleUpdateView)
             {
                 return;
             }
 
-            moduleUpdateDialogView.CloseRequested -= OnModuleUpdateCloseRequested;
-            moduleUpdateDialogView.CloseRequested += OnModuleUpdateCloseRequested;
-            OverlayContainer.Content = _moduleUpdateDialogView;
+            moduleUpdateView.CloseRequested -= OnModuleUpdateCloseRequested;
+            moduleUpdateView.CloseRequested += OnModuleUpdateCloseRequested;
+            OverlayContainer.Content = _moduleUpdateView;
             OverlayContainer.IsVisible = true;
 
-            await moduleUpdateDialogView.OpenAsync(module, mode);
+            await moduleUpdateView.OpenAsync(module, mode);
         }
 
         /// <summary>
@@ -782,17 +782,17 @@ namespace ASLM.Pages
         /// <summary>
         /// Opens the modules page and optionally scrolls one module card into view.
         /// </summary>
-        internal void OpenModuleManagement(string? moduleSourcePath = null)
+        internal void OpenModules(string? moduleSourcePath = null)
         {
-            NavigateTo(ModuleManagementButton);
+            NavigateTo(ModulesButton);
 
             if (string.IsNullOrWhiteSpace(moduleSourcePath) ||
-                _moduleManagementView is not ModuleManagementView moduleManagementView)
+                _modulesView is not ModulesView modulesView)
             {
                 return;
             }
 
-            moduleManagementView.FocusModule(moduleSourcePath);
+            modulesView.FocusModule(moduleSourcePath);
         }
 
         // View resolution
@@ -825,19 +825,19 @@ namespace ASLM.Pages
                 return _consolesView;
             }
 
-            if (button == ModuleManagementButton)
+            if (button == ModulesButton)
             {
-                if (_moduleManagementView == null)
+                if (_modulesView == null)
                 {
-                    var moduleManagementView = _services.GetRequiredService<ModuleManagementView>();
-                    moduleManagementView.Initialize(this, _allModules, _moduleInstaller, _moduleRunner);
-                    _moduleManagementView = moduleManagementView;
+                    var modulesView = _services.GetRequiredService<ModulesView>();
+                    modulesView.Initialize(this, _allModules, _moduleInstaller, _moduleRunner);
+                    _modulesView = modulesView;
                 }
 
-                return _moduleManagementView;
+                return _modulesView;
             }
 
-            if (button == UploadModulesButton)
+            if (button == DownloadsButton)
             {
                 if (_homeView == null)
                 {
@@ -892,7 +892,7 @@ namespace ASLM.Pages
                 return LabelConsoles;
             }
 
-            if (button == ModuleManagementButton)
+            if (button == ModulesButton)
             {
                 return LabelModules;
             }
@@ -907,7 +907,7 @@ namespace ASLM.Pages
                 return LabelNotifications;
             }
 
-            if (button == UploadModulesButton)
+            if (button == DownloadsButton)
             {
                 return LabelDownload;
             }

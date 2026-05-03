@@ -15,7 +15,7 @@ namespace ASLM.Pages
 {
     // Download overlay view
     // Drive the shared download catalog dialog
-    public partial class DownloadModulesView : ContentView, INotifyPropertyChanged
+    public partial class DownloadsView : ContentView, INotifyPropertyChanged
     {
         private const double DialogWidthFactor = 0.88;
         private const double DialogHeightFactor = 0.84;
@@ -65,7 +65,7 @@ namespace ASLM.Pages
 
         // Initialization
         // Build the download overlay and wire its core events
-        public DownloadModulesView(DownloadCatalogService catalogService, DownloadInstallService installService)
+        public DownloadsView(DownloadCatalogService catalogService, DownloadInstallService installService)
         {
             _catalogService = catalogService;
             _installService = installService;

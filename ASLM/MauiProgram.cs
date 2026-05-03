@@ -72,12 +72,12 @@ namespace ASLM
             // Content view registrations
             builder.Services.AddTransient<HomeView>();
             builder.Services.AddTransient<ConsolesView>();
-            builder.Services.AddTransient<ModuleManagementView>();
+            builder.Services.AddTransient<ModulesView>();
             builder.Services.AddTransient<AslmApiView>();
             builder.Services.AddTransient<NotificationsView>();
-            builder.Services.AddTransient<DownloadModulesView>();
+            builder.Services.AddTransient<DownloadsView>();
             builder.Services.AddTransient<SettingsView>();
-            builder.Services.AddTransient<ModuleUpdateDialogView>();
+            builder.Services.AddTransient<ModuleUpdateView>();
 
             return builder.Build();
         }

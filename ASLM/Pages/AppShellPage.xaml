@@ -50,7 +50,7 @@
                         HorizontalOptions="Fill"
                         Clicked="OnNavClicked" />
 
-                <Button x:Name="ModuleManagementButton"
+                <Button x:Name="ModulesButton"
                         Style="{StaticResource SidebarButton}"
                         Text="Modules"
                         HeightRequest="36"
@@ -71,7 +71,7 @@
                         HorizontalOptions="Fill"
                         Clicked="OnNavClicked" />
 
-                <Button x:Name="UploadModulesButton"
+                <Button x:Name="DownloadsButton"
                         Style="{StaticResource SidebarButton}"
                         Text="Download"
                         HeightRequest="36"

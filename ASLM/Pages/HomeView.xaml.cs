@@ -478,7 +478,7 @@ namespace ASLM.Pages
         /// </summary>
         public void OpenModules()
         {
-            MainThread.BeginInvokeOnMainThread(() => _shell?.OpenModuleManagement());
+            MainThread.BeginInvokeOnMainThread(() => _shell?.OpenModules());
         }
 
         /// <summary>
@@ -688,7 +688,7 @@ namespace ASLM.Pages
                     LaunchCommand = new Command(async () => await LaunchModuleAsync(module.SourcePath)),
                     StopCommand = new Command(async () => await StopModuleAsync(module.SourcePath)),
                     RestartCommand = new Command(async () => await RestartModuleAsync(module.SourcePath)),
-                    ManageCommand = new Command(() => OpenModuleManagement(module.SourcePath)),
+                    ManageCommand = new Command(() => OpenModules(module.SourcePath)),
                     ConsoleCommand = new Command(() => OpenModuleConsole(module.SourcePath))
                 });
             }
@@ -985,9 +985,9 @@ namespace ASLM.Pages
         /// <summary>
         /// Opens the full modules page and scrolls the requested module into view.
         /// </summary>
-        private void OpenModuleManagement(string sourcePath)
+        private void OpenModules(string sourcePath)
         {
-            MainThread.BeginInvokeOnMainThread(() => _shell?.OpenModuleManagement(sourcePath));
+            MainThread.BeginInvokeOnMainThread(() => _shell?.OpenModules(sourcePath));
         }
 
         /// <summary>

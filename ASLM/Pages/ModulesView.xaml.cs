@@ -16,7 +16,7 @@ namespace ASLM.Pages
     /// <summary>
     /// Displays module cards and keeps the grid responsive inside the shell.
     /// </summary>
-    public partial class ModuleManagementView : ContentView, INotifyPropertyChanged
+    public partial class ModulesView : ContentView, INotifyPropertyChanged
     {
         private const double MinCardWidth = 400;
 
@@ -59,7 +59,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the module management view and hooks the resize handler.
         /// </summary>
-        public ModuleManagementView(UpdateService updateService)
+        public ModulesView(UpdateService updateService)
         {
             _updateService = updateService;
             InitializeComponent();
@@ -192,7 +192,7 @@ namespace ASLM.Pages
         private void OpenConfigureUpdates(ModuleViewModel module)
         {
             CloseAllMenus();
-            _shell?.OpenModuleUpdateOverlay(module, ModuleUpdateDialogMode.Configure);
+            _shell?.OpenModuleUpdateOverlay(module, ModuleUpdateMode.Configure);
         }
 
         /// <summary>
@@ -201,7 +201,7 @@ namespace ASLM.Pages
         private void OpenUpdateDialog(ModuleViewModel module)
         {
             CloseAllMenus();
-            _shell?.OpenModuleUpdateOverlay(module, ModuleUpdateDialogMode.Update);
+            _shell?.OpenModuleUpdateOverlay(module, ModuleUpdateMode.Update);
         }
 
         /// <summary>
