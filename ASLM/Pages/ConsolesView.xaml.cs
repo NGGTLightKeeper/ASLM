@@ -27,13 +27,13 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the consoles view and initializes its responsive shell layout.
         /// </summary>
-        public ConsolesView(ModuleInstaller moduleInstaller, ModuleConsoleService consoleService, AppDataService appData)
+        public ConsolesView(ModuleInstaller moduleInstaller, ModuleConsoleStore consoleStore, AppDataStore appData)
         {
             InitializeComponent();
 
             BindingContext = _viewModel;
 
-            _presenter = new ConsolesPresenter(this, moduleInstaller, consoleService, appData);
+            _presenter = new ConsolesPresenter(this, moduleInstaller, consoleStore, appData);
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
@@ -393,8 +393,8 @@ namespace ASLM.Pages
 
         private readonly IConsolesView _view;
         private readonly ModuleInstaller _moduleInstaller;
-        private readonly ModuleConsoleService _consoleService;
-        private readonly AppDataService _appData;
+        private readonly ModuleConsoleStore _consoleStore;
+        private readonly AppDataStore _appData;
         private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
         private List<ModuleConfig> _knownModules = [];
@@ -407,11 +407,11 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the presenter for the consoles dashboard.
         /// </summary>
-        public ConsolesPresenter(IConsolesView view, ModuleInstaller moduleInstaller, ModuleConsoleService consoleService, AppDataService appData)
+        public ConsolesPresenter(IConsolesView view, ModuleInstaller moduleInstaller, ModuleConsoleStore consoleStore, AppDataStore appData)
         {
             _view = view;
             _moduleInstaller = moduleInstaller;
-            _consoleService = consoleService;
+            _consoleStore = consoleStore;
             _appData = appData;
             _showCompletedProcesses = _appData.Data.Consoles.ShowCompletedProcesses;
         }
@@ -427,7 +427,7 @@ namespace ASLM.Pages
             }
 
             _isActive = true;
-            _consoleService.StateChanged += OnConsoleStateChanged;
+            _consoleStore.StateChanged += OnConsoleStateChanged;
             LoadPreferences();
             await RefreshAsync(forceModuleReload: true);
         }
@@ -442,7 +442,7 @@ namespace ASLM.Pages
                 return;
             }
 
-            _consoleService.StateChanged -= OnConsoleStateChanged;
+            _consoleStore.StateChanged -= OnConsoleStateChanged;
             _isActive = false;
         }
 
@@ -500,8 +500,8 @@ namespace ASLM.Pages
 
                 var state = await Task.Run(() =>
                 {
-                    _consoleService.EnsureModules(_knownModules);
-                    var snapshots = _consoleService.GetSnapshot();
+                    _consoleStore.EnsureModules(_knownModules);
+                    var snapshots = _consoleStore.GetSnapshot();
                     return BuildState(snapshots);
                 });
 
@@ -602,7 +602,7 @@ namespace ASLM.Pages
                     }
                 ];
 
-                selectedSessionLines = _consoleService.GetUnifiedOverviewLines(activeModulePaths);
+                selectedSessionLines = _consoleStore.GetUnifiedOverviewLines(activeModulePaths);
                 selectedSessionTitle = "All Modules / Unified Console";
                 selectedSessionStatus = string.Empty;
                 selectedSessionDescription = string.Empty;
@@ -656,7 +656,7 @@ namespace ASLM.Pages
 
                 if (selectedSessionItem == null || string.Equals(_selectedSessionId, UnifiedSessionId, StringComparison.Ordinal))
                 {
-                    selectedSessionLines = _consoleService.GetUnifiedModuleLines(selectedModule.SourcePath);
+                    selectedSessionLines = _consoleStore.GetUnifiedModuleLines(selectedModule.SourcePath);
                     selectedSessionTitle = $"{selectedModule.Name} / Unified Console";
                     selectedSessionStatus = string.Empty;
                     selectedSessionDescription = string.Empty;
@@ -674,7 +674,7 @@ namespace ASLM.Pages
                 }
                 else
                 {
-                    selectedSessionLines = _consoleService.GetSessionLines(selectedModule.SourcePath, selectedSession.Id);
+                    selectedSessionLines = _consoleStore.GetSessionLines(selectedModule.SourcePath, selectedSession.Id);
                     selectedSessionTitle = $"{selectedModule.Name} / {selectedSession.Title}";
                     selectedSessionStatus = BuildSelectedStatus(selectedSession);
                     selectedSessionDescription = selectedSession.IsObservedProcess

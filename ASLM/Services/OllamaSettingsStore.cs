@@ -15,13 +15,13 @@ namespace ASLM.Services
     /// <summary>
     /// Reads the managed Ollama account state and executes account commands against the ASLM runtime.
     /// </summary>
-    public sealed class OllamaSettingsService
+    public sealed class OllamaSettingsStore
     {
         private const int ManagedOllamaPort = 11434;
 
         private readonly EngineInstaller _engineInstaller;
         private readonly HttpClient _httpClient;
-        private readonly ILogger<OllamaSettingsService> _logger;
+        private readonly ILogger<OllamaSettingsStore> _logger;
 
         private readonly object _runtimeSync = new();
         private Process? _managedRuntimeProcess;
@@ -32,9 +32,9 @@ namespace ASLM.Services
         /// <summary>
         /// Initializes a new Ollama settings service instance.
         /// </summary>
-        public OllamaSettingsService(
+        public OllamaSettingsStore(
             EngineInstaller engineInstaller,
-            ILogger<OllamaSettingsService> logger)
+            ILogger<OllamaSettingsStore> logger)
         {
             _engineInstaller = engineInstaller ?? throw new ArgumentNullException(nameof(engineInstaller));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));

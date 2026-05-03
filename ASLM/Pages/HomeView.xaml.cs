@@ -36,15 +36,15 @@ namespace ASLM.Pages
         public HomeView(
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
-            ModuleConsoleService consoleService,
-            ProcessSnapshotService processSnapshotService,
-            AppDataService appData)
+            ModuleConsoleStore consoleStore,
+            ProcessSnapshotReader processSnapshots,
+            AppDataStore appData)
         {
             InitializeComponent();
 
             BindingContext = _viewModel;
 
-            _presenter = new HomeDashboardPresenter(this, moduleInstaller, moduleRunner, consoleService, processSnapshotService, appData);
+            _presenter = new HomeDashboardPresenter(this, moduleInstaller, moduleRunner, consoleStore, processSnapshots, appData);
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
@@ -332,8 +332,8 @@ namespace ASLM.Pages
         private readonly IHomeDashboardView _view;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
-        private readonly ModuleConsoleService _consoleService;
-        private readonly AppDataService _appData;
+        private readonly ModuleConsoleStore _consoleStore;
+        private readonly AppDataStore _appData;
         private readonly HomeDiagnosticsCollector _diagnosticsCollector;
         private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
@@ -360,16 +360,16 @@ namespace ASLM.Pages
             IHomeDashboardView view,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
-            ModuleConsoleService consoleService,
-            ProcessSnapshotService processSnapshotService,
-            AppDataService appData)
+            ModuleConsoleStore consoleStore,
+            ProcessSnapshotReader processSnapshots,
+            AppDataStore appData)
         {
             _view = view;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
-            _consoleService = consoleService;
+            _consoleStore = consoleStore;
             _appData = appData;
-            _diagnosticsCollector = new HomeDiagnosticsCollector(processSnapshotService);
+            _diagnosticsCollector = new HomeDiagnosticsCollector(processSnapshots);
         }
 
         /// <summary>
@@ -391,7 +391,7 @@ namespace ASLM.Pages
             }
 
             _isActive = true;
-            _consoleService.StateChanged += OnConsoleStateChanged;
+            _consoleStore.StateChanged += OnConsoleStateChanged;
             await RefreshAsync(forceModuleReload: true);
         }
 
@@ -405,7 +405,7 @@ namespace ASLM.Pages
                 return;
             }
 
-            _consoleService.StateChanged -= OnConsoleStateChanged;
+            _consoleStore.StateChanged -= OnConsoleStateChanged;
             _isActive = false;
         }
 
@@ -446,8 +446,8 @@ namespace ASLM.Pages
                     var modules = _knownModules.ToList();
                     var refreshSnapshot = await Task.Run(() =>
                     {
-                        _consoleService.EnsureModules(modules);
-                        var consoleSnapshots = _consoleService.GetSnapshot();
+                        _consoleStore.EnsureModules(modules);
+                        var consoleSnapshots = _consoleStore.GetSnapshot();
                         var diagnostics = _diagnosticsCollector.Capture(modules, consoleSnapshots);
                         var state = BuildState(modules, consoleSnapshots, diagnostics);
 
@@ -861,8 +861,8 @@ namespace ASLM.Pages
 
                 module.Status.Enabled = true;
                 await Task.Run(() => _moduleInstaller.SaveConfigAsync(module));
-                _consoleService.EnsureModule(module);
-                _consoleService.UpdateModuleEnabledState(module.SourcePath, true);
+                _consoleStore.EnsureModule(module);
+                _consoleStore.UpdateModuleEnabledState(module.SourcePath, true);
 
                 if (module.Commands.Run.Count > 0)
                 {
@@ -903,7 +903,7 @@ namespace ASLM.Pages
 
                 module.Status.Enabled = false;
                 await Task.Run(() => _moduleInstaller.SaveConfigAsync(module));
-                _consoleService.UpdateModuleEnabledState(module.SourcePath, false);
+                _consoleStore.UpdateModuleEnabledState(module.SourcePath, false);
             }
             finally
             {
@@ -939,8 +939,8 @@ namespace ASLM.Pages
 
                 module.Status.Enabled = true;
                 await Task.Run(() => _moduleInstaller.SaveConfigAsync(module));
-                _consoleService.EnsureModule(module);
-                _consoleService.UpdateModuleEnabledState(module.SourcePath, true);
+                _consoleStore.EnsureModule(module);
+                _consoleStore.UpdateModuleEnabledState(module.SourcePath, true);
 
                 if (module.Commands.Run.Count > 0)
                 {
@@ -1960,7 +1960,7 @@ namespace ASLM.Pages
             new(@"pid_(\d+).*?phys_(\d+).*?eng_(\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static IReadOnlyList<string>? _cachedGpuAdapterNames;
 
-        private readonly ProcessSnapshotService _processSnapshotService;
+        private readonly ProcessSnapshotReader _processSnapshots;
         private readonly Dictionary<int, HomeProcessSample> _processSamples = new();
 
         private HomeSystemCpuSample? _lastSystemCpuSample;
@@ -1973,9 +1973,9 @@ namespace ASLM.Pages
         private HashSet<int> _cachedConnectionProcessIds = new();
         private DateTimeOffset _cachedConnectionCountsUtc = DateTimeOffset.MinValue;
 
-        public HomeDiagnosticsCollector(ProcessSnapshotService processSnapshotService)
+        public HomeDiagnosticsCollector(ProcessSnapshotReader processSnapshots)
         {
-            _processSnapshotService = processSnapshotService;
+            _processSnapshots = processSnapshots;
         }
 
         /// <summary>
@@ -1987,7 +1987,7 @@ namespace ASLM.Pages
         {
             var capturedUtc = DateTimeOffset.UtcNow;
             var currentProcessId = Environment.ProcessId;
-            var processSnapshotEntries = _processSnapshotService.GetSnapshot(TimeSpan.FromMilliseconds(500));
+            var processSnapshotEntries = _processSnapshots.GetSnapshot(TimeSpan.FromMilliseconds(500));
             var entriesByPid = processSnapshotEntries.ToDictionary(entry => entry.ProcessId);
             var childrenByParent = processSnapshotEntries
                 .GroupBy(entry => entry.ParentProcessId)

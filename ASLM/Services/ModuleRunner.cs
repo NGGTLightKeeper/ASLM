@@ -16,11 +16,11 @@ namespace ASLM.Services
     public class ModuleRunner : IDisposable
     {
         private readonly EngineInstaller _engineInstaller;
-        private readonly ModuleEnvironmentService _moduleEnvironmentService;
-        private readonly PortManager _portManager;
+        private readonly ModuleEnvironmentResolver _environmentResolver;
+        private readonly PortRegistry _ports;
         private readonly ProcessTracker _processTracker;
-        private readonly ModuleConsoleService _consoleService;
-        private readonly ProcessSnapshotService _processSnapshotService;
+        private readonly ModuleConsoleStore _consoleStore;
+        private readonly ProcessSnapshotReader _processSnapshots;
         private readonly ILogger<ModuleRunner> _logger;
         private readonly SemaphoreSlim _settingCommandThrottle = new(4, 4);
         private bool _disposed;
@@ -40,28 +40,28 @@ namespace ASLM.Services
         /// Creates the module runner.
         /// </summary>
         /// <param name="engineInstaller">Service to resolve engine paths.</param>
-        /// <param name="portManager">Service to assign ports for settings resolution.</param>
+        /// <param name="ports">Service to assign ports for settings resolution.</param>
         /// <param name="processTracker">Service that groups child processes under ASLM.</param>
-        /// <param name="consoleService">Service to report console output and process sessions.</param>
-        /// <param name="processSnapshotService">Service that shares cached process-table snapshots.</param>
+        /// <param name="consoleStore">Service to report console output and process sessions.</param>
+        /// <param name="processSnapshots">Service that shares cached process-table snapshots.</param>
         /// <param name="logger">Logger instance.</param>
         public ModuleRunner(
             EngineInstaller engineInstaller,
-            ModuleEnvironmentService moduleEnvironmentService,
-            PortManager portManager,
+            ModuleEnvironmentResolver environmentResolver,
+            PortRegistry ports,
             ProcessTracker processTracker,
-            ModuleConsoleService consoleService,
-            ProcessSnapshotService processSnapshotService,
+            ModuleConsoleStore consoleStore,
+            ProcessSnapshotReader processSnapshots,
             ILogger<ModuleRunner> logger)
         {
             _engineInstaller = engineInstaller;
-            _moduleEnvironmentService = moduleEnvironmentService;
-            _portManager = portManager;
+            _environmentResolver = environmentResolver;
+            _ports = ports;
             _processTracker = processTracker;
-            _consoleService = consoleService;
-            _processSnapshotService = processSnapshotService;
+            _consoleStore = consoleStore;
+            _processSnapshots = processSnapshots;
             _logger = logger;
-            _portManager.PortsRedistributed += OnPortsRedistributed;
+            _ports.PortsRedistributed += OnPortsRedistributed;
         }
 
         // Setup execution
@@ -75,7 +75,7 @@ namespace ASLM.Services
         /// <returns>True if all setup steps succeeded; otherwise, false.</returns>
         public async Task<bool> ExecuteFirstRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct)
         {
-            _consoleService.EnsureModule(module);
+            _consoleStore.EnsureModule(module);
             var moduleLog = CreateModuleLog(module, log);
 
             // 1. Install engine dependencies (libraries) first
@@ -121,7 +121,7 @@ namespace ASLM.Services
         /// <returns>True if commands were started successfully.</returns>
         public async Task<bool> ExecuteRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct)
         {
-            _consoleService.EnsureModule(module);
+            _consoleStore.EnsureModule(module);
             var moduleLog = CreateModuleLog(module, log);
 
             if (module.Commands.Run.Count == 0)
@@ -207,8 +207,8 @@ namespace ASLM.Services
         /// <param name="moduleSourcePath">The module's SourcePath (unique per instance).</param>
         public async Task StopModuleAsync(string moduleSourcePath)
         {
-            _consoleService.AppendOverviewLine(moduleSourcePath, "Stopping module processes...");
-            _consoleService.UpdateModuleEnabledState(moduleSourcePath, false);
+            _consoleStore.AppendOverviewLine(moduleSourcePath, "Stopping module processes...");
+            _consoleStore.UpdateModuleEnabledState(moduleSourcePath, false);
 
             List<Process> processes;
             lock (_processLock)
@@ -226,7 +226,7 @@ namespace ASLM.Services
                 await KillProcessSafeAsync(process);
             }
 
-            _consoleService.AppendOverviewLine(moduleSourcePath, "Module processes stopped.");
+            _consoleStore.AppendOverviewLine(moduleSourcePath, "Module processes stopped.");
         }
 
         /// <summary>
@@ -341,8 +341,8 @@ namespace ASLM.Services
             var tasks = new List<Task>();
             foreach (var (moduleId, processes) in allEntries)
             {
-                _consoleService.AppendOverviewLine(moduleId, "Stopping all module processes...");
-                _consoleService.UpdateModuleEnabledState(moduleId, false);
+                _consoleStore.AppendOverviewLine(moduleId, "Stopping all module processes...");
+                _consoleStore.UpdateModuleEnabledState(moduleId, false);
 
                 foreach (var process in processes)
                 {
@@ -392,7 +392,7 @@ namespace ASLM.Services
             switch (setting.NormalizedType)
             {
                 case "port":
-                    var ports = _portManager.GetOrAssignPorts(module);
+                    var ports = _ports.GetOrAssignPorts(module);
                     if (ports.TryGetValue(setting.Key, out var assigned))
                         return assigned.ToString();
                     
@@ -486,10 +486,10 @@ namespace ASLM.Services
                     continue;
                 }
 
-                var environment = await _moduleEnvironmentService.EnsureEnvironmentAsync(module, engineConfig, log, ct);
-                var exePath = _moduleEnvironmentService.ResolvePackageManagerExecutable(environment, engineConfig);
+                var environment = await _environmentResolver.EnsureEnvironmentAsync(module, engineConfig, log, ct);
+                var exePath = _environmentResolver.ResolvePackageManagerExecutable(environment, engineConfig);
                 var libs = string.Join(" ", engineDep.Libraries);
-                var args = _moduleEnvironmentService.BuildPackageInstallArguments(environment, engineConfig, engineDep.Libraries);
+                var args = _environmentResolver.BuildPackageInstallArguments(environment, engineConfig, engineDep.Libraries);
                 log.Report($"[Deps] Installing libraries for {engineDep.Id}: {libs}");
 
                 var psi = new ProcessStartInfo
@@ -503,7 +503,7 @@ namespace ASLM.Services
                     CreateNoWindow = true
                 };
                 ConfigureProcessForStreaming(psi, exePath, engineDep.Id);
-                _moduleEnvironmentService.ApplyEnvironmentVariables(module, engineConfig, psi);
+                _environmentResolver.ApplyEnvironmentVariables(module, engineConfig, psi);
 
                 using var process = new Process { StartInfo = psi };
 
@@ -513,7 +513,7 @@ namespace ASLM.Services
                     return false;
                 }
 
-                var sessionHandle = _consoleService.StartProcessSession(
+                var sessionHandle = _consoleStore.StartProcessSession(
                     module,
                     new ModuleCommand
                     {
@@ -532,7 +532,7 @@ namespace ASLM.Services
                     {
                         var line = $"  {e.Data}";
                         log.Report(line);
-                        _consoleService.AppendProcessLine(sessionHandle, line);
+                        _consoleStore.AppendProcessLine(sessionHandle, line);
                     }
                 };
                 process.ErrorDataReceived += (s, e) =>
@@ -541,7 +541,7 @@ namespace ASLM.Services
                     {
                         var line = $"  {e.Data}";
                         log.Report(line);
-                        _consoleService.AppendProcessLine(sessionHandle, line);
+                        _consoleStore.AppendProcessLine(sessionHandle, line);
                     }
                 };
 
@@ -551,7 +551,7 @@ namespace ASLM.Services
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
                 await process.WaitForExitAsync(ct);
-                _consoleService.CompleteProcessSession(sessionHandle, process.ExitCode);
+                _consoleStore.CompleteProcessSession(sessionHandle, process.ExitCode);
 
                 if (process.ExitCode != 0)
                 {
@@ -617,8 +617,8 @@ namespace ASLM.Services
                         return false;
                     }
 
-                    var environment = await _moduleEnvironmentService.EnsureEnvironmentAsync(module, commandEngineConfig, log, ct);
-                    fileName = _moduleEnvironmentService.ResolveCommandExecutable(environment, commandEngineConfig);
+                    var environment = await _environmentResolver.EnsureEnvironmentAsync(module, commandEngineConfig, log, ct);
+                    fileName = _environmentResolver.ResolveCommandExecutable(environment, commandEngineConfig);
                     // Combine engine + script/args
                     // cmd.Exec = "manage.py runserver"
                     // We need to ensure we run it in the module directory context
@@ -649,7 +649,7 @@ namespace ASLM.Services
                 ConfigureProcessForStreaming(psi, fileName, cmd.Engine);
                 if (commandEngineConfig != null)
                 {
-                    _moduleEnvironmentService.ApplyEnvironmentVariables(module, commandEngineConfig, psi);
+                    _environmentResolver.ApplyEnvironmentVariables(module, commandEngineConfig, psi);
                 }
 
                 // Apply settings as environment variables so the module can consume them dynamically
@@ -671,7 +671,7 @@ namespace ASLM.Services
                     return false;
                 }
 
-                var sessionHandle = _consoleService.StartProcessSession(
+                var sessionHandle = _consoleStore.StartProcessSession(
                     module,
                     cmd,
                     sessionStage,
@@ -685,7 +685,7 @@ namespace ASLM.Services
                     {
                         var line = $"  {e.Data}";
                         log.Report(line);
-                        _consoleService.AppendProcessLine(sessionHandle, line);
+                        _consoleStore.AppendProcessLine(sessionHandle, line);
                     }
                 };
                 process.ErrorDataReceived += (s, e) =>
@@ -694,7 +694,7 @@ namespace ASLM.Services
                     {
                         var line = $"  {e.Data}";
                         log.Report(line);
-                        _consoleService.AppendProcessLine(sessionHandle, line);
+                        _consoleStore.AppendProcessLine(sessionHandle, line);
                     }
                 };
 
@@ -718,7 +718,7 @@ namespace ASLM.Services
                 process.BeginErrorReadLine();
 
                 await process.WaitForExitAsync(ct);
-                _consoleService.CompleteProcessSession(sessionHandle, process.ExitCode);
+                _consoleStore.CompleteProcessSession(sessionHandle, process.ExitCode);
 
                 // Remove from tracking after process exits naturally
                 if (trackProcess)
@@ -830,7 +830,7 @@ namespace ASLM.Services
             return new Progress<string>(message =>
             {
                 log.Report(message);
-                _consoleService.AppendOverviewLine(module, message);
+                _consoleStore.AppendOverviewLine(module, message);
             });
         }
 
@@ -908,7 +908,7 @@ namespace ASLM.Services
                 try
                 {
                     var observedProcesses = GetDescendantProcesses(rootProcessId);
-                    _consoleService.SyncObservedProcesses(module, ownerHandle, observedProcesses);
+                    _consoleStore.SyncObservedProcesses(module, ownerHandle, observedProcesses);
 
                     if (observedProcesses.Count == 0 && !IsProcessAlive(rootProcessId))
                     {
@@ -938,7 +938,7 @@ namespace ASLM.Services
                 }
             }
 
-            _consoleService.SyncObservedProcesses(module, ownerHandle, []);
+            _consoleStore.SyncObservedProcesses(module, ownerHandle, []);
         }
 
         /// <summary>
@@ -946,7 +946,7 @@ namespace ASLM.Services
         /// </summary>
         private List<ObservedProcessInfo> GetDescendantProcesses(int rootProcessId)
         {
-            var snapshotEntries = _processSnapshotService.GetSnapshot(TimeSpan.FromMilliseconds(800));
+            var snapshotEntries = _processSnapshots.GetSnapshot(TimeSpan.FromMilliseconds(800));
             var childrenByParent = snapshotEntries
                 .GroupBy(entry => entry.ParentProcessId)
                 .ToDictionary(group => group.Key, group => group.ToList());
@@ -1095,7 +1095,7 @@ namespace ASLM.Services
         {
             if (_disposed) return;
             _disposed = true;
-            _portManager.PortsRedistributed -= OnPortsRedistributed;
+            _ports.PortsRedistributed -= OnPortsRedistributed;
 
             // Kill all tracked processes before the runner is disposed.
             lock (_processLock)

@@ -44,11 +44,11 @@ namespace ASLM.Pages
 
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
-        private readonly AppDataService _appData;
-        private readonly PortManager _portManager;
-        private readonly NotificationService _notificationService;
-        private readonly UpdateService _updateService;
-        private readonly AslmApiServerService _apiServer;
+        private readonly AppDataStore _appData;
+        private readonly PortRegistry _ports;
+        private readonly NotificationCenter _notifications;
+        private readonly UpdateManager _updateManager;
+        private readonly AslmApiServer _apiServer;
         private readonly IServiceProvider _services;
 
         private List<ModuleConfig> _allModules = [];
@@ -80,19 +80,19 @@ namespace ASLM.Pages
         public AppShellPage(
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
-            AppDataService appData,
-            PortManager portManager,
-            NotificationService notificationService,
-            UpdateService updateService,
-            AslmApiServerService apiServer,
+            AppDataStore appData,
+            PortRegistry ports,
+            NotificationCenter notifications,
+            UpdateManager updateManager,
+            AslmApiServer apiServer,
             IServiceProvider services)
         {
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             _appData = appData;
-            _portManager = portManager;
-            _notificationService = notificationService;
-            _updateService = updateService;
+            _ports = ports;
+            _notifications = notifications;
+            _updateManager = updateManager;
             _apiServer = apiServer;
             _services = services;
 
@@ -173,7 +173,7 @@ namespace ASLM.Pages
             ApplyConsoleNavigationState();
             _ = StartEnabledModulesAsync();
             _ = CheckStartupUpdatesAsync();
-            _ = _notificationService.PublishStartupTestNotificationsAsync();
+            _ = _notifications.PublishStartupTestNotificationsAsync();
         }
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace ASLM.Pages
                 return;
             }
 
-            _notificationService.NotificationPublished += OnNotificationPublished;
+            _notifications.NotificationPublished += OnNotificationPublished;
             _apiServer.StateChanged += OnApiServerStateChanged;
             _moduleInstaller.ModulesChanged += OnModulesChanged;
             _shellEventsHooked = true;
@@ -210,7 +210,7 @@ namespace ASLM.Pages
                 return;
             }
 
-            _notificationService.NotificationPublished -= OnNotificationPublished;
+            _notifications.NotificationPublished -= OnNotificationPublished;
             _apiServer.StateChanged -= OnApiServerStateChanged;
             _moduleInstaller.ModulesChanged -= OnModulesChanged;
             _shellEventsHooked = false;
@@ -223,7 +223,7 @@ namespace ASLM.Pages
         {
             try
             {
-                await Task.Run(() => _updateService.CheckAllUpdatesAsync());
+                await Task.Run(() => _updateManager.CheckAllUpdatesAsync());
             }
             catch (Exception ex)
             {
@@ -1017,7 +1017,7 @@ namespace ASLM.Pages
         private void ActivateModulePage(ModuleConfig module)
         {
             _activeModule = module;
-            var url = _portManager.GetModuleUrl(module);
+            var url = _ports.GetModuleUrl(module);
 
             ContentArea.Content = null;
             Browser.Source = url;

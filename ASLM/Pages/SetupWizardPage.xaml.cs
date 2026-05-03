@@ -16,11 +16,11 @@ namespace ASLM.Pages
     {
         private const int TotalSteps = 3;
 
-        private readonly AppDataService _appData;
+        private readonly AppDataStore _appData;
         private readonly EngineInstaller _engineInstaller;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
-        private readonly UpdateService _updateService;
+        private readonly UpdateManager _updateManager;
         private readonly IServiceProvider _services;
 
         private readonly List<(ModuleConfig Module, CheckBox Check)> _moduleChecks = [];
@@ -44,18 +44,18 @@ namespace ASLM.Pages
         /// Creates the setup wizard and preloads persisted defaults into the form.
         /// </summary>
         public SetupWizardPage(
-            AppDataService appData,
+            AppDataStore appData,
             EngineInstaller engineInstaller,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
-            UpdateService updateService,
+            UpdateManager updateManager,
             IServiceProvider services)
         {
             _appData = appData;
             _engineInstaller = engineInstaller;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
-            _updateService = updateService;
+            _updateManager = updateManager;
             _services = services;
 
             InitializeComponent();
@@ -700,7 +700,7 @@ namespace ASLM.Pages
         {
             // Setup should resolve the same branch or release candidate the normal updater would use.
             var candidate = await Task.Run(
-                () => _updateService.ResolveModuleInstallCandidateAsync(module, ct),
+                () => _updateManager.ResolveModuleInstallCandidateAsync(module, ct),
                 ct);
             if (candidate == null)
             {
@@ -710,7 +710,7 @@ namespace ASLM.Pages
 
             // Reuse the full module update pipeline so preserve rules and first-run behavior stay consistent.
             return await Task.Run(
-                () => _updateService.ApplyModuleUpdateAsync(candidate, logProgress, downloadProgress, ct),
+                () => _updateManager.ApplyModuleUpdateAsync(candidate, logProgress, downloadProgress, ct),
                 ct);
         }
 

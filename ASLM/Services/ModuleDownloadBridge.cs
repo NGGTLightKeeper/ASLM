@@ -13,14 +13,14 @@ namespace ASLM.Services
     /// <summary>
     /// Executes module-declared downloads bridge commands and exchanges JSON requests over stdio.
     /// </summary>
-    public class ModuleDownloadBridgeService
+    public class ModuleDownloadBridge
     {
         private const int MaxBridgeOutputCharacters = 2_000_000;
 
         private readonly EngineInstaller _engineInstaller;
-        private readonly ModuleEnvironmentService _moduleEnvironmentService;
+        private readonly ModuleEnvironmentResolver _environmentResolver;
         private readonly ModuleRunner _moduleRunner;
-        private readonly ILogger<ModuleDownloadBridgeService> _logger;
+        private readonly ILogger<ModuleDownloadBridge> _logger;
 
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
@@ -29,16 +29,16 @@ namespace ASLM.Services
         };
 
         /// <summary>
-        /// Creates the downloads bridge service.
+        /// Creates the downloads bridge.
         /// </summary>
-        public ModuleDownloadBridgeService(
+        public ModuleDownloadBridge(
             EngineInstaller engineInstaller,
-            ModuleEnvironmentService moduleEnvironmentService,
+            ModuleEnvironmentResolver environmentResolver,
             ModuleRunner moduleRunner,
-            ILogger<ModuleDownloadBridgeService> logger)
+            ILogger<ModuleDownloadBridge> logger)
         {
             _engineInstaller = engineInstaller;
-            _moduleEnvironmentService = moduleEnvironmentService;
+            _environmentResolver = environmentResolver;
             _moduleRunner = moduleRunner;
             _logger = logger;
         }
@@ -257,7 +257,7 @@ namespace ASLM.Services
                 {
                     var engineConfig = _engineInstaller.GetEngineConfig(bridge.Engine)
                         ?? throw new InvalidOperationException($"Engine '{bridge.Engine}' is not installed.");
-                    await _moduleEnvironmentService.EnsureEnvironmentAsync(module, engineConfig, null, ct);
+                    await _environmentResolver.EnsureEnvironmentAsync(module, engineConfig, null, ct);
                 }
 
                 // Start the bridge process with the same module context used by regular commands.
@@ -391,10 +391,10 @@ namespace ASLM.Services
             {
                 var engineConfig = _engineInstaller.GetEngineConfig(bridge.Engine)
                     ?? throw new InvalidOperationException($"Engine '{bridge.Engine}' is not installed.");
-                var environment = ModuleEnvironmentService.HasModuleEnvironment(engineConfig)
-                    ? _moduleEnvironmentService.ResolveEnvironment(module, engineConfig)
+                var environment = ModuleEnvironmentResolver.HasModuleEnvironment(engineConfig)
+                    ? _environmentResolver.ResolveEnvironment(module, engineConfig)
                     : null;
-                fileName = _moduleEnvironmentService.ResolveCommandExecutable(environment, engineConfig);
+                fileName = _environmentResolver.ResolveCommandExecutable(environment, engineConfig);
 
                 arguments = ResolveCommandPlaceholders(module, bridge.EntryPoint);
             }
@@ -431,7 +431,7 @@ namespace ASLM.Services
             {
                 var engineConfig = _engineInstaller.GetEngineConfig(bridge.Engine)
                     ?? throw new InvalidOperationException($"Engine '{bridge.Engine}' is not installed.");
-                _moduleEnvironmentService.ApplyEnvironmentVariables(module, engineConfig, psi);
+                _environmentResolver.ApplyEnvironmentVariables(module, engineConfig, psi);
             }
             ConfigurePythonProcess(psi, fileName, bridge.Engine);
             return psi;

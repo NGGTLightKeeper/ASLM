@@ -9,10 +9,10 @@ namespace ASLM.Services
 {
     // Download catalog state
     // Persist shared resource installation state
-    public class DownloadCatalogStateService
+    public class DownloadStateStore
     {
         private readonly string _filePath;
-        private readonly ILogger<DownloadCatalogStateService> _logger;
+        private readonly ILogger<DownloadStateStore> _logger;
         private readonly object _lock = new();
 
         private readonly JsonSerializerOptions _jsonOptions = new()
@@ -25,7 +25,7 @@ namespace ASLM.Services
 
         // Initialization
         // Build the state service and resolve the storage path
-        public DownloadCatalogStateService(ILogger<DownloadCatalogStateService> logger)
+        public DownloadStateStore(ILogger<DownloadStateStore> logger)
         {
             _logger = logger;
 

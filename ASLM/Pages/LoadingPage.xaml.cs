@@ -12,10 +12,10 @@ namespace ASLM.Pages
     /// </summary>
     public partial class LoadingPage : ContentPage
     {
-        private readonly AppDataService _appData;
-        private readonly NotificationService _notifications;
-        private readonly UpdateSchedulerService _updateScheduler;
-        private readonly AslmApiServerService _apiServer;
+        private readonly AppDataStore _appData;
+        private readonly NotificationCenter _notifications;
+        private readonly UpdateScheduler _updateScheduler;
+        private readonly AslmApiServer _apiServer;
         private readonly IServiceProvider _services;
         private bool _initialized;
 
@@ -25,10 +25,10 @@ namespace ASLM.Pages
         /// Creates the startup loading page.
         /// </summary>
         public LoadingPage(
-            AppDataService appData,
-            NotificationService notifications,
-            UpdateSchedulerService updateScheduler,
-            AslmApiServerService apiServer,
+            AppDataStore appData,
+            NotificationCenter notifications,
+            UpdateScheduler updateScheduler,
+            AslmApiServer apiServer,
             IServiceProvider services)
         {
             InitializeComponent();

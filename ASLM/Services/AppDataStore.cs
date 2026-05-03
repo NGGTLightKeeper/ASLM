@@ -12,10 +12,10 @@ namespace ASLM.Services
     /// <summary>
     /// Loads and saves the persisted application data stored in <c>Data/App/ASLM_Data.json</c>.
     /// </summary>
-    public class AppDataService
+    public class AppDataStore
     {
         private readonly string _filePath;
-        private readonly ILogger<AppDataService> _logger;
+        private readonly ILogger<AppDataStore> _logger;
 
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
@@ -42,7 +42,7 @@ namespace ASLM.Services
         /// <summary>
         /// Creates the application data service.
         /// </summary>
-        public AppDataService(ILogger<AppDataService> logger)
+        public AppDataStore(ILogger<AppDataStore> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 

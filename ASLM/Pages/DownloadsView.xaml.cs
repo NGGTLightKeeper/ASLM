@@ -33,8 +33,8 @@ namespace ASLM.Pages
         private static readonly Color InactiveTextColor = Color.FromArgb("#E6E6EA");
         private static readonly Color SecondaryTextColor = Color.FromArgb("#99EBEBF5");
         private static readonly Color ActiveSubtitleColor = Color.FromArgb("#E7F1FF");
-        private readonly DownloadCatalogService _catalogService;
-        private readonly DownloadInstallService _installService;
+        private readonly DownloadCatalog _catalog;
+        private readonly DownloadInstaller _installer;
         private CancellationTokenSource? _catalogRefreshCts;
         private CancellationTokenSource? _detailRefreshCts;
         private CancellationTokenSource? _searchDebounceCts;
@@ -65,10 +65,10 @@ namespace ASLM.Pages
 
         // Initialization
         // Build the download overlay and wire its core events
-        public DownloadsView(DownloadCatalogService catalogService, DownloadInstallService installService)
+        public DownloadsView(DownloadCatalog catalog, DownloadInstaller installer)
         {
-            _catalogService = catalogService;
-            _installService = installService;
+            _catalog = catalog;
+            _installer = installer;
 
             InitializeComponent();
             BindingContext = this;
@@ -312,7 +312,7 @@ namespace ASLM.Pages
                 var queryText = SearchText;
                 var selectedFilters = GetSelectedFilterKeys();
                 var snapshot = await Task.Run(
-                    () => _catalogService.LoadCatalogAsync(
+                    () => _catalog.LoadCatalogAsync(
                         queryText: queryText,
                         filters: selectedFilters,
                         preferCached: preferCached,
@@ -638,7 +638,7 @@ namespace ASLM.Pages
             {
                 // Ignore late responses when the user has already moved to another item
                 var detail = await Task.Run(
-                    () => _catalogService.GetItemDetailAsync(item, preferCached, forceRefresh, ct),
+                    () => _catalog.GetItemDetailAsync(item, preferCached, forceRefresh, ct),
                     ct);
                 if (ct.IsCancellationRequested || _selectedItem?.Item.ResourceKey != itemResourceKey) return;
 
@@ -801,7 +801,7 @@ namespace ASLM.Pages
             {
                 var item = _selectedItem.Item;
                 var variant = _selectedVariant.Variant;
-                var result = await Task.Run(() => _installService.InstallAsync(item, variant, progress));
+                var result = await Task.Run(() => _installer.InstallAsync(item, variant, progress));
                 StatusText = result.Message;
                 if (result.Success)
                 {
@@ -837,7 +837,7 @@ namespace ASLM.Pages
             {
                 var item = _selectedItem.Item;
                 var variant = _selectedVariant.Variant;
-                var result = await Task.Run(() => _installService.UninstallAsync(item, variant, progress));
+                var result = await Task.Run(() => _installer.UninstallAsync(item, variant, progress));
                 StatusText = result.Message;
                 if (result.Success)
                 {

@@ -18,16 +18,16 @@ namespace ASLM.Services
     /// <summary>
     /// Hosts a local path-mounted reverse proxy for module endpoints declared in <c>Data/App/ASLM_Ports.json</c>.
     /// </summary>
-    public class AslmApiServerService : IDisposable
+    public class AslmApiServer : IDisposable
     {
         private const int BackendRedirectLimit = 10;
         private const string RouteHeaderName = "X-ASLM-Mirror-Route";
         private static readonly HttpClient ProxyClient = CreateProxyClient();
 
-        private readonly AppDataService _appData;
-        private readonly PortManager _portManager;
+        private readonly AppDataStore _appData;
+        private readonly PortRegistry _ports;
         private readonly ModuleInstaller _moduleInstaller;
-        private readonly ILogger<AslmApiServerService> _logger;
+        private readonly ILogger<AslmApiServer> _logger;
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
             PropertyNameCaseInsensitive = true
@@ -50,16 +50,16 @@ namespace ASLM.Services
         // Initialization
 
         /// <summary>
-        /// Creates the ASLM API reverse proxy service and resolves its runtime data path.
+        /// Creates the ASLM API reverse proxy and resolves its runtime data path.
         /// </summary>
-        public AslmApiServerService(
-            AppDataService appData,
-            PortManager portManager,
+        public AslmApiServer(
+            AppDataStore appData,
+            PortRegistry ports,
             ModuleInstaller moduleInstaller,
-            ILogger<AslmApiServerService> logger)
+            ILogger<AslmApiServer> logger)
         {
             _appData = appData;
-            _portManager = portManager;
+            _ports = ports;
             _moduleInstaller = moduleInstaller;
             _logger = logger;
 
@@ -99,7 +99,7 @@ namespace ASLM.Services
                 lock (_stateLock)
                 {
                     return _activePort ??
-                           _portManager.TryGetInternalServicePort(PortManager.AslmApiServiceId, PortManager.AslmApiPortKey) ??
+                           _ports.TryGetInternalServicePort(PortRegistry.AslmApiServiceId, PortRegistry.AslmApiPortKey) ??
                            _appData.Data.Ports.OfficialStart;
                 }
             }
@@ -134,11 +134,11 @@ namespace ASLM.Services
         {
             if (!IsEnabled)
             {
-                _portManager.RedistributePorts(reserveAslmApiServer: false);
+                _ports.RedistributePorts(reserveAslmApiServer: false);
                 return;
             }
 
-            _portManager.RedistributePorts(reserveAslmApiServer: true);
+            _ports.RedistributePorts(reserveAslmApiServer: true);
             await StartAsync();
         }
 
@@ -157,13 +157,13 @@ namespace ASLM.Services
 
             if (enabled)
             {
-                _portManager.RedistributePorts(reserveAslmApiServer: true);
+                _ports.RedistributePorts(reserveAslmApiServer: true);
                 await StartAsync();
             }
             else
             {
                 await StopAsync();
-                _portManager.RedistributePorts(reserveAslmApiServer: false);
+                _ports.RedistributePorts(reserveAslmApiServer: false);
             }
         }
 
@@ -1801,9 +1801,9 @@ namespace ASLM.Services
         /// </summary>
         private int GetAssignedPort()
         {
-            return _portManager.GetOrAssignInternalServicePort(
-                PortManager.AslmApiServiceId,
-                PortManager.AslmApiPortKey);
+            return _ports.GetOrAssignInternalServicePort(
+                PortRegistry.AslmApiServiceId,
+                PortRegistry.AslmApiPortKey);
         }
 
         /// <summary>

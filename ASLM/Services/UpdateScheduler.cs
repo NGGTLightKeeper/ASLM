@@ -10,14 +10,14 @@ namespace ASLM.Services
     /// <summary>
     /// Runs periodic background update checks according to user preferences.
     /// </summary>
-    public sealed class UpdateSchedulerService : IDisposable
+    public sealed class UpdateScheduler : IDisposable
     {
         private static readonly TimeSpan StartupDelay = TimeSpan.FromSeconds(15);
         private static readonly TimeSpan FailureRetryDelay = TimeSpan.FromMinutes(15);
 
-        private readonly AppDataService _appData;
-        private readonly UpdateService _updateService;
-        private readonly ILogger<UpdateSchedulerService> _logger;
+        private readonly AppDataStore _appData;
+        private readonly UpdateManager _updateManager;
+        private readonly ILogger<UpdateScheduler> _logger;
 
         private CancellationTokenSource? _cts;
         private Task? _worker;
@@ -28,13 +28,13 @@ namespace ASLM.Services
         /// <summary>
         /// Creates the background update scheduler.
         /// </summary>
-        public UpdateSchedulerService(
-            AppDataService appData,
-            UpdateService updateService,
-            ILogger<UpdateSchedulerService> logger)
+        public UpdateScheduler(
+            AppDataStore appData,
+            UpdateManager updateManager,
+            ILogger<UpdateScheduler> logger)
         {
             _appData = appData;
-            _updateService = updateService;
+            _updateManager = updateManager;
             _logger = logger;
         }
 
@@ -131,7 +131,7 @@ namespace ASLM.Services
             settings.LastAutoCheckUtc = DateTime.UtcNow.ToString("o");
             await _appData.SaveAsync();
 
-            var updates = await _updateService.CheckAllUpdatesAsync(ct);
+            var updates = await _updateManager.CheckAllUpdatesAsync(ct);
             if (!settings.AutoUpdateEnabled || updates.Count == 0)
             {
                 return;
@@ -147,9 +147,9 @@ namespace ASLM.Services
                 // App self-updates must stay in a pending state until restart, while modules can be applied immediately.
                 if (string.Equals(update.TargetKind, "app", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!_updateService.HasPendingAppUpdate)
+                    if (!_updateManager.HasPendingAppUpdate)
                     {
-                        await _updateService.PrepareAppUpdateAsync(update, log, null, ct);
+                        await _updateManager.PrepareAppUpdateAsync(update, log, null, ct);
                     }
 
                     continue;
@@ -157,7 +157,7 @@ namespace ASLM.Services
 
                 if (string.Equals(update.TargetKind, "module", StringComparison.OrdinalIgnoreCase))
                 {
-                    await _updateService.ApplyModuleUpdateAsync(update, log, null, ct);
+                    await _updateManager.ApplyModuleUpdateAsync(update, log, null, ct);
                 }
             }
         }
@@ -196,7 +196,7 @@ namespace ASLM.Services
         // Disposal
 
         /// <summary>
-        /// Cancels the background worker when the service is disposed by the host.
+        /// Cancels the background worker when the scheduler is disposed by the host.
         /// </summary>
         public void Dispose()
         {

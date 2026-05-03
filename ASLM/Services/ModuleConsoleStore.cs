@@ -10,7 +10,7 @@ namespace ASLM.Services
     /// <summary>
     /// Stores in-memory console sessions for modules and their spawned processes.
     /// </summary>
-    public sealed class ModuleConsoleService
+    public sealed class ModuleConsoleStore
     {
         private const string OverviewSessionId = "overview";
         private const int MaxLinesPerSession = 5000;

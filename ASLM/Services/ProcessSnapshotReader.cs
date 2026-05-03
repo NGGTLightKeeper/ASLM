@@ -7,7 +7,7 @@ namespace ASLM.Services;
 /// <summary>
 /// Captures and briefly caches the operating-system process table for dashboard and runner diagnostics.
 /// </summary>
-public sealed class ProcessSnapshotService
+public sealed class ProcessSnapshotReader
 {
     private static readonly TimeSpan DefaultMaxAge = TimeSpan.FromMilliseconds(250);
 

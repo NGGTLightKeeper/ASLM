@@ -11,23 +11,23 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Update service
+    // Update manager
 
     /// <summary>
     /// Checks, prepares, and applies ASLM and module updates.
     /// </summary>
-    public sealed class UpdateService
+    public sealed class UpdateManager
     {
         private const string UpdateWorkDirName = ".aslm-update";
         private const string PendingFileName = "pending.json";
         private const string UpdateSourceFileName = "ASLM_UpdateSource.json";
 
-        private readonly AppDataService _appData;
+        private readonly AppDataStore _appData;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly GitHubUpdateClient _github;
-        private readonly NotificationService _notifications;
-        private readonly ILogger<UpdateService> _logger;
+        private readonly NotificationCenter _notifications;
+        private readonly ILogger<UpdateManager> _logger;
 
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
@@ -40,15 +40,15 @@ namespace ASLM.Services
         // Initialization
 
         /// <summary>
-        /// Creates the update service.
+        /// Creates the update manager.
         /// </summary>
-        public UpdateService(
-            AppDataService appData,
+        public UpdateManager(
+            AppDataStore appData,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
             GitHubUpdateClient github,
-            NotificationService notifications,
-            ILogger<UpdateService> logger)
+            NotificationCenter notifications,
+            ILogger<UpdateManager> logger)
         {
             _appData = appData;
             _moduleInstaller = moduleInstaller;
@@ -311,7 +311,7 @@ namespace ASLM.Services
             IProgress<DownloadProgress>? progress = null,
             CancellationToken ct = default)
         {
-            var operationKey = NotificationService.BuildOperationKey("app-update", candidate.TargetId);
+            var operationKey = NotificationCenter.BuildOperationKey("app-update", candidate.TargetId);
             _notifications.StartDownload(
                 operationKey,
                 "Preparing ASLM update",
@@ -392,7 +392,7 @@ namespace ASLM.Services
         {
             var module = candidate.Module ?? throw new InvalidOperationException(
                 "Module update candidate does not contain module metadata.");
-            var operationKey = NotificationService.BuildOperationKey("module-update", module.Id);
+            var operationKey = NotificationCenter.BuildOperationKey("module-update", module.Id);
             _notifications.StartDownload(
                 operationKey,
                 "Updating module",

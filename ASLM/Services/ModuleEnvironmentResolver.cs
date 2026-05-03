@@ -12,7 +12,7 @@ namespace ASLM.Services
     /// <summary>
     /// Creates and resolves engine-specific dependency environments for individual modules.
     /// </summary>
-    public class ModuleEnvironmentService
+    public class ModuleEnvironmentResolver
     {
         private readonly EngineInstaller _engineInstaller;
         private readonly SemaphoreSlim _environmentLock = new(1, 1);
@@ -20,7 +20,7 @@ namespace ASLM.Services
         /// <summary>
         /// Creates the module environment service.
         /// </summary>
-        public ModuleEnvironmentService(EngineInstaller engineInstaller)
+        public ModuleEnvironmentResolver(EngineInstaller engineInstaller)
         {
             _engineInstaller = engineInstaller;
         }

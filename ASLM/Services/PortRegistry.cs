@@ -11,7 +11,7 @@ namespace ASLM.Services
     /// <summary>
     /// Allocates and persists per-module ports inside the configured application ranges.
     /// </summary>
-    public class PortManager
+    public class PortRegistry
     {
         // Port-map owner used by the internal ASLM API mirror server.
         public const string AslmApiServiceId = "__aslm-api";
@@ -19,7 +19,7 @@ namespace ASLM.Services
         // Port key used by the internal ASLM API mirror server.
         public const string AslmApiPortKey = "server-port";
 
-        private readonly AppDataService _appData;
+        private readonly AppDataStore _appData;
         private readonly string _portMapPath;
         private readonly object _lock = new();
 
@@ -44,7 +44,7 @@ namespace ASLM.Services
         /// <summary>
         /// Creates the port manager.
         /// </summary>
-        public PortManager(AppDataService appData)
+        public PortRegistry(AppDataStore appData)
         {
             _appData = appData;
 

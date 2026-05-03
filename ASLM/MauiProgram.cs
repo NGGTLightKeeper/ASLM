@@ -44,25 +44,25 @@ namespace ASLM
 #endif
 
             // Service registrations
-            builder.Services.AddSingleton<AppDataService>();
+            builder.Services.AddSingleton<AppDataStore>();
             builder.Services.AddSingleton<EngineInstaller>();
-            builder.Services.AddSingleton<ModuleEnvironmentService>();
+            builder.Services.AddSingleton<ModuleEnvironmentResolver>();
             builder.Services.AddSingleton<ModuleInstaller>();
-            builder.Services.AddSingleton<ModuleConsoleService>();
-            builder.Services.AddSingleton<ProcessSnapshotService>();
+            builder.Services.AddSingleton<ModuleConsoleStore>();
+            builder.Services.AddSingleton<ProcessSnapshotReader>();
             builder.Services.AddSingleton<ProcessTracker>();
             builder.Services.AddSingleton<ModuleRunner>();
-            builder.Services.AddSingleton<PortManager>();
-            builder.Services.AddSingleton<ModuleDownloadBridgeService>();
-            builder.Services.AddSingleton<DownloadCatalogStateService>();
-            builder.Services.AddSingleton<DownloadCatalogService>();
-            builder.Services.AddSingleton<DownloadInstallService>();
-            builder.Services.AddSingleton<NotificationService>();
-            builder.Services.AddSingleton<OllamaSettingsService>();
+            builder.Services.AddSingleton<PortRegistry>();
+            builder.Services.AddSingleton<ModuleDownloadBridge>();
+            builder.Services.AddSingleton<DownloadStateStore>();
+            builder.Services.AddSingleton<DownloadCatalog>();
+            builder.Services.AddSingleton<DownloadInstaller>();
+            builder.Services.AddSingleton<NotificationCenter>();
+            builder.Services.AddSingleton<OllamaSettingsStore>();
             builder.Services.AddSingleton<GitHubUpdateClient>();
-            builder.Services.AddSingleton<UpdateService>();
-            builder.Services.AddSingleton<UpdateSchedulerService>();
-            builder.Services.AddSingleton<AslmApiServerService>();
+            builder.Services.AddSingleton<UpdateManager>();
+            builder.Services.AddSingleton<UpdateScheduler>();
+            builder.Services.AddSingleton<AslmApiServer>();
 
             // Page registrations
             builder.Services.AddTransient<AppShellPage>();

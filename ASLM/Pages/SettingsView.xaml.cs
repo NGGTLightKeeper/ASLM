@@ -34,13 +34,13 @@ namespace ASLM.Pages
         private static readonly Color PassiveActionBackgroundColor = Color.FromArgb("#2C2C2E");
         private static readonly Color PassiveActionTextColor = Color.FromArgb("#99EBEBF5");
 
-        private readonly AppDataService _appData;
+        private readonly AppDataStore _appData;
         private readonly EngineInstaller _engineInstaller;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
-        private readonly OllamaSettingsService _ollamaSettingsService;
-        private readonly UpdateService _updateService;
-        private readonly AslmApiServerService _apiServer;
+        private readonly OllamaSettingsStore _ollamaSettings;
+        private readonly UpdateManager _updateManager;
+        private readonly AslmApiServer _apiServer;
         private readonly List<SettingControlMapping> _settingMappings = [];
         private readonly Dictionary<string, SettingBaseline> _settingBaselines = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Border> _categoryButtons = new(StringComparer.OrdinalIgnoreCase);
@@ -374,20 +374,20 @@ namespace ASLM.Pages
         /// Creates the settings view and hooks the first-load handler.
         /// </summary>
         public SettingsView(
-            AppDataService appData,
+            AppDataStore appData,
             EngineInstaller engineInstaller,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
-            OllamaSettingsService ollamaSettingsService,
-            UpdateService updateService,
-            AslmApiServerService apiServer)
+            OllamaSettingsStore ollamaSettings,
+            UpdateManager updateManager,
+            AslmApiServer apiServer)
         {
             _appData = appData;
             _engineInstaller = engineInstaller;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
-            _ollamaSettingsService = ollamaSettingsService;
-            _updateService = updateService;
+            _ollamaSettings = ollamaSettings;
+            _updateManager = updateManager;
             _apiServer = apiServer;
             InitializeComponent();
             ApplyFlatEntryStyle(UsernameEntry);
@@ -451,7 +451,7 @@ namespace ASLM.Pages
 
             StopOllamaStatusPolling();
             StopOllamaMetadataRefresh();
-            _ollamaSettingsService.StopManagedRuntime();
+            _ollamaSettings.StopManagedRuntime();
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
@@ -514,7 +514,7 @@ namespace ASLM.Pages
         {
             StopOllamaStatusPolling();
             StopOllamaMetadataRefresh();
-            _ollamaSettingsService.StopManagedRuntime();
+            _ollamaSettings.StopManagedRuntime();
         }
 
         /// <summary>
@@ -581,7 +581,7 @@ namespace ASLM.Pages
         {
             try
             {
-                _ollamaDraft = _ollamaSettingsService.LoadSettings();
+                _ollamaDraft = _ollamaSettings.LoadSettings();
             }
             catch (Exception ex)
             {
@@ -1335,9 +1335,9 @@ namespace ASLM.Pages
             var content = new VerticalStackLayout { Spacing = 10 };
 
             content.Children.Add(CreateCardTitle("Manual check"));
-            content.Children.Add(CreateCardDescription($"Current ASLM version: {_updateService.CurrentAppVersion}"));
+            content.Children.Add(CreateCardDescription($"Current ASLM version: {_updateManager.CurrentAppVersion}"));
 
-            _updateStatusLabel = CreateSecondaryLabel(_updateService.HasPendingAppUpdate
+            _updateStatusLabel = CreateSecondaryLabel(_updateManager.HasPendingAppUpdate
                 ? "ASLM update is prepared and will be applied on restart."
                 : "No update check has been run in this session.");
 
@@ -1346,7 +1346,7 @@ namespace ASLM.Pages
             _prepareAppUpdateButton = CreateInlineActionButton("Prepare ASLM update", OnPrepareAppUpdateClicked);
             _prepareAppUpdateButton.IsVisible = false;
             _restartAppUpdateButton = CreateInlineActionButton("Restart now", OnRestartNowClicked);
-            _restartAppUpdateButton.IsVisible = _updateService.HasPendingAppUpdate;
+            _restartAppUpdateButton.IsVisible = _updateManager.HasPendingAppUpdate;
             actions.Children.Add(checkButton);
             actions.Children.Add(_prepareAppUpdateButton);
             actions.Children.Add(_restartAppUpdateButton);
@@ -1377,7 +1377,7 @@ namespace ASLM.Pages
 
                 if (_restartAppUpdateButton != null)
                 {
-                    _restartAppUpdateButton.IsVisible = _updateService.HasPendingAppUpdate;
+                    _restartAppUpdateButton.IsVisible = _updateManager.HasPendingAppUpdate;
                 }
 
                 if (_updateStatusLabel != null)
@@ -1385,18 +1385,18 @@ namespace ASLM.Pages
                     _updateStatusLabel.Text = "Checking GitHub repositories...";
                 }
 
-                var updates = await Task.Run(() => _updateService.CheckAllUpdatesAsync());
+                var updates = await Task.Run(() => _updateManager.CheckAllUpdatesAsync());
                 _pendingAppUpdateCandidate = updates.FirstOrDefault(update =>
                     string.Equals(update.TargetKind, "app", StringComparison.OrdinalIgnoreCase));
 
                 if (_prepareAppUpdateButton != null)
                 {
-                    _prepareAppUpdateButton.IsVisible = _pendingAppUpdateCandidate != null && !_updateService.HasPendingAppUpdate;
+                    _prepareAppUpdateButton.IsVisible = _pendingAppUpdateCandidate != null && !_updateManager.HasPendingAppUpdate;
                 }
 
                 if (_restartAppUpdateButton != null)
                 {
-                    _restartAppUpdateButton.IsVisible = _updateService.HasPendingAppUpdate;
+                    _restartAppUpdateButton.IsVisible = _updateManager.HasPendingAppUpdate;
                 }
 
                 if (_updateStatusLabel != null)
@@ -1452,7 +1452,7 @@ namespace ASLM.Pages
                     }
                 });
 
-                var success = await Task.Run(() => _updateService.PrepareAppUpdateAsync(_pendingAppUpdateCandidate, log));
+                var success = await Task.Run(() => _updateManager.PrepareAppUpdateAsync(_pendingAppUpdateCandidate, log));
                 if (_updateStatusLabel != null)
                 {
                     _updateStatusLabel.Text = success
@@ -1467,7 +1467,7 @@ namespace ASLM.Pages
 
                 if (_restartAppUpdateButton != null)
                 {
-                    _restartAppUpdateButton.IsVisible = success || _updateService.HasPendingAppUpdate;
+                    _restartAppUpdateButton.IsVisible = success || _updateManager.HasPendingAppUpdate;
                 }
             }
             finally
@@ -2579,8 +2579,8 @@ namespace ASLM.Pages
                 UpdateOllamaAccountActionControls();
 
                 var result = signIn
-                    ? await _ollamaSettingsService.SignInAsync()
-                    : await _ollamaSettingsService.SignOutAsync();
+                    ? await _ollamaSettings.SignInAsync()
+                    : await _ollamaSettings.SignOutAsync();
 
                 await RefreshOllamaRuntimeMetadataAsync(queryLiveStatus: signIn);
                 UpdateOllamaAccountActionControls();
@@ -2612,8 +2612,8 @@ namespace ASLM.Pages
             try
             {
                 var refreshed = queryLiveStatus
-                    ? await Task.Run(() => _ollamaSettingsService.RefreshSettingsAsync(ct), ct)
-                    : await Task.Run(() => _ollamaSettingsService.LoadSettings(), ct);
+                    ? await Task.Run(() => _ollamaSettings.RefreshSettingsAsync(ct), ct)
+                    : await Task.Run(() => _ollamaSettings.LoadSettings(), ct);
                 ApplyOllamaRuntimeMetadata(refreshed);
             }
             catch (OperationCanceledException)

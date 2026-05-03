@@ -11,7 +11,7 @@ namespace ASLM.Services
     /// <summary>
     /// Stores internal ASLM notifications, persists them, and exposes helpers for update and download events.
     /// </summary>
-    public sealed class NotificationService
+    public sealed class NotificationCenter
     {
         private const string NotificationsFileName = "ASLM_Notifications.json";
         private const int MaxPersistedNotifications = 200;
@@ -32,7 +32,7 @@ namespace ASLM.Services
         /// <summary>
         /// Creates the notification service and resolves its persistence file path.
         /// </summary>
-        public NotificationService()
+        public NotificationCenter()
         {
             _readOnlyNotifications = new ReadOnlyObservableCollection<AppNotification>(_notifications);
             _filePath = Path.Combine(GetRootDirectory(), "Data", "App", NotificationsFileName);

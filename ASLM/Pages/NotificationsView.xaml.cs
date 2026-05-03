@@ -20,7 +20,7 @@ namespace ASLM.Pages
         private const double PopupGap = 8;
         private const double ScreenPadding = 12;
 
-        private readonly NotificationService _notificationService;
+        private readonly NotificationCenter _notifications;
 
         /// <summary>
         /// Raised when the user asks to close the notifications popover.
@@ -33,9 +33,9 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the notifications popover and hooks service updates.
         /// </summary>
-        public NotificationsView(NotificationService notificationService)
+        public NotificationsView(NotificationCenter notifications)
         {
-            _notificationService = notificationService;
+            _notifications = notifications;
 
             InitializeComponent();
             BindingContext = this;
@@ -51,9 +51,9 @@ namespace ASLM.Pages
         /// <summary>
         /// Gets the compact total count label.
         /// </summary>
-        public string SummaryText => _notificationService.Notifications.Count == 0
+        public string SummaryText => _notifications.Notifications.Count == 0
             ? "No notifications"
-            : $"{_notificationService.Notifications.Count} total";
+            : $"{_notifications.Notifications.Count} total";
 
         /// <summary>
         /// Gets the small section label above the list.
@@ -94,8 +94,8 @@ namespace ASLM.Pages
         /// </summary>
         private void OnLoaded(object? sender, EventArgs e)
         {
-            _notificationService.NotificationsChanged -= OnNotificationsChanged;
-            _notificationService.NotificationsChanged += OnNotificationsChanged;
+            _notifications.NotificationsChanged -= OnNotificationsChanged;
+            _notifications.NotificationsChanged += OnNotificationsChanged;
             RefreshVisibleNotifications();
         }
 
@@ -104,7 +104,7 @@ namespace ASLM.Pages
         /// </summary>
         private void OnUnloaded(object? sender, EventArgs e)
         {
-            _notificationService.NotificationsChanged -= OnNotificationsChanged;
+            _notifications.NotificationsChanged -= OnNotificationsChanged;
         }
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace ASLM.Pages
         {
             if (sender is Button { BindingContext: AppNotification notification })
             {
-                _notificationService.Dismiss(notification);
+                _notifications.Dismiss(notification);
             }
         }
 
@@ -187,7 +187,7 @@ namespace ASLM.Pages
         /// </summary>
         private void RefreshVisibleNotifications()
         {
-            var filtered = _notificationService.Notifications
+            var filtered = _notifications.Notifications
                 .OrderByDescending(notification => notification.UpdatedAt)
                 .ToList();
 

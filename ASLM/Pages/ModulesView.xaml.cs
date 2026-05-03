@@ -20,7 +20,7 @@ namespace ASLM.Pages
     {
         private const double MinCardWidth = 400;
 
-        private readonly UpdateService _updateService;
+        private readonly UpdateManager _updateManager;
         private AppShellPage? _shell;
         private int _gridSpan = 1;
 
@@ -59,9 +59,9 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the module management view and hooks the resize handler.
         /// </summary>
-        public ModulesView(UpdateService updateService)
+        public ModulesView(UpdateManager updateManager)
         {
-            _updateService = updateService;
+            _updateManager = updateManager;
             InitializeComponent();
             BindingContext = this;
             DashboardView.HandlerChanged += OnDashboardViewHandlerChanged;
@@ -152,7 +152,7 @@ namespace ASLM.Pages
                     module,
                     installer,
                     runner,
-                    _updateService,
+                    _updateManager,
                     OnModuleStateChanged,
                     OnMenuToggleRequested,
                     OpenConfigureUpdates,
@@ -319,7 +319,7 @@ namespace ASLM.Pages
         private readonly ModuleConfig _config;
         private readonly ModuleInstaller _installer;
         private readonly ModuleRunner _runner;
-        private readonly UpdateService _updateService;
+        private readonly UpdateManager _updateManager;
         private readonly Action _onStateChanged;
         private readonly Action<ModuleViewModel> _onMenuToggleRequested;
         private readonly Action<ModuleViewModel> _onConfigureUpdatesRequested;
@@ -375,7 +375,7 @@ namespace ASLM.Pages
             ModuleConfig config,
             ModuleInstaller installer,
             ModuleRunner runner,
-            UpdateService updateService,
+            UpdateManager updateManager,
             Action onStateChanged,
             Action<ModuleViewModel> onMenuToggleRequested,
             Action<ModuleViewModel> onConfigureUpdatesRequested,
@@ -384,7 +384,7 @@ namespace ASLM.Pages
             _config = config;
             _installer = installer;
             _runner = runner;
-            _updateService = updateService;
+            _updateManager = updateManager;
             _onStateChanged = onStateChanged;
             _onMenuToggleRequested = onMenuToggleRequested;
             _onConfigureUpdatesRequested = onConfigureUpdatesRequested;
@@ -1042,7 +1042,7 @@ namespace ASLM.Pages
             _config.Update.SelectedReleaseTag = string.IsNullOrWhiteSpace(_config.Update.SelectedReleaseTag)
                 ? null
                 : _config.Update.SelectedReleaseTag;
-            _updateService.SaveModuleUpdatePreferences(_config);
+            _updateManager.SaveModuleUpdatePreferences(_config);
         }
 
         /// <summary>
@@ -1161,7 +1161,7 @@ namespace ASLM.Pages
                 await EnsureSelectionOptionsLoadedAsync(forceOptionLoad);
                 SynchronizeSelectionForUpdateOperation();
 
-                _updateCandidate = await Task.Run(() => _updateService.CheckModuleUpdateAsync(_config));
+                _updateCandidate = await Task.Run(() => _updateManager.CheckModuleUpdateAsync(_config));
                 HasUpdate = _updateCandidate != null;
                 OnPropertyChanged(nameof(UpdateCandidate));
                 OnPropertyChanged(nameof(AvailableUpdateLabel));
@@ -1225,7 +1225,7 @@ namespace ASLM.Pages
 
             try
             {
-                var branches = await Task.Run(() => _updateService.GetModuleBranchesAsync(_config));
+                var branches = await Task.Run(() => _updateManager.GetModuleBranchesAsync(_config));
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     var selectedBranch = string.IsNullOrWhiteSpace(_selectedBranch)
@@ -1304,7 +1304,7 @@ namespace ASLM.Pages
 
             try
             {
-                var releases = await Task.Run(() => _updateService.GetModuleReleaseCandidatesAsync(_config));
+                var releases = await Task.Run(() => _updateManager.GetModuleReleaseCandidatesAsync(_config));
                 var releaseOptions = BuildReleaseOptions(releases);
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
@@ -1464,7 +1464,7 @@ namespace ASLM.Pages
                     progressSink?.Report(download);
                 });
 
-                var success = await Task.Run(() => _updateService.ApplyModuleUpdateAsync(
+                var success = await Task.Run(() => _updateManager.ApplyModuleUpdateAsync(
                     installCandidate,
                     combinedLog,
                     combinedProgress,
@@ -1726,7 +1726,7 @@ namespace ASLM.Pages
 
             if (IsBranchMode)
             {
-                return await Task.Run(() => _updateService.ResolveModuleInstallCandidateAsync(_config));
+                return await Task.Run(() => _updateManager.ResolveModuleInstallCandidateAsync(_config));
             }
 
             return ResolveSelectedReleaseInstallCandidate();
@@ -1744,7 +1744,7 @@ namespace ASLM.Pages
 
             if (!string.IsNullOrWhiteSpace(_config.Update.InstalledReleaseTag))
             {
-                return UpdateService.AreEquivalentVersionReferences(
+                return UpdateManager.AreEquivalentVersionReferences(
                     _config.Update.InstalledReleaseTag,
                     _selectedReleaseOption.ReleaseTag)
                         ? null
@@ -1759,7 +1759,7 @@ namespace ASLM.Pages
             }
 
             var currentVersion = _config.Status.InstalledVersion ?? _config.Version;
-            return UpdateService.AreEquivalentVersionReferences(currentVersion, _selectedReleaseOption.ReleaseTag)
+            return UpdateManager.AreEquivalentVersionReferences(currentVersion, _selectedReleaseOption.ReleaseTag)
                 ? null
                 : _selectedReleaseOption;
         }

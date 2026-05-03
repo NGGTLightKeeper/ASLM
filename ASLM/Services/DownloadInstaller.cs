@@ -18,15 +18,15 @@ namespace ASLM.Services
     /// <summary>
     /// Resolves bridge install manifests and executes whitelisted install actions inside safe ASLM-managed directories.
     /// </summary>
-    public class DownloadInstallService
+    public class DownloadInstaller
     {
         private readonly ModuleInstaller _moduleInstaller;
-        private readonly ModuleDownloadBridgeService _bridgeService;
+        private readonly ModuleDownloadBridge _bridge;
         private readonly EngineInstaller _engineInstaller;
-        private readonly ModuleEnvironmentService _moduleEnvironmentService;
-        private readonly DownloadCatalogStateService _stateService;
-        private readonly NotificationService _notifications;
-        private readonly ILogger<DownloadInstallService> _logger;
+        private readonly ModuleEnvironmentResolver _environmentResolver;
+        private readonly DownloadStateStore _stateStore;
+        private readonly NotificationCenter _notifications;
+        private readonly ILogger<DownloadInstaller> _logger;
         private readonly HttpClient _httpClient = new();
 
         private readonly JsonSerializerOptions _jsonOptions = new()
@@ -38,20 +38,20 @@ namespace ASLM.Services
         /// <summary>
         /// Creates the download install service.
         /// </summary>
-        public DownloadInstallService(
+        public DownloadInstaller(
             ModuleInstaller moduleInstaller,
-            ModuleDownloadBridgeService bridgeService,
+            ModuleDownloadBridge bridge,
             EngineInstaller engineInstaller,
-            ModuleEnvironmentService moduleEnvironmentService,
-            DownloadCatalogStateService stateService,
-            NotificationService notifications,
-            ILogger<DownloadInstallService> logger)
+            ModuleEnvironmentResolver environmentResolver,
+            DownloadStateStore stateStore,
+            NotificationCenter notifications,
+            ILogger<DownloadInstaller> logger)
         {
             _moduleInstaller = moduleInstaller;
-            _bridgeService = bridgeService;
+            _bridge = bridge;
             _engineInstaller = engineInstaller;
-            _moduleEnvironmentService = moduleEnvironmentService;
-            _stateService = stateService;
+            _environmentResolver = environmentResolver;
+            _stateStore = stateStore;
             _notifications = notifications;
             _logger = logger;
         }
@@ -81,7 +81,7 @@ namespace ASLM.Services
             var selectedVersion = !string.IsNullOrWhiteSpace(selectedVariant?.Version)
                 ? selectedVariant!.Version
                 : item.Version;
-            var operationKey = NotificationService.BuildOperationKey("download-install", selectedResourceKey);
+            var operationKey = NotificationCenter.BuildOperationKey("download-install", selectedResourceKey);
             _notifications.StartDownload(
                 operationKey,
                 "Installing download",
@@ -105,7 +105,7 @@ namespace ASLM.Services
                 ModuleDownloadInstallManifest? manifest;
                 try
                 {
-                    manifest = await _bridgeService.ResolveInstallAsync(module, source.CategoryId, selectedResourceKey, ct);
+                    manifest = await _bridge.ResolveInstallAsync(module, source.CategoryId, selectedResourceKey, ct);
                 }
                 catch (Exception ex)
                 {
@@ -138,7 +138,7 @@ namespace ASLM.Services
                         ? manifest.Version
                         : selectedVersion;
 
-                    await _stateService.MarkInstalledAsync(selectedResourceKey, version, module.Id);
+                    await _stateStore.MarkInstalledAsync(selectedResourceKey, version, module.Id);
 
                     var message = string.IsNullOrWhiteSpace(version)
                         ? $"{effectiveTitle} installed successfully."
@@ -188,7 +188,7 @@ namespace ASLM.Services
             var selectedTitle = !string.IsNullOrWhiteSpace(selectedVariant?.Title)
                 ? selectedVariant!.Title
                 : item.Title;
-            var operationKey = NotificationService.BuildOperationKey("download-remove", selectedResourceKey);
+            var operationKey = NotificationCenter.BuildOperationKey("download-remove", selectedResourceKey);
             _notifications.StartDownload(
                 operationKey,
                 "Removing download",
@@ -212,7 +212,7 @@ namespace ASLM.Services
                 ModuleDownloadInstallManifest? manifest;
                 try
                 {
-                    manifest = await _bridgeService.ResolveUninstallAsync(module, source.CategoryId, selectedResourceKey, ct);
+                    manifest = await _bridge.ResolveUninstallAsync(module, source.CategoryId, selectedResourceKey, ct);
                 }
                 catch (Exception ex)
                 {
@@ -240,7 +240,7 @@ namespace ASLM.Services
                     log?.Report($"Removing {effectiveTitle} via {module.Name}...");
 
                     await ExecuteManifestAsync(module, manifest, operationKey, log, ct);
-                    await _stateService.MarkUninstalledAsync(selectedResourceKey);
+                    await _stateStore.MarkUninstalledAsync(selectedResourceKey);
 
                     var message = $"{effectiveTitle} removed successfully.";
                     log?.Report(message);
@@ -502,9 +502,9 @@ namespace ASLM.Services
                 throw new InvalidOperationException($"Engine '{engineId}' does not declare a package manager.");
             }
 
-            var environment = await _moduleEnvironmentService.EnsureEnvironmentAsync(module, engineConfig, log, ct);
-            var executablePath = _moduleEnvironmentService.ResolvePackageManagerExecutable(environment, engineConfig);
-            var arguments = _moduleEnvironmentService.BuildPackageInstallArguments(environment, engineConfig, action.Packages);
+            var environment = await _environmentResolver.EnsureEnvironmentAsync(module, engineConfig, log, ct);
+            var executablePath = _environmentResolver.ResolvePackageManagerExecutable(environment, engineConfig);
+            var arguments = _environmentResolver.BuildPackageInstallArguments(environment, engineConfig, action.Packages);
             var environmentVariables = environment?.EnvironmentVariables;
 
             await RunProcessAsync(

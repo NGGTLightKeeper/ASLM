@@ -10,27 +10,27 @@ namespace ASLM.Services
     /// <summary>
     /// Builds the shared download catalog by querying every installed module bridge and merging equivalent items.
     /// </summary>
-    public class DownloadCatalogService
+    public class DownloadCatalog
     {
         private const int MaxConcurrentBridgeRequests = 4;
 
         private readonly ModuleInstaller _moduleInstaller;
-        private readonly ModuleDownloadBridgeService _bridgeService;
-        private readonly DownloadCatalogStateService _stateService;
-        private readonly ILogger<DownloadCatalogService> _logger;
+        private readonly ModuleDownloadBridge _bridge;
+        private readonly DownloadStateStore _stateStore;
+        private readonly ILogger<DownloadCatalog> _logger;
 
         /// <summary>
         /// Creates the shared download catalog service.
         /// </summary>
-        public DownloadCatalogService(
+        public DownloadCatalog(
             ModuleInstaller moduleInstaller,
-            ModuleDownloadBridgeService bridgeService,
-            DownloadCatalogStateService stateService,
-            ILogger<DownloadCatalogService> logger)
+            ModuleDownloadBridge bridge,
+            DownloadStateStore stateStore,
+            ILogger<DownloadCatalog> logger)
         {
             _moduleInstaller = moduleInstaller;
-            _bridgeService = bridgeService;
-            _stateService = stateService;
+            _bridge = bridge;
+            _stateStore = stateStore;
             _logger = logger;
         }
 
@@ -87,7 +87,7 @@ namespace ASLM.Services
             {
                 Warnings = warnings,
                 Categories = categoryBuilders.Values
-                    .Select(builder => builder.ToCategory(_stateService))
+                    .Select(builder => builder.ToCategory(_stateStore))
                     .OrderBy(category => category.SortOrder)
                     .ThenBy(category => category.Title, StringComparer.OrdinalIgnoreCase)
                     .ToList()
@@ -111,7 +111,7 @@ namespace ASLM.Services
             List<ModuleDownloadCategoryPayload> categories;
             try
             {
-                categories = await _bridgeService.GetCategoriesAsync(module, preferCached, forceRefresh, ct);
+                categories = await _bridge.GetCategoriesAsync(module, preferCached, forceRefresh, ct);
             }
             catch (OperationCanceledException)
             {
@@ -141,7 +141,7 @@ namespace ASLM.Services
                 ModuleDownloadBridgeResponse itemResponse;
                 try
                 {
-                    itemResponse = await _bridgeService.GetItemsAsync(module, category.Id, queryText, filters, preferCached, forceRefresh, ct);
+                    itemResponse = await _bridge.GetItemsAsync(module, category.Id, queryText, filters, preferCached, forceRefresh, ct);
                 }
                 catch (OperationCanceledException)
                 {
@@ -235,7 +235,7 @@ namespace ASLM.Services
 
                 try
                 {
-                    var detail = await _bridgeService.GetItemDetailAsync(
+                    var detail = await _bridge.GetItemDetailAsync(
                         module,
                         source.CategoryId,
                         item.ResourceKey,
@@ -263,7 +263,7 @@ namespace ASLM.Services
             }
 
             return hadAnyDetail
-                ? builder.ToDetail(_stateService)
+                ? builder.ToDetail(_stateStore)
                 : BuildFallbackDetail(item);
         }
 
@@ -326,7 +326,7 @@ namespace ASLM.Services
             var variantKey = !string.IsNullOrWhiteSpace(item.DefaultVariantResourceKey)
                 ? item.DefaultVariantResourceKey
                 : item.ResourceKey;
-            var persistedState = _stateService.GetResourceState(variantKey);
+            var persistedState = _stateStore.GetResourceState(variantKey);
 
             return new DownloadCatalogItemDetail
             {
@@ -431,7 +431,7 @@ namespace ASLM.Services
             }
 
             // Materialize the final category model
-            public DownloadCatalogCategory ToCategory(DownloadCatalogStateService stateService)
+            public DownloadCatalogCategory ToCategory(DownloadStateStore stateStore)
             {
                 return new DownloadCatalogCategory
                 {
@@ -445,7 +445,7 @@ namespace ASLM.Services
                         .ThenBy(filter => filter.Title, StringComparer.OrdinalIgnoreCase)
                         .ToList(),
                     Items = Items.Values
-                        .Select(item => item.ToItem(stateService))
+                        .Select(item => item.ToItem(stateStore))
                         .OrderBy(item => item.SortOrder)
                         .ThenBy(item => item.Title, StringComparer.OrdinalIgnoreCase)
                         .ToList()
@@ -610,9 +610,9 @@ namespace ASLM.Services
             }
 
             // Materialize the final grouped item model
-            public DownloadCatalogItem ToItem(DownloadCatalogStateService stateService)
+            public DownloadCatalogItem ToItem(DownloadStateStore stateStore)
             {
-                var persistedState = stateService.GetResourceState(GetPrimaryStateKey(this));
+                var persistedState = stateStore.GetResourceState(GetPrimaryStateKey(this));
 
                 return new DownloadCatalogItem
                 {
@@ -771,10 +771,10 @@ namespace ASLM.Services
             }
 
             // Materialize the final detail model
-            public DownloadCatalogItemDetail ToDetail(DownloadCatalogStateService stateService)
+            public DownloadCatalogItemDetail ToDetail(DownloadStateStore stateStore)
             {
                 var variants = Variants.Values
-                    .Select(variant => variant.ToVariant(stateService))
+                    .Select(variant => variant.ToVariant(stateStore))
                     .OrderBy(variant => variant.SortOrder)
                     .ThenBy(variant => variant.Title, StringComparer.OrdinalIgnoreCase)
                     .ToList();
@@ -782,7 +782,7 @@ namespace ASLM.Services
                 // Keep one synthetic variant so install flows still work when no explicit variants were returned.
                 if (variants.Count == 0)
                 {
-                    var fallbackState = stateService.GetResourceState(!string.IsNullOrWhiteSpace(DefaultVariantResourceKey) ? DefaultVariantResourceKey : ResourceKey);
+                    var fallbackState = stateStore.GetResourceState(!string.IsNullOrWhiteSpace(DefaultVariantResourceKey) ? DefaultVariantResourceKey : ResourceKey);
                     variants.Add(new DownloadCatalogVariant
                     {
                         ResourceKey = !string.IsNullOrWhiteSpace(DefaultVariantResourceKey) ? DefaultVariantResourceKey : ResourceKey,
@@ -895,9 +895,9 @@ namespace ASLM.Services
             }
 
             // Materialize the final variant model
-            public DownloadCatalogVariant ToVariant(DownloadCatalogStateService stateService)
+            public DownloadCatalogVariant ToVariant(DownloadStateStore stateStore)
             {
-                var persistedState = stateService.GetResourceState(ResourceKey);
+                var persistedState = stateStore.GetResourceState(ResourceKey);
                 return new DownloadCatalogVariant
                 {
                     ResourceKey = ResourceKey,

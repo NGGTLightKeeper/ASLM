@@ -100,7 +100,7 @@ namespace ASLM.Models
         /// </summary>
         public void Normalize()
         {
-            // The API port is allocated by PortManager from the official module pool.
+            // The API port is allocated by PortRegistry from the official module pool.
         }
     }
 

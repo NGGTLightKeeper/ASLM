@@ -17,8 +17,8 @@ namespace ASLM.Pages
     /// </summary>
     public partial class AslmApiView : ContentView, INotifyPropertyChanged
     {
-        private readonly AslmApiServerService _apiServer;
-        private readonly NotificationService _notifications;
+        private readonly AslmApiServer _apiServer;
+        private readonly NotificationCenter _notifications;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly Dictionary<string, AslmApiHostViewModel> _hostRows = new(StringComparer.OrdinalIgnoreCase);
         private Dictionary<string, AslmApiModuleDisplayState> _moduleDisplayStates = new(StringComparer.OrdinalIgnoreCase);
@@ -44,8 +44,8 @@ namespace ASLM.Pages
         /// Creates the ASLM API page and hooks service state notifications.
         /// </summary>
         public AslmApiView(
-            AslmApiServerService apiServer,
-            NotificationService notifications,
+            AslmApiServer apiServer,
+            NotificationCenter notifications,
             ModuleInstaller moduleInstaller)
         {
             _apiServer = apiServer;
@@ -411,7 +411,7 @@ namespace ASLM.Pages
         private string _mirrorUrl = string.Empty;
         private bool _isModuleDisabled;
         private Command? _copyCommand;
-        private readonly NotificationService _notifications;
+        private readonly NotificationCenter _notifications;
 
         /// <summary>
         /// Creates a host row from the current service host info.
@@ -419,7 +419,7 @@ namespace ASLM.Pages
         public AslmApiHostViewModel(
             AslmApiHostInfo host,
             AslmApiModuleDisplayState moduleState,
-            NotificationService notifications)
+            NotificationCenter notifications)
         {
             _notifications = notifications;
             Update(host, moduleState);
