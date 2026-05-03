@@ -391,7 +391,7 @@
 
                                         <Grid Grid.Column="1"
                                               VerticalOptions="Center">
-                                            <HorizontalStackLayout Spacing="6"
+                                            <HorizontalStackLayout Spacing="8"
                                                                    HorizontalOptions="End"
                                                                    IsVisible="{Binding IsRunningAndIdle}">
                                                 <Border Background="{SolidColorBrush {StaticResource ActionRed}}"
@@ -454,7 +454,7 @@
                                                 </Border>
                                             </HorizontalStackLayout>
 
-                                            <HorizontalStackLayout Spacing="0"
+                                            <HorizontalStackLayout Spacing="8"
                                                                    HorizontalOptions="End"
                                                                    IsVisible="{Binding IsStoppedAndIdle}">
                                                 <Border Background="{SolidColorBrush {StaticResource ActionBlue}}"
