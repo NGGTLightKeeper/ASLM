@@ -17,38 +17,39 @@
             Stroke="{StaticResource Separator}"
             StrokeThickness="1"
             Padding="0"
-            StrokeShape="RoundRectangle 10">
+            StrokeShape="RoundRectangle 12">
 
         <Border.GestureRecognizers>
             <TapGestureRecognizer Tapped="OnDialogTapped" />
         </Border.GestureRecognizers>
 
         <Grid ColumnDefinitions="208,332,*"
-              ColumnSpacing="0">
+              ColumnSpacing="0"
+              Padding="0">
 
             <Border Grid.Column="0"
                     BackgroundColor="#18181A"
                     StrokeThickness="0"
-                    Padding="12,14,8,12">
+                    Padding="8">
                 <Grid RowDefinitions="Auto,*"
                       RowSpacing="0">
-                    <VerticalStackLayout Spacing="4">
+                    <VerticalStackLayout Spacing="0">
                         <Label Text="Download"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{StaticResource LabelPrimary}" />
                         <Label Text="{Binding CategoryCountLabel}"
-                               FontSize="12"
+                               FontSize="13"
                                TextColor="{StaticResource LabelSecondary}" />
                     </VerticalStackLayout>
 
                     <CollectionView Grid.Row="1"
-                                    Margin="0,12,0,0"
+                                    Margin="0,8,0,0"
                                     SelectionMode="None"
                                     VerticalScrollBarVisibility="Never"
                                     ItemsSource="{Binding Categories}">
                         <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="6" />
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="4" />
                         </CollectionView.ItemsLayout>
 
                         <CollectionView.ItemTemplate>
@@ -56,16 +57,17 @@
                                 <Border BackgroundColor="{Binding BackgroundColor}"
                                         Stroke="{Binding StrokeColor}"
                                         StrokeThickness="1"
-                                        StrokeShape="RoundRectangle 8"
-                                        Padding="10,9">
+                                        StrokeShape="RoundRectangle 6"
+                                        Padding="8">
                                     <Border.GestureRecognizers>
                                         <TapGestureRecognizer Command="{Binding SelectCommand}" />
                                     </Border.GestureRecognizers>
 
                                     <Grid ColumnDefinitions="*,Auto"
-                                          ColumnSpacing="10">
+                                          ColumnSpacing="10"
+                                          MinimumHeightRequest="20">
                                         <Label Text="{Binding Title}"
-                                               FontSize="13"
+                                               FontSize="14"
                                                FontAttributes="Bold"
                                                TextColor="{Binding TitleColor}"
                                                VerticalOptions="Center"
@@ -74,7 +76,7 @@
 
                                         <Label Grid.Column="1"
                                                Text="{Binding ItemCountLabel}"
-                                               FontSize="11"
+                                               FontSize="12"
                                                TextColor="{Binding SubtitleColor}"
                                                VerticalOptions="Center" />
                                     </Grid>
@@ -94,16 +96,16 @@
             <Border Grid.Column="1"
                     BackgroundColor="#161618"
                     StrokeThickness="0"
-                    Padding="14,14,10,12">
+                    Padding="8">
                 <Grid RowDefinitions="Auto,Auto,Auto,*"
-                      RowSpacing="10">
-                    <VerticalStackLayout Spacing="4">
+                      RowSpacing="8">
+                    <VerticalStackLayout Spacing="0">
                         <Label Text="{Binding ActiveCategoryTitle}"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{StaticResource LabelPrimary}" />
                         <Label Text="{Binding ActiveCategoryItemCountLabel}"
-                               FontSize="12"
+                               FontSize="13"
                                TextColor="{StaticResource LabelSecondary}" />
                     </VerticalStackLayout>
 
@@ -112,12 +114,14 @@
                             Stroke="{StaticResource Separator}"
                             StrokeThickness="1"
                             StrokeShape="RoundRectangle 6"
-                            Padding="12,0">
+                            Padding="8,0"
+                            Margin="0,4,0,0">
                         <Entry x:Name="SearchEntry"
                                Text="{Binding SearchText}"
                                Placeholder="Search the provider catalog"
                                ClearButtonVisibility="WhileEditing"
-                               HeightRequest="42"
+                               HeightRequest="34"
+                               MinimumHeightRequest="34"
                                FontSize="13"
                                TextChanged="OnSearchTextChanged"
                                HandlerChanged="OnSearchEntryHandlerChanged"
@@ -141,15 +145,15 @@
                                     <Border BackgroundColor="{Binding BackgroundColor}"
                                             Stroke="{Binding StrokeColor}"
                                             StrokeThickness="1"
-                                            StrokeShape="RoundRectangle 16"
-                                            Padding="10,5"
-                                            Margin="0,0,8,8">
+                                            StrokeShape="RoundRectangle 12"
+                                            Padding="8,4"
+                                            Margin="0,0,4,4">
                                         <Border.GestureRecognizers>
                                             <TapGestureRecognizer Command="{Binding ToggleCommand}" />
                                         </Border.GestureRecognizers>
 
                                         <Label Text="{Binding Title}"
-                                               FontSize="11"
+                                               FontSize="12"
                                                TextColor="{Binding TitleColor}"
                                                MaxLines="1"
                                                LineBreakMode="TailTruncation" />
@@ -165,7 +169,7 @@
                                         VerticalScrollBarVisibility="Never"
                                         ItemsSource="{Binding CurrentItems}">
                             <CollectionView.ItemsLayout>
-                                <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                                <LinearItemsLayout Orientation="Vertical" ItemSpacing="4" />
                             </CollectionView.ItemsLayout>
 
                             <CollectionView.ItemTemplate>
@@ -173,8 +177,8 @@
                                     <Border BackgroundColor="{Binding BackgroundColor}"
                                             Stroke="{Binding StrokeColor}"
                                             StrokeThickness="1"
-                                            StrokeShape="RoundRectangle 8"
-                                            Padding="12,11">
+                                            StrokeShape="RoundRectangle 6"
+                                            Padding="8">
                                         <Border.GestureRecognizers>
                                             <TapGestureRecognizer Command="{Binding SelectCommand}" />
                                         </Border.GestureRecognizers>
@@ -190,21 +194,21 @@
                                                        LineBreakMode="TailTruncation" />
                                                 <Label Grid.Column="1"
                                                        Text="{Binding VariantCountLabel}"
-                                                       FontSize="11"
+                                                       FontSize="12"
                                                        TextColor="{Binding SubtitleColor}"
                                                        VerticalOptions="Center" />
                                             </Grid>
 
                                             <Label Text="{Binding Summary}"
                                                    IsVisible="{Binding HasSummary}"
-                                                   FontSize="12"
+                                                   FontSize="13"
                                                    TextColor="{StaticResource LabelSecondary}"
                                                    MaxLines="2"
                                                    LineBreakMode="TailTruncation" />
 
                                             <Label Text="{Binding MetadataLine}"
                                                    IsVisible="{Binding HasMetadata}"
-                                                   FontSize="11"
+                                                   FontSize="12"
                                                    TextColor="{StaticResource LabelSecondary}"
                                                    MaxLines="1"
                                                    LineBreakMode="TailTruncation" />
@@ -241,19 +245,21 @@
 
             <Grid Grid.Column="2"
                   RowDefinitions="Auto,*"
-                  RowSpacing="14"
-                  Padding="16,16,14,14">
+                  RowSpacing="12"
+                  Padding="8">
 
                 <Grid Grid.Row="0"
                       ColumnDefinitions="*,Auto,Auto,Auto"
                       ColumnSpacing="8">
-                    <VerticalStackLayout Spacing="4">
+                    <VerticalStackLayout Spacing="0">
                         <Label Text="{Binding DetailHeaderTitle}"
-                               FontSize="18"
+                               FontSize="16"
+                               HeightRequest="21"
+                               MinimumHeightRequest="21"
                                FontAttributes="Bold"
                                TextColor="{StaticResource LabelPrimary}" />
                         <Label Text="{Binding StatusText}"
-                               FontSize="12"
+                               FontSize="13"
                                TextColor="{StaticResource LabelSecondary}"
                                MaxLines="1"
                                LineBreakMode="TailTruncation" />
@@ -263,13 +269,16 @@
                                        IsVisible="{Binding IsBusy}"
                                        IsRunning="{Binding IsBusy}"
                                        VerticalOptions="Center"
-                                       Color="{StaticResource LabelPrimary}" />
+                                       Color="{StaticResource LabelPrimary}"
+                                       WidthRequest="24"
+                                       HeightRequest="24"/>
 
                     <Button Grid.Column="2"
                             Text="Refresh"
-                            HeightRequest="34"
+                            HeightRequest="36"
+                            MinimumHeightRequest="36"
                             CornerRadius="6"
-                            Padding="14,0"
+                            Padding="8,0"
                             BackgroundColor="{StaticResource ActionBlue}"
                             TextColor="{StaticResource LabelPrimary}"
                             FontSize="13"
@@ -278,8 +287,10 @@
                     <Button Grid.Column="3"
                             Text="&#x2715;"
                             FontSize="17"
-                            WidthRequest="34"
-                            HeightRequest="34"
+                            WidthRequest="36"
+                            MinimumWidthRequest="36"
+                            HeightRequest="36"
+                            MinimumHeightRequest="36"
                             Padding="0"
                             BackgroundColor="Transparent"
                             TextColor="{StaticResource LabelSecondary}"
@@ -291,21 +302,24 @@
                     <Grid IsVisible="{Binding HasSelectedItem}">
                         <ScrollView x:Name="DetailScrollView"
                                     VerticalScrollBarVisibility="Never">
-                            <VerticalStackLayout Spacing="14"
-                                                 Padding="0,0,2,0">
+                            <VerticalStackLayout Spacing="8"
+                                                 Padding="0">
                                 <Border IsVisible="{Binding HasSelectedItem}"
                                         BackgroundColor="{StaticResource BackgroundTertiary}"
                                         Stroke="{StaticResource Separator}"
                                         StrokeThickness="1"
-                                        StrokeShape="RoundRectangle 8"
-                                        Padding="14,12">
-                                    <VerticalStackLayout Spacing="6">
+                                        StrokeShape="RoundRectangle 6"
+                                        Padding="12">
+                                    <VerticalStackLayout Spacing="2">
                                         <Label Text="{Binding SelectedItemTitle}"
-                                               FontSize="22"
+                                               FontSize="16"
                                                FontAttributes="Bold"
                                                TextColor="{StaticResource LabelPrimary}"
                                                MaxLines="1"
-                                               LineBreakMode="TailTruncation" />
+                                               LineBreakMode="TailTruncation"
+                                               HeightRequest="21"
+                                               MinimumHeightRequest="21"
+                                               VerticalTextAlignment="End"/>
                                         <Label Text="{Binding SelectedItemSummary}"
                                                IsVisible="{Binding HasSelectedItemSummary}"
                                                FontSize="12"
@@ -331,15 +345,15 @@
                                         Stroke="{StaticResource Separator}"
                                         StrokeThickness="1"
                                         StrokeShape="RoundRectangle 8"
-                                        Padding="12"
+                                        Padding="8"
                                         IsVisible="{Binding HasVariants}">
                                     <Grid RowDefinitions="Auto,Auto,Auto"
-                                          RowSpacing="10">
+                                          RowSpacing="8">
                                         <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto"
                                               ColumnSpacing="8">
                                             <VerticalStackLayout Spacing="2">
                                                 <Label Text="Variant"
-                                                       FontSize="12"
+                                                       FontSize="13"
                                                        TextColor="{StaticResource LabelSecondary}" />
                                                 <Label Text="{Binding SelectedVariantTitle}"
                                                        FontSize="15"
@@ -355,19 +369,23 @@
                                                     Stroke="{StaticResource ActionBlue}"
                                                     StrokeThickness="1"
                                                     StrokeShape="RoundRectangle 6"
-                                                    Padding="8,4"
-                                                    VerticalOptions="Center">
+                                                    Padding="8"
+                                                    VerticalOptions="Center"
+                                                    HeightRequest="36"
+                                                    MinimumHeightRequest="36">
                                                 <Label Text="{Binding SelectedVariantInstalledLabel}"
-                                                       FontSize="11"
-                                                       TextColor="{StaticResource LabelPrimary}" />
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource LabelPrimary}"
+                                                       VerticalTextAlignment="Center"/>
                                             </Border>
 
                                             <Button Grid.Column="2"
                                                     Text="Install"
                                                     IsVisible="{Binding ShowInstallButton}"
-                                                    HeightRequest="32"
+                                                    HeightRequest="36"
+                                                    MinimumHeightRequest="36"
                                                     CornerRadius="6"
-                                                    Padding="12,0"
+                                                    Padding="8,0"
                                                     BackgroundColor="{StaticResource ActionBlue}"
                                                     TextColor="{StaticResource LabelPrimary}"
                                                     FontSize="12"
@@ -376,9 +394,10 @@
                                             <Button Grid.Column="3"
                                                     Text="Open"
                                                     IsVisible="{Binding ShowOpenVariantButton}"
-                                                    HeightRequest="32"
+                                                    HeightRequest="36"
+                                                    MinimumHeightRequest="36"
                                                     CornerRadius="6"
-                                                    Padding="12,0"
+                                                    Padding="8,0"
                                                     BackgroundColor="{StaticResource BackgroundSecondary}"
                                                     TextColor="{StaticResource LabelPrimary}"
                                                     FontSize="12"
@@ -387,9 +406,10 @@
                                             <Button Grid.Column="4"
                                                     Text="Remove"
                                                     IsVisible="{Binding ShowDeleteButton}"
-                                                    HeightRequest="32"
+                                                    HeightRequest="36"
+                                                    MinimumHeightRequest="36"
                                                     CornerRadius="6"
-                                                    Padding="12,0"
+                                                    Padding="8,0"
                                                     BackgroundColor="#4C1F24"
                                                     TextColor="{StaticResource LabelPrimary}"
                                                     FontSize="12"
@@ -417,32 +437,34 @@
                                                     <Border BackgroundColor="{Binding BackgroundColor}"
                                                             Stroke="{Binding StrokeColor}"
                                                             StrokeThickness="1"
-                                                            StrokeShape="RoundRectangle 8"
-                                                            Padding="10,8">
+                                                            StrokeShape="RoundRectangle 6"
+                                                            Padding="8">
                                                         <Border.GestureRecognizers>
                                                             <TapGestureRecognizer Command="{Binding SelectCommand}" />
                                                         </Border.GestureRecognizers>
 
                                                         <Grid ColumnDefinitions="Auto,*,Auto,Auto"
-                                                              ColumnSpacing="10">
+                                                              ColumnSpacing="8">
                                                             <Label Text="&#x2713;"
                                                                    FontSize="14"
                                                                    TextColor="{Binding TitleColor}"
                                                                    WidthRequest="16"
+                                                                   HeightRequest="16"
                                                                    VerticalOptions="Center"
+                                                                   HorizontalOptions="Center"
                                                                    IsVisible="{Binding IsSelected}" />
 
                                                             <VerticalStackLayout Grid.Column="1"
                                                                                  Spacing="2">
                                                                 <Label Text="{Binding Title}"
-                                                                       FontSize="13"
+                                                                       FontSize="14"
                                                                        FontAttributes="Bold"
                                                                        TextColor="{Binding TitleColor}"
                                                                        MaxLines="1"
                                                                        LineBreakMode="TailTruncation" />
                                                                 <Label Text="{Binding SelectorDetailLine}"
                                                                        IsVisible="{Binding HasSelectorDetailLine}"
-                                                                       FontSize="11"
+                                                                       FontSize="12"
                                                                        TextColor="{StaticResource LabelSecondary}"
                                                                        MaxLines="1"
                                                                        LineBreakMode="TailTruncation" />
@@ -454,17 +476,17 @@
                                                                     Stroke="{StaticResource ActionBlue}"
                                                                     StrokeThickness="1"
                                                                     StrokeShape="RoundRectangle 6"
-                                                                    Padding="8,4"
+                                                                    Padding="8"
                                                                     VerticalOptions="Center">
                                                                 <Label Text="{Binding InstalledLabel}"
-                                                                       FontSize="11"
+                                                                       FontSize="12"
                                                                        TextColor="{StaticResource LabelPrimary}" />
                                                             </Border>
 
                                                             <Label Grid.Column="3"
                                                                    Text="{Binding SizeLabel}"
                                                                    IsVisible="{Binding HasSizeLabel}"
-                                                                   FontSize="11"
+                                                                   FontSize="12"
                                                                    TextColor="{StaticResource LabelSecondary}"
                                                                    VerticalOptions="Center"
                                                                    HorizontalTextAlignment="End" />
@@ -479,7 +501,7 @@
                                 <VerticalStackLayout Spacing="8"
                                                      IsVisible="{Binding HasInfoBlocks}">
                                     <Label Text="{Binding SelectedInfoBlockTitle}"
-                                           FontSize="15"
+                                           FontSize="14"
                                            FontAttributes="Bold"
                                            TextColor="{StaticResource LabelPrimary}"
                                            VerticalOptions="Center" />
@@ -498,15 +520,15 @@
                                                     <Border BackgroundColor="{Binding BackgroundColor}"
                                                             Stroke="{Binding StrokeColor}"
                                                             StrokeThickness="1"
-                                                            StrokeShape="RoundRectangle 16"
-                                                            Padding="10,5"
-                                                            Margin="0,0,8,8">
+                                                            StrokeShape="RoundRectangle 12"
+                                                            Padding="8"
+                                                            Margin="0,0,4,4">
                                                         <Border.GestureRecognizers>
                                                             <TapGestureRecognizer Command="{Binding SelectCommand}" />
                                                         </Border.GestureRecognizers>
 
                                                         <Label Text="{Binding Title}"
-                                                               FontSize="11"
+                                                               FontSize="12"
                                                                TextColor="{Binding TitleColor}"
                                                                MaxLines="1"
                                                                LineBreakMode="TailTruncation" />
@@ -532,7 +554,7 @@
                                             BackgroundColor="{StaticResource BackgroundTertiary}"
                                             Stroke="{StaticResource Separator}"
                                             StrokeThickness="1"
-                                            StrokeShape="RoundRectangle 8"
+                                            StrokeShape="RoundRectangle 6"
                                             Padding="0">
                                         <WebView Source="{Binding SelectedInfoBlockSource}"
                                                  HandlerChanged="OnInfoBlockWebViewHandlerChanged"
@@ -553,7 +575,7 @@
                                          Spacing="8"
                                          Margin="24">
                         <Label Text="Select an item"
-                               FontSize="22"
+                               FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{StaticResource LabelPrimary}"
                                HorizontalOptions="Center" />
