@@ -111,8 +111,9 @@ namespace ASLM.Pages
         {
             // Fast setup uses the Windows username and the default port ranges.
             _appData.Data.User.Name = Environment.UserName;
-            _appData.Data.Ports.OfficialStart = 20000;
-            _appData.Data.Ports.ThirdPartyStart = 21000;
+            var defaultPorts = new AppPortConfig();
+            _appData.Data.Ports.OfficialStart = defaultPorts.OfficialStart;
+            _appData.Data.Ports.ThirdPartyStart = defaultPorts.ThirdPartyStart;
             await _appData.SaveAsync();
 
             _currentStep = 3;
@@ -210,10 +211,15 @@ namespace ASLM.Pages
         {
             if (_currentStep < TotalSteps)
             {
-                if (_currentStep == 1 && string.IsNullOrWhiteSpace(UsernameEntry.Text))
+                if (_currentStep == 1)
                 {
-                    await DisplayAlertAsync("Error", "Please enter a display name.", "OK");
-                    return;
+                    if (!SettingsService.TryValidateDisplayName(UsernameEntry.Text, out var validatedUserName, out var displayNameErrorMessage))
+                    {
+                        await DisplayAlertAsync("Error", displayNameErrorMessage, "OK");
+                        return;
+                    }
+
+                    UsernameEntry.Text = validatedUserName;
                 }
 
                 if (_currentStep == 2 && !ValidatePorts())
@@ -265,24 +271,12 @@ namespace ASLM.Pages
         private bool ValidatePorts()
         {
             PortErrorLabel.IsVisible = false;
-
-            if (!int.TryParse(OfficialPortEntry.Text, out var officialPort) || officialPort < 1024 || officialPort > 65000)
+            var portResult = SettingsService.TryParsePorts(
+                OfficialPortEntry.Text?.Trim() ?? string.Empty,
+                ThirdPartyPortEntry.Text?.Trim() ?? string.Empty);
+            if (!portResult.Success)
             {
-                ShowPortError("Official port must be between 1024 and 65000.");
-                return false;
-            }
-
-            if (!int.TryParse(ThirdPartyPortEntry.Text, out var thirdPartyPort) || thirdPartyPort < 1024 || thirdPartyPort > 64000)
-            {
-                ShowPortError("Third-party port must be between 1024 and 64000.");
-                return false;
-            }
-
-            var officialPortEnd = officialPort + 100;
-            var thirdPartyPortEnd = thirdPartyPort + 1000;
-            if (officialPort < thirdPartyPortEnd && thirdPartyPort < officialPortEnd)
-            {
-                ShowPortError($"Port ranges overlap. Official {officialPort}-{officialPortEnd - 1} conflicts with Third-party {thirdPartyPort}-{thirdPartyPortEnd - 1}.");
+                ShowPortError(portResult.ErrorMessage);
                 return false;
             }
 
@@ -322,15 +316,18 @@ namespace ASLM.Pages
         private async Task StartInstallAsync()
         {
             // Persist the profile and port values before any installation begins.
-            _appData.Data.User.Name = UsernameEntry.Text?.Trim() ?? string.Empty;
-            if (int.TryParse(OfficialPortEntry.Text, out var officialPort))
+            if (SettingsService.TryValidateDisplayName(UsernameEntry.Text, out var validatedUserName, out _))
             {
-                _appData.Data.Ports.OfficialStart = officialPort;
+                _appData.Data.User.Name = validatedUserName;
             }
 
-            if (int.TryParse(ThirdPartyPortEntry.Text, out var thirdPartyPort))
+            var portResult = SettingsService.TryParsePorts(
+                OfficialPortEntry.Text?.Trim() ?? string.Empty,
+                ThirdPartyPortEntry.Text?.Trim() ?? string.Empty);
+            if (portResult.Success)
             {
-                _appData.Data.Ports.ThirdPartyStart = thirdPartyPort;
+                _appData.Data.Ports.OfficialStart = portResult.OfficialPort;
+                _appData.Data.Ports.ThirdPartyStart = portResult.ThirdPartyPort;
             }
 
             await _appData.SaveAsync();

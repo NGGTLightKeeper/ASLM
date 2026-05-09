@@ -63,6 +63,7 @@ namespace ASLM
             builder.Services.AddSingleton<UpdateManager>();
             builder.Services.AddSingleton<UpdateScheduler>();
             builder.Services.AddSingleton<AslmApiServer>();
+            builder.Services.AddSingleton<SettingsService>();
 
             // Page registrations
             builder.Services.AddTransient<AppShellPage>();
