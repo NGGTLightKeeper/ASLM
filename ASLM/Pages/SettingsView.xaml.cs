@@ -94,6 +94,8 @@ namespace ASLM.Pages
         private CompactToggle? _consoleIndividualToggle;
         private CancellationTokenSource? _ollamaMetadataRefreshCts;
         private CancellationTokenSource? _ollamaStatusPollingCts;
+        private bool _settingsReconcileTimerStarted;
+        private bool _settingsReconcileTimerStopRequested;
 
         /// <summary>
         /// Raised when the user asks to close the settings overlay.
@@ -238,6 +240,15 @@ namespace ASLM.Pages
             }
 
             private bool _isToggled;
+
+            /// <summary>
+            /// Updates internal and visual state without raising <see cref="Toggled"/>.
+            /// </summary>
+            public void SetStateWithoutToggleEvent(bool isToggled)
+            {
+                _isToggled = isToggled;
+                UpdateVisualState();
+            }
 
             /// <summary>
             /// Applies the correct track and thumb layout for the current toggle state.
@@ -430,6 +441,7 @@ namespace ASLM.Pages
         {
             if (_hasLoaded)
             {
+                StartSettingsReconcileTimer();
                 return;
             }
 
@@ -444,6 +456,10 @@ namespace ASLM.Pages
             {
                 Debug.WriteLine($"Failed to load settings view: {ex.Message}");
             }
+            finally
+            {
+                StartSettingsReconcileTimer();
+            }
         }
 
         /// <summary>
@@ -451,6 +467,7 @@ namespace ASLM.Pages
         /// </summary>
         private void OnUnloaded(object? sender, EventArgs e)
         {
+            StopSettingsReconcileTimer();
             StopOllamaStatusPolling();
             StopOllamaMetadataRefresh();
             _ollamaSettings.StopManagedRuntime();
@@ -841,6 +858,66 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Starts a periodic pass that copies visible control values into drafts and refreshes footer buttons.
+        /// Mitigates WinUI timing where compact toggles and the save bar can disagree until a later layout pass.
+        /// </summary>
+        private void StartSettingsReconcileTimer()
+        {
+            if (Dispatcher == null || _settingsReconcileTimerStarted)
+            {
+                return;
+            }
+
+            _settingsReconcileTimerStopRequested = false;
+            _settingsReconcileTimerStarted = true;
+            Dispatcher.StartTimer(TimeSpan.FromSeconds(2), OnSettingsReconcileTimerTick);
+        }
+
+        /// <summary>
+        /// Stops the periodic settings/UI reconcile timer started with <see cref="StartSettingsReconcileTimer"/>.
+        /// </summary>
+        private void StopSettingsReconcileTimer()
+        {
+            _settingsReconcileTimerStopRequested = true;
+        }
+
+        private bool OnSettingsReconcileTimerTick()
+        {
+            if (_settingsReconcileTimerStopRequested || !IsLoaded)
+            {
+                _settingsReconcileTimerStarted = false;
+                return false;
+            }
+
+            if (!_hasLoaded || _activeCategory == null || _isSaving)
+            {
+                return true;
+            }
+
+            ReconcileSettingsVisibleControlsWithDrafts();
+            return true;
+        }
+
+        /// <summary>
+        /// Pulls visible values into in-memory drafts (including API/Consoles on the ASLM page) and updates save/discard visibility.
+        /// </summary>
+        private void ReconcileSettingsVisibleControlsWithDrafts()
+        {
+            if (!_hasLoaded || _activeCategory == null || _isSaving)
+            {
+                return;
+            }
+
+            if (_activeCategory.Kind == SettingsCategoryKind.Aslm)
+            {
+                RefreshAslmApiAndConsoleDraftsFromToggles();
+            }
+
+            SyncDraftValuesFromControls();
+            UpdateActionButtons();
+        }
+
+        /// <summary>
         /// Updates the footer action buttons to match the currently visible category.
         /// </summary>
         private void UpdateActionButtons()
@@ -1001,7 +1078,11 @@ namespace ASLM.Pages
         private void AddAslmApiSettings(Layout content)
         {
             _apiServerToggle = CreateCompactToggle(_apiServerEnabledDraft);
-            _apiServerToggle.Toggled += (_, _) => QueueActionButtonUpdate();
+            _apiServerToggle.Toggled += (_, _) =>
+            {
+                RefreshAslmApiAndConsoleDraftsFromToggles();
+                QueueActionButtonUpdate();
+            };
             content.Children.Add(CreateUpdateCard(
                 "API server",
                 "Start the local mirror server with ASLM.",
@@ -1014,21 +1095,33 @@ namespace ASLM.Pages
         private void AddConsoleSettings(Layout content)
         {
             _consoleSidebarToggle = CreateCompactToggle(_consoleDraft.SidebarVisible);
-            _consoleSidebarToggle.Toggled += (_, _) => QueueActionButtonUpdate();
+            _consoleSidebarToggle.Toggled += (_, _) =>
+            {
+                RefreshAslmApiAndConsoleDraftsFromToggles();
+                QueueActionButtonUpdate();
+            };
             content.Children.Add(CreateUpdateCard(
                 "Consoles page",
                 "Show the built-in consoles page in the sidebar.",
                 _consoleSidebarToggle.View));
 
             _consoleIndividualToggle = CreateCompactToggle(_consoleDraft.ShowIndividualModuleConsoles);
-            _consoleIndividualToggle.Toggled += (_, _) => QueueActionButtonUpdate();
+            _consoleIndividualToggle.Toggled += (_, _) =>
+            {
+                RefreshAslmApiAndConsoleDraftsFromToggles();
+                QueueActionButtonUpdate();
+            };
             content.Children.Add(CreateUpdateCard(
                 "Individual consoles",
                 "Show per-process consoles alongside unified module output.",
                 _consoleIndividualToggle.View));
 
             _consoleCompletedToggle = CreateCompactToggle(_consoleDraft.ShowCompletedProcesses);
-            _consoleCompletedToggle.Toggled += (_, _) => QueueActionButtonUpdate();
+            _consoleCompletedToggle.Toggled += (_, _) =>
+            {
+                RefreshAslmApiAndConsoleDraftsFromToggles();
+                QueueActionButtonUpdate();
+            };
             content.Children.Add(CreateUpdateCard(
                 "Completed process consoles",
                 "Keep finished process consoles visible when individual consoles are enabled.",
@@ -1444,6 +1537,53 @@ namespace ASLM.Pages
             ThirdPartyPortEntry.Text = _thirdPartyPortDraft;
         }
 
+        /// <summary>
+        /// Pushes API and console draft values into the dynamically created compact toggles when present.
+        /// </summary>
+        private void ApplyAslmBuiltInDraftsToToggles()
+        {
+            if (_apiServerToggle != null)
+            {
+                _apiServerToggle.SetStateWithoutToggleEvent(_apiServerEnabledDraft);
+            }
+
+            if (_consoleSidebarToggle != null)
+            {
+                _consoleSidebarToggle.SetStateWithoutToggleEvent(_consoleDraft.SidebarVisible);
+            }
+
+            if (_consoleIndividualToggle != null)
+            {
+                _consoleIndividualToggle.SetStateWithoutToggleEvent(_consoleDraft.ShowIndividualModuleConsoles);
+            }
+
+            if (_consoleCompletedToggle != null)
+            {
+                _consoleCompletedToggle.SetStateWithoutToggleEvent(_consoleDraft.ShowCompletedProcesses);
+            }
+        }
+
+        /// <summary>
+        /// Copies API and console compact toggles into the shared drafts after user interaction.
+        /// </summary>
+        private void RefreshAslmApiAndConsoleDraftsFromToggles()
+        {
+            if (_apiServerToggle != null)
+            {
+                _apiServerEnabledDraft = _apiServerToggle.IsToggled;
+            }
+
+            if (_consoleSidebarToggle != null &&
+                _consoleCompletedToggle != null &&
+                _consoleIndividualToggle != null)
+            {
+                _consoleDraft = new ConsoleBaseline(
+                    _consoleSidebarToggle.IsToggled,
+                    _consoleCompletedToggle.IsToggled,
+                    _consoleIndividualToggle.IsToggled);
+            }
+        }
+
         // Draft synchronization
 
         /// <summary>
@@ -1488,12 +1628,8 @@ namespace ASLM.Pages
         /// </summary>
         private void SyncBuiltInDraftValuesFromControls()
         {
-            if (_apiServerToggle != null)
-            {
-                _apiServerEnabledDraft = _apiServerToggle.IsToggled;
-            }
-
-            _consoleDraft = GetCurrentConsoleDraft();
+            // API and console drafts are driven by RefreshAslmApiAndConsoleDraftsFromToggles on user input
+            // and by load/default flows so SyncDraftValuesFromControls cannot overwrite them from WinUI timing glitches.
             _updateDraft = GetCurrentUpdateDraft();
         }
 
@@ -1617,8 +1753,8 @@ namespace ASLM.Pages
             SettingsService.HasUnsavedAslmSettingsChanges(
                 GetCurrentOfficialPortDraft(),
                 GetCurrentThirdPartyPortDraft(),
-                _apiServerToggle?.IsToggled ?? _apiServerEnabledDraft,
-                GetCurrentConsoleDraft(),
+                _apiServerEnabledDraft,
+                _consoleDraft,
                 GetCurrentUpdateDraft(),
                 _aslmBaseline,
                 _consoleBaseline,
@@ -1649,13 +1785,13 @@ namespace ASLM.Pages
         /// Determines whether the ASLM API setting differs from the last saved baseline.
         /// </summary>
         private bool HasUnsavedAslmApiChanges() =>
-            SettingsService.HasUnsavedApiServerChanges(_apiServerToggle?.IsToggled ?? _apiServerEnabledDraft, _aslmBaseline);
+            SettingsService.HasUnsavedApiServerChanges(_apiServerEnabledDraft, _aslmBaseline);
 
         /// <summary>
         /// Determines whether console preferences differ from the last saved baseline.
         /// </summary>
         private bool HasUnsavedConsoleChanges() =>
-            SettingsService.HasUnsavedConsoleChanges(GetCurrentConsoleDraft(), _consoleBaseline);
+            SettingsService.HasUnsavedConsoleChanges(_consoleDraft, _consoleBaseline);
 
         /// <summary>
         /// Determines whether the visible module editors differ from the last saved baseline.
@@ -1688,19 +1824,6 @@ namespace ASLM.Pages
             var updateDraft = GetCurrentUpdateDraft();
             return SettingsService.HasUnsavedUpdateChanges(updateDraft, _updateBaseline);
         }
-
-        /// <summary>
-        /// Gets the latest console draft, reading visible controls when present.
-        /// </summary>
-        private ConsoleBaseline GetCurrentConsoleDraft() =>
-            _consoleSidebarToggle != null &&
-            _consoleCompletedToggle != null &&
-            _consoleIndividualToggle != null
-                ? new ConsoleBaseline(
-                    _consoleSidebarToggle.IsToggled,
-                    _consoleCompletedToggle.IsToggled,
-                    _consoleIndividualToggle.IsToggled)
-                : _consoleDraft;
 
         /// <summary>
         /// Gets the latest update draft, reading visible controls when present.
@@ -1818,14 +1941,18 @@ namespace ASLM.Pages
 
             SyncDraftValuesFromControls();
 
+            var appliedAslmBuiltInDefaults = false;
+            (string OfficialPort, string ThirdPartyPort, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults)? aslmDefaultBuiltIns = null;
+
             switch (_activeCategory.Kind)
             {
                 case SettingsCategoryKind.Aslm:
-                    var aslmDefaults = SettingsService.BuildDefaultAslmDrafts();
-                    _officialPortDraft = aslmDefaults.OfficialPort;
-                    _thirdPartyPortDraft = aslmDefaults.ThirdPartyPort;
-                    _apiServerEnabledDraft = aslmDefaults.ApiServerEnabled;
-                    _consoleDraft = aslmDefaults.ConsoleDefaults;
+                    aslmDefaultBuiltIns = SettingsService.BuildDefaultAslmDrafts();
+                    _officialPortDraft = aslmDefaultBuiltIns.Value.OfficialPort;
+                    _thirdPartyPortDraft = aslmDefaultBuiltIns.Value.ThirdPartyPort;
+                    _apiServerEnabledDraft = aslmDefaultBuiltIns.Value.ApiServerEnabled;
+                    _consoleDraft = aslmDefaultBuiltIns.Value.ConsoleDefaults;
+                    appliedAslmBuiltInDefaults = true;
                     PortErrorLabel.IsVisible = false;
                     RenderAslmCategory();
                     break;
@@ -1847,8 +1974,25 @@ namespace ASLM.Pages
 
             SyncDraftValuesFromControls();
 
+            // Rebuilt compact toggles can briefly report a stale value on some hosts right after attach.
+            // Re-assert defaults on drafts and controls so save detection matches the intended default state.
+            if (appliedAslmBuiltInDefaults && aslmDefaultBuiltIns is { } builtIns)
+            {
+                _officialPortDraft = builtIns.OfficialPort;
+                _thirdPartyPortDraft = builtIns.ThirdPartyPort;
+                _apiServerEnabledDraft = builtIns.ApiServerEnabled;
+                _consoleDraft = builtIns.ConsoleDefaults;
+                ApplyAslmDraftsToControls();
+                ApplyAslmBuiltInDraftsToToggles();
+            }
+
             await SettingsScroll.ScrollToAsync(0, 0, false);
-            UpdateActionButtons();
+            ReconcileSettingsVisibleControlsWithDrafts();
+            Dispatcher?.Dispatch(ReconcileSettingsVisibleControlsWithDrafts);
+            if (Dispatcher != null)
+            {
+                Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(500), ReconcileSettingsVisibleControlsWithDrafts);
+            }
         }
 
         /// <summary>
