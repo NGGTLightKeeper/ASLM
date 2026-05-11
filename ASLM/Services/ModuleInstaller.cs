@@ -360,7 +360,8 @@ namespace ASLM.Services
             int bytesRead;
             var throttle = Stopwatch.StartNew();
 
-            downloadProgress?.Report(new DownloadProgress(0, 0, totalBytes));
+            var transferLabel = Path.GetFileName(destinationPath);
+            downloadProgress?.Report(new DownloadProgress(0, 0, totalBytes, transferLabel));
 
             while ((bytesRead = await contentStream.ReadAsync(buffer, ct)) > 0)
             {
@@ -373,14 +374,16 @@ namespace ASLM.Services
                     downloadProgress?.Report(new DownloadProgress(
                         (double)downloaded / totalBytes,
                         downloaded,
-                        totalBytes));
+                        totalBytes,
+                        transferLabel));
                 }
             }
 
             downloadProgress?.Report(new DownloadProgress(
                 1.0,
                 downloaded,
-                totalBytes > 0 ? totalBytes : downloaded));
+                totalBytes > 0 ? totalBytes : downloaded,
+                transferLabel));
 
             log.Report("  Download complete.");
         }

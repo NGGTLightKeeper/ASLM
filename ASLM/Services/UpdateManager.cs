@@ -312,7 +312,7 @@ namespace ASLM.Services
             CancellationToken ct = default)
         {
             var operationKey = NotificationCenter.BuildOperationKey("app-update", candidate.TargetId);
-            _notifications.StartDownload(
+            await _notifications.StartDownloadAsync(
                 operationKey,
                 "Preparing ASLM update",
                 $"{candidate.Name} {candidate.RemoteVersion}",
@@ -393,7 +393,7 @@ namespace ASLM.Services
             var module = candidate.Module ?? throw new InvalidOperationException(
                 "Module update candidate does not contain module metadata.");
             var operationKey = NotificationCenter.BuildOperationKey("module-update", module.Id);
-            _notifications.StartDownload(
+            await _notifications.StartDownloadAsync(
                 operationKey,
                 "Updating module",
                 $"{module.Name} {candidate.RemoteVersion}",

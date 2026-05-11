@@ -28,6 +28,7 @@ namespace ASLM.Services
 
         private CancellationTokenSource? _saveCts;
         private bool _isInitialized;
+        private readonly DownloadTransferSpeedEstimator _downloadTransferSpeedEstimator = new();
 
         /// <summary>
         /// Creates the notification service and resolves its persistence file path.
@@ -132,53 +133,28 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Publishes ten sample notifications with a fixed delay between arrivals.
+        /// Starts or refreshes a download notification on the UI thread and waits until it is inserted
+        /// so background download progress cannot race ahead of the notification row.
         /// </summary>
-        public async Task PublishStartupTestNotificationsAsync(CancellationToken ct = default)
+        public Task StartDownloadAsync(string operationKey, string title, string message, string sourceKind, string sourceId)
         {
-            var sessionId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
-            var samples = CreateStartupTestNotifications(sessionId);
+            _downloadTransferSpeedEstimator.Reset(operationKey);
 
-            foreach (var sample in samples)
+            return MainThread.InvokeOnMainThreadAsync(() =>
             {
-                await Task.Delay(TimeSpan.FromSeconds(3), ct);
-                UpsertNotification(
-                    id: sample.Id,
-                    category: sample.Category,
-                    severity: sample.Severity,
-                    title: sample.Title,
-                    message: sample.Message,
-                    statusText: sample.StatusText,
-                    detailText: string.Empty,
-                    sourceKind: "test",
-                    sourceId: sample.SourceId,
+                UpsertNotificationImpl(
+                    id: BuildDownloadNotificationId(operationKey),
+                    category: AppNotificationCategory.Downloads,
+                    severity: AppNotificationSeverity.Info,
+                    title: title,
+                    message: message,
+                    statusText: "Starting download...",
+                    detailText: "0 B",
+                    sourceKind: sourceKind,
+                    sourceId: sourceId,
                     showToastForNew: true,
-                    afterUpdate: sample.ProgressFraction.HasValue
-                        ? notification => notification.UpdateProgress(
-                            hasProgress: true,
-                            progressFraction: sample.ProgressFraction.Value,
-                            isInProgress: sample.IsInProgress)
-                        : null);
-            }
-        }
-
-        /// <summary>
-        /// Starts or refreshes a download notification.
-        /// </summary>
-        public void StartDownload(string operationKey, string title, string message, string sourceKind, string sourceId)
-        {
-            UpsertNotification(
-                id: BuildDownloadNotificationId(operationKey),
-                category: AppNotificationCategory.Downloads,
-                severity: AppNotificationSeverity.Info,
-                title: title,
-                message: message,
-                statusText: "Starting download...",
-                detailText: string.Empty,
-                sourceKind: sourceKind,
-                sourceId: sourceId,
-                showToastForNew: true,
-                afterUpdate: notification => notification.UpdateProgress(hasProgress: true, progressFraction: 0, isInProgress: true));
+                    afterUpdate: notification => notification.UpdateProgress(hasProgress: true, progressFraction: 0, isInProgress: true));
+            });
         }
 
         /// <summary>
@@ -193,6 +169,9 @@ namespace ASLM.Services
                 {
                     return;
                 }
+
+                var speedLabel = _downloadTransferSpeedEstimator.Sample(operationKey, progress.DownloadedBytes);
+                notification.ApplyDownloadTransferSample(progress, speedLabel);
 
                 var detail = progress.TotalBytes > 0
                     ? $"{FormatBytes(progress.DownloadedBytes)} / {FormatBytes(progress.TotalBytes)}"
@@ -223,6 +202,9 @@ namespace ASLM.Services
                 {
                     return;
                 }
+
+                _downloadTransferSpeedEstimator.Reset(operationKey);
+                notification.ResetDownloadTransferRow();
 
                 notification.UpdateContent(
                     AppNotificationSeverity.Info,
@@ -281,31 +263,24 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Clears all persisted notifications at once.
+        /// </summary>
+        public void DismissAll()
+        {
+            RunOnMainThread(() =>
+            {
+                _notifications.Clear();
+                RaiseNotificationsChanged();
+                QueueSave(0);
+            });
+        }
+
+        /// <summary>
         /// Builds a stable operation key for download notifications.
         /// </summary>
         public static string BuildOperationKey(string sourceKind, string sourceId)
         {
             return $"{sourceKind.Trim().ToLowerInvariant()}:{sourceId.Trim().ToLowerInvariant()}";
-        }
-
-        /// <summary>
-        /// Creates the delayed startup sample notifications for the current launch.
-        /// </summary>
-        private static List<TestNotificationSample> CreateStartupTestNotifications(string sessionId)
-        {
-            return
-            [
-                new($"test:{sessionId}:01", AppNotificationCategory.Updates, AppNotificationSeverity.Info, "ASLM update found", "ASLM 1.1.0 is available.", "New version", "update"),
-                new($"test:{sessionId}:02", AppNotificationCategory.Downloads, AppNotificationSeverity.Info, "Downloading module", "ASLM Chat package is in progress.", "Downloading", "download-1", 0.18, true),
-                new($"test:{sessionId}:03", AppNotificationCategory.Downloads, AppNotificationSeverity.Info, "Model download", "Gpt2 GGUF Q8_0 is loading.", "Downloading", "download-2", 0.42, true),
-                new($"test:{sessionId}:04", AppNotificationCategory.System, AppNotificationSeverity.Success, "Module ready", "Voice module installed successfully.", "Completed", "success-1"),
-                new($"test:{sessionId}:05", AppNotificationCategory.System, AppNotificationSeverity.Warning, "Restart recommended", "Some changes will apply after restart.", "Attention", "warning-1"),
-                new($"test:{sessionId}:06", AppNotificationCategory.System, AppNotificationSeverity.Error, "Download failed", "A test package could not be loaded.", "Failed", "error-1"),
-                new($"test:{sessionId}:07", AppNotificationCategory.Updates, AppNotificationSeverity.Info, "Module update found", "ASLM Chat has a newer release.", "New version", "update-2"),
-                new($"test:{sessionId}:08", AppNotificationCategory.Downloads, AppNotificationSeverity.Success, "Download complete", "QuantFactory model is ready.", "Completed", "success-2", 1.0, false),
-                new($"test:{sessionId}:09", AppNotificationCategory.System, AppNotificationSeverity.Warning, "Port range notice", "Third-party module ports are nearly full.", "Attention", "warning-2"),
-                new($"test:{sessionId}:10", AppNotificationCategory.System, AppNotificationSeverity.Info, "Background check complete", "Startup update scan finished.", "Ready", "info-1")
-            ];
         }
 
         /// <summary>
@@ -374,13 +349,16 @@ namespace ASLM.Services
                     return;
                 }
 
+                _downloadTransferSpeedEstimator.Reset(operationKey);
+
+                // Clear byte-transfer detail so completed cards show only the result message.
                 notification.UpdateContent(
                     severity,
                     notification.Title,
                     notification.Message,
                     statusText,
-                    notification.DetailText);
-                notification.UpdateProgress(notification.HasProgress, finalProgress, isInProgress: false);
+                    string.Empty);
+                notification.UpdateProgress(hasProgress: false, 0, isInProgress: false);
                 Resort(notification);
                 RaiseNotificationsChanged();
                 QueueSave(0);
@@ -404,33 +382,60 @@ namespace ASLM.Services
             bool showToastForNew,
             Action<AppNotification>? afterUpdate = null)
         {
-            RunOnMainThread(() =>
+            RunOnMainThread(() => UpsertNotificationImpl(
+                id,
+                category,
+                severity,
+                title,
+                message,
+                statusText,
+                detailText,
+                sourceKind,
+                sourceId,
+                showToastForNew,
+                afterUpdate));
+        }
+
+        /// <summary>
+        /// Inserts or updates one notification while already executing on the UI thread.
+        /// </summary>
+        private void UpsertNotificationImpl(
+            string id,
+            AppNotificationCategory category,
+            AppNotificationSeverity severity,
+            string title,
+            string message,
+            string statusText,
+            string detailText,
+            string sourceKind,
+            string sourceId,
+            bool showToastForNew,
+            Action<AppNotification>? afterUpdate = null)
+        {
+            var notification = FindNotification(id);
+            var isNew = notification == null;
+            if (notification == null)
             {
-                var notification = FindNotification(id);
-                var isNew = notification == null;
-                if (notification == null)
-                {
-                    notification = new AppNotification(id, category, severity, title, message, sourceKind, sourceId);
-                    _notifications.Insert(0, notification);
-                }
+                notification = new AppNotification(id, category, severity, title, message, sourceKind, sourceId);
+                _notifications.Insert(0, notification);
+            }
 
-                notification.UpdateContent(
-                    severity,
-                    title,
-                    message,
-                    statusText,
-                    detailText);
-                afterUpdate?.Invoke(notification);
-                Resort(notification);
-                TrimOldNotifications();
-                RaiseNotificationsChanged();
-                QueueSave(200);
+            notification.UpdateContent(
+                severity,
+                title,
+                message,
+                statusText,
+                detailText);
+            afterUpdate?.Invoke(notification);
+            Resort(notification);
+            TrimOldNotifications();
+            RaiseNotificationsChanged();
+            QueueSave(200);
 
-                if (isNew && showToastForNew)
-                {
-                    NotificationPublished?.Invoke(this, notification);
-                }
-            });
+            if (isNew && showToastForNew)
+            {
+                NotificationPublished?.Invoke(this, notification);
+            }
         }
 
         /// <summary>
@@ -443,7 +448,8 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Moves an updated notification back into newest-first order.
+        /// Moves an updated notification back into newest-first order using Move so listeners
+        /// receive a Move notification rather than Remove+Insert, which avoids item animations.
         /// </summary>
         private void Resort(AppNotification notification)
         {
@@ -453,16 +459,29 @@ namespace ASLM.Services
                 return;
             }
 
-            _notifications.RemoveAt(currentIndex);
-
-            var insertIndex = 0;
-            while (insertIndex < _notifications.Count &&
-                   _notifications[insertIndex].UpdatedAt > notification.UpdatedAt)
+            // Compute target index while the item is still in the collection.
+            var targetIndex = 0;
+            for (var i = 0; i < _notifications.Count; i++)
             {
-                insertIndex++;
+                if (i == currentIndex)
+                {
+                    continue;
+                }
+
+                if (_notifications[i].UpdatedAt <= notification.UpdatedAt)
+                {
+                    break;
+                }
+
+                targetIndex++;
             }
 
-            _notifications.Insert(insertIndex, notification);
+            if (targetIndex == currentIndex)
+            {
+                return;
+            }
+
+            _notifications.Move(currentIndex, targetIndex);
         }
 
         /// <summary>
@@ -651,18 +670,5 @@ namespace ASLM.Services
             public bool HasProgress { get; set; }
         }
 
-        /// <summary>
-        /// Describes one startup test notification before it is published.
-        /// </summary>
-        private sealed record TestNotificationSample(
-            string Id,
-            AppNotificationCategory Category,
-            AppNotificationSeverity Severity,
-            string Title,
-            string Message,
-            string StatusText,
-            string SourceId,
-            double? ProgressFraction = null,
-            bool IsInProgress = false);
     }
 }

@@ -173,7 +173,6 @@ namespace ASLM.Pages
             ApplyConsoleNavigationState();
             _ = StartEnabledModulesAsync();
             _ = CheckStartupUpdatesAsync();
-            _ = _notifications.PublishStartupTestNotificationsAsync();
         }
 
         /// <summary>
@@ -592,6 +591,8 @@ namespace ASLM.Pages
 
         /// <summary>
         /// Builds the compact visual toast card for one notification.
+        /// Tapping the body opens the notifications popover and dismisses the toast.
+        /// The close button in the top-right corner only dismisses the toast.
         /// </summary>
         private Border CreateToast(AppNotification notification)
         {
@@ -617,23 +618,39 @@ namespace ASLM.Pages
             var detail = new Label
             {
                 Text = notification.DetailLine,
-                FontSize = 10,
+                FontSize = 11,
                 TextColor = Color.FromArgb("#9A9AA0"),
                 MaxLines = 1,
                 LineBreakMode = LineBreakMode.TailTruncation
             };
 
-            var content = new Grid
+            var closeButton = new Button
+            {
+                Text = "✕",
+                FontSize = 11,
+                WidthRequest = 22,
+                HeightRequest = 22,
+                Padding = new Thickness(0),
+                Margin = new Thickness(0),
+                BackgroundColor = Colors.Transparent,
+                TextColor = Color.FromArgb("#9A9AA0"),
+                CornerRadius = 4,
+                HorizontalOptions = LayoutOptions.End,
+                VerticalOptions = LayoutOptions.Start
+            };
+
+            var outerGrid = new Grid
             {
                 ColumnDefinitions =
                 {
                     new ColumnDefinition(new GridLength(4)),
-                    new ColumnDefinition(GridLength.Star)
+                    new ColumnDefinition(GridLength.Star),
+                    new ColumnDefinition(GridLength.Auto)
                 },
-                ColumnSpacing = 10
+                ColumnSpacing = 6
             };
 
-            content.Children.Add(new BoxView
+            outerGrid.Children.Add(new BoxView
             {
                 BackgroundColor = notification.AccentColor,
                 WidthRequest = 4,
@@ -644,8 +661,11 @@ namespace ASLM.Pages
             textStack.Children.Add(title);
             textStack.Children.Add(message);
             textStack.Children.Add(detail);
-            content.Children.Add(textStack);
+            outerGrid.Children.Add(textStack);
             Grid.SetColumn(textStack, 1);
+
+            outerGrid.Children.Add(closeButton);
+            Grid.SetColumn(closeButton, 2);
 
             var toast = new Border
             {
@@ -655,7 +675,7 @@ namespace ASLM.Pages
                 StrokeThickness = 1,
                 StrokeShape = new RoundRectangle { CornerRadius = 8 },
                 Padding = new Thickness(10),
-                Content = content,
+                Content = outerGrid,
                 Shadow = new Shadow
                 {
                     Brush = Brush.Black,
@@ -665,12 +685,18 @@ namespace ASLM.Pages
                 }
             };
 
-            var tap = new TapGestureRecognizer();
-            tap.Tapped += (_, _) =>
+            // Close button: dismiss only, does not open the notifications panel.
+            closeButton.Clicked += (_, _) => RemoveToast(toast);
+
+            // Tap on the toast body: open notifications panel and dismiss the toast.
+            var bodyTap = new TapGestureRecognizer();
+            bodyTap.Tapped += (_, _) =>
             {
                 RemoveToast(toast);
+                OpenNotificationsOverlay();
             };
-            toast.GestureRecognizers.Add(tap);
+            toast.GestureRecognizers.Add(bodyTap);
+
             return toast;
         }
 

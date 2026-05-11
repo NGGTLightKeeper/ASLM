@@ -41,6 +41,11 @@ namespace ASLM.Models
         private bool _isInProgress;
         private double _progressFraction;
         private bool _hasProgress;
+        private string _activeTransferLabel = string.Empty;
+        private string _transferSpeedDisplay = "—";
+        private string _transferPercentDisplay = "0%";
+        private bool _downloadHasKnownTotal;
+        private bool _showDownloadMetricsRow;
 
         /// <summary>
         /// Creates a notification with stable identity and initial display fields.
@@ -65,6 +70,8 @@ namespace ASLM.Models
             _statusText = string.Empty;
             _detailText = string.Empty;
             _severity = severity;
+            _transferSpeedDisplay = "—";
+            _transferPercentDisplay = "0%";
         }
 
         /// <summary>
@@ -100,6 +107,15 @@ namespace ASLM.Models
             _isInProgress = isInProgress;
             _progressFraction = Math.Clamp(progressFraction, 0, 1);
             _hasProgress = hasProgress;
+            if (category == AppNotificationCategory.Downloads && hasProgress && isInProgress &&
+                detailText.Contains(" / ", StringComparison.Ordinal))
+            {
+                _downloadHasKnownTotal = true;
+            }
+
+            RefreshTransferPercentDisplay();
+            SyncShowDownloadMetricsRow();
+            OnPropertyChanged(nameof(ShowActiveTransferInCard));
         }
 
         /// <inheritdoc />
@@ -154,7 +170,13 @@ namespace ASLM.Models
         public string Message
         {
             get => _message;
-            private set => SetField(ref _message, value);
+            private set
+            {
+                if (SetField(ref _message, value))
+                {
+                    OnPropertyChanged(nameof(ShowActiveTransferInCard));
+                }
+            }
         }
 
         /// <summary>
@@ -168,6 +190,7 @@ namespace ASLM.Models
                 if (SetField(ref _statusText, value))
                 {
                     OnPropertyChanged(nameof(HasStatusText));
+                    OnPropertyChanged(nameof(ShowStatusInCard));
                     OnPropertyChanged(nameof(DetailLine));
                 }
             }
@@ -211,7 +234,14 @@ namespace ASLM.Models
         public bool IsInProgress
         {
             get => _isInProgress;
-            private set => SetField(ref _isInProgress, value);
+            private set
+            {
+                if (SetField(ref _isInProgress, value))
+                {
+                    OnPropertyChanged(nameof(ShowStatusInCard));
+                    OnPropertyChanged(nameof(ShowActiveTransferInCard));
+                }
+            }
         }
 
         /// <summary>
@@ -249,6 +279,13 @@ namespace ASLM.Models
         public bool HasStatusText => !string.IsNullOrWhiteSpace(StatusText);
 
         /// <summary>
+        /// Gets whether the status line should be shown in the notification card.
+        /// Hidden during active download so the card only shows transfer data rows.
+        /// Visible once the operation finishes so the result message is displayed.
+        /// </summary>
+        public bool ShowStatusInCard => HasStatusText && !IsInProgress;
+
+        /// <summary>
         /// Gets whether the detail line contains visible text.
         /// </summary>
         public bool HasDetailText => !string.IsNullOrWhiteSpace(DetailText);
@@ -267,6 +304,41 @@ namespace ASLM.Models
         /// Gets the compact progress label.
         /// </summary>
         public string ProgressPercentLabel => $"{ProgressFraction * 100.0:F0}%";
+
+        /// <summary>
+        /// Gets the optional label for the active download stream or file.
+        /// </summary>
+        public string ActiveTransferLabel => _activeTransferLabel;
+
+        /// <summary>
+        /// Gets whether a specific active transfer label is shown.
+        /// </summary>
+        public bool HasActiveTransferLabel => !string.IsNullOrWhiteSpace(_activeTransferLabel);
+
+        /// <summary>
+        /// Gets whether the active transfer line should appear in the card.
+        /// Suppressed when it only repeats the same resource as <see cref="Message"/> with different punctuation
+        /// (for example Ollama model name vs catalog subtitle).
+        /// </summary>
+        public bool ShowActiveTransferInCard =>
+            IsInProgress &&
+            HasActiveTransferLabel &&
+            !AreResourceLabelsEquivalent(Message, ActiveTransferLabel);
+
+        /// <summary>
+        /// Gets the smoothed transfer speed for the download metrics row.
+        /// </summary>
+        public string TransferSpeedDisplay => _transferSpeedDisplay;
+
+        /// <summary>
+        /// Gets the percent or placeholder for the download metrics row.
+        /// </summary>
+        public string TransferPercentDisplay => _transferPercentDisplay;
+
+        /// <summary>
+        /// Gets whether the download metrics row (speed and percent) should be visible.
+        /// </summary>
+        public bool ShowDownloadMetricsRow => _showDownloadMetricsRow;
 
         /// <summary>
         /// Gets the timestamp label shown in the notification card.
@@ -316,6 +388,7 @@ namespace ASLM.Models
 
             OnPropertyChanged(nameof(TimestampLabel));
             OnPropertyChanged(nameof(DetailLine));
+            RefreshTransferPercentDisplay();
         }
 
         /// <summary>
@@ -327,8 +400,83 @@ namespace ASLM.Models
             ProgressFraction = progressFraction;
             IsInProgress = isInProgress;
             UpdatedAt = DateTimeOffset.Now;
+            if (!isInProgress)
+            {
+                ResetDownloadTransferRow();
+            }
+
             OnPropertyChanged(nameof(TimestampLabel));
             OnPropertyChanged(nameof(DetailLine));
+            SyncShowDownloadMetricsRow();
+            RefreshTransferPercentDisplay();
+        }
+
+        /// <summary>
+        /// Clears streaming labels when a download phase changes or the transfer completes.
+        /// </summary>
+        internal void ResetDownloadTransferRow()
+        {
+            SetField(ref _activeTransferLabel, string.Empty, nameof(ActiveTransferLabel));
+            OnPropertyChanged(nameof(HasActiveTransferLabel));
+            OnPropertyChanged(nameof(ShowActiveTransferInCard));
+            SetField(ref _transferSpeedDisplay, "—", nameof(TransferSpeedDisplay));
+            _downloadHasKnownTotal = false;
+            RefreshTransferPercentDisplay();
+            SyncShowDownloadMetricsRow();
+        }
+
+        /// <summary>
+        /// Applies one streamed download progress snapshot to the notification card.
+        /// </summary>
+        internal void ApplyDownloadTransferSample(DownloadProgress progress, string? measuredSpeedLabel)
+        {
+            if (!string.IsNullOrWhiteSpace(progress.ActiveTransferName))
+            {
+                if (SetField(ref _activeTransferLabel, progress.ActiveTransferName.Trim(), nameof(ActiveTransferLabel)))
+                {
+                    OnPropertyChanged(nameof(HasActiveTransferLabel));
+                }
+            }
+
+            _downloadHasKnownTotal = progress.TotalBytes > 0;
+
+            var speedText = string.IsNullOrWhiteSpace(measuredSpeedLabel) ? "—" : measuredSpeedLabel.Trim();
+            SetField(ref _transferSpeedDisplay, speedText, nameof(TransferSpeedDisplay));
+
+            RefreshTransferPercentDisplay();
+            SyncShowDownloadMetricsRow();
+            OnPropertyChanged(nameof(ShowActiveTransferInCard));
+        }
+
+        /// <summary>
+        /// Recomputes the percent column from the current progress and size hint.
+        /// </summary>
+        internal void RefreshTransferPercentDisplay()
+        {
+            string text;
+            if (!IsInProgress)
+            {
+                text = $"{ProgressFraction * 100.0:F0}%";
+            }
+            else if (!_downloadHasKnownTotal)
+            {
+                text = "—";
+            }
+            else
+            {
+                text = $"{ProgressFraction * 100.0:F0}%";
+            }
+
+            SetField(ref _transferPercentDisplay, text, nameof(TransferPercentDisplay));
+        }
+
+        /// <summary>
+        /// Updates the download metrics row visibility flag for WinUI binding refresh.
+        /// </summary>
+        private void SyncShowDownloadMetricsRow()
+        {
+            var next = Category == AppNotificationCategory.Downloads && HasProgress && IsInProgress;
+            SetField(ref _showDownloadMetricsRow, next, nameof(ShowDownloadMetricsRow));
         }
 
         /// <summary>
@@ -352,6 +500,40 @@ namespace ASLM.Models
             field = value;
             OnPropertyChanged(propertyName);
             return true;
+        }
+
+        /// <summary>
+        /// Returns true when the two labels refer to the same resource (ignoring separators and case).
+        /// </summary>
+        private static bool AreResourceLabelsEquivalent(string message, string transfer)
+        {
+            return string.Equals(
+                NormalizeResourceKey(message),
+                NormalizeResourceKey(transfer),
+                StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Keeps only letters and digits so catalog subtitles and engine names compare reliably.
+        /// </summary>
+        private static string NormalizeResourceKey(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var buffer = new char[value.Length];
+            var length = 0;
+            foreach (var ch in value)
+            {
+                if (char.IsLetterOrDigit(ch))
+                {
+                    buffer[length++] = char.ToLowerInvariant(ch);
+                }
+            }
+
+            return new string(buffer, 0, length);
         }
     }
 }

@@ -118,8 +118,9 @@ namespace ASLM.Services
             long downloaded = 0;
             int bytesRead;
             var throttle = Stopwatch.StartNew();
+            var transferLabel = Path.GetFileName(destinationPath);
 
-            downloadProgress?.Report(new DownloadProgress(0, 0, totalBytes));
+            downloadProgress?.Report(new DownloadProgress(0, 0, totalBytes, transferLabel));
 
             while ((bytesRead = await contentStream.ReadAsync(buffer, ct)) > 0)
             {
@@ -129,11 +130,19 @@ namespace ASLM.Services
                 if (totalBytes > 0 && throttle.ElapsedMilliseconds >= 75)
                 {
                     throttle.Restart();
-                    downloadProgress?.Report(new DownloadProgress((double)downloaded / totalBytes, downloaded, totalBytes));
+                    downloadProgress?.Report(new DownloadProgress(
+                        (double)downloaded / totalBytes,
+                        downloaded,
+                        totalBytes,
+                        transferLabel));
                 }
             }
 
-            downloadProgress?.Report(new DownloadProgress(1.0, downloaded, totalBytes > 0 ? totalBytes : downloaded));
+            downloadProgress?.Report(new DownloadProgress(
+                1.0,
+                downloaded,
+                totalBytes > 0 ? totalBytes : downloaded,
+                transferLabel));
             log?.Report("Download complete.");
         }
 

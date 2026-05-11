@@ -11,40 +11,56 @@
         </Grid.GestureRecognizers>
 
         <Border x:Name="NotificationsPopup"
-                WidthRequest="450"
-                HeightRequest="520"
+                WidthRequest="360"
+                HeightRequest="480"
                 HorizontalOptions="Start"
                 VerticalOptions="Start"
                 BackgroundColor="#252526"
                 Stroke="#454548"
                 StrokeThickness="1"
                 Padding="0"
-                StrokeShape="RoundRectangle 14">
+                StrokeShape="RoundRectangle 12">
 
             <Border.GestureRecognizers>
                 <TapGestureRecognizer Tapped="OnDialogTapped" />
             </Border.GestureRecognizers>
 
             <Grid RowDefinitions="Auto,Auto,*,Auto"
-                  RowSpacing="0">
+                  RowSpacing="4"
+                  Margin="8">
+
+                <!-- Header: title + Clear all + close -->
                 <Grid Grid.Row="0"
-                      ColumnDefinitions="*,Auto"
-                      Padding="16,14,12,10">
-                    <VerticalStackLayout Spacing="2">
-                        <Label Text="Notifications"
-                               FontSize="16"
-                               FontAttributes="Bold"
-                               TextColor="{StaticResource LabelPrimary}" />
-                        <Label Text="{Binding SummaryText}"
-                               FontSize="11"
-                               TextColor="{StaticResource LabelSecondary}" />
-                    </VerticalStackLayout>
+                      ColumnDefinitions="*,Auto,Auto"
+                      ColumnSpacing="4">
+                    <Label Grid.Column="0"
+                           Text="Notifications"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource LabelPrimary}"
+                           VerticalOptions="Center" />
 
                     <Button Grid.Column="1"
+                            Text="Clear all"
+                            FontSize="12"
+                            HeightRequest="28"
+                            MinimumHeightRequest="28"
+                            Padding="8,0"
+                            Margin="0"
+                            BackgroundColor="#333334"
+                            TextColor="{StaticResource LabelSecondary}"
+                            CornerRadius="6"
+                            VerticalOptions="Center"
+                            IsEnabled="{Binding HasAnyNotifications}"
+                            Clicked="OnClearAllClicked" />
+
+                    <Button Grid.Column="2"
                             Text="&#x2715;"
                             FontSize="17"
-                            WidthRequest="30"
-                            HeightRequest="30"
+                            WidthRequest="32"
+                            MinimumWidthRequest="32"
+                            HeightRequest="32"
+                            MinimumHeightRequest="32"
                             Padding="0"
                             Margin="0"
                             BackgroundColor="Transparent"
@@ -54,14 +70,15 @@
                             Clicked="OnCloseClicked" />
                 </Grid>
 
+                <!-- Section label -->
                 <Grid Grid.Row="1"
-                      ColumnDefinitions="*"
-                      Padding="12,4,12,8">
+                      ColumnDefinitions="*">
                     <Label Text="{Binding SectionTitle}"
                            FontSize="12"
                            TextColor="{StaticResource LabelPrimary}" />
                 </Grid>
 
+                <!-- Notification list -->
                 <Grid Grid.Row="2">
                     <CollectionView ItemsSource="{Binding VisibleNotifications}"
                                     SelectionMode="None"
@@ -74,55 +91,102 @@
 
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Grid RowDefinitions="Auto,Auto">
-                                    <Grid Padding="12,9"
-                                          ColumnDefinitions="4,*,Auto"
-                                          ColumnSpacing="10">
+                                <Grid RowDefinitions="Auto,Auto"
+                                      RowSpacing="12">
+                                    <Grid ColumnDefinitions="4,*,Auto"
+                                          ColumnSpacing="8">
                                         <BoxView BackgroundColor="{Binding AccentColor}"
                                                  WidthRequest="4"
-                                                 HeightRequest="22"
+                                                 HeightRequest="32"
                                                  VerticalOptions="Start"
-                                                 Margin="0,3,0,0" />
+                                                 Margin="0,4" />
 
                                         <VerticalStackLayout Grid.Column="1"
                                                              Spacing="2">
                                             <Label Text="{Binding Title}"
-                                                   FontSize="12"
+                                                   FontSize="14"
                                                    FontAttributes="Bold"
                                                    TextColor="{StaticResource LabelPrimary}"
                                                    MaxLines="1"
                                                    LineBreakMode="TailTruncation" />
 
                                             <Label Text="{Binding Message}"
-                                                   FontSize="11"
+                                                   FontSize="12"
                                                    TextColor="{StaticResource LabelPrimary}"
                                                    MaxLines="1"
                                                    LineBreakMode="TailTruncation" />
 
+                                            <!-- Active transfer filename: only when it adds info beyond Message -->
+                                            <Label Text="{Binding ActiveTransferLabel}"
+                                                   FontSize="12"
+                                                   TextColor="{StaticResource LabelSecondary}"
+                                                   MaxLines="1"
+                                                   LineBreakMode="TailTruncation"
+                                                   IsVisible="{Binding ShowActiveTransferInCard}" />
+
+                                            <!-- Status message: hidden during active download, shown after completion -->
+                                            <Label Text="{Binding StatusText}"
+                                                   FontSize="12"
+                                                   TextColor="{StaticResource LabelSecondary}"
+                                                   MaxLines="1"
+                                                   LineBreakMode="TailTruncation"
+                                                   IsVisible="{Binding ShowStatusInCard}" />
+
+                                            <!-- Byte progress detail, Speed, percent — visible only during active download -->
+                                            <Grid ColumnDefinitions="*,Auto,Auto"
+                                                  ColumnSpacing="8"
+                                                  IsVisible="{Binding ShowDownloadMetricsRow}"
+                                                  HeightRequest="18">
+                                                <Label Grid.Column="0"
+                                                       Text="{Binding DetailText}"
+                                                       FontSize="11"
+                                                       TextColor="{StaticResource LabelSecondary}"
+                                                       VerticalTextAlignment="Center"
+                                                       LineBreakMode="TailTruncation"
+                                                       IsVisible="{Binding HasDetailText}" />
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding TransferSpeedDisplay}"
+                                                       FontSize="11"
+                                                       TextColor="{StaticResource LabelSecondary}"
+                                                       VerticalTextAlignment="Center"
+                                                       LineBreakMode="TailTruncation" />
+                                                <Label Grid.Column="2"
+                                                       Text="{Binding TransferPercentDisplay}"
+                                                       FontSize="11"
+                                                       TextColor="{StaticResource LabelSecondary}"
+                                                       VerticalTextAlignment="Center" />
+                                            </Grid>
+
                                             <ProgressBar Progress="{Binding ProgressFraction}"
                                                          IsVisible="{Binding HasProgress}"
-                                                         HeightRequest="3"
-                                                         ProgressColor="{StaticResource ActionBlue}"
-                                                         Margin="0,4,0,0" />
+                                                         HeightRequest="4"
+                                                         ProgressColor="{StaticResource ActionBlue}" />
                                         </VerticalStackLayout>
 
-                                        <Button Grid.Column="2"
-                                                Text="Dismiss"
-                                                FontSize="11"
-                                                WidthRequest="70"
-                                                HeightRequest="28"
+                                        <!-- Ghost icon (same pattern as HomeView process row actions) -->
+                                        <Border Grid.Column="2"
+                                                Background="Transparent"
+                                                StrokeThickness="0"
+                                                StrokeShape="RoundRectangle 0"
+                                                WidthRequest="24"
+                                                HeightRequest="24"
                                                 Padding="0"
-                                                CornerRadius="6"
-                                                BackgroundColor="#333334"
-                                                TextColor="{StaticResource LabelPrimary}"
-                                                VerticalOptions="Start"
-                                                Clicked="OnDismissClicked" />
+                                                Margin="0"
+                                                VerticalOptions="Center">
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Tapped="OnDismissClicked" />
+                                            </Border.GestureRecognizers>
+                                            <Image Source="icon_delete.png"
+                                                   Aspect="AspectFit"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center" />
+                                        </Border>
                                     </Grid>
 
                                     <BoxView Grid.Row="1"
                                              HeightRequest="1"
                                              Color="#343436"
-                                             Margin="12,0,0,0" />
+                                             Margin="0,0,0,8" />
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
@@ -145,12 +209,16 @@
                     </VerticalStackLayout>
                 </Grid>
 
+                <!-- Footer: total count -->
                 <Grid Grid.Row="3"
-                      ColumnDefinitions="*"
-                      Padding="12,8"
-                      BackgroundColor="#222223">
-                    <Label Text="{Binding SummaryText}"
-                           FontSize="10"
+                      RowDefinitions="Auto, Auto">
+                    <BoxView Grid.Row="0"
+                             HeightRequest="2"
+                             Color="#343436"
+                             Margin="0,8,0,4"/>
+                    <Label Grid.Row="1"
+                           Text="{Binding SummaryText}"
+                           FontSize="11"
                            TextColor="{StaticResource LabelSecondary}"
                            HorizontalTextAlignment="End"
                            VerticalTextAlignment="Center" />

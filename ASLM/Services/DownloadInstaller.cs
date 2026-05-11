@@ -82,10 +82,14 @@ namespace ASLM.Services
                 ? selectedVariant!.Version
                 : item.Version;
             var operationKey = NotificationCenter.BuildOperationKey("download-install", selectedResourceKey);
-            _notifications.StartDownload(
+            var catalogLabel = item.Title;
+            var notificationMessage = string.Equals(selectedTitle, catalogLabel, StringComparison.OrdinalIgnoreCase)
+                ? catalogLabel
+                : $"{catalogLabel} · {selectedTitle}";
+            await _notifications.StartDownloadAsync(
                 operationKey,
                 "Installing download",
-                selectedTitle,
+                notificationMessage,
                 "download",
                 selectedResourceKey);
 
@@ -189,10 +193,14 @@ namespace ASLM.Services
                 ? selectedVariant!.Title
                 : item.Title;
             var operationKey = NotificationCenter.BuildOperationKey("download-remove", selectedResourceKey);
-            _notifications.StartDownload(
+            var catalogLabel = item.Title;
+            var notificationMessage = string.Equals(selectedTitle, catalogLabel, StringComparison.OrdinalIgnoreCase)
+                ? catalogLabel
+                : $"{catalogLabel} · {selectedTitle}";
+            await _notifications.StartDownloadAsync(
                 operationKey,
                 "Removing download",
-                selectedTitle,
+                notificationMessage,
                 "download",
                 selectedResourceKey);
 
@@ -296,19 +304,19 @@ namespace ASLM.Services
                             break;
 
                         case "extract_zip":
-                            ExecuteExtractZip(module, manifest, action, context, log);
+                            ExecuteExtractZip(module, manifest, action, context, operationKey, log);
                             break;
 
                         case "python_package":
-                            await ExecutePythonPackageAsync(module, action, log, ct);
+                            await ExecutePythonPackageAsync(module, operationKey, action, log, ct);
                             break;
 
                         case "ollama_pull":
-                            await ExecuteOllamaPullAsync(module, manifest, action, log, ct);
+                            await ExecuteOllamaPullAsync(module, manifest, action, operationKey, log, ct);
                             break;
 
                         case "ollama_remove":
-                            await ExecuteOllamaRemoveAsync(module, manifest, action, log, ct);
+                            await ExecuteOllamaRemoveAsync(module, manifest, action, operationKey, log, ct);
                             break;
 
                         default:
@@ -376,7 +384,9 @@ namespace ASLM.Services
             int bytesRead;
             var throttle = Stopwatch.StartNew();
 
-            _notifications.ReportDownloadProgress(operationKey, new DownloadProgress(0, 0, totalBytes));
+            _notifications.ReportDownloadProgress(
+                operationKey,
+                new DownloadProgress(0, 0, totalBytes, downloadTitle));
 
             while ((bytesRead = await contentStream.ReadAsync(buffer, ct)) > 0)
             {
@@ -392,12 +402,16 @@ namespace ASLM.Services
                 var fraction = totalBytes > 0 ? (double)downloadedBytes / totalBytes : 0;
                 _notifications.ReportDownloadProgress(
                     operationKey,
-                    new DownloadProgress(fraction, downloadedBytes, totalBytes));
+                    new DownloadProgress(fraction, downloadedBytes, totalBytes, downloadTitle));
             }
 
             _notifications.ReportDownloadProgress(
                 operationKey,
-                new DownloadProgress(1.0, downloadedBytes, totalBytes > 0 ? totalBytes : downloadedBytes));
+                new DownloadProgress(
+                    1.0,
+                    downloadedBytes,
+                    totalBytes > 0 ? totalBytes : downloadedBytes,
+                    downloadTitle));
 
             if (!string.IsNullOrWhiteSpace(action.Sha256))
             {
@@ -424,8 +438,11 @@ namespace ASLM.Services
             ModuleDownloadInstallManifest manifest,
             ModuleDownloadInstallAction action,
             InstallExecutionContext context,
+            string operationKey,
             IProgress<string>? log)
         {
+            _notifications.ReportDownloadStatus(operationKey, "Extracting archive…");
+
             if (string.IsNullOrWhiteSpace(action.SourceArtifactId))
             {
                 throw new InvalidOperationException("extract_zip action is missing 'sourceArtifactId'.");
@@ -477,10 +494,15 @@ namespace ASLM.Services
         /// </summary>
         private async Task ExecutePythonPackageAsync(
             ModuleConfig module,
+            string operationKey,
             ModuleDownloadInstallAction action,
             IProgress<string>? log,
             CancellationToken ct)
         {
+            _notifications.ReportDownloadStatus(
+                operationKey,
+                $"Installing Python packages ({action.Packages.Count})…");
+
             var engineId = !string.IsNullOrWhiteSpace(action.EngineId)
                 ? action.EngineId
                 : "python-runtime";
@@ -523,6 +545,7 @@ namespace ASLM.Services
             ModuleConfig module,
             ModuleDownloadInstallManifest manifest,
             ModuleDownloadInstallAction action,
+            string operationKey,
             IProgress<string>? log,
             CancellationToken ct)
         {
@@ -533,6 +556,8 @@ namespace ASLM.Services
             {
                 throw new InvalidOperationException("ollama_pull action is missing 'model'.");
             }
+
+            _notifications.ReportDownloadStatus(operationKey, $"Preparing Ollama: {modelName}");
 
             var targetRef = GetEffectiveTargetRef(manifest, action);
             if (string.IsNullOrWhiteSpace(targetRef))
@@ -596,7 +621,11 @@ namespace ASLM.Services
             try
             {
                 await WaitForOllamaAsync(port, ct);
-                await StreamOllamaPullAsync(port, modelName, log, ct);
+                _notifications.ReportDownloadProgress(
+                    operationKey,
+                    new DownloadProgress(0, 0, 0, modelName),
+                    $"Pulling {modelName}");
+                await StreamOllamaPullAsync(port, modelName, operationKey, log, ct);
             }
             finally
             {
@@ -611,6 +640,7 @@ namespace ASLM.Services
             ModuleConfig module,
             ModuleDownloadInstallManifest manifest,
             ModuleDownloadInstallAction action,
+            string operationKey,
             IProgress<string>? log,
             CancellationToken ct)
         {
@@ -621,6 +651,8 @@ namespace ASLM.Services
             {
                 throw new InvalidOperationException("ollama_remove action is missing 'model'.");
             }
+
+            _notifications.ReportDownloadStatus(operationKey, $"Removing Ollama model {modelName}…");
 
             var targetRef = GetEffectiveTargetRef(manifest, action);
             if (string.IsNullOrWhiteSpace(targetRef))
@@ -726,7 +758,12 @@ namespace ASLM.Services
         /// <summary>
         /// Streams one Ollama pull operation over the HTTP API and forwards progress into the UI log.
         /// </summary>
-        private async Task StreamOllamaPullAsync(int port, string modelName, IProgress<string>? log, CancellationToken ct)
+        private async Task StreamOllamaPullAsync(
+            int port,
+            string modelName,
+            string operationKey,
+            IProgress<string>? log,
+            CancellationToken ct)
         {
             var requestPayload = JsonSerializer.Serialize(new { model = modelName, stream = true }, _jsonOptions);
             using var request = new HttpRequestMessage(HttpMethod.Post, $"http://127.0.0.1:{port}/api/pull")
@@ -739,6 +776,10 @@ namespace ASLM.Services
 
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             using var reader = new StreamReader(stream, Encoding.UTF8);
+
+            var uiThrottle = Stopwatch.StartNew();
+            const int progressIntervalMs = 100;
+            const int statusOnlyIntervalMs = 400;
 
             string? line;
             while ((line = await reader.ReadLineAsync(ct)) != null)
@@ -771,12 +812,47 @@ namespace ASLM.Services
                 {
                     var percent = Math.Clamp((double)completed / total * 100.0, 0, 100);
                     log?.Report($"[ollama] {status} ({percent:F1}%)");
+
+                    if (uiThrottle.ElapsedMilliseconds >= progressIntervalMs)
+                    {
+                        uiThrottle.Restart();
+                        var fraction = Math.Clamp(completed / (double)total, 0, 1);
+                        var statusLine = string.IsNullOrWhiteSpace(status)
+                            ? "Pulling layers"
+                            : TruncateForNotificationStatus(status);
+                        _notifications.ReportDownloadProgress(
+                            operationKey,
+                            new DownloadProgress(fraction, completed, total, modelName),
+                            statusLine);
+                    }
                 }
                 else if (!string.IsNullOrWhiteSpace(status))
                 {
                     log?.Report($"[ollama] {status}");
+                    if (uiThrottle.ElapsedMilliseconds >= statusOnlyIntervalMs)
+                    {
+                        uiThrottle.Restart();
+                        _notifications.ReportDownloadProgress(
+                            operationKey,
+                            new DownloadProgress(0, 0, 0, modelName),
+                            TruncateForNotificationStatus(status));
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Shortens long Ollama status strings for the notification status line.
+        /// </summary>
+        private static string TruncateForNotificationStatus(string status)
+        {
+            const int maxLen = 140;
+            if (status.Length <= maxLen)
+            {
+                return status;
+            }
+
+            return string.Concat(status.AsSpan(0, maxLen - 1), "…");
         }
 
         /// <summary>

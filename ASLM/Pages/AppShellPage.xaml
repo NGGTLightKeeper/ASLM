@@ -108,7 +108,7 @@
         <VerticalStackLayout x:Name="ToastPanel"
                              Grid.ColumnSpan="2"
                              Spacing="8"
-                             Margin="0,0,18,18"
+                             Margin="0,0,16,16"
                              WidthRequest="360"
                              HorizontalOptions="End"
                              VerticalOptions="End"

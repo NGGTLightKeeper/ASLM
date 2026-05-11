@@ -6,6 +6,10 @@ using System.Runtime.CompilerServices;
 using ASLM.Models;
 using ASLM.Services;
 
+// ReadOnlyObservableCollection used as direct binding source to avoid CollectionView item animations.
+
+using Microsoft.Maui.Graphics;
+
 namespace ASLM.Pages
 {
     // Notifications popover view
@@ -15,12 +19,16 @@ namespace ASLM.Pages
     /// </summary>
     public partial class NotificationsView : ContentView, INotifyPropertyChanged
     {
-        private const double PopupWidth = 450;
-        private const double PopupHeight = 520;
-        private const double PopupGap = 8;
-        private const double ScreenPadding = 12;
+        // Keep in sync with NotificationsPopup WidthRequest / HeightRequest in NotificationsView.xaml.
+        private const double PopupWidth = 360;
+        private const double PopupHeight = 480;
+        private const double PopupGap = 21;
+        private const double ScreenPadding = 14;
 
         private readonly NotificationCenter _notifications;
+
+        private Rect _lastAnchorBounds;
+        private bool _popupPositioningActive;
 
         /// <summary>
         /// Raised when the user asks to close the notifications popover.
@@ -45,11 +53,13 @@ namespace ASLM.Pages
 
         /// <summary>
         /// Gets the notifications currently visible in the popover.
+        /// Bound directly to the service collection so CollectionView sees only granular
+        /// add/remove/move events and does not play item-appear animations on every update.
         /// </summary>
-        public ObservableCollection<AppNotification> VisibleNotifications { get; } = [];
+        public ReadOnlyObservableCollection<AppNotification> VisibleNotifications => _notifications.Notifications;
 
         /// <summary>
-        /// Gets the compact total count label.
+        /// Gets the compact total count label shown in the footer.
         /// </summary>
         public string SummaryText => _notifications.Notifications.Count == 0
             ? "No notifications"
@@ -63,7 +73,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Gets whether the current filter has visible notifications.
         /// </summary>
-        public bool HasVisibleNotifications => VisibleNotifications.Count > 0;
+        public bool HasVisibleNotifications => _notifications.Notifications.Count > 0;
 
         /// <summary>
         /// Gets whether the empty state should be shown.
@@ -71,10 +81,17 @@ namespace ASLM.Pages
         public bool IsEmptyVisible => !HasVisibleNotifications;
 
         /// <summary>
+        /// Gets whether the Clear all button is enabled.
+        /// </summary>
+        public bool HasAnyNotifications => _notifications.Notifications.Count > 0;
+
+        /// <summary>
         /// Positions the popover next to the notifications sidebar button.
         /// </summary>
         public Task OpenAtAsync(Rect anchorBounds, double hostWidth, double hostHeight)
         {
+            _lastAnchorBounds = anchorBounds;
+            _popupPositioningActive = true;
             PositionPopup(anchorBounds, hostWidth, hostHeight);
             RefreshVisibleNotifications();
             return Task.CompletedTask;
@@ -96,6 +113,8 @@ namespace ASLM.Pages
         {
             _notifications.NotificationsChanged -= OnNotificationsChanged;
             _notifications.NotificationsChanged += OnNotificationsChanged;
+            SizeChanged -= OnHostSizeChanged;
+            SizeChanged += OnHostSizeChanged;
             RefreshVisibleNotifications();
         }
 
@@ -105,6 +124,23 @@ namespace ASLM.Pages
         private void OnUnloaded(object? sender, EventArgs e)
         {
             _notifications.NotificationsChanged -= OnNotificationsChanged;
+            SizeChanged -= OnHostSizeChanged;
+            _popupPositioningActive = false;
+        }
+
+        /// <summary>
+        /// Re-clamps the popover when the overlay host is resized so it stays on screen.
+        /// </summary>
+        private void OnHostSizeChanged(object? sender, EventArgs e)
+        {
+            if (!_popupPositioningActive)
+            {
+                return;
+            }
+
+            var hostW = Width > 0 ? Width : 0;
+            var hostH = Height > 0 ? Height : 0;
+            PositionPopup(_lastAnchorBounds, hostW, hostH);
         }
 
         /// <summary>
@@ -164,13 +200,25 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Dismisses one notification from its row action.
+        /// Clears all notifications when the Clear all button is pressed.
+        /// </summary>
+        private void OnClearAllClicked(object? sender, EventArgs e)
+        {
+            _notifications.DismissAll();
+        }
+
+        /// <summary>
+        /// Dismisses one notification from its row action (Border + TapGestureRecognizer pattern from HomeView).
         /// </summary>
         private void OnDismissClicked(object? sender, EventArgs e)
         {
-            if (sender is Button { BindingContext: AppNotification notification })
+            for (var element = sender as Element; element != null; element = element.Parent)
             {
-                _notifications.Dismiss(notification);
+                if (element.BindingContext is AppNotification notification)
+                {
+                    _notifications.Dismiss(notification);
+                    return;
+                }
             }
         }
 
@@ -183,20 +231,11 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Rebuilds the visible notifications collection newest first.
+        /// Raises view-state properties when the service collection changes.
+        /// The CollectionView is bound directly to the service collection, so no rebuild needed.
         /// </summary>
         private void RefreshVisibleNotifications()
         {
-            var filtered = _notifications.Notifications
-                .OrderByDescending(notification => notification.UpdatedAt)
-                .ToList();
-
-            VisibleNotifications.Clear();
-            foreach (var notification in filtered)
-            {
-                VisibleNotifications.Add(notification);
-            }
-
             RaiseViewStateProperties();
         }
 
@@ -209,6 +248,7 @@ namespace ASLM.Pages
             OnPropertyChanged(nameof(SectionTitle));
             OnPropertyChanged(nameof(HasVisibleNotifications));
             OnPropertyChanged(nameof(IsEmptyVisible));
+            OnPropertyChanged(nameof(HasAnyNotifications));
         }
 
         /// <summary>
