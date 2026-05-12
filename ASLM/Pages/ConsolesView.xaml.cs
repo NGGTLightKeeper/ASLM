@@ -16,22 +16,24 @@ namespace ASLM.Pages
     public partial class ConsolesView : ContentView, IConsolesView
     {
         private const double CompactBreakpoint = 1180;
+        private static readonly TimeSpan AutoRefreshInterval = TimeSpan.FromSeconds(3);
 
         private readonly ConsolesPageViewModel _viewModel = new();
         private readonly ConsolesPresenter _presenter;
         private bool _suppressSelection;
         private int _layoutRefreshQueued;
+        private CancellationTokenSource? _autoRefreshCts;
 
         /// <summary>
         /// Creates the consoles view and initializes its responsive shell layout.
         /// </summary>
-        public ConsolesView(ModuleInstaller moduleInstaller, ModuleConsoleService consoleService)
+        public ConsolesView(ModuleInstaller moduleInstaller, ModuleConsoleStore consoleStore, AppDataStore appData)
         {
             InitializeComponent();
 
             BindingContext = _viewModel;
 
-            _presenter = new ConsolesPresenter(this, moduleInstaller, consoleService);
+            _presenter = new ConsolesPresenter(this, moduleInstaller, consoleStore, appData);
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
@@ -64,6 +66,7 @@ namespace ASLM.Pages
         private async void OnLoaded(object? sender, EventArgs e)
         {
             await _presenter.ActivateAsync();
+            StartAutoRefresh();
             QueueConsoleLayoutRefresh();
         }
 
@@ -72,6 +75,7 @@ namespace ASLM.Pages
         /// </summary>
         private void OnUnloaded(object? sender, EventArgs e)
         {
+            StopAutoRefresh();
             _presenter.Deactivate();
         }
 
@@ -84,24 +88,6 @@ namespace ASLM.Pages
         {
             UpdateResponsiveLayout();
             QueueConsoleLayoutRefresh();
-        }
-
-        // Toolbar actions
-
-        /// <summary>
-        /// Reloads the current console state from the presenter.
-        /// </summary>
-        private async void OnRefreshClicked(object? sender, EventArgs e)
-        {
-            await _presenter.RefreshAsync();
-        }
-
-        /// <summary>
-        /// Toggles whether completed process sessions stay visible in the session list.
-        /// </summary>
-        private async void OnShowCompletedProcessesChanged(object? sender, CheckedChangedEventArgs e)
-        {
-            await _presenter.SetShowCompletedProcessesAsync(e.Value);
         }
 
         // Selection events
@@ -145,10 +131,6 @@ namespace ASLM.Pages
         {
             _suppressSelection = true;
 
-            _viewModel.Subtitle = state.Subtitle;
-            _viewModel.ModuleListCaption = state.ModuleListCaption;
-            _viewModel.SessionListCaption = state.SessionListCaption;
-            _viewModel.ShowCompletedProcesses = state.ShowCompletedProcesses;
             _viewModel.SelectedSessionId = state.SelectedSessionId;
             _viewModel.SelectedSessionKey = state.SelectedSessionKey;
             _viewModel.SelectedSessionTitle = state.SelectedSessionTitle;
@@ -173,8 +155,51 @@ namespace ASLM.Pages
                 SessionsCollection.SelectedItem = selectedSession;
             }
 
+            SessionsPanel.IsVisible = state.ShowSessionList;
+            UpdateResponsiveLayout(state.ShowSessionList);
             QueueConsoleLayoutRefresh();
             _suppressSelection = false;
+        }
+
+        // Auto refresh
+
+        /// <summary>
+        /// Starts the lightweight periodic refresh used instead of a manual refresh button.
+        /// </summary>
+        private void StartAutoRefresh()
+        {
+            StopAutoRefresh();
+            var cts = new CancellationTokenSource();
+            _autoRefreshCts = cts;
+            _ = RunAutoRefreshAsync(cts.Token);
+        }
+
+        /// <summary>
+        /// Stops the periodic refresh loop when the page unloads.
+        /// </summary>
+        private void StopAutoRefresh()
+        {
+            _autoRefreshCts?.Cancel();
+            _autoRefreshCts?.Dispose();
+            _autoRefreshCts = null;
+        }
+
+        /// <summary>
+        /// Refreshes the dashboard on a fixed interval while the view is visible.
+        /// </summary>
+        private async Task RunAutoRefreshAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(AutoRefreshInterval, cancellationToken);
+                    await _presenter.RefreshAsync(forceModuleReload: false);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
 
         // Responsive layout
@@ -182,9 +207,10 @@ namespace ASLM.Pages
         /// <summary>
         /// Switches the workspace between the compact stacked layout and the wide three-column layout.
         /// </summary>
-        private void UpdateResponsiveLayout()
+        private void UpdateResponsiveLayout(bool? showSessionList = null)
         {
             var isCompact = Width > 0 && Width < CompactBreakpoint;
+            var includeSessions = showSessionList ?? SessionsPanel.IsVisible;
 
             WorkspaceLayout.ColumnDefinitions.Clear();
             WorkspaceLayout.RowDefinitions.Clear();
@@ -193,29 +219,35 @@ namespace ASLM.Pages
             {
                 WorkspaceLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Star });
                 WorkspaceLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                WorkspaceLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 WorkspaceLayout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                if (includeSessions)
+                {
+                    WorkspaceLayout.RowDefinitions.Insert(1, new RowDefinition { Height = GridLength.Auto });
+                }
 
                 Grid.SetRow(ModulesPanel, 0);
                 Grid.SetColumn(ModulesPanel, 0);
-                Grid.SetRow(SessionsPanel, 1);
+                Grid.SetRow(SessionsPanel, includeSessions ? 1 : 0);
                 Grid.SetColumn(SessionsPanel, 0);
-                Grid.SetRow(OutputPanel, 2);
+                Grid.SetRow(OutputPanel, includeSessions ? 2 : 1);
                 Grid.SetColumn(OutputPanel, 0);
             }
             else
             {
-                WorkspaceLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = 280 });
-                WorkspaceLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = 320 });
+                WorkspaceLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = 260 });
+                if (includeSessions)
+                {
+                    WorkspaceLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = 260 });
+                }
                 WorkspaceLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 WorkspaceLayout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
                 Grid.SetRow(ModulesPanel, 0);
                 Grid.SetColumn(ModulesPanel, 0);
                 Grid.SetRow(SessionsPanel, 0);
-                Grid.SetColumn(SessionsPanel, 1);
+                Grid.SetColumn(SessionsPanel, includeSessions ? 1 : 0);
                 Grid.SetRow(OutputPanel, 0);
-                Grid.SetColumn(OutputPanel, 2);
+                Grid.SetColumn(OutputPanel, includeSessions ? 2 : 1);
             }
         }
 
@@ -361,7 +393,8 @@ namespace ASLM.Pages
 
         private readonly IConsolesView _view;
         private readonly ModuleInstaller _moduleInstaller;
-        private readonly ModuleConsoleService _consoleService;
+        private readonly ModuleConsoleStore _consoleStore;
+        private readonly AppDataStore _appData;
         private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
         private List<ModuleConfig> _knownModules = [];
@@ -374,11 +407,13 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the presenter for the consoles dashboard.
         /// </summary>
-        public ConsolesPresenter(IConsolesView view, ModuleInstaller moduleInstaller, ModuleConsoleService consoleService)
+        public ConsolesPresenter(IConsolesView view, ModuleInstaller moduleInstaller, ModuleConsoleStore consoleStore, AppDataStore appData)
         {
             _view = view;
             _moduleInstaller = moduleInstaller;
-            _consoleService = consoleService;
+            _consoleStore = consoleStore;
+            _appData = appData;
+            _showCompletedProcesses = _appData.Data.Consoles.ShowCompletedProcesses;
         }
 
         /// <summary>
@@ -392,7 +427,8 @@ namespace ASLM.Pages
             }
 
             _isActive = true;
-            _consoleService.StateChanged += OnConsoleStateChanged;
+            _consoleStore.StateChanged += OnConsoleStateChanged;
+            LoadPreferences();
             await RefreshAsync(forceModuleReload: true);
         }
 
@@ -406,7 +442,7 @@ namespace ASLM.Pages
                 return;
             }
 
-            _consoleService.StateChanged -= OnConsoleStateChanged;
+            _consoleStore.StateChanged -= OnConsoleStateChanged;
             _isActive = false;
         }
 
@@ -422,20 +458,6 @@ namespace ASLM.Pages
 
             _selectedModuleSourcePath = sourcePath;
             _selectedSessionId = null;
-            await RefreshAsync(forceModuleReload: false);
-        }
-
-        /// <summary>
-        /// Updates whether completed process sessions stay visible in per-module session lists.
-        /// </summary>
-        public async Task SetShowCompletedProcessesAsync(bool showCompletedProcesses)
-        {
-            if (_showCompletedProcesses == showCompletedProcesses)
-            {
-                return;
-            }
-
-            _showCompletedProcesses = showCompletedProcesses;
             await RefreshAsync(forceModuleReload: false);
         }
 
@@ -464,20 +486,24 @@ namespace ASLM.Pages
         /// <summary>
         /// Reloads module metadata when requested, snapshots console state, and renders the result.
         /// </summary>
-        private async Task RefreshAsync(bool forceModuleReload)
+        public async Task RefreshAsync(bool forceModuleReload)
         {
             await _refreshLock.WaitAsync();
             try
             {
+                LoadPreferences();
+
                 if (forceModuleReload || _knownModules.Count == 0)
                 {
-                    _knownModules = await _moduleInstaller.DiscoverModulesAsync();
+                    _knownModules = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync());
                 }
 
-                _consoleService.EnsureModules(_knownModules);
-
-                var snapshots = _consoleService.GetSnapshot();
-                var state = BuildState(snapshots);
+                var state = await Task.Run(() =>
+                {
+                    _consoleStore.EnsureModules(_knownModules);
+                    var snapshots = _consoleStore.GetSnapshot();
+                    return BuildState(snapshots);
+                });
 
                 await MainThread.InvokeOnMainThreadAsync(() => _view.Render(state));
             }
@@ -503,6 +529,15 @@ namespace ASLM.Pages
                 Interlocked.Exchange(ref _refreshQueued, 0);
                 await RefreshAsync(forceModuleReload: false);
             });
+        }
+
+        /// <summary>
+        /// Loads console preferences from persisted app data.
+        /// </summary>
+        private void LoadPreferences()
+        {
+            _appData.Data.Consoles.Normalize();
+            _showCompletedProcesses = _appData.Data.Consoles.ShowCompletedProcesses;
         }
 
         /// <summary>
@@ -541,6 +576,7 @@ namespace ASLM.Pages
             var isGlobalModule = string.Equals(_selectedModuleSourcePath, AllModulesModuleId, StringComparison.Ordinal);
             var selectedModule = activeModules.FirstOrDefault(module => module.SourcePath == _selectedModuleSourcePath);
             var activeModulePaths = activeModules.Select(module => module.SourcePath).ToList();
+            var showIndividualConsoles = _appData.Data.Consoles.ShowIndividualModuleConsoles;
 
             IReadOnlyList<ConsoleSessionItemViewModel> sessionItems;
             IReadOnlyList<string> selectedSessionLines;
@@ -561,15 +597,15 @@ namespace ASLM.Pages
                         ModuleSourcePath = AllModulesModuleId,
                         SessionSourceId = GlobalUnifiedSessionId,
                         Title = "Unified Console",
-                        StatusText = "Merged output across all active modules",
+                        StatusText = "All active modules",
                         Preview = "Includes unified logs and completed process history from active modules."
                     }
                 ];
 
-                selectedSessionLines = _consoleService.GetUnifiedOverviewLines(activeModulePaths);
+                selectedSessionLines = _consoleStore.GetUnifiedOverviewLines(activeModulePaths);
                 selectedSessionTitle = "All Modules / Unified Console";
-                selectedSessionStatus = $"{activeModules.Count} active modules";
-                selectedSessionDescription = "Merged output across all active modules. Completed processes remain visible here even when hidden from per-module lists.";
+                selectedSessionStatus = string.Empty;
+                selectedSessionDescription = string.Empty;
                 selectedSessionCommandLine = string.Empty;
                 selectedSessionFooter = $"{selectedSessionLines.Count} visible lines";
             }
@@ -592,24 +628,24 @@ namespace ASLM.Pages
                     .Where(session => _showCompletedProcesses || session.IsRunning)
                     .ToList();
 
-                sessionItems =
-                [
-                    new ConsoleSessionItemViewModel
-                    {
-                        Id = UnifiedSessionId,
-                        ModuleSourcePath = selectedModule.SourcePath,
-                        SessionSourceId = UnifiedSessionId,
-                        Title = "Unified Console",
-                        StatusText = "Merged output for this module",
-                        Preview = "Includes shared lifecycle logs and completed process history for the selected module."
-                    },
-                    .. visibleSessions.Select(session => MapSession(selectedModule, session))
-                ];
+                var unifiedItem = new ConsoleSessionItemViewModel
+                {
+                    Id = UnifiedSessionId,
+                    ModuleSourcePath = selectedModule.SourcePath,
+                    SessionSourceId = UnifiedSessionId,
+                    Title = "Unified Console",
+                    StatusText = "Merged output",
+                    Preview = "Includes shared lifecycle logs and completed process history for the selected module."
+                };
+
+                sessionItems = showIndividualConsoles
+                    ? [unifiedItem, .. visibleSessions.Select(session => MapSession(selectedModule, session))]
+                    : [unifiedItem];
 
                 if (string.IsNullOrWhiteSpace(_selectedSessionId) ||
                     !sessionItems.Any(session => string.Equals(session.Id, _selectedSessionId, StringComparison.Ordinal)))
                 {
-                    _selectedSessionId = UnifiedSessionId;
+                    _selectedSessionId = sessionItems.FirstOrDefault()?.Id;
                 }
 
                 var selectedSessionItem = sessionItems.FirstOrDefault(session => string.Equals(session.Id, _selectedSessionId, StringComparison.Ordinal));
@@ -620,10 +656,10 @@ namespace ASLM.Pages
 
                 if (selectedSessionItem == null || string.Equals(_selectedSessionId, UnifiedSessionId, StringComparison.Ordinal))
                 {
-                    selectedSessionLines = _consoleService.GetUnifiedModuleLines(selectedModule.SourcePath);
+                    selectedSessionLines = _consoleStore.GetUnifiedModuleLines(selectedModule.SourcePath);
                     selectedSessionTitle = $"{selectedModule.Name} / Unified Console";
-                    selectedSessionStatus = $"{selectedModule.ActiveProcessCount} active subprocesses";
-                    selectedSessionDescription = "Merged output for the selected module. Completed processes stay visible here even when hidden in the per-process list.";
+                    selectedSessionStatus = string.Empty;
+                    selectedSessionDescription = string.Empty;
                     selectedSessionCommandLine = string.Empty;
                     selectedSessionFooter = $"{selectedSessionLines.Count} visible lines";
                 }
@@ -638,7 +674,7 @@ namespace ASLM.Pages
                 }
                 else
                 {
-                    selectedSessionLines = _consoleService.GetSessionLines(selectedModule.SourcePath, selectedSession.Id);
+                    selectedSessionLines = _consoleStore.GetSessionLines(selectedModule.SourcePath, selectedSession.Id);
                     selectedSessionTitle = $"{selectedModule.Name} / {selectedSession.Title}";
                     selectedSessionStatus = BuildSelectedStatus(selectedSession);
                     selectedSessionDescription = selectedSession.IsObservedProcess
@@ -651,26 +687,12 @@ namespace ASLM.Pages
                 }
             }
 
-            var activeProcesses = activeModules.Sum(module => module.ActiveProcessCount);
-            var totalSessions = activeModules.Sum(module => module.Sessions.Count(session => !session.IsObservedProcess));
-
             return new ConsolesDashboardState
             {
-                Subtitle = activeModules.Count == 0
-                    ? "No module consoles are available yet."
-                    : $"{activeModules.Count} active modules - {activeProcesses} active subprocesses - {totalSessions} sessions",
-                ModuleListCaption = activeModules.Count == 0
-                    ? "No active modules"
-                    : $"{activeModules.Count} active modules",
-                ShowCompletedProcesses = _showCompletedProcesses,
-                SessionListCaption = isGlobalModule
-                    ? "Unified output across active modules."
-                    : selectedModule == null
-                        ? "Select a module to inspect its output."
-                        : $"{sessionItems.Count} visible consoles for {selectedModule.Name}",
                 Modules = moduleItems,
                 SelectedModuleSourcePath = _selectedModuleSourcePath,
                 Sessions = sessionItems,
+                ShowSessionList = sessionItems.Count > 1 && !isGlobalModule,
                 SelectedSessionId = _selectedSessionId,
                 SelectedSessionKey = $"{_selectedModuleSourcePath}|{_selectedSessionId}",
                 SelectedSessionTitle = selectedSessionTitle,
@@ -788,26 +810,6 @@ namespace ASLM.Pages
     internal sealed class ConsolesDashboardState
     {
         /// <summary>
-        /// Gets or sets the page subtitle summarizing active modules and sessions.
-        /// </summary>
-        public string Subtitle { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the caption shown above the module list.
-        /// </summary>
-        public string ModuleListCaption { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the caption shown above the session list.
-        /// </summary>
-        public string SessionListCaption { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets whether completed process sessions are visible in the session list.
-        /// </summary>
-        public bool ShowCompletedProcesses { get; set; }
-
-        /// <summary>
         /// Gets or sets the rendered module items.
         /// </summary>
         public IReadOnlyList<ConsoleModuleItemViewModel> Modules { get; set; } = [];
@@ -821,6 +823,11 @@ namespace ASLM.Pages
         /// Gets or sets the rendered session items for the selected module scope.
         /// </summary>
         public IReadOnlyList<ConsoleSessionItemViewModel> Sessions { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets whether the console picker should be visible.
+        /// </summary>
+        public bool ShowSessionList { get; set; }
 
         /// <summary>
         /// Gets or sets the selected session identifier.
@@ -870,10 +877,6 @@ namespace ASLM.Pages
     /// </summary>
     public sealed class ConsolesPageViewModel : INotifyPropertyChanged
     {
-        private bool _showCompletedProcesses;
-        private string _subtitle = string.Empty;
-        private string _moduleListCaption = string.Empty;
-        private string _sessionListCaption = string.Empty;
         private string? _selectedSessionId;
         private string _selectedSessionKey = string.Empty;
         private string _selectedSessionTitle = "No console selected";
@@ -895,42 +898,6 @@ namespace ASLM.Pages
         /// Gets the session items shown in the session list.
         /// </summary>
         public ObservableCollection<ConsoleSessionItemViewModel> Sessions { get; } = new();
-
-        /// <summary>
-        /// Gets or sets whether completed process sessions are shown in the session list.
-        /// </summary>
-        public bool ShowCompletedProcesses
-        {
-            get => _showCompletedProcesses;
-            set => SetProperty(ref _showCompletedProcesses, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the page subtitle.
-        /// </summary>
-        public string Subtitle
-        {
-            get => _subtitle;
-            set => SetProperty(ref _subtitle, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the caption shown above the module list.
-        /// </summary>
-        public string ModuleListCaption
-        {
-            get => _moduleListCaption;
-            set => SetProperty(ref _moduleListCaption, value);
-        }
-
-        /// <summary>
-        /// Gets or sets the caption shown above the session list.
-        /// </summary>
-        public string SessionListCaption
-        {
-            get => _sessionListCaption;
-            set => SetProperty(ref _sessionListCaption, value);
-        }
 
         /// <summary>
         /// Gets or sets the selected session identifier.

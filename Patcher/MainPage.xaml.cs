@@ -2,13 +2,15 @@
 
 using System.Text;
 
-namespace Patcher;
+namespace ASLM.Patcher;
 
 /// <summary>
 /// Shows live patcher status while the file replacement runs in the background.
 /// </summary>
 public partial class MainPage : ContentPage
 {
+    private static readonly bool CloseAutomaticallyAfterPatch = true;
+
     private readonly StringBuilder _log = new();
     private bool _started;
 
@@ -36,19 +38,18 @@ public partial class MainPage : ContentPage
         var progress = new Progress<PatcherProgress>(OnProgress);
         var exitCode = await PatcherRunner.RunAsync(args, progress);
 
-        BusyIndicator.IsRunning = false;
-        BusyIndicator.Color = exitCode == 0
-            ? (Color)Application.Current!.Resources["SystemGreen"]
-            : (Color)Application.Current!.Resources["SystemRed"];
         StatusLabel.Text = exitCode == 0
-            ? "Update finished. Starting ASLM..."
-            : "Update failed. Starting ASLM...";
+            ? "Update finished. ASLM has been started."
+            : "Update failed. ASLM has been started.";
         SubtitleLabel.Text = exitCode == 0
             ? "Finished"
             : "Failed";
 
-        await Task.Delay(900);
-        Application.Current?.Quit();
+        if (CloseAutomaticallyAfterPatch)
+        {
+            await Task.Delay(900);
+            Application.Current?.Quit();
+        }
     }
 
     /// <summary>

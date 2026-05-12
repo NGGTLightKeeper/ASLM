@@ -26,12 +26,20 @@ public partial class App : Application
     /// </summary>
     protected override Window CreateWindow(IActivationState? activationState)
     {
+        const int width = 720;
+        const int height = 540;
+
         var window = new Window(new MainPage());
         window.Title = "ASLM Installer";
-        window.Width = 720;
-        window.Height = 520;
-        window.MinimumWidth = 620;
-        window.MinimumHeight = 440;
+
+        window.Width = width;
+        window.Height = height;
+
+        window.MinimumWidth = width;
+        window.MaximumWidth = width;
+        window.MinimumHeight = height;
+        window.MaximumHeight = height;
+
         return window;
     }
 }

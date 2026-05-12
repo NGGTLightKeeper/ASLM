@@ -50,14 +50,28 @@
                         HorizontalOptions="Fill"
                         Clicked="OnNavClicked" />
 
-                <Button x:Name="ModuleManagementButton"
+                <Button x:Name="ModulesButton"
                         Style="{StaticResource SidebarButton}"
                         Text="Modules"
                         HeightRequest="36"
                         HorizontalOptions="Fill"
                         Clicked="OnNavClicked" />
 
-                <Button x:Name="UploadModulesButton"
+                <Button x:Name="AslmApiButton"
+                        Style="{StaticResource SidebarButton}"
+                        Text="ASLM API"
+                        HeightRequest="36"
+                        HorizontalOptions="Fill"
+                        Clicked="OnNavClicked" />
+
+                <Button x:Name="NotificationsButton"
+                        Style="{StaticResource SidebarButton}"
+                        Text="Notifications"
+                        HeightRequest="36"
+                        HorizontalOptions="Fill"
+                        Clicked="OnNavClicked" />
+
+                <Button x:Name="DownloadsButton"
                         Style="{StaticResource SidebarButton}"
                         Text="Download"
                         HeightRequest="36"
@@ -75,7 +89,8 @@
 
         <!-- Main Content Area -->
         <Grid Grid.Column="1">
-            <ContentView x:Name="ContentArea" />
+            <ContentView x:Name="ContentArea"
+                         Padding="8"/>
 
             <!-- WebView (visible when a module page is selected) -->
             <WebView x:Name="Browser"
@@ -88,6 +103,16 @@
                      Grid.ColumnSpan="2"
                      IsVisible="False"
                      BackgroundColor="Transparent" />
+
+        <!-- In-app toast notifications -->
+        <VerticalStackLayout x:Name="ToastPanel"
+                             Grid.ColumnSpan="2"
+                             Spacing="8"
+                             Margin="0,0,16,16"
+                             WidthRequest="360"
+                             HorizontalOptions="End"
+                             VerticalOptions="End"
+                             InputTransparent="False" />
 
     </Grid>
 

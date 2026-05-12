@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
-namespace Patcher;
+namespace ASLM.Patcher;
 
 /// <summary>
 /// Carries one status update from the patcher runner to the UI.

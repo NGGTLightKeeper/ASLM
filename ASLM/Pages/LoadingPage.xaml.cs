@@ -12,8 +12,10 @@ namespace ASLM.Pages
     /// </summary>
     public partial class LoadingPage : ContentPage
     {
-        private readonly AppDataService _appData;
-        private readonly UpdateSchedulerService _updateScheduler;
+        private readonly AppDataStore _appData;
+        private readonly NotificationCenter _notifications;
+        private readonly UpdateScheduler _updateScheduler;
+        private readonly AslmApiServer _apiServer;
         private readonly IServiceProvider _services;
         private bool _initialized;
 
@@ -23,13 +25,17 @@ namespace ASLM.Pages
         /// Creates the startup loading page.
         /// </summary>
         public LoadingPage(
-            AppDataService appData,
-            UpdateSchedulerService updateScheduler,
+            AppDataStore appData,
+            NotificationCenter notifications,
+            UpdateScheduler updateScheduler,
+            AslmApiServer apiServer,
             IServiceProvider services)
         {
             InitializeComponent();
             _appData = appData;
+            _notifications = notifications;
             _updateScheduler = updateScheduler;
+            _apiServer = apiServer;
             _services = services;
         }
 
@@ -48,8 +54,10 @@ namespace ASLM.Pages
             }
 
             _initialized = true;
-            await _appData.InitializeAsync();
-            _updateScheduler.Start();
+            await Task.Run(() => _appData.InitializeAsync());
+            await Task.Run(() => _notifications.InitializeAsync());
+            await Task.Run(() => _apiServer.StartIfEnabledAsync());
+            await Task.Run(_updateScheduler.Start);
 
             Page nextPage = _appData.IsFirstRun
                 ? _services.GetRequiredService<SetupWizardPage>()

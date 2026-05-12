@@ -1,10 +1,5 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
-#if WINDOWS
-using WinRT.Interop;
-using Windows.Storage.Pickers;
-#endif
-
 namespace ASLM.Installer;
 
 // Installer wizard UI.
@@ -191,19 +186,20 @@ public partial class MainPage : ContentPage
     private async void OnBrowseClicked(object? sender, EventArgs e)
     {
 #if WINDOWS
-        var picker = new FolderPicker();
-        picker.FileTypeFilter.Add("*");
-
-        var window = Application.Current?.Windows.FirstOrDefault()?.Handler?.PlatformView;
-        if (window is not null)
+        try
         {
-            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(window));
+            FooterLabel.Text = string.Empty;
+            var window = Application.Current?.Windows.FirstOrDefault()?.Handler?.PlatformView;
+            var folderPath = WindowsFolderPicker.PickFolder(window, "Select installation directory");
+
+            if (!string.IsNullOrWhiteSpace(folderPath))
+            {
+                BasePathEntry.Text = folderPath;
+            }
         }
-
-        var folder = await picker.PickSingleFolderAsync();
-        if (folder is not null)
+        catch (Exception ex)
         {
-            BasePathEntry.Text = folder.Path;
+            FooterLabel.Text = $"Unable to open folder picker: {ex.Message}";
         }
 #else
         await DisplayAlert("ASLM Installer", "Folder browsing is available in the Windows installer build.", "OK");
@@ -229,7 +225,6 @@ public partial class MainPage : ContentPage
         _isInstalling = true;
         BackButton.IsEnabled = false;
         NextButton.IsEnabled = false;
-        InstallBusyIndicator.IsRunning = true;
 
         try
         {
@@ -243,7 +238,6 @@ public partial class MainPage : ContentPage
             _manifest = await _installerService.InstallAsync(options, progress, _installCancellation.Token);
 
             _isInstalled = true;
-            InstallBusyIndicator.IsRunning = false;
             LaunchAfterInstallPanel.IsVisible = true;
             NextButton.Text = "Finish";
             NextButton.IsEnabled = true;
@@ -252,7 +246,6 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            InstallBusyIndicator.IsRunning = false;
             FooterLabel.Text = ex.Message;
             NextButton.Text = "Retry";
             NextButton.IsEnabled = true;
@@ -432,7 +425,6 @@ public partial class MainPage : ContentPage
         ConfirmPathLabel.Text = validation.IsValid
             ? $"Install path: {validation.InstallPath}"
             : $"Install path: {validation.Message}";
-        ConfirmLegalLabel.Text = $"Accepted documents: {_acceptedLegalDocumentIds.Count}";
     }
 
 

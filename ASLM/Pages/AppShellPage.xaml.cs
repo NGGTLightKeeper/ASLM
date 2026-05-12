@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using ASLM.Models;
 using ASLM.Services;
+using Microsoft.Maui.Controls.Shapes;
 
 namespace ASLM.Pages
 {
@@ -21,6 +22,8 @@ namespace ASLM.Pages
         private const string IconHome = "icon_home.png";
         private const string IconConsole = "icon_console.png";
         private const string IconModules = "icon_modules.png";
+        private const string IconApi = "icon_api.png";
+        private const string IconNotifications = "icon_notifications.png";
         private const string IconDownload = "icon_download.png";
         private const string IconSettings = "icon_settings.png";
         private const string IconPage = "icon_page.png";
@@ -28,6 +31,8 @@ namespace ASLM.Pages
         private const string LabelHome = "Home";
         private const string LabelConsoles = "Consoles";
         private const string LabelModules = "Modules";
+        private const string LabelApi = "ASLM API";
+        private const string LabelNotifications = "Notifications";
         private const string LabelDownload = "Download";
         private const string LabelSettings = "Settings";
         private const int MaxConcurrentModuleStarts = 2;
@@ -39,7 +44,11 @@ namespace ASLM.Pages
 
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
-        private readonly PortManager _portManager;
+        private readonly AppDataStore _appData;
+        private readonly PortRegistry _ports;
+        private readonly NotificationCenter _notifications;
+        private readonly UpdateManager _updateManager;
+        private readonly AslmApiServer _apiServer;
         private readonly IServiceProvider _services;
 
         private List<ModuleConfig> _allModules = [];
@@ -49,14 +58,19 @@ namespace ASLM.Pages
 
         private View? _homeView;
         private View? _consolesView;
-        private View? _moduleManagementView;
-        private View? _downloadModulesView;
+        private View? _modulesView;
+        private View? _aslmApiView;
+        private View? _notificationsView;
+        private View? _downloadsView;
         private View? _settingsView;
-        private View? _moduleUpdateDialogView;
+        private View? _moduleUpdateView;
 
         private Button? _activeNavButton;
         private Button[] _navButtons = [];
         private CancellationTokenSource? _pageButtonLayoutCts;
+        private readonly SemaphoreSlim _moduleRefreshLock = new(1, 1);
+        private bool _shellEventsHooked;
+        private int _moduleRefreshQueued;
 
         // Initialization
 
@@ -66,23 +80,32 @@ namespace ASLM.Pages
         public AppShellPage(
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
-            PortManager portManager,
+            AppDataStore appData,
+            PortRegistry ports,
+            NotificationCenter notifications,
+            UpdateManager updateManager,
+            AslmApiServer apiServer,
             IServiceProvider services)
         {
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
-            _portManager = portManager;
+            _appData = appData;
+            _ports = ports;
+            _notifications = notifications;
+            _updateManager = updateManager;
+            _apiServer = apiServer;
             _services = services;
 
             InitializeComponent();
             BindingContext = this;
             Loaded += OnPageLoaded;
+            Unloaded += OnPageUnloaded;
 
             // Restore the sidebar width before the first render so the shell opens in the saved state.
             _panelExpanded = Preferences.Default.Get("SidebarExpanded", false);
             SidePanel.WidthRequest = _panelExpanded ? PanelExpandedWidth : PanelCollapsedWidth;
 
-            _navButtons = [HomeButton, ConsolesButton, ModuleManagementButton, UploadModulesButton, SettingsButton];
+            _navButtons = [HomeButton, ConsolesButton, ModulesButton, AslmApiButton, NotificationsButton, DownloadsButton, SettingsButton];
 
             // Hook alignment updates once so WinUI buttons keep the same content layout.
             CollapseButton.HandlerChanged += (sender, _) => UpdateButtonAlignment((Button)sender!);
@@ -95,8 +118,10 @@ namespace ASLM.Pages
             CollapseButton.ImageSource = IconMenu;
             HomeButton.ImageSource = IconHome;
             ConsolesButton.ImageSource = IconConsole;
-            ModuleManagementButton.ImageSource = IconModules;
-            UploadModulesButton.ImageSource = IconDownload;
+            ModulesButton.ImageSource = IconModules;
+            AslmApiButton.ImageSource = IconApi;
+            NotificationsButton.ImageSource = IconNotifications;
+            DownloadsButton.ImageSource = IconDownload;
             SettingsButton.ImageSource = IconSettings;
 
             // Initialize button labels and image layout based on the current sidebar width.
@@ -105,6 +130,9 @@ namespace ASLM.Pages
                 button.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
                 button.Text = _panelExpanded ? GetButtonLabel(button) : string.Empty;
             }
+
+            ApplyAslmApiNavigationState();
+            ApplyConsoleNavigationState();
         }
 
 
@@ -131,6 +159,8 @@ namespace ASLM.Pages
         /// </summary>
         private async void OnPageLoaded(object? sender, EventArgs e)
         {
+            HookShellEvents();
+
             if (_hasLoaded)
             {
                 return;
@@ -139,7 +169,65 @@ namespace ASLM.Pages
             _hasLoaded = true;
             await RefreshModulesAsync();
             NavigateTo(HomeButton);
+            ApplyAslmApiNavigationState();
+            ApplyConsoleNavigationState();
             _ = StartEnabledModulesAsync();
+            _ = CheckStartupUpdatesAsync();
+        }
+
+        /// <summary>
+        /// Unhooks shell-level notification events when the page leaves the visual tree.
+        /// </summary>
+        private void OnPageUnloaded(object? sender, EventArgs e)
+        {
+            UnhookShellEvents();
+        }
+
+        /// <summary>
+        /// Hooks shell-wide service events once per visual lifetime.
+        /// </summary>
+        private void HookShellEvents()
+        {
+            if (_shellEventsHooked)
+            {
+                return;
+            }
+
+            _notifications.NotificationPublished += OnNotificationPublished;
+            _apiServer.StateChanged += OnApiServerStateChanged;
+            _moduleInstaller.ModulesChanged += OnModulesChanged;
+            _shellEventsHooked = true;
+        }
+
+        /// <summary>
+        /// Unhooks shell-wide service events when the page leaves the visual tree.
+        /// </summary>
+        private void UnhookShellEvents()
+        {
+            if (!_shellEventsHooked)
+            {
+                return;
+            }
+
+            _notifications.NotificationPublished -= OnNotificationPublished;
+            _apiServer.StateChanged -= OnApiServerStateChanged;
+            _moduleInstaller.ModulesChanged -= OnModulesChanged;
+            _shellEventsHooked = false;
+        }
+
+        /// <summary>
+        /// Checks ASLM and modules for updates once after the main shell opens.
+        /// </summary>
+        private async Task CheckStartupUpdatesAsync()
+        {
+            try
+            {
+                await Task.Run(() => _updateManager.CheckAllUpdatesAsync());
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[StartupUpdates] Check failed: {ex.Message}");
+            }
         }
 
         // Module refresh
@@ -149,28 +237,53 @@ namespace ASLM.Pages
         /// </summary>
         private async Task RefreshModulesAsync()
         {
-            _allModules = await _moduleInstaller.DiscoverModulesAsync();
-            BuildPageButtons();
-
-            if (_moduleManagementView is ModuleManagementView moduleManagementView)
+            Interlocked.Exchange(ref _moduleRefreshQueued, 1);
+            if (!await _moduleRefreshLock.WaitAsync(0))
             {
-                moduleManagementView.RefreshModules(_allModules, _moduleInstaller, _moduleRunner);
+                return;
             }
 
-            if (_homeView is HomeView homeView)
+            try
             {
-                _ = homeView.RefreshAsync();
+                do
+                {
+                    Interlocked.Exchange(ref _moduleRefreshQueued, 0);
+                    var modules = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync());
+                    await MainThread.InvokeOnMainThreadAsync(() => ApplyModules(modules));
+                }
+                while (Interlocked.Exchange(ref _moduleRefreshQueued, 0) == 1);
+            }
+            finally
+            {
+                _moduleRefreshLock.Release();
             }
         }
 
-        // Module state callback
-
         /// <summary>
-        /// Refreshes module page buttons after a module changes state.
+        /// Applies the latest module API snapshot to the sidebar and loaded module-backed views.
         /// </summary>
-        internal void OnModuleStateChanged()
+        private void ApplyModules(List<ModuleConfig> modules)
         {
+            var activeModuleSourcePath = _activeModule?.SourcePath;
+            _allModules = modules;
+
+            if (!string.IsNullOrWhiteSpace(activeModuleSourcePath))
+            {
+                _activeModule = _allModules.FirstOrDefault(module =>
+                    string.Equals(module.SourcePath, activeModuleSourcePath, StringComparison.OrdinalIgnoreCase));
+            }
+
             BuildPageButtons();
+
+            if (_activeModule is { HasPage: true, Status.Enabled: false })
+            {
+                NavigateTo(HomeButton);
+            }
+
+            if (_modulesView is ModulesView modulesView)
+            {
+                modulesView.RefreshModules(_allModules, _moduleInstaller, _moduleRunner);
+            }
 
             if (_consolesView is ConsolesView consolesView)
             {
@@ -181,10 +294,70 @@ namespace ASLM.Pages
             {
                 _ = homeView.RefreshAsync();
             }
+
+            if (_aslmApiView is AslmApiView aslmApiView)
+            {
+                _ = aslmApiView.RefreshAsync();
+            }
+        }
+
+        /// <summary>
+        /// Refreshes module-backed UI after a module manifest is saved.
+        /// </summary>
+        private void OnModulesChanged(object? sender, EventArgs e)
+        {
+            _ = RefreshModulesAsync();
+        }
+
+        // Module state callback
+
+        /// <summary>
+        /// Refreshes module page buttons after a module changes state.
+        /// </summary>
+        internal void OnModuleStateChanged()
+        {
+            _ = RefreshModulesAsync();
         }
 
 
         // Sidebar
+
+        /// <summary>
+        /// Refreshes ASLM API sidebar visibility when the server setting changes.
+        /// </summary>
+        private void OnApiServerStateChanged(object? sender, EventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(ApplyAslmApiNavigationState);
+        }
+
+        /// <summary>
+        /// Shows the ASLM API navigation item only when the API server is enabled.
+        /// </summary>
+        private void ApplyAslmApiNavigationState()
+        {
+            var isVisible = _apiServer.IsEnabled;
+            AslmApiButton.IsVisible = isVisible;
+
+            if (!isVisible && _activeNavButton == AslmApiButton)
+            {
+                NavigateTo(HomeButton);
+            }
+        }
+
+        /// <summary>
+        /// Shows the consoles navigation item according to the saved user preference.
+        /// </summary>
+        private void ApplyConsoleNavigationState()
+        {
+            _appData.Data.Consoles.Normalize();
+            var isVisible = _appData.Data.Consoles.SidebarVisible;
+            ConsolesButton.IsVisible = isVisible;
+
+            if (!isVisible && _activeNavButton == ConsolesButton)
+            {
+                NavigateTo(HomeButton);
+            }
+        }
 
         /// <summary>
         /// Expands or collapses the sidebar and updates every visible button.
@@ -241,9 +414,15 @@ namespace ASLM.Pages
         {
             if (sender is Button button)
             {
-                if (button == UploadModulesButton)
+                if (button == DownloadsButton)
                 {
                     OpenDownloadOverlay();
+                    return;
+                }
+
+                if (button == NotificationsButton)
+                {
+                    OpenNotificationsOverlay();
                     return;
                 }
 
@@ -277,26 +456,44 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Opens the shared notifications overlay and refreshes it before showing.
+        /// </summary>
+        private void OpenNotificationsOverlay()
+        {
+            _notificationsView ??= _services.GetRequiredService<NotificationsView>();
+            if (_notificationsView is NotificationsView notificationsView)
+            {
+                notificationsView.CloseRequested -= OnNotificationsCloseRequested;
+                notificationsView.CloseRequested += OnNotificationsCloseRequested;
+                var anchorBounds = GetElementBoundsInShell(NotificationsButton);
+                _ = notificationsView.OpenAtAsync(anchorBounds, Width, Height);
+            }
+
+            OverlayContainer.Content = _notificationsView;
+            OverlayContainer.IsVisible = true;
+        }
+
+        /// <summary>
         /// Opens the shared download overlay and refreshes it before showing.
         /// </summary>
         private void OpenDownloadOverlay()
         {
-            _downloadModulesView ??= _services.GetRequiredService<DownloadModulesView>();
-            if (_downloadModulesView is DownloadModulesView downloadModulesView)
+            _downloadsView ??= _services.GetRequiredService<DownloadsView>();
+            if (_downloadsView is DownloadsView downloadsView)
             {
-                downloadModulesView.CloseRequested -= OnDownloadCloseRequested;
-                downloadModulesView.CloseRequested += OnDownloadCloseRequested;
-                _ = downloadModulesView.OpenAsync();
+                downloadsView.CloseRequested -= OnDownloadCloseRequested;
+                downloadsView.CloseRequested += OnDownloadCloseRequested;
+                _ = downloadsView.OpenAsync();
             }
 
-            OverlayContainer.Content = _downloadModulesView;
+            OverlayContainer.Content = _downloadsView;
             OverlayContainer.IsVisible = true;
         }
 
         /// <summary>
         /// Opens the shared module update overlay for the selected module.
         /// </summary>
-        internal void OpenModuleUpdateOverlay(ModuleViewModel module, ModuleUpdateDialogMode mode)
+        internal void OpenModuleUpdateOverlay(ModuleViewModel module, ModuleUpdateMode mode)
         {
             _ = OpenModuleUpdateOverlayAsync(module, mode);
         }
@@ -304,20 +501,20 @@ namespace ASLM.Pages
         /// <summary>
         /// Loads and shows the module update overlay before binding it to the selected module.
         /// </summary>
-        private async Task OpenModuleUpdateOverlayAsync(ModuleViewModel module, ModuleUpdateDialogMode mode)
+        private async Task OpenModuleUpdateOverlayAsync(ModuleViewModel module, ModuleUpdateMode mode)
         {
-            _moduleUpdateDialogView ??= _services.GetRequiredService<ModuleUpdateDialogView>();
-            if (_moduleUpdateDialogView is not ModuleUpdateDialogView moduleUpdateDialogView)
+            _moduleUpdateView ??= _services.GetRequiredService<ModuleUpdateView>();
+            if (_moduleUpdateView is not ModuleUpdateView moduleUpdateView)
             {
                 return;
             }
 
-            moduleUpdateDialogView.CloseRequested -= OnModuleUpdateCloseRequested;
-            moduleUpdateDialogView.CloseRequested += OnModuleUpdateCloseRequested;
-            OverlayContainer.Content = _moduleUpdateDialogView;
+            moduleUpdateView.CloseRequested -= OnModuleUpdateCloseRequested;
+            moduleUpdateView.CloseRequested += OnModuleUpdateCloseRequested;
+            OverlayContainer.Content = _moduleUpdateView;
             OverlayContainer.IsVisible = true;
 
-            await moduleUpdateDialogView.OpenAsync(module, mode);
+            await moduleUpdateView.OpenAsync(module, mode);
         }
 
         /// <summary>
@@ -326,6 +523,26 @@ namespace ASLM.Pages
         private void OnSettingsCloseRequested(object? sender, EventArgs e)
         {
             OverlayContainer.IsVisible = false;
+            ApplyConsoleNavigationState();
+
+            if (_consolesView is ConsolesView consolesView)
+            {
+                _ = consolesView.RefreshAsync();
+            }
+
+            if (_homeView is HomeView homeView)
+            {
+                _ = homeView.RefreshAsync();
+            }
+        }
+
+        /// <summary>
+        /// Hides the overlay container when the notifications view requests close.
+        /// </summary>
+        private void OnNotificationsCloseRequested(object? sender, EventArgs e)
+        {
+            OverlayContainer.IsVisible = false;
+            OverlayContainer.Content = null;
         }
 
         /// <summary>
@@ -342,6 +559,188 @@ namespace ASLM.Pages
         private void OnModuleUpdateCloseRequested(object? sender, EventArgs e)
         {
             OverlayContainer.IsVisible = false;
+        }
+
+        // Toast notifications
+
+        /// <summary>
+        /// Shows an in-app toast when a new notification is published.
+        /// </summary>
+        private void OnNotificationPublished(object? sender, AppNotification notification)
+        {
+            MainThread.BeginInvokeOnMainThread(() => ShowToast(notification));
+        }
+
+        /// <summary>
+        /// Adds one toast card to the bottom-right stack for a short fixed lifetime.
+        /// </summary>
+        private void ShowToast(AppNotification notification)
+        {
+            var toast = CreateToast(notification);
+            ToastPanel.Children.Insert(0, toast);
+
+            while (ToastPanel.Children.Count > 4)
+            {
+                ToastPanel.Children.RemoveAt(ToastPanel.Children.Count - 1);
+            }
+
+            toast.Opacity = 0;
+            _ = toast.FadeToAsync(1, 120, Easing.CubicOut);
+            _ = RemoveToastAfterDelayAsync(toast, TimeSpan.FromSeconds(10));
+        }
+
+        /// <summary>
+        /// Builds the compact visual toast card for one notification.
+        /// Tapping the body opens the notifications popover and dismisses the toast.
+        /// The close button in the top-right corner only dismisses the toast.
+        /// </summary>
+        private Border CreateToast(AppNotification notification)
+        {
+            var title = new Label
+            {
+                Text = notification.Title,
+                FontSize = 13,
+                FontAttributes = FontAttributes.Bold,
+                TextColor = Colors.White,
+                MaxLines = 1,
+                LineBreakMode = LineBreakMode.TailTruncation
+            };
+
+            var message = new Label
+            {
+                Text = notification.Message,
+                FontSize = 11,
+                TextColor = Color.FromArgb("#D8D8DC"),
+                MaxLines = 2,
+                LineBreakMode = LineBreakMode.TailTruncation
+            };
+
+            var detail = new Label
+            {
+                Text = notification.DetailLine,
+                FontSize = 11,
+                TextColor = Color.FromArgb("#9A9AA0"),
+                MaxLines = 1,
+                LineBreakMode = LineBreakMode.TailTruncation
+            };
+
+            var closeButton = new Button
+            {
+                Text = "✕",
+                FontSize = 11,
+                WidthRequest = 22,
+                HeightRequest = 22,
+                Padding = new Thickness(0),
+                Margin = new Thickness(0),
+                BackgroundColor = Colors.Transparent,
+                TextColor = Color.FromArgb("#9A9AA0"),
+                CornerRadius = 4,
+                HorizontalOptions = LayoutOptions.End,
+                VerticalOptions = LayoutOptions.Start
+            };
+
+            var outerGrid = new Grid
+            {
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition(new GridLength(4)),
+                    new ColumnDefinition(GridLength.Star),
+                    new ColumnDefinition(GridLength.Auto)
+                },
+                ColumnSpacing = 6
+            };
+
+            outerGrid.Children.Add(new BoxView
+            {
+                BackgroundColor = notification.AccentColor,
+                WidthRequest = 4,
+                VerticalOptions = LayoutOptions.Fill
+            });
+
+            var textStack = new VerticalStackLayout { Spacing = 2 };
+            textStack.Children.Add(title);
+            textStack.Children.Add(message);
+            textStack.Children.Add(detail);
+            outerGrid.Children.Add(textStack);
+            Grid.SetColumn(textStack, 1);
+
+            outerGrid.Children.Add(closeButton);
+            Grid.SetColumn(closeButton, 2);
+
+            var toast = new Border
+            {
+                BindingContext = notification,
+                BackgroundColor = Color.FromArgb("#28282A"),
+                Stroke = Color.FromArgb("#454548"),
+                StrokeThickness = 1,
+                StrokeShape = new RoundRectangle { CornerRadius = 8 },
+                Padding = new Thickness(10),
+                Content = outerGrid,
+                Shadow = new Shadow
+                {
+                    Brush = Brush.Black,
+                    Opacity = 0.35f,
+                    Radius = 12,
+                    Offset = new Point(0, 4)
+                }
+            };
+
+            // Close button: dismiss only, does not open the notifications panel.
+            closeButton.Clicked += (_, _) => RemoveToast(toast);
+
+            // Tap on the toast body: open notifications panel and dismiss the toast.
+            var bodyTap = new TapGestureRecognizer();
+            bodyTap.Tapped += (_, _) =>
+            {
+                RemoveToast(toast);
+                OpenNotificationsOverlay();
+            };
+            toast.GestureRecognizers.Add(bodyTap);
+
+            return toast;
+        }
+
+        /// <summary>
+        /// Removes a toast after the requested delay unless it has already been dismissed.
+        /// </summary>
+        private async Task RemoveToastAfterDelayAsync(Border toast, TimeSpan delay)
+        {
+            await Task.Delay(delay);
+            await MainThread.InvokeOnMainThreadAsync(() => RemoveToast(toast));
+        }
+
+        /// <summary>
+        /// Animates and removes one toast from the stack.
+        /// </summary>
+        private void RemoveToast(Border toast)
+        {
+            if (!ToastPanel.Children.Contains(toast))
+            {
+                return;
+            }
+
+            _ = toast.FadeToAsync(0, 120, Easing.CubicIn).ContinueWith(_ =>
+                MainThread.BeginInvokeOnMainThread(() => ToastPanel.Children.Remove(toast)));
+        }
+
+        /// <summary>
+        /// Calculates one child element's bounds in the shell coordinate space.
+        /// </summary>
+        private Rect GetElementBoundsInShell(VisualElement element)
+        {
+            var x = element.Bounds.X;
+            var y = element.Bounds.Y;
+            var parent = element.Parent;
+
+            // Walk the MAUI visual parent chain so popovers can anchor to controls inside nested layouts.
+            while (parent is VisualElement parentElement && parentElement != this)
+            {
+                x += parentElement.Bounds.X;
+                y += parentElement.Bounds.Y;
+                parent = parentElement.Parent;
+            }
+
+            return new Rect(x, y, element.Bounds.Width, element.Bounds.Height);
         }
 
         // View activation
@@ -409,17 +808,17 @@ namespace ASLM.Pages
         /// <summary>
         /// Opens the modules page and optionally scrolls one module card into view.
         /// </summary>
-        internal void OpenModuleManagement(string? moduleSourcePath = null)
+        internal void OpenModules(string? moduleSourcePath = null)
         {
-            NavigateTo(ModuleManagementButton);
+            NavigateTo(ModulesButton);
 
             if (string.IsNullOrWhiteSpace(moduleSourcePath) ||
-                _moduleManagementView is not ModuleManagementView moduleManagementView)
+                _modulesView is not ModulesView modulesView)
             {
                 return;
             }
 
-            moduleManagementView.FocusModule(moduleSourcePath);
+            modulesView.FocusModule(moduleSourcePath);
         }
 
         // View resolution
@@ -452,19 +851,19 @@ namespace ASLM.Pages
                 return _consolesView;
             }
 
-            if (button == ModuleManagementButton)
+            if (button == ModulesButton)
             {
-                if (_moduleManagementView == null)
+                if (_modulesView == null)
                 {
-                    var moduleManagementView = _services.GetRequiredService<ModuleManagementView>();
-                    moduleManagementView.Initialize(this, _allModules, _moduleInstaller, _moduleRunner);
-                    _moduleManagementView = moduleManagementView;
+                    var modulesView = _services.GetRequiredService<ModulesView>();
+                    modulesView.Initialize(this, _allModules, _moduleInstaller, _moduleRunner);
+                    _modulesView = modulesView;
                 }
 
-                return _moduleManagementView;
+                return _modulesView;
             }
 
-            if (button == UploadModulesButton)
+            if (button == DownloadsButton)
             {
                 if (_homeView == null)
                 {
@@ -474,6 +873,29 @@ namespace ASLM.Pages
                 }
 
                 return ContentArea.Content ?? _homeView;
+            }
+
+            if (button == NotificationsButton)
+            {
+                if (_homeView == null)
+                {
+                    var homeView = _services.GetRequiredService<HomeView>();
+                    homeView.Initialize(this);
+                    _homeView = homeView;
+                }
+
+                return ContentArea.Content ?? _homeView;
+            }
+
+            if (button == AslmApiButton)
+            {
+                _aslmApiView ??= _services.GetRequiredService<AslmApiView>();
+                if (_aslmApiView is AslmApiView aslmApiView)
+                {
+                    _ = aslmApiView.RefreshAsync();
+                }
+
+                return _aslmApiView;
             }
 
             return new Label { Text = "Unknown page", TextColor = Colors.White };
@@ -496,12 +918,22 @@ namespace ASLM.Pages
                 return LabelConsoles;
             }
 
-            if (button == ModuleManagementButton)
+            if (button == ModulesButton)
             {
                 return LabelModules;
             }
 
-            if (button == UploadModulesButton)
+            if (button == AslmApiButton)
+            {
+                return LabelApi;
+            }
+
+            if (button == NotificationsButton)
+            {
+                return LabelNotifications;
+            }
+
+            if (button == DownloadsButton)
             {
                 return LabelDownload;
             }
@@ -611,7 +1043,7 @@ namespace ASLM.Pages
         private void ActivateModulePage(ModuleConfig module)
         {
             _activeModule = module;
-            var url = _portManager.GetModuleUrl(module);
+            var url = _ports.GetModuleUrl(module);
 
             ContentArea.Content = null;
             Browser.Source = url;
@@ -670,7 +1102,7 @@ namespace ASLM.Pages
                 {
                     var logProgress = new Progress<string>(message => System.Diagnostics.Debug.WriteLine($"[ModuleStart:{module.Name}] {message}"));
 
-                    await _moduleRunner.ExecuteRunAsync(module, logProgress, CancellationToken.None);
+                    await Task.Run(() => _moduleRunner.ExecuteRunAsync(module, logProgress, CancellationToken.None));
                 }
                 finally
                 {

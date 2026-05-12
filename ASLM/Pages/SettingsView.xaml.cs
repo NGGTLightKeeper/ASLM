@@ -26,20 +26,31 @@ namespace ASLM.Pages
         private static readonly TimeSpan OllamaSignInPollInterval = TimeSpan.FromSeconds(3);
         private static readonly TimeSpan OllamaSignInPollDuration = TimeSpan.FromMinutes(5);
 
-        private static readonly Color ActiveCategoryTextColor = Colors.White;
-        private static readonly Color InactiveCategoryTextColor = Color.FromArgb("#99EBEBF5");
-        private static readonly Color ActiveCategoryBackgroundColor = Color.FromArgb("#2F7BF6");
-        private static readonly Color InactiveCategoryBackgroundColor = Colors.Transparent;
-        private static readonly Color ActiveCategoryAccentColor = Color.FromArgb("#0A84FF");
-        private static readonly Color PassiveActionBackgroundColor = Color.FromArgb("#2C2C2E");
-        private static readonly Color PassiveActionTextColor = Color.FromArgb("#99EBEBF5");
+        private const string FooterButtonStyleKey = "SettingsFooterButtonStyle";
+        private const string FooterPrimaryButtonStyleKey = "SettingsFooterPrimaryButtonStyle";
+        private const string FooterDangerButtonStyleKey = "SettingsFooterDangerButtonStyle";
+        private const string SelectorHeaderLabelStyleKey = "SettingsSelectorHeaderLabelStyle";
+        private const string SelectorButtonBorderStyleKey = "SettingsSelectorButtonBorderStyle";
+        private const string SelectorButtonLabelStyleKey = "SettingsSelectorButtonLabelStyle";
+        private const string TransparentBorderStyleKey = "SettingsTransparentBorderStyle";
+        private const string FieldBorderStyleKey = "SettingsFieldBorderStyle";
+        private const string TextEntryStyleKey = "SettingsTextEntryStyle";
+        private const string PickerStyleKey = "SettingsPickerStyle";
+        private const string SubGroupHeaderLabelStyleKey = "SettingsSubGroupHeaderLabelStyle";
+        private const string CardTitleLabelStyleKey = "SettingsCardTitleLabelStyle";
+        private const string CardDescriptionLabelStyleKey = "SettingsCardDescriptionLabelStyle";
+        private const string SecondaryLabelStyleKey = "SettingsSecondaryLabelStyle";
+        private const string InlineActionButtonStyleKey = "SettingsInlineActionButtonStyle";
+        private const string PasswordToggleImageStyleKey = "SettingsPasswordToggleImageStyle";
 
-        private readonly AppDataService _appData;
-        private readonly EngineInstaller _engineInstaller;
-        private readonly ModuleInstaller _moduleInstaller;
-        private readonly ModuleRunner _moduleRunner;
-        private readonly OllamaSettingsService _ollamaSettingsService;
-        private readonly UpdateService _updateService;
+        private const double TitleDescriptionSpacing = 8;
+
+        private readonly AppDataStore _appData;
+        private readonly SettingsService _settingsService;
+        private readonly OllamaSettingsStore _ollamaSettings;
+        private readonly UpdateManager _updateManager;
+        private readonly AslmApiServer _apiServer;
+        private readonly NotificationCenter _notifications;
         private readonly List<SettingControlMapping> _settingMappings = [];
         private readonly Dictionary<string, SettingBaseline> _settingBaselines = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Border> _categoryButtons = new(StringComparer.OrdinalIgnoreCase);
@@ -47,13 +58,16 @@ namespace ASLM.Pages
         private List<ModuleConfig> _loadedModules = [];
         private List<SettingsCategory> _categories = [];
         private SettingsCategory? _activeCategory;
-        private SettingsCategoryGroup _activeGroup = SettingsCategoryGroup.Aslm;
-        private AslmBaseline _aslmBaseline = new(string.Empty, string.Empty, string.Empty);
+        private AslmBaseline _aslmBaseline = new(string.Empty, string.Empty, string.Empty, true);
+        private ConsoleBaseline _consoleBaseline = new(true, true, true);
         private UpdateBaseline _updateBaseline = new(true, false, "24", "release", "release", "release");
+        private ConsoleBaseline _consoleDraft = new(true, true, true);
+        private UpdateBaseline _updateDraft = new(true, false, "24", "release", "release", "release");
         private OllamaPersistentSettings _ollamaDraft = new();
         private string _userNameDraft = string.Empty;
         private string _officialPortDraft = string.Empty;
         private string _thirdPartyPortDraft = string.Empty;
+        private bool _apiServerEnabledDraft = true;
         private bool _hasLoaded;
         private bool _isRefreshingVisibility;
         private bool _isSwitchingCategory;
@@ -74,34 +88,19 @@ namespace ASLM.Pages
         private Button? _prepareAppUpdateButton;
         private Button? _restartAppUpdateButton;
         private UpdateCandidate? _pendingAppUpdateCandidate;
+        private CompactToggle? _apiServerToggle;
+        private CompactToggle? _consoleSidebarToggle;
+        private CompactToggle? _consoleCompletedToggle;
+        private CompactToggle? _consoleIndividualToggle;
         private CancellationTokenSource? _ollamaMetadataRefreshCts;
         private CancellationTokenSource? _ollamaStatusPollingCts;
+        private bool _settingsReconcileTimerStarted;
+        private bool _settingsReconcileTimerStopRequested;
 
         /// <summary>
         /// Raised when the user asks to close the settings overlay.
         /// </summary>
         public event EventHandler? CloseRequested;
-
-        /// <summary>
-        /// Distinguishes the supported top-level settings groups.
-        /// </summary>
-        private enum SettingsCategoryGroup
-        {
-            Aslm,
-            Modules
-        }
-
-        /// <summary>
-        /// Distinguishes the supported settings category types in the selector.
-        /// </summary>
-        private enum SettingsCategoryKind
-        {
-            AslmProfile,
-            AslmPorts,
-            Updates,
-            Ollama,
-            Module
-        }
 
         /// <summary>
         /// Stores how one rendered control maps back to its module setting and current draft readers.
@@ -243,6 +242,15 @@ namespace ASLM.Pages
             private bool _isToggled;
 
             /// <summary>
+            /// Updates internal and visual state without raising <see cref="Toggled"/>.
+            /// </summary>
+            public void SetStateWithoutToggleEvent(bool isToggled)
+            {
+                _isToggled = isToggled;
+                UpdateVisualState();
+            }
+
+            /// <summary>
             /// Applies the correct track and thumb layout for the current toggle state.
             /// </summary>
             private void UpdateVisualState()
@@ -313,67 +321,25 @@ namespace ASLM.Pages
             private double CurrentThumbOffset => AbsoluteLayout.GetLayoutBounds(_thumb).X - ThumbInset;
         }
 
-        /// <summary>
-        /// Couples one setting with the runtime value loaded for the current refresh pass.
-        /// </summary>
-        private record LoadedSetting(ModuleSetting Setting, object? Value);
-
-        /// <summary>
-        /// Captures the initial effective value used to detect real user changes across UI rebuilds.
-        /// </summary>
-        private record SettingBaseline(string DisplayValue, bool UseCustomValue);
-
-        /// <summary>
-        /// Stores the initial ASLM values loaded for the current page session.
-        /// </summary>
-        private record AslmBaseline(string UserName, string OfficialPort, string ThirdPartyPort);
-
-        /// <summary>
-        /// Stores the initial update settings loaded for the current page session.
-        /// </summary>
-        private record UpdateBaseline(
-            bool CheckEnabled,
-            bool AutoUpdateEnabled,
-            string AutoCheckPeriodHours,
-            string AppChannel,
-            string ModuleDefaultMode,
-            string ModuleDefaultChannel);
-
-        /// <summary>
-        /// Describes one selectable settings category shown in the sidebar.
-        /// </summary>
-        private record SettingsCategory(
-            string Id,
-            string Title,
-            string Description,
-            SettingsCategoryKind Kind,
-            ModuleConfig? Module,
-            bool SupportsAppRestart);
-
-        /// <summary>
-        /// Summarizes the modules touched during one save operation.
-        /// </summary>
-        private record ModuleSaveResult(HashSet<ModuleConfig> TouchedModules, List<string> DeferredSettings);
-
         // Initialization
 
         /// <summary>
         /// Creates the settings view and hooks the first-load handler.
         /// </summary>
         public SettingsView(
-            AppDataService appData,
-            EngineInstaller engineInstaller,
-            ModuleInstaller moduleInstaller,
-            ModuleRunner moduleRunner,
-            OllamaSettingsService ollamaSettingsService,
-            UpdateService updateService)
+            AppDataStore appData,
+            SettingsService settingsService,
+            OllamaSettingsStore ollamaSettings,
+            UpdateManager updateManager,
+            AslmApiServer apiServer,
+            NotificationCenter notifications)
         {
             _appData = appData;
-            _engineInstaller = engineInstaller;
-            _moduleInstaller = moduleInstaller;
-            _moduleRunner = moduleRunner;
-            _ollamaSettingsService = ollamaSettingsService;
-            _updateService = updateService;
+            _settingsService = settingsService;
+            _ollamaSettings = ollamaSettings;
+            _updateManager = updateManager;
+            _apiServer = apiServer;
+            _notifications = notifications;
             InitializeComponent();
             ApplyFlatEntryStyle(UsernameEntry);
             ApplyFlatEntryStyle(OfficialPortEntry);
@@ -436,7 +402,7 @@ namespace ASLM.Pages
 
             StopOllamaStatusPolling();
             StopOllamaMetadataRefresh();
-            _ollamaSettingsService.StopManagedRuntime();
+            _ollamaSettings.StopManagedRuntime();
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
@@ -450,10 +416,10 @@ namespace ASLM.Pages
             var previousCategoryId = _activeCategory?.Id;
 
             LoadAslmDraftsFromAppData();
-            LoadOllamaDraftsFromService();
+            await Task.Run(LoadOllamaDraftsFromService);
             await LoadModuleDraftsAsync(reloadModules: true, reloadRuntimeValues: false);
 
-            _categories = CreateOrderedCategories();
+            _categories = _settingsService.CreateOrderedCategories(_loadedModules);
 
             var targetCategory = ResolveCategory(previousCategoryId) ?? _categories.FirstOrDefault();
             if (targetCategory == null)
@@ -464,7 +430,6 @@ namespace ASLM.Pages
                 return;
             }
 
-            _activeGroup = GetGroupForCategory(targetCategory);
             BuildCategorySelectors();
             ActivateCategory(targetCategory);
         }
@@ -476,6 +441,7 @@ namespace ASLM.Pages
         {
             if (_hasLoaded)
             {
+                StartSettingsReconcileTimer();
                 return;
             }
 
@@ -490,6 +456,10 @@ namespace ASLM.Pages
             {
                 Debug.WriteLine($"Failed to load settings view: {ex.Message}");
             }
+            finally
+            {
+                StartSettingsReconcileTimer();
+            }
         }
 
         /// <summary>
@@ -497,9 +467,10 @@ namespace ASLM.Pages
         /// </summary>
         private void OnUnloaded(object? sender, EventArgs e)
         {
+            StopSettingsReconcileTimer();
             StopOllamaStatusPolling();
             StopOllamaMetadataRefresh();
-            _ollamaSettingsService.StopManagedRuntime();
+            _ollamaSettings.StopManagedRuntime();
         }
 
         /// <summary>
@@ -537,18 +508,16 @@ namespace ASLM.Pages
         /// </summary>
         private void LoadAslmDraftsFromAppData()
         {
-            _userNameDraft = _appData.Data.User.Name ?? string.Empty;
-            _officialPortDraft = _appData.Data.Ports.OfficialStart.ToString(CultureInfo.InvariantCulture);
-            _thirdPartyPortDraft = _appData.Data.Ports.ThirdPartyStart.ToString(CultureInfo.InvariantCulture);
-            _aslmBaseline = new AslmBaseline(_userNameDraft, _officialPortDraft, _thirdPartyPortDraft);
-            _appData.Data.Updates.Normalize();
-            _updateBaseline = new UpdateBaseline(
-                _appData.Data.Updates.CheckEnabled,
-                _appData.Data.Updates.AutoUpdateEnabled,
-                _appData.Data.Updates.AutoCheckPeriodHours.ToString(CultureInfo.InvariantCulture),
-                _appData.Data.Updates.AppChannel,
-                _appData.Data.Updates.ModuleDefaultMode,
-                _appData.Data.Updates.ModuleDefaultChannel);
+            var snapshot = SettingsService.BuildAslmDraftSnapshot(_appData, _apiServer.IsEnabled);
+            _userNameDraft = snapshot.UserName;
+            _officialPortDraft = snapshot.OfficialPort;
+            _thirdPartyPortDraft = snapshot.ThirdPartyPort;
+            _apiServerEnabledDraft = snapshot.ApiServerEnabled;
+            _aslmBaseline = new AslmBaseline(_userNameDraft, _officialPortDraft, _thirdPartyPortDraft, _apiServerEnabledDraft);
+            _consoleBaseline = snapshot.ConsoleBaseline;
+            _consoleDraft = _consoleBaseline;
+            _updateBaseline = snapshot.UpdateBaseline;
+            _updateDraft = _updateBaseline;
 
             ApplyAslmDraftsToControls();
             PortErrorLabel.IsVisible = false;
@@ -561,7 +530,7 @@ namespace ASLM.Pages
         {
             try
             {
-                _ollamaDraft = _ollamaSettingsService.LoadSettings();
+                _ollamaDraft = _ollamaSettings.LoadSettings();
             }
             catch (Exception ex)
             {
@@ -577,7 +546,7 @@ namespace ASLM.Pages
         {
             if (reloadModules || _loadedModules.Count == 0)
             {
-                _loadedModules = await _moduleInstaller.DiscoverModulesAsync();
+                _loadedModules = await _settingsService.DiscoverModulesAsync();
                 _runtimeLoadedModuleIds.Clear();
                 _settingBaselines.Clear();
             }
@@ -590,93 +559,15 @@ namespace ASLM.Pages
 
             foreach (var module in _loadedModules)
             {
-                await LoadModuleDraftAsync(module, reloadRuntimeValues);
+                await _settingsService.LoadModuleDraftAsync(module, reloadRuntimeValues, _settingBaselines);
                 if (reloadRuntimeValues)
                 {
-                    _runtimeLoadedModuleIds.Add(GetModuleRuntimeKey(module));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Loads one module's visible settings, optionally using live runtime getters.
-        /// </summary>
-        private async Task LoadModuleDraftAsync(ModuleConfig module, bool reloadRuntimeValues)
-        {
-            var settings = module.Settings?.Where(ShouldDisplaySetting).ToList() ?? [];
-            if (settings.Count == 0)
-            {
-                return;
-            }
-
-            var loaded = reloadRuntimeValues
-                ? await Task.WhenAll(settings.Select(setting => LoadSettingValueAsync(module, setting)))
-                : settings.Select(setting => new LoadedSetting(setting, GetFallbackValue(module, setting))).ToArray();
-
-            UpdateSettingBaselines(module, loaded);
-
-            foreach (var item in loaded)
-            {
-                if (!item.Setting.IsAutomaticallyManaged || item.Setting.UseCustomValue)
-                {
-                    item.Setting.Value = item.Value;
+                    _runtimeLoadedModuleIds.Add(SettingsService.GetModuleRuntimeKey(module));
                 }
             }
         }
 
         // Categories
-
-        /// <summary>
-        /// Builds the ordered category list with ASLM categories first and modules after them.
-        /// </summary>
-        private List<SettingsCategory> CreateOrderedCategories()
-        {
-            var categories = new List<SettingsCategory>
-            {
-                new(
-                    "aslm-profile",
-                    "User Profile",
-                    "Display name used by ASLM and shared with modules.",
-                    SettingsCategoryKind.AslmProfile,
-                    null,
-                    false),
-                new(
-                    "aslm-ports",
-                    "Port Allocation",
-                    "Reserved port ranges for official modules and third-party integrations.",
-                    SettingsCategoryKind.AslmPorts,
-                    null,
-                    true),
-                new(
-                    "aslm-updates",
-                    "Updates",
-                    "ASLM and module update checks.",
-                    SettingsCategoryKind.Updates,
-                    null,
-                    false),
-                new(
-                    "aslm-ollama",
-                    "Ollama",
-                    "Ollama account sign-in and sign-out controls.",
-                    SettingsCategoryKind.Ollama,
-                    null,
-                    false)
-            };
-
-            categories.AddRange(
-                _loadedModules
-                    .Where(module => module.Settings.Any(ShouldDisplaySetting))
-                    .OrderBy(module => module.Name, StringComparer.OrdinalIgnoreCase)
-                    .Select(module => new SettingsCategory(
-                        $"module::{module.Id}",
-                        module.Name,
-                        string.IsNullOrWhiteSpace(module.Description) ? "Module-specific configuration." : module.Description.Trim(),
-                        SettingsCategoryKind.Module,
-                        module,
-                        false)));
-
-            return categories;
-        }
 
         /// <summary>
         /// Rebuilds the unified category selector sidebar.
@@ -688,7 +579,7 @@ namespace ASLM.Pages
 
             // ASLM Group
             CategoryPanel.Children.Add(CreateSelectorHeader("ASLM"));
-            foreach (var category in _categories.Where(c => GetGroupForCategory(c) == SettingsCategoryGroup.Aslm))
+            foreach (var category in _categories.Where(c => SettingsService.GetGroupForCategory(c) == SettingsCategoryGroup.Aslm))
             {
                 var button = CreateSelectorButton(category.Title);
                 button.BindingContext = category;
@@ -700,7 +591,7 @@ namespace ASLM.Pages
             }
 
             // Modules Group
-            var modCategories = _categories.Where(c => GetGroupForCategory(c) == SettingsCategoryGroup.Modules).ToList();
+            var modCategories = _categories.Where(c => SettingsService.GetGroupForCategory(c) == SettingsCategoryGroup.Modules).ToList();
             if (modCategories.Count > 0)
             {
                 CategoryPanel.Children.Add(new BoxView { HeightRequest = 12, Color = Colors.Transparent }); // spacing
@@ -727,10 +618,7 @@ namespace ASLM.Pages
             new()
             {
                 Text = text,
-                FontSize = 11,
-                FontAttributes = FontAttributes.Bold,
-                TextColor = Color.FromArgb("#8E8E93"),
-                Margin = new Thickness(6, 12, 6, 8)
+                Style = GetStyleResource(SelectorHeaderLabelStyleKey)
             };
 
         /// <summary>
@@ -740,24 +628,13 @@ namespace ASLM.Pages
         {
             var border = new Border
             {
-                Padding = new Thickness(12, 0),
-                StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = new CornerRadius(10) },
-                MinimumHeightRequest = 32,
-                HeightRequest = 32,
-                BackgroundColor = Colors.Transparent,
-                StrokeThickness = 0,
-                Margin = new Thickness(0, 0, 0, 4),
-                HorizontalOptions = LayoutOptions.Fill
+                Style = GetStyleResource(SelectorButtonBorderStyleKey)
             };
 
             var label = new Label
             {
                 Text = text,
-                FontSize = 14,
-                VerticalOptions = LayoutOptions.Center,
-                HorizontalOptions = LayoutOptions.Start,
-                VerticalTextAlignment = TextAlignment.Center,
-                LineBreakMode = LineBreakMode.TailTruncation
+                Style = GetStyleResource(SelectorButtonLabelStyleKey)
             };
 
             border.Content = label;
@@ -795,19 +672,13 @@ namespace ASLM.Pages
             try
             {
                 _isSwitchingCategory = true;
-
-                if (!await ConfirmDiscardChangesIfNeededAsync())
-                {
-                    return;
-                }
+                SyncDraftValuesFromControls();
 
                 var resolvedCategory = ResolveCategory(category.Id);
                 if (resolvedCategory == null)
                 {
                     return;
                 }
-
-                _activeGroup = GetGroupForCategory(resolvedCategory);
 
                 ActivateCategory(resolvedCategory);
             }
@@ -827,11 +698,11 @@ namespace ASLM.Pages
 
             switch (category.Kind)
             {
-                case SettingsCategoryKind.AslmProfile:
-                    RenderAslmCategory(showProfile: true, showPorts: false);
+                case SettingsCategoryKind.Aslm:
+                    RenderAslmCategory();
                     break;
-                case SettingsCategoryKind.AslmPorts:
-                    RenderAslmCategory(showProfile: false, showPorts: true);
+                case SettingsCategoryKind.AslmProfile:
+                    RenderAccountCategory();
                     break;
                 case SettingsCategoryKind.Updates:
                     RenderUpdatesCategory();
@@ -860,7 +731,7 @@ namespace ASLM.Pages
             }
 
             var module = category.Module;
-            var runtimeKey = GetModuleRuntimeKey(module);
+            var runtimeKey = SettingsService.GetModuleRuntimeKey(module);
             if (_runtimeLoadedModuleIds.Contains(runtimeKey))
             {
                 return;
@@ -868,14 +739,14 @@ namespace ASLM.Pages
 
             try
             {
-                var settings = module.Settings?.Where(ShouldDisplaySetting).ToList() ?? [];
+                var settings = module.Settings?.Where(SettingsService.ShouldDisplaySetting).ToList() ?? [];
                 if (settings.Count == 0)
                 {
                     _runtimeLoadedModuleIds.Add(runtimeKey);
                     return;
                 }
 
-                var loaded = await Task.WhenAll(settings.Select(setting => LoadSettingValueAsync(module, setting)));
+                var loaded = await Task.WhenAll(settings.Select(setting => _settingsService.LoadSettingValueAsync(module, setting)));
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
@@ -889,7 +760,7 @@ namespace ASLM.Pages
                         return;
                     }
 
-                    UpdateSettingBaselines(module, loaded);
+                    _settingsService.UpdateSettingBaselines(module, loaded, _settingBaselines);
                     foreach (var item in loaded)
                     {
                         if (!item.Setting.IsAutomaticallyManaged || item.Setting.UseCustomValue)
@@ -918,15 +789,11 @@ namespace ASLM.Pages
         /// </summary>
         private async Task ReloadModuleRuntimeValuesAsync(ModuleConfig module)
         {
-            _runtimeLoadedModuleIds.Remove(GetModuleRuntimeKey(module));
-            await LoadModuleDraftAsync(module, reloadRuntimeValues: true);
-            _runtimeLoadedModuleIds.Add(GetModuleRuntimeKey(module));
+            var key = SettingsService.GetModuleRuntimeKey(module);
+            _runtimeLoadedModuleIds.Remove(key);
+            await _settingsService.LoadModuleDraftAsync(module, reloadRuntimeValues: true, _settingBaselines);
+            _runtimeLoadedModuleIds.Add(key);
         }
-
-        /// <summary>
-        /// Returns the stable key used to remember whether live runtime values were already loaded.
-        /// </summary>
-        private static string GetModuleRuntimeKey(ModuleConfig module) => module.SourcePath;
 
         /// <summary>
         /// Returns the category that matches the stored category identifier, if it still exists.
@@ -935,14 +802,6 @@ namespace ASLM.Pages
             string.IsNullOrWhiteSpace(categoryId)
                 ? null
                 : _categories.FirstOrDefault(category => category.Id.Equals(categoryId, StringComparison.OrdinalIgnoreCase));
-
-        /// <summary>
-        /// Returns the top-level group that owns the specified category.
-        /// </summary>
-        private static SettingsCategoryGroup GetGroupForCategory(SettingsCategory category) =>
-            category.Kind == SettingsCategoryKind.Module
-                ? SettingsCategoryGroup.Modules
-                : SettingsCategoryGroup.Aslm;
 
         /// <summary>
         /// Applies active and inactive styling to the selector buttons.
@@ -963,11 +822,15 @@ namespace ASLM.Pages
         {
             if (button.Content is Label label)
             {
-                label.TextColor = isActive ? ActiveCategoryTextColor : InactiveCategoryTextColor;
+                label.TextColor = isActive
+                    ? Colors.White
+                    : GetColorResource("LabelSecondary", Color.FromArgb("#99EBEBF5"));
                 label.FontAttributes = FontAttributes.None;
             }
 
-            button.BackgroundColor = isActive ? ActiveCategoryBackgroundColor : InactiveCategoryBackgroundColor;
+            button.BackgroundColor = isActive
+                ? GetColorResource("ActionBlue", Color.FromArgb("#0A84FF"))
+                : Colors.Transparent;
             button.Opacity = isActive ? 1.0 : 0.92;
         }
 
@@ -995,22 +858,87 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Starts a periodic pass that copies visible control values into drafts and refreshes footer buttons.
+        /// Mitigates WinUI timing where compact toggles and the save bar can disagree until a later layout pass.
+        /// </summary>
+        private void StartSettingsReconcileTimer()
+        {
+            if (Dispatcher == null || _settingsReconcileTimerStarted)
+            {
+                return;
+            }
+
+            _settingsReconcileTimerStopRequested = false;
+            _settingsReconcileTimerStarted = true;
+            Dispatcher.StartTimer(TimeSpan.FromSeconds(2), OnSettingsReconcileTimerTick);
+        }
+
+        /// <summary>
+        /// Stops the periodic settings/UI reconcile timer started with <see cref="StartSettingsReconcileTimer"/>.
+        /// </summary>
+        private void StopSettingsReconcileTimer()
+        {
+            _settingsReconcileTimerStopRequested = true;
+        }
+
+        private bool OnSettingsReconcileTimerTick()
+        {
+            if (_settingsReconcileTimerStopRequested || !IsLoaded)
+            {
+                _settingsReconcileTimerStarted = false;
+                return false;
+            }
+
+            if (!_hasLoaded || _activeCategory == null || _isSaving)
+            {
+                return true;
+            }
+
+            ReconcileSettingsVisibleControlsWithDrafts();
+            return true;
+        }
+
+        /// <summary>
+        /// Pulls visible values into in-memory drafts (including API/Consoles on the ASLM page) and updates save/discard visibility.
+        /// </summary>
+        private void ReconcileSettingsVisibleControlsWithDrafts()
+        {
+            if (!_hasLoaded || _activeCategory == null || _isSaving)
+            {
+                return;
+            }
+
+            if (_activeCategory.Kind == SettingsCategoryKind.Aslm)
+            {
+                RefreshAslmApiAndConsoleDraftsFromToggles();
+            }
+
+            SyncDraftValuesFromControls();
+            UpdateActionButtons();
+        }
+
+        /// <summary>
         /// Updates the footer action buttons to match the currently visible category.
         /// </summary>
         private void UpdateActionButtons()
         {
             var canInteract = !_isSaving && _activeCategory != null;
-            var hasChanges = canInteract && HasUnsavedChanges();
+            var hasChanges = canInteract && HasAnyUnsavedChanges();
             var canReset = _activeCategory is { Kind: not SettingsCategoryKind.Ollama };
             DefaultButton.IsVisible = canReset;
             DefaultButton.IsEnabled = canInteract && canReset;
+            DiscardButton.IsVisible = canReset && hasChanges;
+            DiscardButton.IsEnabled = canInteract && hasChanges;
             SaveButton.IsEnabled = canInteract;
             SaveButton.Text = _isSaving ? "Saving..." : "Save";
             ApplyActionButtonState(DefaultButton, false);
+            ApplyActionButtonState(DiscardButton, isPrimary: false, isDanger: true);
 
             if (_activeCategory == null)
             {
                 DefaultButton.IsVisible = false;
+                DiscardButton.IsVisible = false;
+                DiscardButton.IsEnabled = false;
                 SaveAndRestartButton.IsEnabled = false;
                 SaveAndRestartButton.IsVisible = false;
                 SaveButton.IsVisible = false;
@@ -1019,16 +947,7 @@ namespace ASLM.Pages
                 return;
             }
 
-            var canShowRestart = false;
-            if (_activeCategory.Kind == SettingsCategoryKind.Module)
-            {
-                canShowRestart = _activeCategory.Module is { Status.Enabled: true } module &&
-                    module.Commands.Run.Count > 0;
-            }
-            else
-            {
-                canShowRestart = _activeCategory.SupportsAppRestart;
-            }
+            var canShowRestart = hasChanges && HasPendingRestartChanges();
 
             SaveAndRestartButton.IsVisible = canShowRestart;
             SaveAndRestartButton.IsEnabled = canInteract && canShowRestart;
@@ -1045,70 +964,190 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Checks whether any pending edit has a restart path, regardless of the visible category.
+        /// </summary>
+        private bool HasPendingRestartChanges() =>
+            HasUnsavedAslmSettingsChanges() ||
+            GetModulesWithUnsavedChanges().Any(CanRestartModule);
+
+        /// <summary>
+        /// Returns modules with unsaved settings, including the currently edited module controls.
+        /// </summary>
+        private List<ModuleConfig> GetModulesWithUnsavedChanges()
+        {
+            var result = new List<ModuleConfig>();
+            foreach (var module in _loadedModules)
+            {
+                var isActiveModule =
+                    _activeCategory?.Kind == SettingsCategoryKind.Module &&
+                    _activeCategory.Module != null &&
+                    string.Equals(_activeCategory.Module.SourcePath, module.SourcePath, StringComparison.OrdinalIgnoreCase);
+
+                var hasChanges = isActiveModule && _settingMappings.Count > 0
+                    ? HasUnsavedModuleChanges()
+                    : _settingsService.ModuleHasChangesComparedToBaseline(module, _settingBaselines);
+
+                if (hasChanges)
+                {
+                    result.Add(module);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Determines whether one changed module can be restarted from settings.
+        /// </summary>
+        private static bool CanRestartModule(ModuleConfig module) =>
+            module.Status.Enabled && module.Commands.Run.Count > 0;
+
+        /// <summary>
         /// Applies the passive or emphasized visual state to one footer action button.
         /// </summary>
-        private static void ApplyActionButtonState(Button button, bool isPrimary)
+        private static void ApplyActionButtonState(Button button, bool isPrimary, bool isDanger = false)
         {
-            button.BackgroundColor = isPrimary ? Color.FromArgb("#0A84FF") : PassiveActionBackgroundColor;
-            button.TextColor = isPrimary ? Colors.White : PassiveActionTextColor;
             button.BorderWidth = 0;
+            button.Style = GetStyleResource(isDanger
+                ? FooterDangerButtonStyleKey
+                : isPrimary
+                    ? FooterPrimaryButtonStyleKey
+                    : FooterButtonStyleKey);
         }
 
         // Rendering
 
         /// <summary>
-        /// Shows one of the built-in ASLM categories while hiding module-specific content.
+        /// Shows the combined ASLM settings category while hiding module-specific content.
         /// </summary>
-        private void RenderAslmCategory(bool showProfile, bool showPorts)
+        private void RenderAslmCategory()
         {
             ApplyAslmDraftsToControls();
             _settingMappings.Clear();
-            ResetOllamaControlReferences();
-            ResetUpdateControlReferences();
+            ResetRenderedControlReferences();
+            PrepareCategorySurface(showAslmContainer: true, showModuleContainer: true, showEmptyState: false);
+            UserProfileSection.IsVisible = false;
+            PortsSection.IsVisible = true;
 
-            AslmSettingsContainer.IsVisible = true;
-            UserProfileSection.IsVisible = showProfile;
-            PortsSection.IsVisible = showPorts;
-            ModuleSettingsContainer.IsVisible = false;
-            ModuleSettingsContainer.Children.Clear();
-            EmptyCategoryState.IsVisible = false;
+            var section = CreateModuleSectionBorder();
+            var content = new VerticalStackLayout { Spacing = 8 };
+
+            content.Children.Add(CreateSubGroupHeader("API"));
+            AddAslmApiSettings(content);
+
+            content.Children.Add(CreateSubGroupHeader("Consoles"));
+            AddConsoleSettings(content);
+
+            section.Content = content;
+            ModuleSettingsContainer.Children.Add(section);
         }
 
         /// <summary>
-        /// Rebuilds the update settings category and its action controls.
+        /// Shows the account category while hiding module-specific content.
+        /// </summary>
+        private void RenderAccountCategory()
+        {
+            ApplyAslmDraftsToControls();
+            _settingMappings.Clear();
+            ResetRenderedControlReferences();
+            PrepareCategorySurface(showAslmContainer: true, showModuleContainer: false, showEmptyState: false);
+            UserProfileSection.IsVisible = true;
+            PortsSection.IsVisible = false;
+        }
+
+        /// <summary>
+        /// Shows the dedicated updates category.
         /// </summary>
         private void RenderUpdatesCategory()
         {
             _settingMappings.Clear();
-            ResetOllamaControlReferences();
-            ResetUpdateControlReferences();
-            ModuleSettingsContainer.Children.Clear();
-
-            AslmSettingsContainer.IsVisible = false;
-            ModuleSettingsContainer.IsVisible = true;
-            EmptyCategoryState.IsVisible = false;
-
-            _appData.Data.Updates.Normalize();
-            var settings = _appData.Data.Updates;
+            ResetRenderedControlReferences();
+            PrepareCategorySurface(showAslmContainer: false, showModuleContainer: true, showEmptyState: false);
 
             var section = CreateModuleSectionBorder();
-            var content = new VerticalStackLayout { Spacing = 14 };
+            var content = new VerticalStackLayout { Spacing = 8 };
+            AddUpdateSettings(content);
 
-            _checkUpdatesToggle = CreateCompactToggle(settings.CheckEnabled);
+            section.Content = content;
+            ModuleSettingsContainer.Children.Add(section);
+        }
+
+        /// <summary>
+        /// Adds the local ASLM API setting rows to the combined ASLM category.
+        /// </summary>
+        private void AddAslmApiSettings(Layout content)
+        {
+            _apiServerToggle = CreateCompactToggle(_apiServerEnabledDraft);
+            _apiServerToggle.Toggled += (_, _) =>
+            {
+                RefreshAslmApiAndConsoleDraftsFromToggles();
+                QueueActionButtonUpdate();
+            };
+            content.Children.Add(CreateUpdateCard(
+                "API server",
+                "Start the local mirror server with ASLM.",
+                _apiServerToggle.View));
+        }
+
+        /// <summary>
+        /// Adds the console page setting rows to the combined ASLM category.
+        /// </summary>
+        private void AddConsoleSettings(Layout content)
+        {
+            _consoleSidebarToggle = CreateCompactToggle(_consoleDraft.SidebarVisible);
+            _consoleSidebarToggle.Toggled += (_, _) =>
+            {
+                RefreshAslmApiAndConsoleDraftsFromToggles();
+                QueueActionButtonUpdate();
+            };
+            content.Children.Add(CreateUpdateCard(
+                "Consoles page",
+                "Show the built-in consoles page in the sidebar.",
+                _consoleSidebarToggle.View));
+
+            _consoleIndividualToggle = CreateCompactToggle(_consoleDraft.ShowIndividualModuleConsoles);
+            _consoleIndividualToggle.Toggled += (_, _) =>
+            {
+                RefreshAslmApiAndConsoleDraftsFromToggles();
+                QueueActionButtonUpdate();
+            };
+            content.Children.Add(CreateUpdateCard(
+                "Individual consoles",
+                "Show per-process consoles alongside unified module output.",
+                _consoleIndividualToggle.View));
+
+            _consoleCompletedToggle = CreateCompactToggle(_consoleDraft.ShowCompletedProcesses);
+            _consoleCompletedToggle.Toggled += (_, _) =>
+            {
+                RefreshAslmApiAndConsoleDraftsFromToggles();
+                QueueActionButtonUpdate();
+            };
+            content.Children.Add(CreateUpdateCard(
+                "Completed process consoles",
+                "Keep finished process consoles visible when individual consoles are enabled.",
+                _consoleCompletedToggle.View));
+        }
+
+        /// <summary>
+        /// Adds update setting rows to the combined ASLM category.
+        /// </summary>
+        private void AddUpdateSettings(Layout content)
+        {
+            _checkUpdatesToggle = CreateCompactToggle(_updateDraft.CheckEnabled);
             _checkUpdatesToggle.Toggled += (_, _) => QueueActionButtonUpdate();
             content.Children.Add(CreateUpdateCard(
                 "Check for updates",
                 "Allow ASLM to query configured GitHub repositories.",
                 _checkUpdatesToggle.View));
 
-            _autoUpdatesToggle = CreateCompactToggle(settings.AutoUpdateEnabled);
+            _autoUpdatesToggle = CreateCompactToggle(_updateDraft.AutoUpdateEnabled);
             _autoUpdatesToggle.Toggled += (_, _) => QueueActionButtonUpdate();
             content.Children.Add(CreateUpdateCard(
                 "Install updates automatically",
                 "Automatically apply module updates and prepare ASLM builds for the next restart.",
                 _autoUpdatesToggle.View));
 
-            _updatePeriodEntry = CreateTextEntry(settings.AutoCheckPeriodHours.ToString(CultureInfo.InvariantCulture));
+            _updatePeriodEntry = CreateTextEntry(_updateDraft.AutoCheckPeriodHours);
             _updatePeriodEntry.Keyboard = Keyboard.Numeric;
             _updatePeriodEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
             content.Children.Add(CreateUpdateCard(
@@ -1116,37 +1155,34 @@ namespace ASLM.Pages
                 "Hours between background update checks.",
                 CreateFieldContainer(_updatePeriodEntry)));
 
-            _appUpdateChannelPicker = CreatePicker("ASLM channel", 13);
+            _appUpdateChannelPicker = CreatePicker(null, 13);
             _appUpdateChannelPicker.ItemsSource = new List<string> { "release", "pre-release" };
-            _appUpdateChannelPicker.SelectedItem = settings.AppChannel;
+            _appUpdateChannelPicker.SelectedItem = _updateDraft.AppChannel;
             _appUpdateChannelPicker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
             content.Children.Add(CreateUpdateCard(
                 "ASLM release channel",
                 "Release uses stable GitHub releases only. Pre-release also accepts preview releases.",
-                CreatePickerContainer(_appUpdateChannelPicker)));
+                CreateUpdatePickerContainer(_appUpdateChannelPicker)));
 
-            _moduleUpdateModePicker = CreatePicker("Module source", 13);
+            _moduleUpdateModePicker = CreatePicker(null, 13);
             _moduleUpdateModePicker.ItemsSource = new List<string> { "release", "branch" };
-            _moduleUpdateModePicker.SelectedItem = settings.ModuleDefaultMode;
+            _moduleUpdateModePicker.SelectedItem = _updateDraft.ModuleDefaultMode;
             _moduleUpdateModePicker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
             content.Children.Add(CreateUpdateCard(
                 "Default module update mode",
                 "New module preferences start from this mode; individual modules can override it.",
-                CreatePickerContainer(_moduleUpdateModePicker)));
+                CreateUpdatePickerContainer(_moduleUpdateModePicker)));
 
-            _moduleUpdateChannelPicker = CreatePicker("Module channel", 13);
+            _moduleUpdateChannelPicker = CreatePicker(null, 13);
             _moduleUpdateChannelPicker.ItemsSource = new List<string> { "release", "pre-release" };
-            _moduleUpdateChannelPicker.SelectedItem = settings.ModuleDefaultChannel;
+            _moduleUpdateChannelPicker.SelectedItem = _updateDraft.ModuleDefaultChannel;
             _moduleUpdateChannelPicker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
             content.Children.Add(CreateUpdateCard(
                 "Default module release channel",
                 "Used by modules that follow GitHub releases.",
-                CreatePickerContainer(_moduleUpdateChannelPicker)));
+                CreateUpdatePickerContainer(_moduleUpdateChannelPicker)));
 
             content.Children.Add(CreateManualUpdateCard());
-
-            section.Content = content;
-            ModuleSettingsContainer.Children.Add(section);
         }
 
         /// <summary>
@@ -1155,16 +1191,11 @@ namespace ASLM.Pages
         private void RenderOllamaCategory()
         {
             _settingMappings.Clear();
-            ResetOllamaControlReferences();
-            ResetUpdateControlReferences();
-            ModuleSettingsContainer.Children.Clear();
-
-            AslmSettingsContainer.IsVisible = false;
-            ModuleSettingsContainer.IsVisible = true;
-            EmptyCategoryState.IsVisible = false;
+            ResetRenderedControlReferences();
+            PrepareCategorySurface(showAslmContainer: false, showModuleContainer: true, showEmptyState: false);
 
             var section = CreateModuleSectionBorder();
-            var content = new VerticalStackLayout { Spacing = 12 };
+            var content = new VerticalStackLayout { Spacing = 8 };
 
             content.Children.Add(CreateOllamaAccountCard());
 
@@ -1188,11 +1219,11 @@ namespace ASLM.Pages
                     new ColumnDefinition(GridLength.Star),
                     new ColumnDefinition(GridLength.Auto)
                 },
-                ColumnSpacing = 16,
-                MinimumHeightRequest = 46
+                ColumnSpacing = 8,
+                MinimumHeightRequest = 32
             };
 
-            var text = new VerticalStackLayout { Spacing = 3 };
+            var text = new VerticalStackLayout { Spacing = TitleDescriptionSpacing };
             text.Children.Add(CreateCardTitle(title));
             text.Children.Add(CreateCardDescription(description));
 
@@ -1214,21 +1245,21 @@ namespace ASLM.Pages
         private Border CreateManualUpdateCard()
         {
             var card = CreateSettingCardBorder();
-            var content = new VerticalStackLayout { Spacing = 10 };
+            var content = new VerticalStackLayout { Spacing = TitleDescriptionSpacing };
 
             content.Children.Add(CreateCardTitle("Manual check"));
-            content.Children.Add(CreateCardDescription($"Current ASLM version: {_updateService.CurrentAppVersion}"));
+            content.Children.Add(CreateCardDescription($"Current ASLM version: {_updateManager.CurrentAppVersion}"));
 
-            _updateStatusLabel = CreateSecondaryLabel(_updateService.HasPendingAppUpdate
+            _updateStatusLabel = CreateSecondaryLabel(_updateManager.HasPendingAppUpdate
                 ? "ASLM update is prepared and will be applied on restart."
                 : "No update check has been run in this session.");
 
-            var actions = new HorizontalStackLayout { Spacing = 8 };
+            var actions = new HorizontalStackLayout { Spacing = 8, Margin = new Thickness(0, 8, 0, 0) };
             var checkButton = CreateInlineActionButton("Check now", OnCheckUpdatesNowClicked);
             _prepareAppUpdateButton = CreateInlineActionButton("Prepare ASLM update", OnPrepareAppUpdateClicked);
             _prepareAppUpdateButton.IsVisible = false;
             _restartAppUpdateButton = CreateInlineActionButton("Restart now", OnRestartNowClicked);
-            _restartAppUpdateButton.IsVisible = _updateService.HasPendingAppUpdate;
+            _restartAppUpdateButton.IsVisible = _updateManager.HasPendingAppUpdate;
             actions.Children.Add(checkButton);
             actions.Children.Add(_prepareAppUpdateButton);
             actions.Children.Add(_restartAppUpdateButton);
@@ -1259,7 +1290,7 @@ namespace ASLM.Pages
 
                 if (_restartAppUpdateButton != null)
                 {
-                    _restartAppUpdateButton.IsVisible = _updateService.HasPendingAppUpdate;
+                    _restartAppUpdateButton.IsVisible = _updateManager.HasPendingAppUpdate;
                 }
 
                 if (_updateStatusLabel != null)
@@ -1267,18 +1298,18 @@ namespace ASLM.Pages
                     _updateStatusLabel.Text = "Checking GitHub repositories...";
                 }
 
-                var updates = await _updateService.CheckAllUpdatesAsync();
+                var updates = await Task.Run(() => _updateManager.CheckAllUpdatesAsync());
                 _pendingAppUpdateCandidate = updates.FirstOrDefault(update =>
                     string.Equals(update.TargetKind, "app", StringComparison.OrdinalIgnoreCase));
 
                 if (_prepareAppUpdateButton != null)
                 {
-                    _prepareAppUpdateButton.IsVisible = _pendingAppUpdateCandidate != null && !_updateService.HasPendingAppUpdate;
+                    _prepareAppUpdateButton.IsVisible = _pendingAppUpdateCandidate != null && !_updateManager.HasPendingAppUpdate;
                 }
 
                 if (_restartAppUpdateButton != null)
                 {
-                    _restartAppUpdateButton.IsVisible = _updateService.HasPendingAppUpdate;
+                    _restartAppUpdateButton.IsVisible = _updateManager.HasPendingAppUpdate;
                 }
 
                 if (_updateStatusLabel != null)
@@ -1334,7 +1365,7 @@ namespace ASLM.Pages
                     }
                 });
 
-                var success = await _updateService.PrepareAppUpdateAsync(_pendingAppUpdateCandidate, log);
+                var success = await Task.Run(() => _updateManager.PrepareAppUpdateAsync(_pendingAppUpdateCandidate, log));
                 if (_updateStatusLabel != null)
                 {
                     _updateStatusLabel.Text = success
@@ -1349,7 +1380,7 @@ namespace ASLM.Pages
 
                 if (_restartAppUpdateButton != null)
                 {
-                    _restartAppUpdateButton.IsVisible = success || _updateService.HasPendingAppUpdate;
+                    _restartAppUpdateButton.IsVisible = success || _updateManager.HasPendingAppUpdate;
                 }
             }
             finally
@@ -1378,8 +1409,8 @@ namespace ASLM.Pages
                     _updateStatusLabel.Text = "Restarting ASLM...";
                 }
 
-                await _moduleRunner.StopAllModulesAsync();
-                StartLauncherForSelfUpdate();
+                await _settingsService.StopAllModulesAsync();
+                await Task.Run(SettingsService.StartLauncherForSelfUpdate);
                 Application.Current?.Quit();
             }
             catch (Exception ex)
@@ -1394,75 +1425,6 @@ namespace ASLM.Pages
                     failedButton.IsEnabled = true;
                 }
             }
-        }
-
-        /// <summary>
-        /// Starts the launcher so it can detect the prepared update after the current app exits.
-        /// </summary>
-        private static void StartLauncherForSelfUpdate()
-        {
-            var root = ResolveRootForSelfUpdate();
-            var launcherPath = System.IO.Path.Combine(root, "ASLM.exe");
-            if (!File.Exists(launcherPath))
-            {
-                throw new FileNotFoundException("ASLM launcher was not found.", launcherPath);
-            }
-
-            var arguments = new[]
-            {
-                "--wait-process",
-                Environment.ProcessId.ToString(CultureInfo.InvariantCulture)
-            };
-
-            if (DetachedProcessStarter.TryStartBreakawayProcess(launcherPath, root, arguments))
-            {
-                return;
-            }
-
-            var startInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = launcherPath,
-                WorkingDirectory = root,
-                UseShellExecute = false
-            };
-            foreach (var argument in arguments)
-            {
-                startInfo.ArgumentList.Add(argument);
-            }
-
-            var process = System.Diagnostics.Process.Start(startInfo);
-
-            if (process == null)
-            {
-                throw new InvalidOperationException("ASLM launcher did not start.");
-            }
-        }
-
-        /// <summary>
-        /// Resolves the ASLM root folder that contains the pending update manifest.
-        /// </summary>
-        private static string ResolveRootForSelfUpdate()
-        {
-            var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(
-                System.IO.Path.DirectorySeparatorChar,
-                System.IO.Path.AltDirectorySeparatorChar);
-            var parentRoot = Directory.GetParent(appDir)?.FullName;
-            var candidateRoots = new[]
-            {
-                parentRoot,
-                appDir
-            };
-
-            foreach (var root in candidateRoots.Where(static root => !string.IsNullOrWhiteSpace(root)))
-            {
-                var pendingPath = System.IO.Path.Combine(root!, ".aslm-update", "pending.json");
-                if (File.Exists(pendingPath))
-                {
-                    return root!;
-                }
-            }
-
-            return parentRoot ?? appDir;
         }
 
         /// <summary>
@@ -1482,7 +1444,7 @@ namespace ASLM.Pages
 
             var text = new VerticalStackLayout
             {
-                Spacing = 2,
+                Spacing = TitleDescriptionSpacing,
                 VerticalOptions = LayoutOptions.Center
             };
 
@@ -1512,22 +1474,18 @@ namespace ASLM.Pages
         private void RenderModuleCategory(ModuleConfig module)
         {
             _settingMappings.Clear();
-            ResetOllamaControlReferences();
-            ResetUpdateControlReferences();
-            ModuleSettingsContainer.Children.Clear();
+            ResetRenderedControlReferences();
+            PrepareCategorySurface(showAslmContainer: false, showModuleContainer: true, showEmptyState: false);
 
-            var settings = module.Settings?.Where(ShouldDisplaySetting).ToList() ?? [];
+            var settings = module.Settings?.Where(SettingsService.ShouldDisplaySetting).ToList() ?? [];
             var loadedSettings = settings
-                .Select(setting => new LoadedSetting(setting, GetCurrentSettingValue(module, setting)))
+                .Select(setting => new LoadedSetting(setting, _settingsService.GetCurrentSettingValue(module, setting)))
                 .ToList();
 
             var valuesByKey = loadedSettings.ToDictionary(item => item.Setting.Key, item => item.Value, StringComparer.OrdinalIgnoreCase);
             var visibleSettings = loadedSettings
-                .Where(item => ShouldRenderSetting(item.Setting, settings, valuesByKey))
+                .Where(item => SettingsService.ShouldRenderSetting(item.Setting, settings, valuesByKey))
                 .ToList();
-
-            AslmSettingsContainer.IsVisible = false;
-            ModuleSettingsContainer.IsVisible = true;
 
             if (visibleSettings.Count == 0)
             {
@@ -1538,7 +1496,7 @@ namespace ASLM.Pages
             EmptyCategoryState.IsVisible = false;
 
             var section = CreateModuleSectionBorder();
-            var content = new VerticalStackLayout { Spacing = 12 };
+            var content = new VerticalStackLayout { Spacing = 8 };
 
             foreach (var item in visibleSettings)
             {
@@ -1564,13 +1522,9 @@ namespace ASLM.Pages
         /// </summary>
         private void ShowEmptyCategory(string message)
         {
-            ResetOllamaControlReferences();
-            ResetUpdateControlReferences();
-            AslmSettingsContainer.IsVisible = false;
-            ModuleSettingsContainer.IsVisible = false;
-            ModuleSettingsContainer.Children.Clear();
+            ResetRenderedControlReferences();
+            PrepareCategorySurface(showAslmContainer: false, showModuleContainer: false, showEmptyState: true);
             EmptyCategoryLabel.Text = message;
-            EmptyCategoryState.IsVisible = true;
         }
 
         /// <summary>
@@ -1581,6 +1535,53 @@ namespace ASLM.Pages
             UsernameEntry.Text = _userNameDraft;
             OfficialPortEntry.Text = _officialPortDraft;
             ThirdPartyPortEntry.Text = _thirdPartyPortDraft;
+        }
+
+        /// <summary>
+        /// Pushes API and console draft values into the dynamically created compact toggles when present.
+        /// </summary>
+        private void ApplyAslmBuiltInDraftsToToggles()
+        {
+            if (_apiServerToggle != null)
+            {
+                _apiServerToggle.SetStateWithoutToggleEvent(_apiServerEnabledDraft);
+            }
+
+            if (_consoleSidebarToggle != null)
+            {
+                _consoleSidebarToggle.SetStateWithoutToggleEvent(_consoleDraft.SidebarVisible);
+            }
+
+            if (_consoleIndividualToggle != null)
+            {
+                _consoleIndividualToggle.SetStateWithoutToggleEvent(_consoleDraft.ShowIndividualModuleConsoles);
+            }
+
+            if (_consoleCompletedToggle != null)
+            {
+                _consoleCompletedToggle.SetStateWithoutToggleEvent(_consoleDraft.ShowCompletedProcesses);
+            }
+        }
+
+        /// <summary>
+        /// Copies API and console compact toggles into the shared drafts after user interaction.
+        /// </summary>
+        private void RefreshAslmApiAndConsoleDraftsFromToggles()
+        {
+            if (_apiServerToggle != null)
+            {
+                _apiServerEnabledDraft = _apiServerToggle.IsToggled;
+            }
+
+            if (_consoleSidebarToggle != null &&
+                _consoleCompletedToggle != null &&
+                _consoleIndividualToggle != null)
+            {
+                _consoleDraft = new ConsoleBaseline(
+                    _consoleSidebarToggle.IsToggled,
+                    _consoleCompletedToggle.IsToggled,
+                    _consoleIndividualToggle.IsToggled);
+            }
         }
 
         // Draft synchronization
@@ -1602,6 +1603,7 @@ namespace ASLM.Pages
             }
 
             SyncAslmDraftValuesFromControls();
+            SyncBuiltInDraftValuesFromControls();
         }
 
         /// <summary>
@@ -1619,6 +1621,16 @@ namespace ASLM.Pages
                 _officialPortDraft = OfficialPortEntry.Text?.Trim() ?? string.Empty;
                 _thirdPartyPortDraft = ThirdPartyPortEntry.Text?.Trim() ?? string.Empty;
             }
+        }
+
+        /// <summary>
+        /// Copies visible built-in ASLM controls into the cross-category draft values.
+        /// </summary>
+        private void SyncBuiltInDraftValuesFromControls()
+        {
+            // API and console drafts are driven by RefreshAslmApiAndConsoleDraftsFromToggles on user input
+            // and by load/default flows so SyncDraftValuesFromControls cannot overwrite them from WinUI timing glitches.
+            _updateDraft = GetCurrentUpdateDraft();
         }
 
         /// <summary>
@@ -1668,7 +1680,9 @@ namespace ASLM.Pages
         /// </summary>
         private async Task<bool> ConfirmDiscardChangesIfNeededAsync()
         {
-            if (_activeCategory == null || !HasUnsavedChanges())
+            SyncDraftValuesFromControls();
+
+            if (_activeCategory == null || !HasAnyUnsavedChanges())
             {
                 return true;
             }
@@ -1687,7 +1701,7 @@ namespace ASLM.Pages
             LoadAslmDraftsFromAppData();
             LoadOllamaDraftsFromService();
             await LoadModuleDraftsAsync(reloadModules: false, reloadRuntimeValues: true);
-            _categories = CreateOrderedCategories();
+            _categories = _settingsService.CreateOrderedCategories(_loadedModules);
 
             return true;
         }
@@ -1704,15 +1718,80 @@ namespace ASLM.Pages
 
             return _activeCategory.Kind switch
             {
-                SettingsCategoryKind.AslmProfile => !string.Equals(UsernameEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.UserName, StringComparison.Ordinal),
-                SettingsCategoryKind.AslmPorts => !string.Equals(OfficialPortEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.OfficialPort, StringComparison.Ordinal) ||
-                                                  !string.Equals(ThirdPartyPortEntry.Text?.Trim() ?? string.Empty, _aslmBaseline.ThirdPartyPort, StringComparison.Ordinal),
+                SettingsCategoryKind.Aslm => HasUnsavedAslmSettingsChanges(),
+                SettingsCategoryKind.AslmProfile => HasUnsavedAccountChanges(),
                 SettingsCategoryKind.Updates => HasUnsavedUpdateChanges(),
                 SettingsCategoryKind.Ollama => false,
                 SettingsCategoryKind.Module => HasUnsavedModuleChanges(),
                 _ => false
             };
         }
+
+        /// <summary>
+        /// Determines whether any loaded settings category has pending unsaved edits.
+        /// </summary>
+        private bool HasAnyUnsavedChanges() =>
+            HasUnsavedAccountChanges() ||
+            HasUnsavedAslmSettingsChanges() ||
+            _loadedModules.Any(m => _settingsService.ModuleHasChangesComparedToBaseline(m, _settingBaselines));
+
+        /// <summary>
+        /// Determines whether the account display name differs from the saved baseline.
+        /// </summary>
+        private bool HasUnsavedAccountChanges()
+        {
+            var userName = UserProfileSection.IsVisible
+                ? UsernameEntry.Text?.Trim() ?? string.Empty
+                : _userNameDraft;
+            return SettingsService.HasUnsavedAccountChanges(userName, _aslmBaseline);
+        }
+
+        /// <summary>
+        /// Determines whether any combined ASLM setting differs from the saved baseline.
+        /// </summary>
+        private bool HasUnsavedAslmSettingsChanges() =>
+            SettingsService.HasUnsavedAslmSettingsChanges(
+                GetCurrentOfficialPortDraft(),
+                GetCurrentThirdPartyPortDraft(),
+                _apiServerEnabledDraft,
+                _consoleDraft,
+                GetCurrentUpdateDraft(),
+                _aslmBaseline,
+                _consoleBaseline,
+                _updateBaseline);
+
+        private string GetCurrentOfficialPortDraft() =>
+            PortsSection.IsVisible
+                ? OfficialPortEntry.Text?.Trim() ?? string.Empty
+                : _officialPortDraft;
+
+        private string GetCurrentThirdPartyPortDraft() =>
+            PortsSection.IsVisible
+                ? ThirdPartyPortEntry.Text?.Trim() ?? string.Empty
+                : _thirdPartyPortDraft;
+
+        /// <summary>
+        /// Determines whether the port draft differs from the saved baseline.
+        /// </summary>
+        private bool HasUnsavedPortChanges()
+        {
+            return SettingsService.HasUnsavedPortChanges(
+                GetCurrentOfficialPortDraft(),
+                GetCurrentThirdPartyPortDraft(),
+                _aslmBaseline);
+        }
+
+        /// <summary>
+        /// Determines whether the ASLM API setting differs from the last saved baseline.
+        /// </summary>
+        private bool HasUnsavedAslmApiChanges() =>
+            SettingsService.HasUnsavedApiServerChanges(_apiServerEnabledDraft, _aslmBaseline);
+
+        /// <summary>
+        /// Determines whether console preferences differ from the last saved baseline.
+        /// </summary>
+        private bool HasUnsavedConsoleChanges() =>
+            SettingsService.HasUnsavedConsoleChanges(_consoleDraft, _consoleBaseline);
 
         /// <summary>
         /// Determines whether the visible module editors differ from the last saved baseline.
@@ -1723,7 +1802,7 @@ namespace ASLM.Pages
             {
                 var useCustom = mapping.ReadCustomValue?.Invoke() ?? mapping.Setting.UseCustomValue;
                 var currentValue = mapping.Setting.IsAutomaticallyManaged && !useCustom
-                    ? _moduleRunner.GetResolvedSettingValue(mapping.Module, mapping.Setting)
+                    ? _settingsService.GetResolvedSettingValue(mapping.Module, mapping.Setting)
                     : mapping.Setting.NormalizeUserValue(mapping.ReadValue());
                 var displayValue = mapping.Setting.FormatValueForDisplay(currentValue);
 
@@ -1742,97 +1821,64 @@ namespace ASLM.Pages
         /// </summary>
         private bool HasUnsavedUpdateChanges()
         {
-            if (_checkUpdatesToggle == null ||
-                _autoUpdatesToggle == null ||
-                _updatePeriodEntry == null ||
-                _appUpdateChannelPicker == null ||
-                _moduleUpdateModePicker == null ||
-                _moduleUpdateChannelPicker == null)
-            {
-                return false;
-            }
-
-            return _checkUpdatesToggle.IsToggled != _updateBaseline.CheckEnabled ||
-                   _autoUpdatesToggle.IsToggled != _updateBaseline.AutoUpdateEnabled ||
-                   !string.Equals(_updatePeriodEntry.Text?.Trim() ?? string.Empty, _updateBaseline.AutoCheckPeriodHours, StringComparison.Ordinal) ||
-                   !string.Equals(_appUpdateChannelPicker.SelectedItem?.ToString() ?? "release", _updateBaseline.AppChannel, StringComparison.OrdinalIgnoreCase) ||
-                   !string.Equals(_moduleUpdateModePicker.SelectedItem?.ToString() ?? "release", _updateBaseline.ModuleDefaultMode, StringComparison.OrdinalIgnoreCase) ||
-                   !string.Equals(_moduleUpdateChannelPicker.SelectedItem?.ToString() ?? "release", _updateBaseline.ModuleDefaultChannel, StringComparison.OrdinalIgnoreCase);
+            var updateDraft = GetCurrentUpdateDraft();
+            return SettingsService.HasUnsavedUpdateChanges(updateDraft, _updateBaseline);
         }
 
         /// <summary>
-        /// Reads and validates update settings from the current controls.
+        /// Gets the latest update draft, reading visible controls when present.
         /// </summary>
-        private bool TryReadUpdateSettings(out AppUpdateSettings settings, out string errorMessage)
-        {
-            settings = new AppUpdateSettings();
-            errorMessage = string.Empty;
-
-            if (_checkUpdatesToggle == null ||
-                _autoUpdatesToggle == null ||
-                _updatePeriodEntry == null ||
-                _appUpdateChannelPicker == null ||
-                _moduleUpdateModePicker == null ||
-                _moduleUpdateChannelPicker == null)
-            {
-                errorMessage = "Update settings controls are not ready.";
-                return false;
-            }
-
-            if (!int.TryParse(_updatePeriodEntry.Text?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var periodHours) ||
-                periodHours < 1 ||
-                periodHours > 720)
-            {
-                errorMessage = "Auto-check period must be between 1 and 720 hours.";
-                return false;
-            }
-
-            settings.CheckEnabled = _checkUpdatesToggle.IsToggled;
-            settings.AutoUpdateEnabled = _autoUpdatesToggle.IsToggled;
-            settings.AutoCheckPeriodHours = periodHours;
-            settings.AppChannel = _appUpdateChannelPicker.SelectedItem?.ToString() ?? "release";
-            settings.ModuleDefaultMode = _moduleUpdateModePicker.SelectedItem?.ToString() ?? "release";
-            settings.ModuleDefaultChannel = _moduleUpdateChannelPicker.SelectedItem?.ToString() ?? "release";
-            settings.Normalize();
-            return true;
-        }
+        private UpdateBaseline GetCurrentUpdateDraft() =>
+            _checkUpdatesToggle != null &&
+            _autoUpdatesToggle != null &&
+            _updatePeriodEntry != null &&
+            _appUpdateChannelPicker != null &&
+            _moduleUpdateModePicker != null &&
+            _moduleUpdateChannelPicker != null
+                ? new UpdateBaseline(
+                    _checkUpdatesToggle.IsToggled,
+                    _autoUpdatesToggle.IsToggled,
+                    _updatePeriodEntry.Text?.Trim() ?? string.Empty,
+                    _appUpdateChannelPicker.SelectedItem?.ToString() ?? "release",
+                    _moduleUpdateModePicker.SelectedItem?.ToString() ?? "release",
+                    _moduleUpdateChannelPicker.SelectedItem?.ToString() ?? "release")
+                : _updateDraft;
 
         /// <summary>
         /// Pushes default update preferences into the visible update controls.
         /// </summary>
         private void ApplyUpdateDefaultsToControls()
         {
-            var defaults = new AppUpdateSettings();
-            defaults.Normalize();
+            _updateDraft = SettingsService.BuildDefaultUpdateBaseline();
 
             if (_checkUpdatesToggle != null)
             {
-                _checkUpdatesToggle.IsToggled = defaults.CheckEnabled;
+                _checkUpdatesToggle.IsToggled = _updateDraft.CheckEnabled;
             }
 
             if (_autoUpdatesToggle != null)
             {
-                _autoUpdatesToggle.IsToggled = defaults.AutoUpdateEnabled;
+                _autoUpdatesToggle.IsToggled = _updateDraft.AutoUpdateEnabled;
             }
 
             if (_updatePeriodEntry != null)
             {
-                _updatePeriodEntry.Text = defaults.AutoCheckPeriodHours.ToString(CultureInfo.InvariantCulture);
+                _updatePeriodEntry.Text = _updateDraft.AutoCheckPeriodHours;
             }
 
             if (_appUpdateChannelPicker != null)
             {
-                _appUpdateChannelPicker.SelectedItem = defaults.AppChannel;
+                _appUpdateChannelPicker.SelectedItem = _updateDraft.AppChannel;
             }
 
             if (_moduleUpdateModePicker != null)
             {
-                _moduleUpdateModePicker.SelectedItem = defaults.ModuleDefaultMode;
+                _moduleUpdateModePicker.SelectedItem = _updateDraft.ModuleDefaultMode;
             }
 
             if (_moduleUpdateChannelPicker != null)
             {
-                _moduleUpdateChannelPicker.SelectedItem = defaults.ModuleDefaultChannel;
+                _moduleUpdateChannelPicker.SelectedItem = _updateDraft.ModuleDefaultChannel;
             }
         }
 
@@ -1845,12 +1891,33 @@ namespace ASLM.Pages
                 : Task.FromResult(false);
 
         /// <summary>
+        /// Finds one of the keyed XAML styles used by dynamically rendered settings controls.
+        /// </summary>
+        private static Style? GetStyleResource(string key) =>
+            Application.Current?.Resources.TryGetValue(key, out var value) == true && value is Style style
+                ? style
+                : null;
+
+        /// <summary>
+        /// Finds one of the shared color resources with a defensive fallback.
+        /// </summary>
+        private static Color GetColorResource(string key, Color fallback) =>
+            Application.Current?.Resources.TryGetValue(key, out var value) == true && value is Color color
+                ? color
+                : fallback;
+
+        /// <summary>
         /// Shows a simple informational dialog on the current shell page.
         /// </summary>
-        private static Task ShowSuccessAsync(string message) =>
-            Application.Current?.Windows.Count > 0
-                ? Application.Current.Windows[0].Page!.DisplayAlertAsync("Success", message, "OK")
-                : Task.CompletedTask;
+        private Task ShowSuccessAsync(string message)
+        {
+            _notifications.PublishSystemToast(
+                "Settings saved",
+                message,
+                "Saved",
+                "settings-save");
+            return Task.CompletedTask;
+        }
 
         /// <summary>
         /// Shows an error dialog on the current shell page.
@@ -1874,47 +1941,98 @@ namespace ASLM.Pages
 
             SyncDraftValuesFromControls();
 
+            var appliedAslmBuiltInDefaults = false;
+            (string OfficialPort, string ThirdPartyPort, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults)? aslmDefaultBuiltIns = null;
+
             switch (_activeCategory.Kind)
             {
+                case SettingsCategoryKind.Aslm:
+                    aslmDefaultBuiltIns = SettingsService.BuildDefaultAslmDrafts();
+                    _officialPortDraft = aslmDefaultBuiltIns.Value.OfficialPort;
+                    _thirdPartyPortDraft = aslmDefaultBuiltIns.Value.ThirdPartyPort;
+                    _apiServerEnabledDraft = aslmDefaultBuiltIns.Value.ApiServerEnabled;
+                    _consoleDraft = aslmDefaultBuiltIns.Value.ConsoleDefaults;
+                    appliedAslmBuiltInDefaults = true;
+                    PortErrorLabel.IsVisible = false;
+                    RenderAslmCategory();
+                    break;
                 case SettingsCategoryKind.AslmProfile:
                     _userNameDraft = Environment.UserName;
-                    RenderAslmCategory(showProfile: true, showPorts: false);
-                    break;
-                case SettingsCategoryKind.AslmPorts:
-                    var defaultPorts = new AppPortConfig();
-                    _officialPortDraft = defaultPorts.OfficialStart.ToString(CultureInfo.InvariantCulture);
-                    _thirdPartyPortDraft = defaultPorts.ThirdPartyStart.ToString(CultureInfo.InvariantCulture);
-                    PortErrorLabel.IsVisible = false;
-                    RenderAslmCategory(showProfile: false, showPorts: true);
+                    RenderAccountCategory();
                     break;
                 case SettingsCategoryKind.Updates:
                     ApplyUpdateDefaultsToControls();
+                    RenderUpdatesCategory();
                     break;
                 case SettingsCategoryKind.Ollama:
                     break;
                 case SettingsCategoryKind.Module:
-                    ResetModuleToDefaults(_activeCategory.Module!);
+                    SettingsService.ResetModuleToDefaults(_activeCategory.Module!);
                     RenderModuleCategory(_activeCategory.Module!);
                     break;
             }
 
+            SyncDraftValuesFromControls();
+
+            // Rebuilt compact toggles can briefly report a stale value on some hosts right after attach.
+            // Re-assert defaults on drafts and controls so save detection matches the intended default state.
+            if (appliedAslmBuiltInDefaults && aslmDefaultBuiltIns is { } builtIns)
+            {
+                _officialPortDraft = builtIns.OfficialPort;
+                _thirdPartyPortDraft = builtIns.ThirdPartyPort;
+                _apiServerEnabledDraft = builtIns.ApiServerEnabled;
+                _consoleDraft = builtIns.ConsoleDefaults;
+                ApplyAslmDraftsToControls();
+                ApplyAslmBuiltInDraftsToToggles();
+            }
+
+            await SettingsScroll.ScrollToAsync(0, 0, false);
+            ReconcileSettingsVisibleControlsWithDrafts();
+            Dispatcher?.Dispatch(ReconcileSettingsVisibleControlsWithDrafts);
+            if (Dispatcher != null)
+            {
+                Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(500), ReconcileSettingsVisibleControlsWithDrafts);
+            }
+        }
+
+        /// <summary>
+        /// Reverts all pending settings drafts back to the last persisted values.
+        /// </summary>
+        private async void OnDiscardChangesClicked(object? sender, EventArgs e)
+        {
+            if (_activeCategory == null || _isSaving)
+            {
+                return;
+            }
+
+            await DiscardUnsavedChangesAsync();
             await SettingsScroll.ScrollToAsync(0, 0, false);
         }
 
         /// <summary>
-        /// Restores every editable setting in the selected module back to its manifest default.
+        /// Reloads saved values and rebuilds the active category after an explicit discard.
         /// </summary>
-        private static void ResetModuleToDefaults(ModuleConfig module)
+        private async Task DiscardUnsavedChangesAsync()
         {
-            foreach (var setting in module.Settings.Where(ShouldDisplaySetting))
-            {
-                if (setting.IsAutomaticallyManaged)
-                {
-                    setting.UseCustomValue = false;
-                }
+            var activeCategoryId = _activeCategory?.Id;
 
-                setting.Value = setting.NormalizeUserValue(setting.Default);
+            LoadAslmDraftsFromAppData();
+            LoadOllamaDraftsFromService();
+            await LoadModuleDraftsAsync(reloadModules: false, reloadRuntimeValues: true);
+
+            _categories = _settingsService.CreateOrderedCategories(_loadedModules);
+            BuildCategorySelectors();
+
+            var targetCategory = ResolveCategory(activeCategoryId) ?? _categories.FirstOrDefault();
+            if (targetCategory == null)
+            {
+                _activeCategory = null;
+                ShowEmptyCategory("No settings are available.");
+                UpdateActionButtons();
+                return;
             }
+
+            ActivateCategory(targetCategory);
         }
 
         /// <summary>
@@ -1946,136 +2064,117 @@ namespace ASLM.Pages
             try
             {
                 _isSaving = true;
+                SyncDraftValuesFromControls();
                 UpdateSelectorButtonStates();
                 UpdateActionButtons();
 
-                switch (_activeCategory.Kind)
+                if (!SettingsService.TryValidateDisplayName(_userNameDraft, out var validatedUserName, out var displayNameErrorMessage))
                 {
-                    case SettingsCategoryKind.AslmProfile:
+                    await ShowErrorAsync(displayNameErrorMessage);
+                    return;
+                }
+                _userNameDraft = validatedUserName;
+
+                var portResult = SettingsService.TryParsePorts(_officialPortDraft, _thirdPartyPortDraft);
+                if (!portResult.Success)
+                {
+                    if (_activeCategory.Kind == SettingsCategoryKind.Aslm)
                     {
-                        SyncAslmDraftValuesFromControls();
-                        if (string.IsNullOrWhiteSpace(_userNameDraft))
-                        {
-                            RenderAslmCategory(showProfile: true, showPorts: false);
-                            await ShowErrorAsync("Display name cannot be empty.");
-                            return;
-                        }
-
-                        var hasChanges = !string.Equals(_aslmBaseline.UserName, _userNameDraft, StringComparison.Ordinal);
-                        _appData.Data.User.Name = _userNameDraft;
-                        await _appData.SaveAsync();
-                        _aslmBaseline = _aslmBaseline with { UserName = _userNameDraft };
-                        RenderAslmCategory(showProfile: true, showPorts: false);
-
-                        if (restartAfterSave && _activeCategory.SupportsAppRestart && await RestartActiveTargetAsync())
-                        {
-                            return;
-                        }
-
-                        await ShowSuccessAsync(BuildSaveMessage(hasChanges, false, []));
-                        break;
+                        ShowPortError(portResult.ErrorMessage);
+                    }
+                    else
+                    {
+                        await ShowErrorAsync(portResult.ErrorMessage);
                     }
 
-                    case SettingsCategoryKind.AslmPorts:
+                    return;
+                }
+
+                _updateDraft = GetCurrentUpdateDraft();
+                if (!SettingsService.TryValidateAndBuildUpdateSettings(_updateDraft, out var nextSettings, out var updateErrorMessage))
+                {
+                    await ShowErrorAsync(updateErrorMessage);
+                    return;
+                }
+
+                foreach (var module in _loadedModules)
+                {
+                    if (!_settingsService.TryValidateModuleSettings(module, out var moduleErrorMessage))
                     {
-                        SyncAslmDraftValuesFromControls();
-                        if (!TryParsePorts(out var officialPort, out var thirdPartyPort))
-                        {
-                            RenderAslmCategory(showProfile: false, showPorts: true);
-                            return;
-                        }
-
-                        PortErrorLabel.IsVisible = false;
-                        var hasChanges =
-                            !string.Equals(_aslmBaseline.OfficialPort, _officialPortDraft, StringComparison.Ordinal) ||
-                            !string.Equals(_aslmBaseline.ThirdPartyPort, _thirdPartyPortDraft, StringComparison.Ordinal);
-
-                        _appData.Data.Ports.OfficialStart = officialPort;
-                        _appData.Data.Ports.ThirdPartyStart = thirdPartyPort;
-                        await _appData.SaveAsync();
-                        _aslmBaseline = _aslmBaseline with
-                        {
-                            OfficialPort = _officialPortDraft,
-                            ThirdPartyPort = _thirdPartyPortDraft
-                        };
-
-                        RenderAslmCategory(showProfile: false, showPorts: true);
-
-                        if (restartAfterSave && _activeCategory.SupportsAppRestart && await RestartActiveTargetAsync())
-                        {
-                            return;
-                        }
-
-                        await ShowSuccessAsync(BuildSaveMessage(hasChanges, false, []));
-                        break;
+                        await ShowErrorAsync(moduleErrorMessage);
+                        return;
                     }
+                }
 
-                    case SettingsCategoryKind.Updates:
+                var hadAppRestartChanges = HasUnsavedAslmSettingsChanges();
+                var hadAslmChanges = HasUnsavedAccountChanges() || hadAppRestartChanges;
+                var modulesWithChanges = GetModulesWithUnsavedChanges();
+
+                SettingsService.ApplyDraftsToAppData(
+                    _appData,
+                    _userNameDraft,
+                    portResult.OfficialPort,
+                    portResult.ThirdPartyPort,
+                    _consoleDraft,
+                    nextSettings);
+                await _appData.SaveAsync();
+
+                if (_apiServerEnabledDraft != _aslmBaseline.ApiServerEnabled)
+                {
+                    await _apiServer.SetEnabledAsync(_apiServerEnabledDraft);
+                }
+
+                _aslmBaseline = new AslmBaseline(
+                    _userNameDraft,
+                    _officialPortDraft,
+                    _thirdPartyPortDraft,
+                    _apiServer.IsEnabled);
+                _apiServerEnabledDraft = _apiServer.IsEnabled;
+                _consoleBaseline = _consoleDraft;
+                _updateBaseline = SettingsService.BuildAslmDraftSnapshot(_appData, _apiServer.IsEnabled).UpdateBaseline;
+                _updateDraft = _updateBaseline;
+                PortErrorLabel.IsVisible = false;
+
+                var touchedModules = new HashSet<ModuleConfig>();
+                var deferredSettings = new List<string>();
+                foreach (var module in modulesWithChanges)
+                {
+                    var moduleSaveResult = await _settingsService.SaveActiveModuleAsync(module, _settingBaselines);
+                    touchedModules.UnionWith(moduleSaveResult.TouchedModules);
+                    deferredSettings.AddRange(moduleSaveResult.DeferredSettings);
+                }
+
+                foreach (var module in touchedModules)
+                {
+                    await ReloadModuleRuntimeValuesAsync(module);
+                }
+
+                var activeCategoryId = _activeCategory.Id;
+                _categories = _settingsService.CreateOrderedCategories(_loadedModules);
+                BuildCategorySelectors();
+                var resolvedCategory = ResolveCategory(activeCategoryId);
+                if (resolvedCategory != null)
+                {
+                    ActivateCategory(resolvedCategory);
+                }
+
+                var successMessage = SettingsService.BuildSaveMessage(hadAslmChanges, touchedModules.Count > 0, deferredSettings);
+                if (restartAfterSave)
+                {
+                    _ = Task.Run(async () =>
                     {
-                        if (!TryReadUpdateSettings(out var nextSettings, out var errorMessage))
-                        {
-                            await ShowErrorAsync(errorMessage);
-                            return;
-                        }
+                        await Task.Delay(1000);
+                        await ShowSuccessAsync(successMessage);
+                    });
+                }
+                else
+                {
+                    await ShowSuccessAsync(successMessage);
+                }
 
-                        var hasChanges = HasUnsavedUpdateChanges();
-                        _appData.Data.Updates.CheckEnabled = nextSettings.CheckEnabled;
-                        _appData.Data.Updates.AutoUpdateEnabled = nextSettings.AutoUpdateEnabled;
-                        _appData.Data.Updates.AutoCheckPeriodHours = nextSettings.AutoCheckPeriodHours;
-                        _appData.Data.Updates.AppChannel = nextSettings.AppChannel;
-                        _appData.Data.Updates.ModuleDefaultMode = nextSettings.ModuleDefaultMode;
-                        _appData.Data.Updates.ModuleDefaultChannel = nextSettings.ModuleDefaultChannel;
-                        _appData.Data.Updates.Normalize();
-                        await _appData.SaveAsync();
-
-                        _updateBaseline = new UpdateBaseline(
-                            _appData.Data.Updates.CheckEnabled,
-                            _appData.Data.Updates.AutoUpdateEnabled,
-                            _appData.Data.Updates.AutoCheckPeriodHours.ToString(CultureInfo.InvariantCulture),
-                            _appData.Data.Updates.AppChannel,
-                            _appData.Data.Updates.ModuleDefaultMode,
-                            _appData.Data.Updates.ModuleDefaultChannel);
-
-                        RenderUpdatesCategory();
-                        await ShowSuccessAsync(BuildSaveMessage(hasChanges, false, []));
-                        break;
-                    }
-
-                    case SettingsCategoryKind.Ollama:
-                        break;
-
-                    case SettingsCategoryKind.Module:
-                    {
-                        SyncModuleDraftValuesFromControls();
-                        if (!TryValidateModuleSettings(out var errorMessage))
-                        {
-                            await ShowErrorAsync(errorMessage);
-                            return;
-                        }
-
-                        var moduleSaveResult = await SaveActiveModuleAsync(_activeCategory.Module!);
-                        if (moduleSaveResult.TouchedModules.Count > 0)
-                        {
-                            await ReloadModuleRuntimeValuesAsync(_activeCategory.Module!);
-                        }
-
-                        var activeCategoryId = _activeCategory.Id;
-                        _categories = CreateOrderedCategories();
-                        BuildCategorySelectors();
-                        var resolvedCategory = ResolveCategory(activeCategoryId);
-                        if (resolvedCategory != null)
-                        {
-                            ActivateCategory(resolvedCategory);
-                        }
-
-                        if (restartAfterSave)
-                        {
-                            await RestartActiveTargetAsync();
-                        }
-
-                        await ShowSuccessAsync(BuildSaveMessage(false, moduleSaveResult.TouchedModules.Count > 0, moduleSaveResult.DeferredSettings));
-                        break;
-                    }
+                if (restartAfterSave && await RestartChangedTargetsAsync(hadAppRestartChanges, touchedModules))
+                {
+                    return;
                 }
             }
             finally
@@ -2087,120 +2186,22 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Persists the changed settings for the active module and applies runtime updates where possible.
+        /// Restarts the changed app-level target or changed module targets when supported.
         /// </summary>
-        private async Task<ModuleSaveResult> SaveActiveModuleAsync(ModuleConfig module)
+        private async Task<bool> RestartChangedTargetsAsync(bool restartApp, IEnumerable<ModuleConfig> changedModules)
         {
-            var touchedModules = new HashSet<ModuleConfig>();
-            var deferredSettings = new List<string>();
-
-            foreach (var setting in module.Settings.Where(ShouldDisplaySetting))
-            {
-                if (IsAutoDetectedAslmEngine(setting))
-                {
-                    continue;
-                }
-
-                var currentValue = GetCurrentSettingValue(module, setting);
-                var baseline = GetSettingBaseline(module, setting, currentValue);
-                var effectiveValue = ResolveEffectiveSettingValue(module, setting, currentValue);
-                var displayValue = setting.FormatValueForDisplay(effectiveValue);
-
-                if (baseline.UseCustomValue == setting.UseCustomValue &&
-                    string.Equals(baseline.DisplayValue, displayValue, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                touchedModules.Add(module);
-
-                if (string.IsNullOrWhiteSpace(setting.SetExec))
-                {
-                    continue;
-                }
-
-                if (!File.Exists(module.SourcePath))
-                {
-                    deferredSettings.Add($"{module.Name}: {setting.Name}");
-                    continue;
-                }
-
-                try
-                {
-                    var applyResult = await _moduleRunner.ExecuteSettingCommandAsync(
-                        module,
-                        setting,
-                        isSet: true,
-                        newValue: displayValue,
-                        CancellationToken.None);
-
-                    if (applyResult == null)
-                    {
-                        deferredSettings.Add($"{module.Name}: {setting.Name}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Failed to apply setting '{setting.Key}' for module '{module.Name}': {ex.Message}");
-                    deferredSettings.Add($"{module.Name}: {setting.Name}");
-                }
-            }
-
-            foreach (var touchedModule in touchedModules)
-            {
-                _moduleInstaller.SaveModuleConfig(touchedModule);
-            }
-
-            return new ModuleSaveResult(touchedModules, deferredSettings);
-        }
-
-        /// <summary>
-        /// Restarts the target represented by the active category when restart is supported.
-        /// </summary>
-        private async Task<bool> RestartActiveTargetAsync()
-        {
-            if (_activeCategory == null)
-            {
-                return false;
-            }
-
-            if (_activeCategory.Kind == SettingsCategoryKind.Module && _activeCategory.Module != null)
-            {
-                if (!_activeCategory.Module.Status.Enabled || _activeCategory.Module.Commands.Run.Count == 0)
-                {
-                    return false;
-                }
-
-                await RestartModuleAsync(_activeCategory.Module);
-                return false;
-            }
-
-            if (_activeCategory.SupportsAppRestart)
+            if (restartApp)
             {
                 await RestartApplicationAsync();
                 return true;
             }
 
-            return false;
-        }
-
-        /// <summary>
-        /// Restarts one module using the same flow as the module management page.
-        /// </summary>
-        private async Task RestartModuleAsync(ModuleConfig module)
-        {
-            var freshConfig = await _moduleInstaller.LoadModuleConfig(module.SourcePath);
-            if (freshConfig != null)
+            foreach (var module in changedModules.Where(CanRestartModule))
             {
-                module.Settings = freshConfig.Settings;
-                module.Commands = freshConfig.Commands;
+                await _settingsService.RestartModuleAsync(module);
             }
 
-            await _moduleRunner.StopModuleAsync(module.SourcePath);
-            await Task.Delay(1000);
-
-            var restartLog = new Progress<string>(message => Debug.WriteLine($"[Restart] {message}"));
-            _ = Task.Run(() => _moduleRunner.ExecuteRunAsync(module, restartLog, CancellationToken.None));
+            return false;
         }
 
         /// <summary>
@@ -2208,7 +2209,7 @@ namespace ASLM.Pages
         /// </summary>
         private async Task RestartApplicationAsync()
         {
-            await _moduleRunner.StopAllModulesAsync();
+            await _settingsService.StopAllModulesAsync();
 
             if (Application.Current is not App application || application.Windows.Count == 0)
             {
@@ -2218,127 +2219,6 @@ namespace ASLM.Pages
             var newPage = application.CreateStartupPage();
             var window = application.Windows[0];
             window.Page = newPage;
-        }
-
-        // Validation
-
-        /// <summary>
-        /// Validates the current port draft values and returns parsed integers when valid.
-        /// </summary>
-        private bool TryParsePorts(out int officialPort, out int thirdPartyPort)
-        {
-            officialPort = 0;
-            thirdPartyPort = 0;
-
-            if (!int.TryParse(_officialPortDraft, NumberStyles.Integer, CultureInfo.InvariantCulture, out officialPort) ||
-                officialPort < 1024 ||
-                officialPort > 65000)
-            {
-                ShowPortError("Official port must be between 1024 and 65000.");
-                return false;
-            }
-
-            if (!int.TryParse(_thirdPartyPortDraft, NumberStyles.Integer, CultureInfo.InvariantCulture, out thirdPartyPort) ||
-                thirdPartyPort < 1024 ||
-                thirdPartyPort > 64000)
-            {
-                ShowPortError("Third-party port must be between 1024 and 64000.");
-                return false;
-            }
-
-            var officialPortEnd = officialPort + 100;
-            var thirdPartyPortEnd = thirdPartyPort + 1000;
-            if (officialPort < thirdPartyPortEnd && thirdPartyPort < officialPortEnd)
-            {
-                ShowPortError($"Port ranges overlap. Official {officialPort}-{officialPortEnd - 1} conflicts with Third-party {thirdPartyPort}-{thirdPartyPortEnd - 1}.");
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Validates the current drafted module settings to ensure type correctness.
-        /// </summary>
-        private bool TryValidateModuleSettings(out string errorMessage)
-        {
-            errorMessage = string.Empty;
-
-            foreach (var mapping in _settingMappings)
-            {
-                var useCustom = mapping.ReadCustomValue?.Invoke() ?? mapping.Setting.UseCustomValue;
-                if (mapping.Setting.IsAutomaticallyManaged && !useCustom)
-                {
-                    continue;
-                }
-
-                var rawValueObj = mapping.ReadValue();
-                var rawValue = rawValueObj?.ToString();
-                
-                if (rawValueObj is bool)
-                {
-                    continue;
-                }
-
-                if (string.IsNullOrWhiteSpace(rawValue))
-                {
-                    continue;
-                }
-
-                var type = mapping.Setting.NormalizedType;
-                
-                if (type is "int" or "integer" or "port")
-                {
-                    if (!int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
-                    {
-                        errorMessage = $"Invalid integer numeric value for '{mapping.Setting.Name}'.";
-                        return false;
-                    }
-                }
-                else if (type is "long")
-                {
-                    if (!long.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
-                    {
-                        errorMessage = $"Invalid long integer numeric value for '{mapping.Setting.Name}'.";
-                        return false;
-                    }
-                }
-                else if (type is "float" or "double" or "number")
-                {
-                    if (!double.TryParse(rawValue, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out _))
-                    {
-                        errorMessage = $"Invalid numeric value for '{mapping.Setting.Name}'.";
-                        return false;
-                    }
-                }
-                else if (type is "bool" or "engine")
-                {
-                    if (!bool.TryParse(rawValue, out _) && !string.Equals(rawValue, "true", StringComparison.OrdinalIgnoreCase) && !string.Equals(rawValue, "false", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Some text fields might be used for booleans, allow true/false strings.
-                        errorMessage = $"Invalid boolean value for '{mapping.Setting.Name}'.";
-                        return false;
-                    }
-                }
-                else if (type is "json" or "object" or "array")
-                {
-                    var trimmed = rawValue.Trim();
-                    if (trimmed.StartsWith('{') || trimmed.StartsWith('['))
-                    {
-                        try
-                        {
-                            using var jsonDocument = System.Text.Json.JsonDocument.Parse(trimmed);
-                        }
-                        catch
-                        {
-                            errorMessage = $"Invalid JSON payload for '{mapping.Setting.Name}'.";
-                            return false;
-                        }
-                    }
-                }
-            }
-
-            return true;
         }
 
         /// <summary>
@@ -2382,8 +2262,8 @@ namespace ASLM.Pages
                 UpdateOllamaAccountActionControls();
 
                 var result = signIn
-                    ? await _ollamaSettingsService.SignInAsync()
-                    : await _ollamaSettingsService.SignOutAsync();
+                    ? await _ollamaSettings.SignInAsync()
+                    : await _ollamaSettings.SignOutAsync();
 
                 await RefreshOllamaRuntimeMetadataAsync(queryLiveStatus: signIn);
                 UpdateOllamaAccountActionControls();
@@ -2415,8 +2295,8 @@ namespace ASLM.Pages
             try
             {
                 var refreshed = queryLiveStatus
-                    ? await _ollamaSettingsService.RefreshSettingsAsync(ct)
-                    : _ollamaSettingsService.LoadSettings();
+                    ? await Task.Run(() => _ollamaSettings.RefreshSettingsAsync(ct), ct)
+                    : await Task.Run(() => _ollamaSettings.LoadSettings(), ct);
                 ApplyOllamaRuntimeMetadata(refreshed);
             }
             catch (OperationCanceledException)
@@ -2542,6 +2422,27 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Clears all dynamic control references before rebuilding one category UI tree.
+        /// </summary>
+        private void ResetRenderedControlReferences()
+        {
+            ResetOllamaControlReferences();
+            ResetUpdateControlReferences();
+            ResetAslmApiControlReferences();
+        }
+
+        /// <summary>
+        /// Applies baseline visibility and cleanup for one category render pass.
+        /// </summary>
+        private void PrepareCategorySurface(bool showAslmContainer, bool showModuleContainer, bool showEmptyState)
+        {
+            AslmSettingsContainer.IsVisible = showAslmContainer;
+            ModuleSettingsContainer.IsVisible = showModuleContainer;
+            EmptyCategoryState.IsVisible = showEmptyState;
+            ModuleSettingsContainer.Children.Clear();
+        }
+
+        /// <summary>
         /// Clears references to dynamically created update controls before the page is rebuilt.
         /// </summary>
         private void ResetUpdateControlReferences()
@@ -2556,6 +2457,17 @@ namespace ASLM.Pages
             _prepareAppUpdateButton = null;
             _restartAppUpdateButton = null;
             _pendingAppUpdateCandidate = null;
+        }
+
+        /// <summary>
+        /// Clears the dynamically created built-in ASLM setting controls before the page is rebuilt.
+        /// </summary>
+        private void ResetAslmApiControlReferences()
+        {
+            _apiServerToggle = null;
+            _consoleSidebarToggle = null;
+            _consoleCompletedToggle = null;
+            _consoleIndividualToggle = null;
         }
 
         /// <summary>
@@ -2684,172 +2596,6 @@ namespace ASLM.Pages
             PortErrorLabel.IsVisible = true;
         }
 
-        /// <summary>
-        /// Filters out settings that should never be shown in the UI editor.
-        /// </summary>
-        private static bool ShouldDisplaySetting(ModuleSetting setting) =>
-            !string.Equals(setting.NormalizedType, "port", StringComparison.OrdinalIgnoreCase);
-
-        /// <summary>
-        /// Evaluates whether a setting should currently be visible based on its controlling toggle.
-        /// </summary>
-        private static bool ShouldRenderSetting(
-            ModuleSetting setting,
-            IReadOnlyList<ModuleSetting> allSettings,
-            IReadOnlyDictionary<string, object?> valuesByKey)
-        {
-            var controller = FindControllingSetting(setting, allSettings, valuesByKey);
-            if (controller == null || !valuesByKey.TryGetValue(controller.Key, out var value))
-            {
-                return true;
-            }
-
-            return value is bool enabled ? enabled : true;
-        }
-
-        /// <summary>
-        /// Finds the nearest parent toggle that controls whether the current setting is displayed.
-        /// </summary>
-        private static ModuleSetting? FindControllingSetting(
-            ModuleSetting setting,
-            IReadOnlyList<ModuleSetting> allSettings,
-            IReadOnlyDictionary<string, object?> valuesByKey) =>
-            allSettings
-                .Where(candidate =>
-                    !string.Equals(candidate.Key, setting.Key, StringComparison.OrdinalIgnoreCase) &&
-                    IsVisibilityToggle(candidate, valuesByKey) &&
-                    IsGroupedUnder(candidate.Key, setting.Key))
-                .OrderByDescending(candidate => candidate.Key.Length)
-                .FirstOrDefault();
-
-        /// <summary>
-        /// Determines whether a child setting belongs to the same prefixed configuration group.
-        /// </summary>
-        private static bool IsGroupedUnder(string parentKey, string childKey) =>
-            childKey.StartsWith(parentKey + "_", StringComparison.OrdinalIgnoreCase) ||
-            childKey.StartsWith(parentKey + "-", StringComparison.OrdinalIgnoreCase);
-
-        /// <summary>
-        /// Detects whether a setting can act as a visibility toggle for dependent settings.
-        /// </summary>
-        private static bool IsVisibilityToggle(ModuleSetting setting, IReadOnlyDictionary<string, object?> valuesByKey)
-        {
-            if (!valuesByKey.TryGetValue(setting.Key, out var value))
-            {
-                return setting.NormalizedType is "bool" or "engine";
-            }
-
-            return value is bool;
-        }
-
-        /// <summary>
-        /// Checks whether the current setting controls the visibility of any other setting.
-        /// </summary>
-        private static bool HasDependentSettings(ModuleConfig module, ModuleSetting setting) =>
-            module.Settings.Any(other =>
-                !string.Equals(other.Key, setting.Key, StringComparison.OrdinalIgnoreCase) &&
-                IsGroupedUnder(setting.Key, other.Key) &&
-                ShouldDisplaySetting(other));
-
-        /// <summary>
-        /// Reads the current runtime value for one module setting with graceful fallback behavior.
-        /// </summary>
-        private async Task<LoadedSetting> LoadSettingValueAsync(ModuleConfig module, ModuleSetting setting)
-        {
-            if (IsAutoDetectedAslmEngine(setting))
-            {
-                return new LoadedSetting(setting, IsAslmEngineInstalled(setting.Key));
-            }
-
-            var fallbackValue = GetFallbackValue(module, setting);
-            if (setting.IsAutomaticallyManaged && !setting.UseCustomValue)
-            {
-                return new LoadedSetting(setting, fallbackValue);
-            }
-
-            if (string.IsNullOrWhiteSpace(setting.GetExec) || !File.Exists(module.SourcePath))
-            {
-                return new LoadedSetting(setting, fallbackValue);
-            }
-
-            try
-            {
-                var rawValue = await _moduleRunner.ExecuteSettingCommandAsync(module, setting, false, null, CancellationToken.None);
-                return rawValue == null
-                    ? new LoadedSetting(setting, fallbackValue)
-                    : new LoadedSetting(setting, setting.ParseSerializedValue(rawValue));
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to read setting '{setting.Key}' for module '{module.Name}': {ex.Message}");
-                return new LoadedSetting(setting, fallbackValue);
-            }
-        }
-
-        /// <summary>
-        /// Resolves the current draft value used for rendering and save comparison.
-        /// </summary>
-        private object? GetCurrentSettingValue(ModuleConfig module, ModuleSetting setting) =>
-            IsAutoDetectedAslmEngine(setting)
-                ? IsAslmEngineInstalled(setting.Key)
-                : setting.IsAutomaticallyManaged && !setting.UseCustomValue
-                    ? _moduleRunner.GetResolvedSettingValue(module, setting) ?? setting.Value ?? setting.Default
-                    : setting.Value ?? setting.Default;
-
-        /// <summary>
-        /// Resolves the best available value when runtime loading is skipped or fails.
-        /// </summary>
-        private object? GetFallbackValue(ModuleConfig module, ModuleSetting setting) =>
-            IsAutoDetectedAslmEngine(setting)
-                ? IsAslmEngineInstalled(setting.Key)
-                : setting.IsAutomaticallyManaged && !setting.UseCustomValue
-                ? _moduleRunner.GetResolvedSettingValue(module, setting) ?? setting.Value ?? setting.Default
-                : setting.Value ?? setting.Default;
-
-        /// <summary>
-        /// Refreshes the per-setting baselines used to detect changed values after UI rebuilds.
-        /// </summary>
-        private void UpdateSettingBaselines(ModuleConfig module, IEnumerable<LoadedSetting> loadedSettings)
-        {
-            foreach (var loadedSetting in loadedSettings)
-            {
-                var setting = loadedSetting.Setting;
-                var effectiveValue = ResolveEffectiveSettingValue(module, setting, loadedSetting.Value);
-
-                _settingBaselines[GetSettingIdentity(module, setting)] = new SettingBaseline(
-                    setting.FormatValueForDisplay(effectiveValue),
-                    setting.UseCustomValue);
-            }
-        }
-
-        /// <summary>
-        /// Returns the original effective value snapshot for one setting during the current page session.
-        /// </summary>
-        private SettingBaseline GetSettingBaseline(ModuleConfig module, ModuleSetting setting, object? currentValue)
-        {
-            if (_settingBaselines.TryGetValue(GetSettingIdentity(module, setting), out var baseline))
-            {
-                return baseline;
-            }
-
-            var effectiveValue = ResolveEffectiveSettingValue(module, setting, currentValue);
-            return new SettingBaseline(setting.FormatValueForDisplay(effectiveValue), setting.UseCustomValue);
-        }
-
-        /// <summary>
-        /// Returns the value that ASLM will effectively apply for the current setting state.
-        /// </summary>
-        private object? ResolveEffectiveSettingValue(ModuleConfig module, ModuleSetting setting, object? currentValue) =>
-            setting.IsAutomaticallyManaged && !setting.UseCustomValue
-                ? _moduleRunner.GetResolvedSettingValue(module, setting) ?? currentValue
-                : currentValue;
-
-        /// <summary>
-        /// Builds a stable dictionary key for one setting within the currently loaded modules.
-        /// </summary>
-        private static string GetSettingIdentity(ModuleConfig module, ModuleSetting setting) =>
-            $"{module.Id}::{setting.Key}";
-
         // Editor creation
 
         /// <summary>
@@ -2858,15 +2604,15 @@ namespace ASLM.Pages
         private (View Control, SettingControlMapping? Mapping) CreateSettingCard(ModuleConfig module, ModuleSetting setting, object? value)
         {
             var card = CreateSettingCardBorder();
-            var description = BuildSettingDescription(setting);
+            var description = SettingsService.BuildSettingDescription(setting);
 
-            if (IsAutoDetectedAslmEngine(setting))
+            if (_settingsService.IsAutoDetectedAslmEngine(setting))
             {
-                var row = new Grid { ColumnSpacing = 16 };
+                var row = new Grid { ColumnSpacing = 8 };
                 row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
                 row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
 
-                var text = new VerticalStackLayout { Spacing = 5 };
+                var text = new VerticalStackLayout { Spacing = TitleDescriptionSpacing };
                 text.Children.Add(CreateCardTitle(setting.Name));
                 if (!string.IsNullOrWhiteSpace(description))
                 {
@@ -2887,11 +2633,11 @@ namespace ASLM.Pages
             if (setting.NormalizedType is "bool" or "engine")
             {
                 var (toggleView, mapping) = CreateBooleanEditor(module, setting, value);
-                var row = new Grid { ColumnSpacing = 16 };
+                var row = new Grid { ColumnSpacing = 8 };
                 row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
                 row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
 
-                var text = new VerticalStackLayout { Spacing = 5 };
+                var text = new VerticalStackLayout { Spacing = TitleDescriptionSpacing };
                 text.Children.Add(CreateCardTitle(setting.Name));
                 if (!string.IsNullOrWhiteSpace(description))
                 {
@@ -2907,7 +2653,7 @@ namespace ASLM.Pages
                 return (card, mapping);
             }
 
-            var content = new VerticalStackLayout { Spacing = 9 };
+            var content = new VerticalStackLayout { Spacing = TitleDescriptionSpacing };
             content.Children.Add(CreateCardTitle(setting.Name));
             if (!string.IsNullOrWhiteSpace(description))
             {
@@ -2930,7 +2676,7 @@ namespace ASLM.Pages
                 return CreateManagedEditor(module, setting, value);
             }
 
-            if (IsActiveEngineSelector(setting))
+            if (SettingsService.IsActiveEngineSelector(setting))
             {
                 return CreateActiveEngineEditor(module, setting, value);
             }
@@ -2953,13 +2699,13 @@ namespace ASLM.Pages
         /// </summary>
         private (View Control, SettingControlMapping? Mapping) CreateBooleanEditor(ModuleConfig module, ModuleSetting setting, object? value)
         {
-            var baseline = GetSettingBaseline(module, setting, value);
+            var baseline = _settingsService.GetSettingBaseline(module, setting, value, _settingBaselines);
             var toggle = CreateCompactToggle(value is bool boolValue
                 ? boolValue
                 : bool.TryParse(setting.FormatValueForDisplay(value), out var parsedBool) && parsedBool);
             toggle.View.HorizontalOptions = LayoutOptions.End;
 
-            if (HasDependentSettings(module, setting))
+            if (SettingsService.HasDependentSettings(module, setting))
             {
                 toggle.Toggled += (_, _) =>
                 {
@@ -2984,7 +2730,7 @@ namespace ASLM.Pages
         /// </summary>
         private (View Control, SettingControlMapping? Mapping) CreateActiveEngineEditor(ModuleConfig module, ModuleSetting setting, object? value)
         {
-            var baseline = GetSettingBaseline(module, setting, value);
+            var baseline = _settingsService.GetSettingBaseline(module, setting, value, _settingBaselines);
             var allowedValues = setting.AllowedValues ?? [];
             var picker = CreatePicker(null, 13);
             var pickerContainer = CreatePickerContainer(picker);
@@ -3024,7 +2770,7 @@ namespace ASLM.Pages
         /// </summary>
         private (View Control, SettingControlMapping? Mapping) CreatePickerEditor(ModuleConfig module, ModuleSetting setting, object? value)
         {
-            var baseline = GetSettingBaseline(module, setting, value);
+            var baseline = _settingsService.GetSettingBaseline(module, setting, value, _settingBaselines);
             var picker = CreatePicker(null, 14);
             var pickerContainer = CreatePickerContainer(picker);
             var allowedValues = setting.AllowedValues!.ToList();
@@ -3063,7 +2809,7 @@ namespace ASLM.Pages
         /// </summary>
         private (View Control, SettingControlMapping? Mapping) CreateNumericEditor(ModuleConfig module, ModuleSetting setting, object? value)
         {
-            var baseline = GetSettingBaseline(module, setting, value);
+            var baseline = _settingsService.GetSettingBaseline(module, setting, value, _settingBaselines);
             var (field, entry) = CreateTextField(setting.FormatValueForDisplay(value));
             entry.Keyboard = Keyboard.Numeric;
             entry.TextChanged += (_, _) => QueueActionButtonUpdate();
@@ -3076,7 +2822,7 @@ namespace ASLM.Pages
         /// </summary>
         private (View Control, SettingControlMapping? Mapping) CreateTextEditor(ModuleConfig module, ModuleSetting setting, object? value)
         {
-            var baseline = GetSettingBaseline(module, setting, value);
+            var baseline = _settingsService.GetSettingBaseline(module, setting, value, _settingBaselines);
             var (field, entry) = CreateTextField(setting.FormatValueForDisplay(value));
             entry.TextChanged += (_, _) => QueueActionButtonUpdate();
             return (field, new SettingControlMapping(module, setting, () => entry.Text, null, baseline.DisplayValue, baseline.UseCustomValue));
@@ -3087,7 +2833,7 @@ namespace ASLM.Pages
         /// </summary>
         private (View Control, SettingControlMapping? Mapping) CreatePasswordEditor(ModuleConfig module, ModuleSetting setting, object? value)
         {
-            var baseline = GetSettingBaseline(module, setting, value);
+            var baseline = _settingsService.GetSettingBaseline(module, setting, value, _settingBaselines);
             var (field, entry) = CreatePasswordField(setting.FormatValueForDisplay(value));
             entry.TextChanged += (_, _) => QueueActionButtonUpdate();
             return (field, new SettingControlMapping(module, setting, () => entry.Text, null, baseline.DisplayValue, baseline.UseCustomValue));
@@ -3098,7 +2844,7 @@ namespace ASLM.Pages
         /// </summary>
         private (View Control, SettingControlMapping? Mapping) CreateManagedEditor(ModuleConfig module, ModuleSetting setting, object? value)
         {
-            var autoValue = _moduleRunner.GetResolvedSettingValue(module, setting);
+            var autoValue = _settingsService.GetResolvedSettingValue(module, setting);
             var initialDisplayValue = setting.UseCustomValue
                 ? setting.FormatValueForDisplay(value)
                 : setting.FormatValueForDisplay(autoValue);
@@ -3107,7 +2853,7 @@ namespace ASLM.Pages
             var entryView = isPasswordSetting
                 ? CreatePasswordField(initialDisplayValue)
                 : CreateTextField(initialDisplayValue);
-            var baseline = GetSettingBaseline(module, setting, initialDisplayValue);
+            var baseline = _settingsService.GetSettingBaseline(module, setting, initialDisplayValue, _settingBaselines);
             var entry = entryView.Entry;
             var lastCustomValue = setting.FormatValueForDisplay(setting.Value ?? value);
 
@@ -3128,7 +2874,7 @@ namespace ASLM.Pages
             {
                 entry.Text = args.Value
                     ? (string.IsNullOrWhiteSpace(lastCustomValue) ? setting.FormatValueForDisplay(setting.Value ?? value) : lastCustomValue)
-                    : setting.FormatValueForDisplay(_moduleRunner.GetResolvedSettingValue(module, setting));
+                    : setting.FormatValueForDisplay(_settingsService.GetResolvedSettingValue(module, setting));
 
                 ApplyTextEntryState(entry, !args.Value);
                 QueueActionButtonUpdate();
@@ -3158,12 +2904,9 @@ namespace ASLM.Pages
         {
             var border = new Border
             {
-                StrokeThickness = 0,
-                StrokeShape = new RoundRectangle { CornerRadius = 0 },
-                Padding = 0
+                Style = GetStyleResource(TransparentBorderStyleKey)
             };
 
-            border.BackgroundColor = Colors.Transparent;
             return border;
         }
 
@@ -3174,22 +2917,23 @@ namespace ASLM.Pages
         {
             var border = new Border
             {
-                StrokeThickness = 0,
-                StrokeShape = new RoundRectangle { CornerRadius = 0 },
-                Padding = 0
+                Style = GetStyleResource(TransparentBorderStyleKey)
             };
 
-            border.BackgroundColor = Colors.Transparent;
             return border;
         }
 
         /// <summary>
-        /// Creates the title label used for each module settings section.
+        /// Creates a compact sub-group header label used to group related settings
+        /// within one category (e.g. "Ports", "API", "Consoles", "Updates").
         /// </summary>
-        private static Label CreateSectionHeader(string text)
+        private static Label CreateSubGroupHeader(string text)
         {
-            var label = new Label { Text = text, FontSize = 16, FontAttributes = FontAttributes.Bold };
-            label.SetDynamicResource(Label.TextColorProperty, "LabelPrimary");
+            var label = new Label
+            {
+                Text = text,
+                Style = GetStyleResource(SubGroupHeaderLabelStyleKey)
+            };
             return label;
         }
 
@@ -3198,8 +2942,11 @@ namespace ASLM.Pages
         /// </summary>
         private static Label CreateCardTitle(string text)
         {
-            var label = new Label { Text = text, FontSize = 15, FontAttributes = FontAttributes.Bold };
-            label.SetDynamicResource(Label.TextColorProperty, "LabelPrimary");
+            var label = new Label
+            {
+                Text = text,
+                Style = GetStyleResource(CardTitleLabelStyleKey)
+            };
             return label;
         }
 
@@ -3208,8 +2955,11 @@ namespace ASLM.Pages
         /// </summary>
         private static Label CreateCardDescription(string text)
         {
-            var label = new Label { Text = text, FontSize = 12, LineBreakMode = LineBreakMode.WordWrap, MaxLines = 3 };
-            label.SetDynamicResource(Label.TextColorProperty, "LabelSecondary");
+            var label = new Label
+            {
+                Text = text,
+                Style = GetStyleResource(CardDescriptionLabelStyleKey)
+            };
             return label;
         }
 
@@ -3218,8 +2968,11 @@ namespace ASLM.Pages
         /// </summary>
         private static Label CreateSecondaryLabel(string text)
         {
-            var label = new Label { Text = text, FontSize = 12 };
-            label.SetDynamicResource(Label.TextColorProperty, "LabelSecondary");
+            var label = new Label
+            {
+                Text = text,
+                Style = GetStyleResource(SecondaryLabelStyleKey)
+            };
             return label;
         }
 
@@ -3240,11 +2993,11 @@ namespace ASLM.Pages
 
             var row = new Grid
             {
-                ColumnSpacing = 10,
+                ColumnSpacing = 8,
                 VerticalOptions = LayoutOptions.Center,
                 HorizontalOptions = LayoutOptions.Fill,
                 MinimumHeightRequest = 22,
-                Margin = new Thickness(0, 4, 0, 2)
+                Margin = new Thickness(0, 4, 0, 0)
             };
             row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
             row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
@@ -3267,15 +3020,9 @@ namespace ASLM.Pages
             var button = new Button
             {
                 Text = text,
-                FontSize = 13,
-                HeightRequest = 36,
-                MinimumHeightRequest = 36,
-                CornerRadius = 6,
-                Padding = new Thickness(14, 0),
-                HorizontalOptions = LayoutOptions.Start
+                Style = GetStyleResource(InlineActionButtonStyleKey)
             };
 
-            ApplyActionButtonState(button, true);
             button.Clicked += clicked;
             return button;
         }
@@ -3302,14 +3049,10 @@ namespace ASLM.Pages
             {
                 Title = title,
                 FontSize = fontSize,
-                HeightRequest = 46,
-                MinimumHeightRequest = 46,
+                Style = GetStyleResource(PickerStyleKey),
                 HorizontalOptions = LayoutOptions.Fill
             };
 
-            picker.SetDynamicResource(Picker.TextColorProperty, "LabelPrimary");
-            picker.SetDynamicResource(Picker.TitleColorProperty, "LabelSecondary");
-            picker.BackgroundColor = Colors.Transparent;
             ApplyCompactPickerStyle(picker);
             return picker;
         }
@@ -3321,15 +3064,21 @@ namespace ASLM.Pages
         {
             var border = new Border
             {
-                StrokeThickness = 1,
-                StrokeShape = new RoundRectangle { CornerRadius = 8 },
-                Padding = new Thickness(12, 0),
-                MinimumHeightRequest = 46,
+                Style = GetStyleResource(FieldBorderStyleKey),
                 Content = picker
             };
 
-            border.BackgroundColor = Color.FromArgb("#19191C");
-            border.SetDynamicResource(Border.StrokeProperty, "Separator");
+            return border;
+        }
+
+        /// <summary>
+        /// Creates the compact fixed-width picker shell used by the Updates category.
+        /// </summary>
+        private static Border CreateUpdatePickerContainer(Picker picker)
+        {
+            var border = CreatePickerContainer(picker);
+            border.WidthRequest = 132;
+            border.MinimumWidthRequest = 132;
             return border;
         }
 
@@ -3340,15 +3089,15 @@ namespace ASLM.Pages
         {
             var border = new Border
             {
-                StrokeThickness = 1,
-                StrokeShape = new RoundRectangle { CornerRadius = 8 },
-                Padding = padding ?? new Thickness(12, 0),
-                MinimumHeightRequest = 46,
+                Style = GetStyleResource(FieldBorderStyleKey),
                 Content = content
             };
 
-            border.BackgroundColor = Color.FromArgb("#19191C");
-            border.SetDynamicResource(Border.StrokeProperty, "Separator");
+            if (padding != null)
+            {
+                border.Padding = padding.Value;
+            }
+
             return border;
         }
 
@@ -3399,6 +3148,12 @@ namespace ASLM.Pages
                     viewer.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
                     viewer.Padding = new Microsoft.UI.Xaml.Thickness(0);
 
+                    if (!isSidebar)
+                    {
+                        viewer.VerticalScrollBarVisibility = Microsoft.UI.Xaml.Controls.ScrollBarVisibility.Hidden;
+                        viewer.HorizontalScrollBarVisibility = Microsoft.UI.Xaml.Controls.ScrollBarVisibility.Hidden;
+                    }
+
                     void Restyle()
                     {
                         StyleScrollBars(viewer, isSidebar);
@@ -3429,9 +3184,19 @@ namespace ASLM.Pages
             var thumbBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(
                 Microsoft.UI.ColorHelper.FromArgb(isSidebar ? (byte)54 : (byte)92, 255, 255, 255));
             var transparentBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            var hiddenOpacity = isSidebar ? (double?)null : 0;
 
             foreach (var scrollBar in FindDescendants<Microsoft.UI.Xaml.Controls.Primitives.ScrollBar>(viewer))
             {
+                if (!isSidebar)
+                {
+                    scrollBar.Opacity = 0;
+                    scrollBar.Width = 0;
+                    scrollBar.MinWidth = 0;
+                    scrollBar.Height = 0;
+                    scrollBar.MinHeight = 0;
+                }
+
                 if (scrollBar.Orientation == Microsoft.UI.Xaml.Controls.Orientation.Vertical)
                 {
                     scrollBar.HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Right;
@@ -3439,14 +3204,14 @@ namespace ASLM.Pages
                     scrollBar.Padding = new Microsoft.UI.Xaml.Thickness(0);
                     scrollBar.Background = transparentBrush;
                     scrollBar.Foreground = thumbBrush;
-                    scrollBar.Opacity = isSidebar ? 0.18 : 0.34;
+                    scrollBar.Opacity = hiddenOpacity ?? 0.18;
                 }
                 else
                 {
-                    scrollBar.Height = 3;
-                    scrollBar.MinHeight = 3;
+                    scrollBar.Height = isSidebar ? 3 : 0;
+                    scrollBar.MinHeight = isSidebar ? 3 : 0;
                     scrollBar.Background = transparentBrush;
-                    scrollBar.Opacity = 0.2;
+                    scrollBar.Opacity = hiddenOpacity ?? 0.2;
                 }
 
                 foreach (var repeatButton in FindDescendants<Microsoft.UI.Xaml.Controls.Primitives.RepeatButton>(scrollBar))
@@ -3511,32 +3276,37 @@ namespace ASLM.Pages
         private static (View Control, Entry Entry) CreatePasswordField(string? text)
         {
             var entry = CreateTextEntry(text, isPassword: true, clearButtonVisibility: ClearButtonVisibility.Never);
-            entry.Margin = new Thickness(12, 0, 44, 0);
-            var toggleButton = new ImageButton
+            entry.Margin = new Thickness(12, 0, 36, 0);
+            var toggleIcon = new Image
             {
                 Source = PasswordIconHidden,
-                WidthRequest = 36,
-                HeightRequest = 36,
-                MinimumWidthRequest = 36,
-                MinimumHeightRequest = 36,
-                Padding = 10,
-                Margin = new Thickness(0, 0, 4, 0),
+                Style = GetStyleResource(PasswordToggleImageStyleKey)
+            };
+
+            var toggleButton = new Border
+            {
+                WidthRequest = 32,
+                HeightRequest = 32,
+                MinimumWidthRequest = 32,
+                MinimumHeightRequest = 32,
+                Padding = 0,
+                Margin = new Thickness(0, 0, 2, 0),
                 HorizontalOptions = LayoutOptions.End,
                 VerticalOptions = LayoutOptions.Center,
                 BackgroundColor = Colors.Transparent,
-                BorderWidth = 0,
-                CornerRadius = 0,
-                Aspect = Aspect.AspectFit
+                StrokeThickness = 0,
+                Content = toggleIcon
             };
 
-            toggleButton.Background = new SolidColorBrush(Colors.Transparent);
-            toggleButton.Clicked += (_, _) =>
+            var tapGesture = new TapGestureRecognizer();
+            tapGesture.Tapped += (_, _) =>
             {
                 entry.IsPassword = !entry.IsPassword;
-                UpdatePasswordToggleIcon(toggleButton, entry.IsPassword);
+                UpdatePasswordToggleIcon(toggleIcon, entry.IsPassword);
             };
+            toggleButton.GestureRecognizers.Add(tapGesture);
 
-            var grid = new Grid { MinimumHeightRequest = 46 };
+            var grid = new Grid { MinimumHeightRequest = 36 };
             grid.Children.Add(entry);
             grid.Children.Add(toggleButton);
             toggleButton.ZIndex = 1;
@@ -3546,9 +3316,9 @@ namespace ASLM.Pages
         /// <summary>
         /// Updates the password visibility icon to reflect the current hidden or visible state.
         /// </summary>
-        private static void UpdatePasswordToggleIcon(ImageButton toggleButton, bool isPasswordHidden)
+        private static void UpdatePasswordToggleIcon(Image toggleIcon, bool isPasswordHidden)
         {
-            toggleButton.Source = isPasswordHidden
+            toggleIcon.Source = isPasswordHidden
                 ? PasswordIconHidden
                 : PasswordIconVisible;
         }
@@ -3570,18 +3340,11 @@ namespace ASLM.Pages
             var entry = new Entry
             {
                 Text = text,
-                FontSize = 13,
-                HeightRequest = 46,
-                MinimumHeightRequest = 46,
-                HorizontalOptions = LayoutOptions.Fill,
-                VerticalOptions = LayoutOptions.Center,
-                VerticalTextAlignment = TextAlignment.Center,
                 ClearButtonVisibility = clearButtonVisibility,
                 IsPassword = isPassword,
-                BackgroundColor = Colors.Transparent
+                Style = GetStyleResource(TextEntryStyleKey)
             };
 
-            entry.SetDynamicResource(Entry.TextColorProperty, "LabelPrimary");
             ApplyFlatEntryStyle(entry);
             return entry;
         }
@@ -3662,56 +3425,5 @@ namespace ASLM.Pages
             };
         }
 
-        /// <summary>
-        /// Detects whether an engine-style setting maps directly to an ASLM engine installation.
-        /// </summary>
-        private bool IsAutoDetectedAslmEngine(ModuleSetting setting)
-        {
-            if (!string.Equals(setting.NormalizedType, "engine", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            return _engineInstaller
-                .DiscoverEngines()
-                .Any(engine => engine.Id.Equals(setting.Key, StringComparison.OrdinalIgnoreCase));
-        }
-
-        /// <summary>
-        /// Checks whether the specified ASLM engine is currently installed on the system.
-        /// </summary>
-        private bool IsAslmEngineInstalled(string engineId) =>
-            _engineInstaller.GetEngineConfig(engineId) != null;
-
-        /// <summary>
-        /// Returns the trimmed description text shown under a setting title.
-        /// </summary>
-        private static string BuildSettingDescription(ModuleSetting setting) => setting.Description?.Trim() ?? string.Empty;
-
-        /// <summary>
-        /// Determines whether a setting should use the segmented active-engine selector.
-        /// </summary>
-        private static bool IsActiveEngineSelector(ModuleSetting setting) =>
-            string.Equals(setting.Key, "llm-engine", StringComparison.OrdinalIgnoreCase) &&
-            setting.AllowedValues is { Count: > 0 };
-
-        /// <summary>
-        /// Builds the save confirmation message, including deferred runtime updates when present.
-        /// </summary>
-        private static string BuildSaveMessage(bool hasAslmChanges, bool hasModuleChanges, List<string> deferredSettings)
-        {
-            if (!hasAslmChanges && !hasModuleChanges)
-            {
-                return "No changes to save.";
-            }
-
-            if (deferredSettings.Count == 0)
-            {
-                return "Settings saved and applied.";
-            }
-
-            var preview = string.Join("\n", deferredSettings.Take(5));
-            return $"Settings saved. Some module settings could not be applied immediately and will be retried on next module start.\n\n{preview}";
-        }
     }
 }

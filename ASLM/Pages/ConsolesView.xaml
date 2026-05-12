@@ -5,81 +5,50 @@
              xmlns:services="clr-namespace:ASLM.Services"
              x:Class="ASLM.Pages.ConsolesView">
 
-    <!-- Page layout -->
     <Grid RowDefinitions="Auto,*"
           RowSpacing="12"
-          Margin="12,16">
+          Padding="4">
 
-        <!-- Header -->
-        <Grid Grid.Row="0"
-              ColumnDefinitions="*,Auto"
-              ColumnSpacing="12">
-            <VerticalStackLayout Spacing="4">
+        <Grid Grid.Row="0">
+            <VerticalStackLayout>
                 <Label Text="Consoles"
                        FontSize="24"
                        FontAttributes="Bold"
                        TextColor="{StaticResource LabelPrimary}" />
-                <Label Text="{Binding Subtitle}"
-                       FontSize="14"
-                       TextColor="{StaticResource LabelSecondary}" />
             </VerticalStackLayout>
-
-            <HorizontalStackLayout Grid.Column="1"
-                                   Spacing="10"
-                                   VerticalOptions="Center">
-                <HorizontalStackLayout Spacing="6"
-                                       VerticalOptions="Center">
-                    <CheckBox IsChecked="{Binding ShowCompletedProcesses}"
-                              CheckedChanged="OnShowCompletedProcessesChanged"
-                              VerticalOptions="Center" />
-                    <Label Text="Show completed processes"
-                           FontSize="13"
-                           VerticalOptions="Center"
-                           TextColor="{StaticResource LabelSecondary}" />
-                </HorizontalStackLayout>
-                <Button Text="Refresh"
-                        Clicked="OnRefreshClicked"
-                        BackgroundColor="{StaticResource BackgroundSecondary}"
-                        TextColor="{StaticResource LabelPrimary}"
-                        FontSize="13"
-                        HeightRequest="32"
-                        CornerRadius="6" />
-            </HorizontalStackLayout>
         </Grid>
 
-        <!-- Workspace -->
         <Grid x:Name="WorkspaceLayout"
               Grid.Row="1"
-              ColumnDefinitions="280,320,*"
-              ColumnSpacing="12"
-              RowSpacing="12">
+              ColumnDefinitions="260,260,*"
+              ColumnSpacing="8"
+              RowSpacing="12"
+              Margin="0,4,0,0">
 
-            <!-- Modules column -->
             <Border x:Name="ModulesPanel"
                     Grid.Column="0"
-                    BackgroundColor="#18181C"
-                    StrokeThickness="0"
-                    StrokeShape="RoundRectangle 12"
-                    Padding="12">
+                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                    Stroke="{StaticResource Separator}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="8">
                 <Grid RowDefinitions="Auto,*"
-                      RowSpacing="10">
-                    <VerticalStackLayout Spacing="2">
+                      RowSpacing="4">
+                    <VerticalStackLayout Spacing="0">
                         <Label Text="Modules"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{StaticResource LabelPrimary}" />
-                        <Label Text="{Binding ModuleListCaption}"
-                               FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}" />
                     </VerticalStackLayout>
 
                     <CollectionView x:Name="ModulesCollection"
                                     Grid.Row="1"
                                     ItemsSource="{Binding Modules}"
                                     SelectionMode="Single"
-                                    SelectionChanged="OnModuleSelectionChanged">
+                                    SelectionChanged="OnModuleSelectionChanged"
+                                    Margin="0">
                         <CollectionView.EmptyView>
-                            <Label Text="Active modules will appear here."
+                            <Label Text="No active modules"
                                    FontSize="13"
                                    TextColor="{StaticResource LabelSecondary}"
                                    HorizontalOptions="Center"
@@ -88,11 +57,10 @@
 
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border BackgroundColor="#141418"
-                                        StrokeThickness="0"
-                                        StrokeShape="RoundRectangle 10"
-                                        Padding="10"
-                                        Margin="0,0,0,6">
+                                <Border StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 8"
+                                        Padding="12"
+                                        Margin="0,0,0,4">
                                     <VerticalStackLayout Spacing="4">
                                         <Label Text="{Binding Name}"
                                                FontSize="14"
@@ -101,9 +69,6 @@
                                         <Label Text="{Binding StatusText}"
                                                FontSize="12"
                                                TextColor="{StaticResource LabelSecondary}" />
-                                        <Label Text="{Binding ActivityText}"
-                                               FontSize="12"
-                                               TextColor="{StaticResource LabelSecondary}" />
                                     </VerticalStackLayout>
                                 </Border>
                             </DataTemplate>
@@ -112,32 +77,30 @@
                 </Grid>
             </Border>
 
-            <!-- Sessions column -->
             <Border x:Name="SessionsPanel"
                     Grid.Column="1"
-                    BackgroundColor="#18181C"
-                    StrokeThickness="0"
-                    StrokeShape="RoundRectangle 12"
-                    Padding="12">
+                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                    Stroke="{StaticResource Separator}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="8">
                 <Grid RowDefinitions="Auto,*"
-                      RowSpacing="10">
-                    <VerticalStackLayout Spacing="2">
+                      RowSpacing="4">
+                    <VerticalStackLayout Spacing="0">
                         <Label Text="Consoles"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{StaticResource LabelPrimary}" />
-                        <Label Text="{Binding SessionListCaption}"
-                               FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}" />
                     </VerticalStackLayout>
 
                     <CollectionView x:Name="SessionsCollection"
                                     Grid.Row="1"
                                     ItemsSource="{Binding Sessions}"
                                     SelectionMode="Single"
-                                    SelectionChanged="OnSessionSelectionChanged">
+                                    SelectionChanged="OnSessionSelectionChanged"
+                                    Margin="0">
                         <CollectionView.EmptyView>
-                            <Label Text="This module has no console sessions yet."
+                            <Label Text="No consoles"
                                    FontSize="13"
                                    TextColor="{StaticResource LabelSecondary}"
                                    HorizontalOptions="Center"
@@ -146,11 +109,10 @@
 
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border BackgroundColor="#141418"
-                                        StrokeThickness="0"
-                                        StrokeShape="RoundRectangle 10"
-                                        Padding="10"
-                                        Margin="0,0,0,6">
+                                <Border StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 8"
+                                        Padding="12"
+                                        Margin="0,0,0,4">
                                     <VerticalStackLayout Spacing="4">
                                         <Label Text="{Binding Title}"
                                                FontSize="14"
@@ -159,11 +121,6 @@
                                         <Label Text="{Binding StatusText}"
                                                FontSize="12"
                                                TextColor="{StaticResource LabelSecondary}" />
-                                        <Label Text="{Binding Preview}"
-                                               FontSize="12"
-                                               TextColor="{StaticResource LabelSecondary}"
-                                               LineBreakMode="TailTruncation"
-                                               MaxLines="2" />
                                     </VerticalStackLayout>
                                 </Border>
                             </DataTemplate>
@@ -172,53 +129,29 @@
                 </Grid>
             </Border>
 
-            <!-- Console output column -->
             <Border x:Name="OutputPanel"
                     Grid.Column="2"
-                    BackgroundColor="#101013"
-                    StrokeThickness="0"
-                    StrokeShape="RoundRectangle 12"
-                    Padding="12">
-                <Grid RowDefinitions="Auto,Auto,*,Auto"
-                      RowSpacing="10">
+                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                    Stroke="{StaticResource Separator}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="8">
+                <Grid RowDefinitions="Auto,*"
+                      RowSpacing="8">
                     <VerticalStackLayout x:Name="OutputHeaderPanel"
-                                         Spacing="4">
+                                         Spacing="0">
                         <Label Text="{Binding SelectedSessionTitle}"
-                               FontSize="18"
+                               FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{StaticResource LabelPrimary}" />
-                        <Label Text="{Binding SelectedSessionStatus}"
-                               FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}" />
-                    </VerticalStackLayout>
-
-                    <VerticalStackLayout x:Name="OutputDetailsPanel"
-                                         Grid.Row="1"
-                                         Spacing="2">
-                        <Label Text="{Binding SelectedSessionDescription}"
-                               FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}"
-                               LineBreakMode="TailTruncation"
-                               MaxLines="2" />
-                        <Label Text="{Binding SelectedSessionCommandLine}"
-                               FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}"
-                               LineBreakMode="MiddleTruncation"
-                               MaxLines="2" />
                     </VerticalStackLayout>
 
                     <services:ConsoleOutputView x:Name="ConsoleOutputHost"
-                                                Grid.Row="2"
+                                                Grid.Row="1"
                                                 Text="{Binding SelectedSessionText}"
                                                 SessionKey="{Binding SelectedSessionKey}"
                                                 HorizontalOptions="Fill"
                                                 VerticalOptions="Fill" />
-
-                    <Label x:Name="OutputFooterLabel"
-                           Grid.Row="3"
-                           Text="{Binding SelectedSessionFooter}"
-                           FontSize="12"
-                           TextColor="{StaticResource LabelSecondary}" />
                 </Grid>
             </Border>
         </Grid>

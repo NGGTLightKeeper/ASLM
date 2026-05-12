@@ -23,6 +23,14 @@ namespace ASLM.Models
         [JsonPropertyName("ports")]
         public AppPortConfig Ports { get; set; } = new();
 
+        // Stores the local ASLM API mirror server settings.
+        [JsonPropertyName("api")]
+        public AppApiConfig Api { get; set; } = new();
+
+        // Stores console page preferences.
+        [JsonPropertyName("consoles")]
+        public AppConsoleConfig Consoles { get; set; } = new();
+
         // Stores ASLM and module update preferences.
         [JsonPropertyName("updates")]
         public AppUpdateSettings Updates { get; set; } = new();
@@ -38,6 +46,14 @@ namespace ASLM.Models
 
             // Recreate the ports section when it is missing from the persisted file.
             Ports ??= new();
+
+            // Recreate and normalize the API server section when it is absent.
+            Api ??= new();
+            Api.Normalize();
+
+            // Recreate and normalize console preferences when the section is absent.
+            Consoles ??= new();
+            Consoles.Normalize();
 
             // Recreate and normalize update preferences when the section is absent.
             Updates ??= new();
@@ -68,6 +84,56 @@ namespace ASLM.Models
     }
 
 
+    // API mirror server
+
+    /// <summary>
+    /// Stores preferences for the local ASLM API mirror server.
+    /// </summary>
+    public class AppApiConfig
+    {
+        // Indicates whether the local mirror server should start with ASLM.
+        [JsonPropertyName("serverEnabled")]
+        public bool ServerEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Restores safe defaults after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            // The API port is allocated by PortRegistry from the official module pool.
+        }
+    }
+
+
+    // Console page settings
+
+    /// <summary>
+    /// Stores preferences for the built-in consoles page.
+    /// </summary>
+    public class AppConsoleConfig
+    {
+        // Indicates whether the consoles page is shown in the sidebar.
+        [JsonPropertyName("sidebarVisible")]
+        public bool SidebarVisible { get; set; } = true;
+
+        // Indicates whether completed process sessions remain visible in per-module console lists.
+        [JsonPropertyName("showCompletedProcesses")]
+        public bool ShowCompletedProcesses { get; set; } = true;
+
+        // Indicates whether per-process consoles are available in addition to unified module consoles.
+        [JsonPropertyName("showIndividualModuleConsoles")]
+        public bool ShowIndividualModuleConsoles { get; set; } = true;
+
+        /// <summary>
+        /// Restores safe defaults after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            // Boolean properties already carry their default values.
+        }
+    }
+
+
     // Port allocation
 
     /// <summary>
@@ -77,7 +143,7 @@ namespace ASLM.Models
     {
         // First port in the range reserved for official modules.
         [JsonPropertyName("officialStart")]
-        public int OfficialStart { get; set; } = 8000;
+        public int OfficialStart { get; set; } = 20000;
 
         // Number of ports reserved for official modules.
         [JsonPropertyName("officialCount")]
@@ -85,7 +151,7 @@ namespace ASLM.Models
 
         // First port in the range reserved for third-party modules.
         [JsonPropertyName("thirdPartyStart")]
-        public int ThirdPartyStart { get; set; } = 9000;
+        public int ThirdPartyStart { get; set; } = 21000;
 
         // Number of ports reserved for third-party modules.
         [JsonPropertyName("thirdPartyCount")]

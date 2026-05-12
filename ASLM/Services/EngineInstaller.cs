@@ -9,17 +9,6 @@ using ASLM.Models;
 
 namespace ASLM.Services
 {
-    // Download progress
-
-    /// <summary>
-    /// Carries download progress values for UI updates.
-    /// </summary>
-    /// <param name="Fraction">Download completion from 0.0 to 1.0.</param>
-    /// <param name="DownloadedBytes">Total bytes downloaded so far.</param>
-    /// <param name="TotalBytes">Expected total file size in bytes.</param>
-    public record DownloadProgress(double Fraction, long DownloadedBytes, long TotalBytes);
-
-
     // Engine installer
 
     /// <summary>
@@ -328,6 +317,7 @@ namespace ASLM.Services
         {
             var url = step.Url ?? throw new InvalidOperationException("Download step missing 'url'.");
             var dest = ctx.ResolvePath(step.Dest ?? throw new InvalidOperationException("Download step missing 'dest'."));
+            var transferLabel = Path.GetFileName(dest);
 
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
             log.Report($"  Downloading: {url}");
@@ -377,7 +367,10 @@ namespace ASLM.Services
                     var throttle = Stopwatch.StartNew();
 
                     downloadProgress?.Report(new DownloadProgress(
-                        totalBytes > 0 ? (double)downloaded / totalBytes : 0, downloaded, totalBytes));
+                        totalBytes > 0 ? (double)downloaded / totalBytes : 0,
+                        downloaded,
+                        totalBytes,
+                        transferLabel));
 
                     while ((bytesRead = await contentStream.ReadAsync(buffer, ct)) > 0)
                     {
@@ -389,7 +382,10 @@ namespace ASLM.Services
                         {
                             throttle.Restart();
                             downloadProgress?.Report(new DownloadProgress(
-                                (double)downloaded / totalBytes, downloaded, totalBytes));
+                                (double)downloaded / totalBytes,
+                                downloaded,
+                                totalBytes,
+                                transferLabel));
                         }
                     }
 
@@ -409,7 +405,10 @@ namespace ASLM.Services
 
             // Report final 100%.
             downloadProgress?.Report(new DownloadProgress(
-                1.0, downloaded, totalBytes > 0 ? totalBytes : downloaded));
+                1.0,
+                downloaded,
+                totalBytes > 0 ? totalBytes : downloaded,
+                transferLabel));
 
             // Verify SHA-256 if a hash was provided.
             if (!string.IsNullOrWhiteSpace(step.Sha256))

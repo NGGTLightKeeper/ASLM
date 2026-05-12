@@ -24,6 +24,11 @@ namespace ASLM.Services
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
+        /// <summary>
+        /// Raised after an installed module manifest is saved.
+        /// </summary>
+        public event EventHandler? ModulesChanged;
+
         // Initialization
 
         /// <summary>
@@ -53,9 +58,9 @@ namespace ASLM.Services
             }
 
             // Materialize the manifest list once before fan-out deserialization.
-            var jsonFiles = Directory
+            var jsonFiles = await Task.Run(() => Directory
                 .EnumerateFiles(modulesRoot, "ASLM_Module.json", SearchOption.AllDirectories)
-                .ToList();
+                .ToList());
 
             var tasks = jsonFiles.Select(LoadModuleConfig);
             var results = await Task.WhenAll(tasks);
@@ -355,7 +360,8 @@ namespace ASLM.Services
             int bytesRead;
             var throttle = Stopwatch.StartNew();
 
-            downloadProgress?.Report(new DownloadProgress(0, 0, totalBytes));
+            var transferLabel = Path.GetFileName(destinationPath);
+            downloadProgress?.Report(new DownloadProgress(0, 0, totalBytes, transferLabel));
 
             while ((bytesRead = await contentStream.ReadAsync(buffer, ct)) > 0)
             {
@@ -368,14 +374,16 @@ namespace ASLM.Services
                     downloadProgress?.Report(new DownloadProgress(
                         (double)downloaded / totalBytes,
                         downloaded,
-                        totalBytes));
+                        totalBytes,
+                        transferLabel));
                 }
             }
 
             downloadProgress?.Report(new DownloadProgress(
                 1.0,
                 downloaded,
-                totalBytes > 0 ? totalBytes : downloaded));
+                totalBytes > 0 ? totalBytes : downloaded,
+                transferLabel));
 
             log.Report("  Download complete.");
         }
@@ -406,6 +414,7 @@ namespace ASLM.Services
 
             var json = JsonSerializer.Serialize(config, _jsonOptions);
             File.WriteAllText(config.SourcePath, json);
+            RaiseModulesChanged();
         }
 
         // Async save
@@ -422,6 +431,7 @@ namespace ASLM.Services
 
             var json = JsonSerializer.Serialize(config, _jsonOptions);
             await File.WriteAllTextAsync(config.SourcePath, json);
+            RaiseModulesChanged();
         }
 
         // Temp file cleanup
@@ -477,6 +487,14 @@ namespace ASLM.Services
             using var document = JsonDocument.Parse(json);
             return document.RootElement.ValueKind == JsonValueKind.Object &&
                    document.RootElement.TryGetProperty("update", out _);
+        }
+
+        /// <summary>
+        /// Notifies listeners that installed module metadata changed.
+        /// </summary>
+        private void RaiseModulesChanged()
+        {
+            ModulesChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 }

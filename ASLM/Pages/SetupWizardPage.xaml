@@ -6,7 +6,7 @@
              Title="ASLM Setup"
              BackgroundColor="{StaticResource BackgroundPrimary}">
 
-    <Grid RowDefinitions="Auto, *, Auto" Padding="32">
+    <Grid RowDefinitions="Auto, *, Auto" Padding="16">
 
         <!-- Header (hidden on welcome step) -->
         <Grid x:Name="HeaderRow" Grid.Row="0" ColumnDefinitions="*, Auto"
@@ -40,7 +40,7 @@
             <!-- Step 0: Welcome -->
             <VerticalStackLayout x:Name="Step0Panel" IsVisible="True"
                                  VerticalOptions="Center" HorizontalOptions="Center"
-                                 Spacing="12">
+                                 Spacing="8">
                 <Label Text="Welcome to ASLM!"
                        FontSize="36"
                        FontAttributes="Bold"
@@ -50,7 +50,7 @@
                        FontSize="16"
                        TextColor="{StaticResource LabelSecondary}"
                        HorizontalTextAlignment="Center"
-                       Margin="0,0,0,30" />
+                       Margin="0,0,0,24" />
                 <Button Text="Setup"
                         BackgroundColor="{StaticResource ActionBlue}"
                         TextColor="{StaticResource LabelPrimary}"
@@ -68,7 +68,7 @@
                         HorizontalOptions="Center"
                         Clicked="OnFastSetupClicked" />
                 <Label Text="Fast Setup uses your Windows username and default ports"
-                       FontSize="11"
+                       FontSize="12"
                        TextColor="{StaticResource LabelSecondary}"
                        HorizontalTextAlignment="Center"
                        Margin="0,4,0,0" />
@@ -79,7 +79,7 @@
                                  VerticalOptions="Center" HorizontalOptions="Center"
                                  WidthRequest="400">
                 <Label Text="Choose a display name"
-                       FontSize="18"
+                       FontSize="16"
                        TextColor="{StaticResource LabelPrimary}" />
                 <Entry x:Name="UsernameEntry"
                        Placeholder="Your name"
@@ -100,7 +100,7 @@
                        FontSize="13"
                        TextColor="{StaticResource LabelSecondary}" />
                 <Entry x:Name="OfficialPortEntry"
-                       Text="8000"
+                       Text="20000"
                        Keyboard="Numeric"
                        FontSize="16"
                        TextColor="{StaticResource LabelPrimary}"
@@ -109,7 +109,7 @@
                        FontSize="13"
                        TextColor="{StaticResource LabelSecondary}" />
                 <Entry x:Name="ThirdPartyPortEntry"
-                       Text="9000"
+                       Text="21000"
                        Keyboard="Numeric"
                        FontSize="16"
                        TextColor="{StaticResource LabelPrimary}"
@@ -145,7 +145,7 @@
 
                     <!-- Overall progress bar -->
                     <Label Text="Overall Progress"
-                           FontSize="10"
+                           FontSize="12"
                            TextColor="{StaticResource LabelSecondary}"
                            Grid.Row="1"
                            Margin="0,0,0,4" />
@@ -187,7 +187,7 @@
         </Grid>
 
         <!-- Navigation Buttons (hidden on step 0) -->
-        <HorizontalStackLayout x:Name="ButtonPanel" Grid.Row="2" Spacing="15"
+        <HorizontalStackLayout x:Name="ButtonPanel" Grid.Row="2" Spacing="12"
                                HorizontalOptions="End"
                                Margin="0,20,0,0"
                                IsVisible="False">

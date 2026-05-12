@@ -2,7 +2,7 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace Patcher;
+namespace ASLM.Patcher;
 
 /// <summary>
 /// Creates the MAUI host used by the standalone patcher.

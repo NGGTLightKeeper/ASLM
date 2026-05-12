@@ -5,7 +5,7 @@
     <BuildDependency Project="Launcher/Launcher.csproj" />
     <BuildDependency Project="Patcher/Patcher.csproj" />
   </Project>
-  <Project Path="Installer/Bootstrapper/Bootstrapper.csproj">
+  <Project Path="Installer/Installer-Bootstrapper/Installer-Bootstrapper.csproj">
     <BuildDependency Project="Installer/Installer/Installer.csproj" />
   </Project>
   <Project Path="Patcher/Patcher.csproj">
