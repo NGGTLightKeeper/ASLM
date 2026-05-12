@@ -685,7 +685,9 @@ namespace ASLM.Pages
         /// Gets whether the current selection can be installed.
         /// </summary>
         public bool CanInstallSelectedUpdate => IsBranchMode
-            ? !IsBusy && !string.IsNullOrWhiteSpace(SelectedBranch)
+            ? !IsBusy &&
+              !string.IsNullOrWhiteSpace(SelectedBranch) &&
+              _updateCandidate != null
             : ResolveSelectedReleaseInstallCandidate() != null && !IsBusy;
 
         /// <summary>
@@ -1255,6 +1257,7 @@ namespace ASLM.Pages
                     OnPropertyChanged(nameof(SelectedBranch));
                     OnPropertyChanged(nameof(SelectedTargetLabel));
                     OnPropertyChanged(nameof(BranchOptions));
+                    PersistUpdatePreferences();
                 });
             }
             catch
@@ -1282,6 +1285,7 @@ namespace ASLM.Pages
                     OnPropertyChanged(nameof(SelectedBranch));
                     OnPropertyChanged(nameof(SelectedTargetLabel));
                     OnPropertyChanged(nameof(BranchOptions));
+                    PersistUpdatePreferences();
                 });
             }
             finally
@@ -1325,12 +1329,18 @@ namespace ASLM.Pages
 
                     _hasLoadedReleaseOptions = true;
                     _loadedReleaseMode = _selectedSourceMode;
+                    if (_selectedReleaseOption != null)
+                    {
+                        _config.Update.SelectedReleaseTag = ResolveReleaseSelectionKey(_selectedReleaseOption);
+                    }
+
                     OnPropertyChanged(nameof(ReleaseOptions));
                     OnPropertyChanged(nameof(SelectedReleaseOption));
                     OnPropertyChanged(nameof(SelectedTargetLabel));
                     OnPropertyChanged(nameof(CanInstallSelectedUpdate));
                     OnPropertyChanged(nameof(ShowInstallAction));
                     RefreshCommandStates();
+                    PersistUpdatePreferences();
                 });
             }
             finally
@@ -1742,24 +1752,11 @@ namespace ASLM.Pages
                 return null;
             }
 
-            if (!string.IsNullOrWhiteSpace(_config.Update.InstalledReleaseTag))
-            {
-                return UpdateManager.AreEquivalentVersionReferences(
-                    _config.Update.InstalledReleaseTag,
-                    _selectedReleaseOption.ReleaseTag)
-                        ? null
-                        : _selectedReleaseOption;
-            }
+            var installedRef = !string.IsNullOrWhiteSpace(_config.Update.InstalledReleaseTag)
+                ? _config.Update.InstalledReleaseTag
+                : (_config.Status.InstalledVersion ?? _config.Version);
 
-            if (!IsLatestReleaseOption(_selectedReleaseOption))
-            {
-                // Legacy installs may not have an installedReleaseTag yet.
-                // Allow a concrete tag selection so the first successful install records it.
-                return _selectedReleaseOption;
-            }
-
-            var currentVersion = _config.Status.InstalledVersion ?? _config.Version;
-            return UpdateManager.AreEquivalentVersionReferences(currentVersion, _selectedReleaseOption.ReleaseTag)
+            return UpdateManager.AreEquivalentVersionReferences(installedRef, _selectedReleaseOption.ReleaseTag)
                 ? null
                 : _selectedReleaseOption;
         }

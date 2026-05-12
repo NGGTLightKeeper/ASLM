@@ -388,6 +388,17 @@ namespace ASLM.Pages
                 SyncPickerSelections();
             }
 
+            if (e.PropertyName == nameof(ModuleViewModel.BranchOptions))
+            {
+                QueueBranchPickerResyncAfterListChange();
+            }
+
+            if (e.PropertyName == nameof(ModuleViewModel.IsBranchMode) && IsBranchMode)
+            {
+                QueueBranchPickerResyncAfterListChange();
+                _ = ResyncBranchPickerAfterBranchUiShownAsync();
+            }
+
             if (e.PropertyName == nameof(ModuleViewModel.UpdateLogText) ||
                 e.PropertyName == nameof(ModuleViewModel.HasUpdateLog))
             {
@@ -529,6 +540,10 @@ namespace ASLM.Pages
                 await _module.EnsureSelectionOptionsLoadedAsync(forceRefresh);
                 RaiseModuleProperties();
                 SyncPickerSelections();
+                if (_module.IsBranchMode)
+                {
+                    QueueBranchPickerResyncAfterListChange();
+                }
             }
             catch (Exception ex)
             {
@@ -759,20 +774,149 @@ namespace ASLM.Pages
 
                     ReleasePicker.SelectedItem = SelectedReleaseOption;
 
-                    var selectedBranch = BranchOptions.FirstOrDefault(branch =>
-                        string.Equals(branch, SelectedBranch, StringComparison.OrdinalIgnoreCase));
-
-                    BranchPicker.SelectedItem = selectedBranch;
-                    if (selectedBranch == null)
-                    {
-                        BranchPicker.SelectedIndex = -1;
-                    }
+                    ReapplyBranchPickerFromViewModel();
                 }
                 finally
                 {
                     _isSynchronizingPickers = false;
                 }
             });
+        }
+
+        /// <summary>
+        /// Re-applies branch selection after ItemsSource changes; repeats briefly so WinUI can hydrate the ComboBox.
+        /// </summary>
+        private void QueueBranchPickerResyncAfterListChange()
+        {
+            _ = BranchPickerDeferredResyncLoopAsync();
+        }
+
+        private async Task BranchPickerDeferredResyncLoopAsync()
+        {
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                if (_module == null || !IsBranchMode)
+                {
+                    return;
+                }
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    if (_module == null || !IsBranchMode)
+                    {
+                        return;
+                    }
+
+                    _isSynchronizingPickers = true;
+                    try
+                    {
+                        ReapplyBranchPickerFromViewModel();
+                    }
+                    finally
+                    {
+                        _isSynchronizingPickers = false;
+                    }
+                });
+
+                if (attempt < 2)
+                {
+                    await Task.Delay(16).ConfigureAwait(false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Runs after the branch column becomes visible (same grid cell as release); native host may ignore the first selection pass.
+        /// </summary>
+        private async Task ResyncBranchPickerAfterBranchUiShownAsync()
+        {
+            try
+            {
+                await Task.Delay(48).ConfigureAwait(false);
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    if (_module == null || !IsBranchMode)
+                    {
+                        return;
+                    }
+
+                    _isSynchronizingPickers = true;
+                    try
+                    {
+                        ReapplyBranchPickerFromViewModel();
+                    }
+                    finally
+                    {
+                        _isSynchronizingPickers = false;
+                    }
+                });
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        /// <summary>
+        /// Aligns the branch picker with <see cref="SelectedBranch"/> using the current <see cref="BranchOptions"/> list.
+        /// </summary>
+        private void ReapplyBranchPickerFromViewModel()
+        {
+            if (_module == null || !IsBranchMode)
+            {
+                return;
+            }
+
+            var index = -1;
+            for (var i = 0; i < BranchOptions.Count; i++)
+            {
+                if (string.Equals(BranchOptions[i], SelectedBranch, StringComparison.OrdinalIgnoreCase))
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index < 0)
+            {
+                BranchPicker.SelectedIndex = -1;
+                BranchPicker.SelectedItem = null;
+                ForceWinUiBranchPickerSelection(-1);
+                return;
+            }
+
+            // Index first: Windows ComboBox often needs a concrete index after ItemsSource refresh before it shows text.
+            BranchPicker.SelectedIndex = index;
+            BranchPicker.SelectedItem = BranchOptions[index];
+            ForceWinUiBranchPickerSelection(index);
+        }
+
+        /// <summary>
+        /// Pushes selection into the WinUI ComboBox backing the MAUI picker (avoids blank display after ItemsSource updates).
+        /// </summary>
+        private void ForceWinUiBranchPickerSelection(int index)
+        {
+#if WINDOWS
+            try
+            {
+                if (BranchPicker.Handler?.PlatformView is not Microsoft.UI.Xaml.Controls.ComboBox combo)
+                {
+                    return;
+                }
+
+                if (index < 0 || combo.Items.Count == 0)
+                {
+                    combo.SelectedIndex = -1;
+                    return;
+                }
+
+                var bounded = Math.Min(index, combo.Items.Count - 1);
+                combo.SelectedIndex = bounded;
+            }
+            catch
+            {
+                // ComboBox can throw while its item collection is mid-refresh; deferred resync will retry.
+            }
+#endif
         }
 
         /// <summary>

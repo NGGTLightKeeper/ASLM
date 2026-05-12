@@ -392,6 +392,14 @@ namespace ASLM.Services
         {
             var module = candidate.Module ?? throw new InvalidOperationException(
                 "Module update candidate does not contain module metadata.");
+            module.Normalize();
+
+            if (IsModuleAlreadyAtInstallTarget(module, candidate))
+            {
+                log?.Report("The selected version is already installed.");
+                return false;
+            }
+
             var operationKey = NotificationCenter.BuildOperationKey("module-update", module.Id);
             await _notifications.StartDownloadAsync(
                 operationKey,
@@ -568,6 +576,15 @@ namespace ASLM.Services
                 return null;
             }
 
+            if (!string.IsNullOrWhiteSpace(module.Update.InstalledCommitSha) &&
+                string.Equals(
+                    selected.CommitSha.Trim(),
+                    module.Update.InstalledCommitSha.Trim(),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
             return new UpdateCandidate
             {
                 TargetKind = "module",
@@ -606,13 +623,6 @@ namespace ASLM.Services
                     return null;
                 }
 
-                // Old installations may only know the package version, not the GitHub tag.
-                // A concrete user selection should be installable once so the tag cache can be established.
-                if (string.IsNullOrWhiteSpace(module.Update.InstalledReleaseTag))
-                {
-                    return selected;
-                }
-
                 return !AreEquivalentVersionReferences(selected.ReleaseTag, currentTag) ? selected : null;
             }
 
@@ -635,18 +645,26 @@ namespace ASLM.Services
                 return null;
             }
 
+            UpdateCandidate resolved;
             if (!IsLatestReleaseSelection(module.Update.SelectedReleaseTag) &&
                 !string.IsNullOrWhiteSpace(module.Update.SelectedReleaseTag))
             {
                 var selected = candidates.FirstOrDefault(candidate =>
                     string.Equals(candidate.ReleaseTag, module.Update.SelectedReleaseTag, StringComparison.OrdinalIgnoreCase));
-                if (selected != null)
-                {
-                    return selected;
-                }
+                resolved = selected ?? candidates[0];
+            }
+            else
+            {
+                resolved = candidates[0];
             }
 
-            return candidates[0];
+            if (string.IsNullOrWhiteSpace(resolved.ReleaseTag))
+            {
+                return null;
+            }
+
+            var installed = ResolveInstalledModuleReleaseTag(module);
+            return AreEquivalentVersionReferences(resolved.ReleaseTag, installed) ? null : resolved;
         }
 
         /// <summary>
@@ -942,6 +960,35 @@ namespace ASLM.Services
         private static string ResolveInstalledModuleReleaseTag(ModuleConfig module)
         {
             return module.Update.InstalledReleaseTag ?? module.Status.InstalledVersion ?? module.Version;
+        }
+
+        /// <summary>
+        /// Returns whether the install candidate already matches the local installation (no file work needed).
+        /// </summary>
+        private static bool IsModuleAlreadyAtInstallTarget(ModuleConfig module, UpdateCandidate candidate)
+        {
+            if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(candidate.Mode, "branch", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrWhiteSpace(candidate.CommitSha) ||
+                    string.IsNullOrWhiteSpace(module.Update.InstalledCommitSha))
+                {
+                    return false;
+                }
+
+                return string.Equals(
+                    candidate.CommitSha.Trim(),
+                    module.Update.InstalledCommitSha.Trim(),
+                    StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (string.IsNullOrWhiteSpace(candidate.ReleaseTag))
+            {
+                return false;
+            }
+
+            var installed = ResolveInstalledModuleReleaseTag(module);
+            return AreEquivalentVersionReferences(candidate.ReleaseTag, installed);
         }
 
         /// <summary>
