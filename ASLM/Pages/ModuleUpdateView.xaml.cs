@@ -483,7 +483,8 @@ namespace ASLM.Pages
         /// </summary>
         private async Task CheckForUpdatesAsync(bool forceOptionLoad, bool announceInLog)
         {
-            if (_module == null)
+            var module = _module;
+            if (module == null)
             {
                 return;
             }
@@ -495,33 +496,36 @@ namespace ASLM.Pages
 
             if (announceInLog)
             {
-                _module.AppendUpdateLog($"Checking updates for {_module.Name}...");
+                module.AppendUpdateLog($"Checking updates for {module.Name}...");
             }
 
-            _module.SetUpdateActivityStatus("Checking for updates...");
+            module.SetUpdateActivityStatus("Checking for updates...");
             RaiseActivityProperties();
 
             try
             {
-                await _module.RefreshUpdateStateAsync(forceOptionLoad);
+                await module.RefreshUpdateStateAsync(forceOptionLoad);
 
                 if (announceInLog)
                 {
-                    _module.AppendUpdateLog(_module.UpdateStatus);
+                    module.AppendUpdateLog(module.UpdateStatus);
                 }
             }
             catch (Exception ex)
             {
-                _module.SetUpdateActivityStatus($"Check failed: {ex.Message}");
+                module.SetUpdateActivityStatus($"Check failed: {ex.Message}");
                 if (announceInLog)
                 {
-                    _module.AppendUpdateLog(_module.UpdateActivityStatus);
+                    module.AppendUpdateLog(module.UpdateActivityStatus);
                 }
             }
             finally
             {
-                RaiseModuleProperties();
-                RaiseActivityProperties();
+                if (ReferenceEquals(_module, module))
+                {
+                    RaiseModuleProperties();
+                    RaiseActivityProperties();
+                }
             }
         }
 
@@ -530,25 +534,34 @@ namespace ASLM.Pages
         /// </summary>
         private async Task EnsureModeOptionsLoadedAsync(bool forceRefresh)
         {
-            if (_module == null)
+            var module = _module;
+            if (module == null)
             {
                 return;
             }
 
             try
             {
-                await _module.EnsureSelectionOptionsLoadedAsync(forceRefresh);
+                await module.EnsureSelectionOptionsLoadedAsync(forceRefresh);
+                if (!ReferenceEquals(_module, module))
+                {
+                    return;
+                }
+
                 RaiseModuleProperties();
                 SyncPickerSelections();
-                if (_module.IsBranchMode)
+                if (module.IsBranchMode)
                 {
                     QueueBranchPickerResyncAfterListChange();
                 }
             }
             catch (Exception ex)
             {
-                _module.SetUpdateActivityStatus($"Failed to load update options: {ex.Message}");
-                RaiseActivityProperties();
+                module.SetUpdateActivityStatus($"Failed to load update options: {ex.Message}");
+                if (ReferenceEquals(_module, module))
+                {
+                    RaiseActivityProperties();
+                }
             }
         }
 
@@ -568,7 +581,8 @@ namespace ASLM.Pages
         /// </summary>
         private async Task InstallUpdateAsync()
         {
-            if (_module == null)
+            var module = _module;
+            if (module == null)
             {
                 return;
             }
@@ -578,28 +592,31 @@ namespace ASLM.Pages
                 return;
             }
 
-            if (!_module.CanInstallSelectedUpdate || _module.IsUpdating)
+            if (!module.CanInstallSelectedUpdate || module.IsUpdating)
             {
                 return;
             }
 
-            _module.ResetUpdateSession(clearLog: true);
-            _module.SetUpdateActivityStatus($"Installing update for {_module.Name}...");
+            module.ResetUpdateSession(clearLog: true);
+            module.SetUpdateActivityStatus($"Installing update for {module.Name}...");
             RaiseActivityProperties();
-            _module.AppendUpdateLog($"Starting update for {_module.Name}.");
+            module.AppendUpdateLog($"Starting update for {module.Name}.");
 
-            var success = await _module.ApplyUpdateAsync();
+            var success = await module.ApplyUpdateAsync();
 
-            _module.SetUpdateActivityStatus(success
-                ? $"{_module.Name} updated successfully."
-                : $"{_module.Name} update failed.");
+            module.SetUpdateActivityStatus(success
+                ? $"{module.Name} updated successfully."
+                : $"{module.Name} update failed.");
 
-            _module.AppendUpdateLog(success
-                ? $"Update finished. Installed {_module.VersionString}."
+            module.AppendUpdateLog(success
+                ? $"Update finished. Installed {module.VersionString}."
                 : "Update did not complete successfully.");
 
-            RaiseModuleProperties();
-            RaiseActivityProperties();
+            if (ReferenceEquals(_module, module))
+            {
+                RaiseModuleProperties();
+                RaiseActivityProperties();
+            }
         }
 
         /// <summary>

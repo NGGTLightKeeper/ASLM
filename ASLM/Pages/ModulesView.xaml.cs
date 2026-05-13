@@ -1524,8 +1524,11 @@ namespace ASLM.Pages
             IProgress<string> debugLog = new Progress<string>(message =>
                 Debug.WriteLine($"[ModuleUpdate:{Name}] {message}"));
 
+            var success = false;
+            var enteredApply = false;
             try
             {
+                enteredApply = true;
                 var logSink = log;
                 var progressSink = progress;
 
@@ -1545,7 +1548,7 @@ namespace ASLM.Pages
                     progressSink?.Report(download);
                 });
 
-                var success = await Task.Run(() => _updateManager.ApplyModuleUpdateAsync(
+                success = await Task.Run(() => _updateManager.ApplyModuleUpdateAsync(
                     installCandidate,
                     combinedLog,
                     combinedProgress,
@@ -1563,17 +1566,25 @@ namespace ASLM.Pages
                 _updateCandidate = null;
                 OnPropertyChanged(nameof(UpdateCandidate));
                 OnPropertyChanged(nameof(AvailableUpdateLabel));
-                _onStateChanged?.Invoke();
                 await EnsureSelectionOptionsLoadedAsync(forceRefresh: false);
                 await RefreshUpdateStateAsync(forceOptionLoad: false);
-                return success;
             }
             finally
             {
-                IsUpdating = false;
-                OnPropertyChanged(nameof(ShowUpdatingStatus));
-                OnPropertyChanged(nameof(CanShowLaunchAction));
+                if (enteredApply)
+                {
+                    IsUpdating = false;
+                    OnPropertyChanged(nameof(ShowUpdatingStatus));
+                    OnPropertyChanged(nameof(CanShowLaunchAction));
+                }
             }
+
+            if (enteredApply)
+            {
+                _onStateChanged?.Invoke();
+            }
+
+            return success;
         }
 
 
@@ -1913,6 +1924,12 @@ namespace ASLM.Pages
         internal void ResetCompletedUpdateSession()
         {
             if (IsBusy)
+            {
+                return;
+            }
+
+            // Do not wipe in-flight install UI if flags were lost but status still reflects an active update.
+            if (string.Equals(UpdateStatus, "Updating...", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }

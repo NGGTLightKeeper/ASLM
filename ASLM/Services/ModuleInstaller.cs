@@ -431,7 +431,12 @@ namespace ASLM.Services
         /// <summary>
         /// Saves a module manifest asynchronously.
         /// </summary>
-        public async Task SaveConfigAsync(ModuleConfig config)
+        /// <param name="config">Manifest to persist.</param>
+        /// <param name="raiseModulesChanged">
+        /// When false, skips <see cref="ModulesChanged"/> so hosts do not rebuild module cards mid-flight
+        /// (for example during a multi-step module update that would otherwise drop in-progress UI state).
+        /// </param>
+        public async Task SaveConfigAsync(ModuleConfig config, bool raiseModulesChanged = true)
         {
             if (string.IsNullOrEmpty(config.SourcePath))
             {
@@ -440,7 +445,10 @@ namespace ASLM.Services
 
             var json = JsonSerializer.Serialize(config, _jsonOptions);
             await File.WriteAllTextAsync(config.SourcePath, json);
-            RaiseModulesChanged();
+            if (raiseModulesChanged)
+            {
+                RaiseModulesChanged();
+            }
         }
 
         // Temp file cleanup

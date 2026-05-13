@@ -574,7 +574,7 @@ namespace ASLM.Services
                     log?.Report($"Stopping {module.Name} before update...");
                     await _moduleRunner.StopModuleAsync(module.SourcePath);
                     module.Status.Enabled = false;
-                    _moduleInstaller.SaveModuleConfig(module);
+                    _moduleInstaller.SaveModuleConfig(module, raiseModulesChanged: false);
                 }
 
                 await StopProcessesRunningFromDirectoryAsync(moduleDir, log, ct);
@@ -918,7 +918,7 @@ namespace ASLM.Services
                     ?? throw new InvalidOperationException("Updated module manifest could not be loaded.");
 
                 MergeModuleState(module, installed, candidate);
-                await _moduleInstaller.SaveConfigAsync(installed);
+                await _moduleInstaller.SaveConfigAsync(installed, raiseModulesChanged: false);
 
                 if (installed.Update.RunFirstRunAfterUpdate)
                 {
@@ -934,7 +934,7 @@ namespace ASLM.Services
 
                     if (!setupSuccess)
                     {
-                        await _moduleInstaller.SaveConfigAsync(installed);
+                        await _moduleInstaller.SaveConfigAsync(installed, raiseModulesChanged: false);
                         log?.Report("Module update applied, but setup failed.");
                         return false;
                     }
@@ -943,7 +943,7 @@ namespace ASLM.Services
                 if (wasEnabled && installed.Commands.Run.Count > 0)
                 {
                     installed.Status.Enabled = true;
-                    await _moduleInstaller.SaveConfigAsync(installed);
+                    await _moduleInstaller.SaveConfigAsync(installed, raiseModulesChanged: false);
                     _ = Task.Run(() => _moduleRunner.ExecuteRunAsync(
                         installed,
                         log ?? NoOpProgress<string>.Instance,
@@ -951,7 +951,7 @@ namespace ASLM.Services
                 }
 
                 installed.Status.LastUpdated = DateTime.UtcNow.ToString("o");
-                await _moduleInstaller.SaveConfigAsync(installed);
+                await _moduleInstaller.SaveConfigAsync(installed, raiseModulesChanged: false);
                 log?.Report($"{installed.Name} updated to {candidate.RemoteVersion}.");
                 return true;
             }
