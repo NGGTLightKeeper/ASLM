@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using ASLM.Models;
 using Microsoft.Extensions.Logging;
 
@@ -296,7 +297,123 @@ namespace ASLM.Services
         public void SaveModuleUpdatePreferences(ModuleConfig module)
         {
             module.Update.Normalize();
-            _moduleInstaller.SaveModuleConfig(module);
+            // Persist without ModulesChanged: the shell rebuilds module cards on that event and would drop
+            // in-memory update-check results (HasUpdate / candidate) tied to the current ModuleViewModel instances.
+            _moduleInstaller.SaveModuleConfig(module, raiseModulesChanged: false);
+        }
+
+        /// <summary>
+        /// Rebuilds a module <see cref="UpdateCandidate"/> from <see cref="ModuleUpdateConfig.PendingUpdate"/> when the
+        /// persisted snapshot still reflects an update newer than the local installation.
+        /// </summary>
+        public bool TryRestorePendingUpdateCandidate(ModuleConfig module, [NotNullWhen(true)] out UpdateCandidate? candidate)
+        {
+            candidate = null;
+            module.Normalize();
+            var pending = module.Update.PendingUpdate;
+            if (pending == null || string.IsNullOrWhiteSpace(pending.RemoteVersion))
+            {
+                return false;
+            }
+
+            pending.Normalize();
+            if (string.IsNullOrWhiteSpace(pending.RemoteVersion))
+            {
+                return false;
+            }
+
+            if (!string.Equals(pending.UpdateMode, module.Update.Mode, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrWhiteSpace(pending.CommitSha) || string.IsNullOrWhiteSpace(pending.Branch))
+                {
+                    return false;
+                }
+
+                if (!string.Equals(
+                    pending.Branch.Trim(),
+                    module.Update.Branch.Trim(),
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                if (string.Equals(
+                    pending.CommitSha.Trim(),
+                    module.Update.InstalledCommitSha?.Trim(),
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                candidate = new UpdateCandidate
+                {
+                    TargetKind = "module",
+                    TargetId = module.Id,
+                    Name = module.Name,
+                    CurrentVersion = BuildModuleCurrentVersion(module),
+                    RemoteVersion = pending.RemoteVersion,
+                    Channel = "branch",
+                    Mode = "branch",
+                    ReferenceName = pending.ReferenceName ?? pending.Branch,
+                    CommitSha = pending.CommitSha,
+                    Module = module
+                };
+                return true;
+            }
+
+            if (string.IsNullOrWhiteSpace(pending.ReleaseTag))
+            {
+                return false;
+            }
+
+            var installed = ResolveInstalledModuleReleaseTag(module);
+            if (AreEquivalentVersionReferences(pending.ReleaseTag, installed))
+            {
+                return false;
+            }
+
+            if (!IsLatestReleaseSelection(module.Update.SelectedReleaseTag) &&
+                !string.IsNullOrWhiteSpace(module.Update.SelectedReleaseTag) &&
+                !string.IsNullOrWhiteSpace(pending.ReleaseSelectionKey) &&
+                !string.Equals(
+                    pending.ReleaseSelectionKey.Trim(),
+                    module.Update.SelectedReleaseTag.Trim(),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var displayName = pending.IsVirtualLatest
+                ? ModuleUpdateConfig.LatestReleaseTag
+                : (!string.IsNullOrWhiteSpace(pending.DisplayName) ? pending.DisplayName : pending.RemoteVersion);
+
+            var channel = !string.IsNullOrWhiteSpace(pending.Channel)
+                ? pending.Channel
+                : (IsPrereleaseMode(module.Update.Mode) ? "pre-release" : "release");
+
+            candidate = new UpdateCandidate
+            {
+                TargetKind = "module",
+                TargetId = module.Id,
+                Name = module.Name,
+                DisplayName = displayName,
+                CurrentVersion = BuildModuleCurrentVersion(module),
+                RemoteVersion = pending.RemoteVersion,
+                Channel = channel,
+                Mode = module.Update.Mode,
+                DownloadUrl = pending.DownloadUrl ?? string.Empty,
+                ReleaseTag = pending.ReleaseTag,
+                IsVirtualLatest = pending.IsVirtualLatest,
+                IsPrerelease = pending.IsPrerelease,
+                PublishedAt = null,
+                Module = module
+            };
+            return true;
         }
 
 
@@ -392,6 +509,14 @@ namespace ASLM.Services
         {
             var module = candidate.Module ?? throw new InvalidOperationException(
                 "Module update candidate does not contain module metadata.");
+            module.Normalize();
+
+            if (IsModuleAlreadyAtInstallTarget(module, candidate))
+            {
+                log?.Report("The selected version is already installed.");
+                return false;
+            }
+
             var operationKey = NotificationCenter.BuildOperationKey("module-update", module.Id);
             await _notifications.StartDownloadAsync(
                 operationKey,
@@ -449,7 +574,7 @@ namespace ASLM.Services
                     log?.Report($"Stopping {module.Name} before update...");
                     await _moduleRunner.StopModuleAsync(module.SourcePath);
                     module.Status.Enabled = false;
-                    _moduleInstaller.SaveModuleConfig(module);
+                    _moduleInstaller.SaveModuleConfig(module, raiseModulesChanged: false);
                 }
 
                 await StopProcessesRunningFromDirectoryAsync(moduleDir, log, ct);
@@ -568,6 +693,15 @@ namespace ASLM.Services
                 return null;
             }
 
+            if (!string.IsNullOrWhiteSpace(module.Update.InstalledCommitSha) &&
+                string.Equals(
+                    selected.CommitSha.Trim(),
+                    module.Update.InstalledCommitSha.Trim(),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
             return new UpdateCandidate
             {
                 TargetKind = "module",
@@ -606,13 +740,6 @@ namespace ASLM.Services
                     return null;
                 }
 
-                // Old installations may only know the package version, not the GitHub tag.
-                // A concrete user selection should be installable once so the tag cache can be established.
-                if (string.IsNullOrWhiteSpace(module.Update.InstalledReleaseTag))
-                {
-                    return selected;
-                }
-
                 return !AreEquivalentVersionReferences(selected.ReleaseTag, currentTag) ? selected : null;
             }
 
@@ -635,18 +762,26 @@ namespace ASLM.Services
                 return null;
             }
 
+            UpdateCandidate resolved;
             if (!IsLatestReleaseSelection(module.Update.SelectedReleaseTag) &&
                 !string.IsNullOrWhiteSpace(module.Update.SelectedReleaseTag))
             {
                 var selected = candidates.FirstOrDefault(candidate =>
                     string.Equals(candidate.ReleaseTag, module.Update.SelectedReleaseTag, StringComparison.OrdinalIgnoreCase));
-                if (selected != null)
-                {
-                    return selected;
-                }
+                resolved = selected ?? candidates[0];
+            }
+            else
+            {
+                resolved = candidates[0];
             }
 
-            return candidates[0];
+            if (string.IsNullOrWhiteSpace(resolved.ReleaseTag))
+            {
+                return null;
+            }
+
+            var installed = ResolveInstalledModuleReleaseTag(module);
+            return AreEquivalentVersionReferences(resolved.ReleaseTag, installed) ? null : resolved;
         }
 
         /// <summary>
@@ -783,7 +918,7 @@ namespace ASLM.Services
                     ?? throw new InvalidOperationException("Updated module manifest could not be loaded.");
 
                 MergeModuleState(module, installed, candidate);
-                await _moduleInstaller.SaveConfigAsync(installed);
+                await _moduleInstaller.SaveConfigAsync(installed, raiseModulesChanged: false);
 
                 if (installed.Update.RunFirstRunAfterUpdate)
                 {
@@ -799,7 +934,7 @@ namespace ASLM.Services
 
                     if (!setupSuccess)
                     {
-                        await _moduleInstaller.SaveConfigAsync(installed);
+                        await _moduleInstaller.SaveConfigAsync(installed, raiseModulesChanged: false);
                         log?.Report("Module update applied, but setup failed.");
                         return false;
                     }
@@ -808,7 +943,7 @@ namespace ASLM.Services
                 if (wasEnabled && installed.Commands.Run.Count > 0)
                 {
                     installed.Status.Enabled = true;
-                    await _moduleInstaller.SaveConfigAsync(installed);
+                    await _moduleInstaller.SaveConfigAsync(installed, raiseModulesChanged: false);
                     _ = Task.Run(() => _moduleRunner.ExecuteRunAsync(
                         installed,
                         log ?? NoOpProgress<string>.Instance,
@@ -816,7 +951,7 @@ namespace ASLM.Services
                 }
 
                 installed.Status.LastUpdated = DateTime.UtcNow.ToString("o");
-                await _moduleInstaller.SaveConfigAsync(installed);
+                await _moduleInstaller.SaveConfigAsync(installed, raiseModulesChanged: false);
                 log?.Report($"{installed.Name} updated to {candidate.RemoteVersion}.");
                 return true;
             }
@@ -873,6 +1008,7 @@ namespace ASLM.Services
                 IsLatestReleaseSelection(oldConfig.Update.SelectedReleaseTag)
                     ? ModuleUpdateConfig.LatestReleaseTag
                     : candidate.ReleaseTag ?? oldConfig.Update.SelectedReleaseTag;
+            newConfig.Update.PendingUpdate = null;
             newConfig.Update.Normalize();
         }
 
@@ -942,6 +1078,35 @@ namespace ASLM.Services
         private static string ResolveInstalledModuleReleaseTag(ModuleConfig module)
         {
             return module.Update.InstalledReleaseTag ?? module.Status.InstalledVersion ?? module.Version;
+        }
+
+        /// <summary>
+        /// Returns whether the install candidate already matches the local installation (no file work needed).
+        /// </summary>
+        private static bool IsModuleAlreadyAtInstallTarget(ModuleConfig module, UpdateCandidate candidate)
+        {
+            if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(candidate.Mode, "branch", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrWhiteSpace(candidate.CommitSha) ||
+                    string.IsNullOrWhiteSpace(module.Update.InstalledCommitSha))
+                {
+                    return false;
+                }
+
+                return string.Equals(
+                    candidate.CommitSha.Trim(),
+                    module.Update.InstalledCommitSha.Trim(),
+                    StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (string.IsNullOrWhiteSpace(candidate.ReleaseTag))
+            {
+                return false;
+            }
+
+            var installed = ResolveInstalledModuleReleaseTag(module);
+            return AreEquivalentVersionReferences(candidate.ReleaseTag, installed);
         }
 
         /// <summary>

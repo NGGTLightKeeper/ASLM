@@ -124,7 +124,7 @@
                                             Padding="8,0">
                                         <Picker x:Name="SourceModePicker"
                                                 ItemsSource="{Binding SourceModeOptions, Source={x:Reference RootView}}"
-                                                SelectedItem="{Binding SelectedSourceMode, Source={x:Reference RootView}, Mode=TwoWay}"
+                                                SelectedItem="{Binding SelectedSourceMode, Source={x:Reference RootView}, Mode=OneWay}"
                                                 SelectedIndexChanged="OnSourceModeSelectionChanged"
                                                 FontSize="13"
                                                 HeightRequest="44"
@@ -147,7 +147,7 @@
                                             Padding="12,0">
                                         <Picker x:Name="ReleasePicker"
                                                 ItemsSource="{Binding ReleaseOptions, Source={x:Reference RootView}}"
-                                                SelectedItem="{Binding SelectedReleaseOption, Source={x:Reference RootView}, Mode=TwoWay}"
+                                                SelectedItem="{Binding SelectedReleaseOption, Source={x:Reference RootView}, Mode=OneWay}"
                                                 SelectedIndexChanged="OnReleaseSelectionChanged"
                                                 ItemDisplayBinding="{Binding DisplayName}"
                                                 FontSize="13"
@@ -171,7 +171,6 @@
                                             Padding="8,0">
                                         <Picker x:Name="BranchPicker"
                                                 ItemsSource="{Binding BranchOptions, Source={x:Reference RootView}}"
-                                                SelectedItem="{Binding SelectedBranch, Source={x:Reference RootView}, Mode=TwoWay}"
                                                 SelectedIndexChanged="OnBranchSelectionChanged"
                                                 FontSize="13"
                                                 HeightRequest="44"

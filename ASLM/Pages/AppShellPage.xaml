@@ -95,6 +95,7 @@
             <!-- WebView (visible when a module page is selected) -->
             <WebView x:Name="Browser"
                      IsVisible="False"
+                     HandlerChanged="Browser_HandlerChanged"
                      Navigating="Browser_Navigating" />
         </Grid>
         
@@ -104,7 +105,7 @@
                      IsVisible="False"
                      BackgroundColor="Transparent" />
 
-        <!-- In-app toast notifications -->
+        <!-- Toasts sit above the shell; pass input through the empty stack so WebView2 receives drag/drop (children stay interactive). -->
         <VerticalStackLayout x:Name="ToastPanel"
                              Grid.ColumnSpan="2"
                              Spacing="8"
@@ -112,7 +113,8 @@
                              WidthRequest="360"
                              HorizontalOptions="End"
                              VerticalOptions="End"
-                             InputTransparent="False" />
+                             CascadeInputTransparent="False"
+                             InputTransparent="True" />
 
     </Grid>
 

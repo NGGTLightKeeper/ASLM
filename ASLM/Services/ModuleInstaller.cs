@@ -405,7 +405,13 @@ namespace ASLM.Services
         /// <summary>
         /// Saves a module manifest synchronously.
         /// </summary>
-        public void SaveModuleConfig(ModuleConfig config)
+        /// <param name="config">Manifest to persist.</param>
+        /// <param name="raiseModulesChanged">
+        /// When true, raises <see cref="ModulesChanged"/> so hosts reload module lists and dashboards.
+        /// Use false for saves that only mirror preferences already held by live view models (for example update-source pickers),
+        /// so ephemeral state such as a completed update check is not discarded by rebuilding cards.
+        /// </param>
+        public void SaveModuleConfig(ModuleConfig config, bool raiseModulesChanged = true)
         {
             if (string.IsNullOrEmpty(config.SourcePath))
             {
@@ -414,7 +420,10 @@ namespace ASLM.Services
 
             var json = JsonSerializer.Serialize(config, _jsonOptions);
             File.WriteAllText(config.SourcePath, json);
-            RaiseModulesChanged();
+            if (raiseModulesChanged)
+            {
+                RaiseModulesChanged();
+            }
         }
 
         // Async save
@@ -422,7 +431,12 @@ namespace ASLM.Services
         /// <summary>
         /// Saves a module manifest asynchronously.
         /// </summary>
-        public async Task SaveConfigAsync(ModuleConfig config)
+        /// <param name="config">Manifest to persist.</param>
+        /// <param name="raiseModulesChanged">
+        /// When false, skips <see cref="ModulesChanged"/> so hosts do not rebuild module cards mid-flight
+        /// (for example during a multi-step module update that would otherwise drop in-progress UI state).
+        /// </param>
+        public async Task SaveConfigAsync(ModuleConfig config, bool raiseModulesChanged = true)
         {
             if (string.IsNullOrEmpty(config.SourcePath))
             {
@@ -431,7 +445,10 @@ namespace ASLM.Services
 
             var json = JsonSerializer.Serialize(config, _jsonOptions);
             await File.WriteAllTextAsync(config.SourcePath, json);
-            RaiseModulesChanged();
+            if (raiseModulesChanged)
+            {
+                RaiseModulesChanged();
+            }
         }
 
         // Temp file cleanup

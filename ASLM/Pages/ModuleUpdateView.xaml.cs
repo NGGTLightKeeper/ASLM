@@ -388,6 +388,17 @@ namespace ASLM.Pages
                 SyncPickerSelections();
             }
 
+            if (e.PropertyName == nameof(ModuleViewModel.BranchOptions))
+            {
+                QueueBranchPickerResyncAfterListChange();
+            }
+
+            if (e.PropertyName == nameof(ModuleViewModel.IsBranchMode) && IsBranchMode)
+            {
+                QueueBranchPickerResyncAfterListChange();
+                _ = ResyncBranchPickerAfterBranchUiShownAsync();
+            }
+
             if (e.PropertyName == nameof(ModuleViewModel.UpdateLogText) ||
                 e.PropertyName == nameof(ModuleViewModel.HasUpdateLog))
             {
@@ -472,7 +483,8 @@ namespace ASLM.Pages
         /// </summary>
         private async Task CheckForUpdatesAsync(bool forceOptionLoad, bool announceInLog)
         {
-            if (_module == null)
+            var module = _module;
+            if (module == null)
             {
                 return;
             }
@@ -484,33 +496,36 @@ namespace ASLM.Pages
 
             if (announceInLog)
             {
-                _module.AppendUpdateLog($"Checking updates for {_module.Name}...");
+                module.AppendUpdateLog($"Checking updates for {module.Name}...");
             }
 
-            _module.SetUpdateActivityStatus("Checking for updates...");
+            module.SetUpdateActivityStatus("Checking for updates...");
             RaiseActivityProperties();
 
             try
             {
-                await _module.RefreshUpdateStateAsync(forceOptionLoad);
+                await module.RefreshUpdateStateAsync(forceOptionLoad);
 
                 if (announceInLog)
                 {
-                    _module.AppendUpdateLog(_module.UpdateStatus);
+                    module.AppendUpdateLog(module.UpdateStatus);
                 }
             }
             catch (Exception ex)
             {
-                _module.SetUpdateActivityStatus($"Check failed: {ex.Message}");
+                module.SetUpdateActivityStatus($"Check failed: {ex.Message}");
                 if (announceInLog)
                 {
-                    _module.AppendUpdateLog(_module.UpdateActivityStatus);
+                    module.AppendUpdateLog(module.UpdateActivityStatus);
                 }
             }
             finally
             {
-                RaiseModuleProperties();
-                RaiseActivityProperties();
+                if (ReferenceEquals(_module, module))
+                {
+                    RaiseModuleProperties();
+                    RaiseActivityProperties();
+                }
             }
         }
 
@@ -519,21 +534,34 @@ namespace ASLM.Pages
         /// </summary>
         private async Task EnsureModeOptionsLoadedAsync(bool forceRefresh)
         {
-            if (_module == null)
+            var module = _module;
+            if (module == null)
             {
                 return;
             }
 
             try
             {
-                await _module.EnsureSelectionOptionsLoadedAsync(forceRefresh);
+                await module.EnsureSelectionOptionsLoadedAsync(forceRefresh);
+                if (!ReferenceEquals(_module, module))
+                {
+                    return;
+                }
+
                 RaiseModuleProperties();
                 SyncPickerSelections();
+                if (module.IsBranchMode)
+                {
+                    QueueBranchPickerResyncAfterListChange();
+                }
             }
             catch (Exception ex)
             {
-                _module.SetUpdateActivityStatus($"Failed to load update options: {ex.Message}");
-                RaiseActivityProperties();
+                module.SetUpdateActivityStatus($"Failed to load update options: {ex.Message}");
+                if (ReferenceEquals(_module, module))
+                {
+                    RaiseActivityProperties();
+                }
             }
         }
 
@@ -553,7 +581,8 @@ namespace ASLM.Pages
         /// </summary>
         private async Task InstallUpdateAsync()
         {
-            if (_module == null)
+            var module = _module;
+            if (module == null)
             {
                 return;
             }
@@ -563,28 +592,31 @@ namespace ASLM.Pages
                 return;
             }
 
-            if (!_module.CanInstallSelectedUpdate || _module.IsUpdating)
+            if (!module.CanInstallSelectedUpdate || module.IsUpdating)
             {
                 return;
             }
 
-            _module.ResetUpdateSession(clearLog: true);
-            _module.SetUpdateActivityStatus($"Installing update for {_module.Name}...");
+            module.ResetUpdateSession(clearLog: true);
+            module.SetUpdateActivityStatus($"Installing update for {module.Name}...");
             RaiseActivityProperties();
-            _module.AppendUpdateLog($"Starting update for {_module.Name}.");
+            module.AppendUpdateLog($"Starting update for {module.Name}.");
 
-            var success = await _module.ApplyUpdateAsync();
+            var success = await module.ApplyUpdateAsync();
 
-            _module.SetUpdateActivityStatus(success
-                ? $"{_module.Name} updated successfully."
-                : $"{_module.Name} update failed.");
+            module.SetUpdateActivityStatus(success
+                ? $"{module.Name} updated successfully."
+                : $"{module.Name} update failed.");
 
-            _module.AppendUpdateLog(success
-                ? $"Update finished. Installed {_module.VersionString}."
+            module.AppendUpdateLog(success
+                ? $"Update finished. Installed {module.VersionString}."
                 : "Update did not complete successfully.");
 
-            RaiseModuleProperties();
-            RaiseActivityProperties();
+            if (ReferenceEquals(_module, module))
+            {
+                RaiseModuleProperties();
+                RaiseActivityProperties();
+            }
         }
 
         /// <summary>
@@ -759,20 +791,149 @@ namespace ASLM.Pages
 
                     ReleasePicker.SelectedItem = SelectedReleaseOption;
 
-                    var selectedBranch = BranchOptions.FirstOrDefault(branch =>
-                        string.Equals(branch, SelectedBranch, StringComparison.OrdinalIgnoreCase));
-
-                    BranchPicker.SelectedItem = selectedBranch;
-                    if (selectedBranch == null)
-                    {
-                        BranchPicker.SelectedIndex = -1;
-                    }
+                    ReapplyBranchPickerFromViewModel();
                 }
                 finally
                 {
                     _isSynchronizingPickers = false;
                 }
             });
+        }
+
+        /// <summary>
+        /// Re-applies branch selection after ItemsSource changes; repeats briefly so WinUI can hydrate the ComboBox.
+        /// </summary>
+        private void QueueBranchPickerResyncAfterListChange()
+        {
+            _ = BranchPickerDeferredResyncLoopAsync();
+        }
+
+        private async Task BranchPickerDeferredResyncLoopAsync()
+        {
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                if (_module == null || !IsBranchMode)
+                {
+                    return;
+                }
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    if (_module == null || !IsBranchMode)
+                    {
+                        return;
+                    }
+
+                    _isSynchronizingPickers = true;
+                    try
+                    {
+                        ReapplyBranchPickerFromViewModel();
+                    }
+                    finally
+                    {
+                        _isSynchronizingPickers = false;
+                    }
+                });
+
+                if (attempt < 2)
+                {
+                    await Task.Delay(16).ConfigureAwait(false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Runs after the branch column becomes visible (same grid cell as release); native host may ignore the first selection pass.
+        /// </summary>
+        private async Task ResyncBranchPickerAfterBranchUiShownAsync()
+        {
+            try
+            {
+                await Task.Delay(48).ConfigureAwait(false);
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    if (_module == null || !IsBranchMode)
+                    {
+                        return;
+                    }
+
+                    _isSynchronizingPickers = true;
+                    try
+                    {
+                        ReapplyBranchPickerFromViewModel();
+                    }
+                    finally
+                    {
+                        _isSynchronizingPickers = false;
+                    }
+                });
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        /// <summary>
+        /// Aligns the branch picker with <see cref="SelectedBranch"/> using the current <see cref="BranchOptions"/> list.
+        /// </summary>
+        private void ReapplyBranchPickerFromViewModel()
+        {
+            if (_module == null || !IsBranchMode)
+            {
+                return;
+            }
+
+            var index = -1;
+            for (var i = 0; i < BranchOptions.Count; i++)
+            {
+                if (string.Equals(BranchOptions[i], SelectedBranch, StringComparison.OrdinalIgnoreCase))
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index < 0)
+            {
+                BranchPicker.SelectedIndex = -1;
+                BranchPicker.SelectedItem = null;
+                ForceWinUiBranchPickerSelection(-1);
+                return;
+            }
+
+            // Index first: Windows ComboBox often needs a concrete index after ItemsSource refresh before it shows text.
+            BranchPicker.SelectedIndex = index;
+            BranchPicker.SelectedItem = BranchOptions[index];
+            ForceWinUiBranchPickerSelection(index);
+        }
+
+        /// <summary>
+        /// Pushes selection into the WinUI ComboBox backing the MAUI picker (avoids blank display after ItemsSource updates).
+        /// </summary>
+        private void ForceWinUiBranchPickerSelection(int index)
+        {
+#if WINDOWS
+            try
+            {
+                if (BranchPicker.Handler?.PlatformView is not Microsoft.UI.Xaml.Controls.ComboBox combo)
+                {
+                    return;
+                }
+
+                if (index < 0 || combo.Items.Count == 0)
+                {
+                    combo.SelectedIndex = -1;
+                    return;
+                }
+
+                var bounded = Math.Min(index, combo.Items.Count - 1);
+                combo.SelectedIndex = bounded;
+            }
+            catch
+            {
+                // ComboBox can throw while its item collection is mid-refresh; deferred resync will retry.
+            }
+#endif
         }
 
         /// <summary>

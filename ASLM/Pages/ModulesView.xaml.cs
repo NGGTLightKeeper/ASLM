@@ -412,6 +412,7 @@ namespace ASLM.Pages
             CheckUpdateCommand = _checkUpdateCommand;
             UpdateCommand = _updateCommand;
             CloseMenuCommand = _closeMenuCommand;
+            TryHydratePendingUpdateFromConfig();
         }
 
 
@@ -541,9 +542,9 @@ namespace ASLM.Pages
                 _config.Update.Channel = string.Equals(_selectedSourceMode, "pre-release", StringComparison.OrdinalIgnoreCase)
                     ? "pre-release"
                     : "release";
-                PersistUpdatePreferences();
                 _updateCandidate = null;
                 HasUpdate = false;
+                PersistPendingUpdateSnapshot();
                 UpdateStatus = "Ready to check.";
                 SetUpdateActivityStatus(UpdateStatus);
                 OnPropertyChanged();
@@ -593,7 +594,7 @@ namespace ASLM.Pages
 
                 _selectedReleaseOption = value;
                 _config.Update.SelectedReleaseTag = selectedKey;
-                PersistUpdatePreferences();
+                PersistPendingUpdateSnapshot();
 
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SelectedTargetLabel));
@@ -685,7 +686,9 @@ namespace ASLM.Pages
         /// Gets whether the current selection can be installed.
         /// </summary>
         public bool CanInstallSelectedUpdate => IsBranchMode
-            ? !IsBusy && !string.IsNullOrWhiteSpace(SelectedBranch)
+            ? !IsBusy &&
+              !string.IsNullOrWhiteSpace(SelectedBranch) &&
+              _updateCandidate != null
             : ResolveSelectedReleaseInstallCandidate() != null && !IsBusy;
 
         /// <summary>
@@ -1046,6 +1049,75 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Writes <see cref="ModuleUpdateConfig.PendingUpdate"/> so the card badge survives dashboard rebuilds and app restarts.
+        /// </summary>
+        private void PersistPendingUpdateSnapshot()
+        {
+            try
+            {
+                if (_hasUpdate && _updateCandidate != null)
+                {
+                    _config.Update.PendingUpdate = ModulePendingUpdate.FromCandidate(_config, _updateCandidate);
+                }
+                else
+                {
+                    _config.Update.PendingUpdate = null;
+                }
+
+                PersistUpdatePreferences();
+            }
+            catch
+            {
+                // Preference persistence must never break the module card UI.
+            }
+        }
+
+        /// <summary>
+        /// Restores update badge state from the manifest after startup or when a stale snapshot is on disk.
+        /// </summary>
+        private void TryHydratePendingUpdateFromConfig()
+        {
+            if (_hasUpdate || _updateCandidate != null)
+            {
+                return;
+            }
+
+            if (!_updateManager.TryRestorePendingUpdateCandidate(_config, out var candidate))
+            {
+                ClearStalePendingUpdateOnDisk();
+                return;
+            }
+
+            _updateCandidate = candidate;
+            HasUpdate = true;
+            UpdateStatus = $"Update available: {candidate.RemoteVersion}";
+            SetUpdateActivityStatus(UpdateStatus);
+            OnPropertyChanged(nameof(UpdateCandidate));
+            OnPropertyChanged(nameof(AvailableUpdateLabel));
+            ApplyCheckResultSelection();
+        }
+
+        /// <summary>
+        /// Removes an invalid <see cref="ModuleUpdateConfig.PendingUpdate"/> block from disk when it no longer applies.
+        /// </summary>
+        private void ClearStalePendingUpdateOnDisk()
+        {
+            if (_config.Update.PendingUpdate == null)
+            {
+                return;
+            }
+
+            _config.Update.PendingUpdate = null;
+            try
+            {
+                PersistUpdatePreferences();
+            }
+            catch
+            {
+            }
+        }
+
+        /// <summary>
         /// Synchronizes the latest UI selection into the backing update config before check or install operations.
         /// </summary>
         private void SynchronizeSelectionForUpdateOperation()
@@ -1111,9 +1183,9 @@ namespace ASLM.Pages
 
             _selectedBranch = normalized;
             _config.Update.Branch = normalized;
-            PersistUpdatePreferences();
             _updateCandidate = null;
             HasUpdate = false;
+            PersistPendingUpdateSnapshot();
             UpdateStatus = "Ready to check.";
             SetUpdateActivityStatus(UpdateStatus);
             OnPropertyChanged(nameof(SelectedBranch));
@@ -1183,6 +1255,7 @@ namespace ASLM.Pages
             }
             finally
             {
+                PersistPendingUpdateSnapshot();
                 IsCheckingUpdate = false;
             }
         }
@@ -1255,6 +1328,7 @@ namespace ASLM.Pages
                     OnPropertyChanged(nameof(SelectedBranch));
                     OnPropertyChanged(nameof(SelectedTargetLabel));
                     OnPropertyChanged(nameof(BranchOptions));
+                    PersistPendingUpdateSnapshot();
                 });
             }
             catch
@@ -1282,6 +1356,7 @@ namespace ASLM.Pages
                     OnPropertyChanged(nameof(SelectedBranch));
                     OnPropertyChanged(nameof(SelectedTargetLabel));
                     OnPropertyChanged(nameof(BranchOptions));
+                    PersistPendingUpdateSnapshot();
                 });
             }
             finally
@@ -1325,12 +1400,18 @@ namespace ASLM.Pages
 
                     _hasLoadedReleaseOptions = true;
                     _loadedReleaseMode = _selectedSourceMode;
+                    if (_selectedReleaseOption != null)
+                    {
+                        _config.Update.SelectedReleaseTag = ResolveReleaseSelectionKey(_selectedReleaseOption);
+                    }
+
                     OnPropertyChanged(nameof(ReleaseOptions));
                     OnPropertyChanged(nameof(SelectedReleaseOption));
                     OnPropertyChanged(nameof(SelectedTargetLabel));
                     OnPropertyChanged(nameof(CanInstallSelectedUpdate));
                     OnPropertyChanged(nameof(ShowInstallAction));
                     RefreshCommandStates();
+                    PersistPendingUpdateSnapshot();
                 });
             }
             finally
@@ -1443,8 +1524,11 @@ namespace ASLM.Pages
             IProgress<string> debugLog = new Progress<string>(message =>
                 Debug.WriteLine($"[ModuleUpdate:{Name}] {message}"));
 
+            var success = false;
+            var enteredApply = false;
             try
             {
+                enteredApply = true;
                 var logSink = log;
                 var progressSink = progress;
 
@@ -1464,7 +1548,7 @@ namespace ASLM.Pages
                     progressSink?.Report(download);
                 });
 
-                var success = await Task.Run(() => _updateManager.ApplyModuleUpdateAsync(
+                success = await Task.Run(() => _updateManager.ApplyModuleUpdateAsync(
                     installCandidate,
                     combinedLog,
                     combinedProgress,
@@ -1482,17 +1566,25 @@ namespace ASLM.Pages
                 _updateCandidate = null;
                 OnPropertyChanged(nameof(UpdateCandidate));
                 OnPropertyChanged(nameof(AvailableUpdateLabel));
-                _onStateChanged?.Invoke();
                 await EnsureSelectionOptionsLoadedAsync(forceRefresh: false);
                 await RefreshUpdateStateAsync(forceOptionLoad: false);
-                return success;
             }
             finally
             {
-                IsUpdating = false;
-                OnPropertyChanged(nameof(ShowUpdatingStatus));
-                OnPropertyChanged(nameof(CanShowLaunchAction));
+                if (enteredApply)
+                {
+                    IsUpdating = false;
+                    OnPropertyChanged(nameof(ShowUpdatingStatus));
+                    OnPropertyChanged(nameof(CanShowLaunchAction));
+                }
             }
+
+            if (enteredApply)
+            {
+                _onStateChanged?.Invoke();
+            }
+
+            return success;
         }
 
 
@@ -1674,6 +1766,7 @@ namespace ASLM.Pages
 
             NotifyModuleMetadataChanged();
             NotifyStateChanged();
+            TryHydratePendingUpdateFromConfig();
         }
 
 
@@ -1742,24 +1835,11 @@ namespace ASLM.Pages
                 return null;
             }
 
-            if (!string.IsNullOrWhiteSpace(_config.Update.InstalledReleaseTag))
-            {
-                return UpdateManager.AreEquivalentVersionReferences(
-                    _config.Update.InstalledReleaseTag,
-                    _selectedReleaseOption.ReleaseTag)
-                        ? null
-                        : _selectedReleaseOption;
-            }
+            var installedRef = !string.IsNullOrWhiteSpace(_config.Update.InstalledReleaseTag)
+                ? _config.Update.InstalledReleaseTag
+                : (_config.Status.InstalledVersion ?? _config.Version);
 
-            if (!IsLatestReleaseOption(_selectedReleaseOption))
-            {
-                // Legacy installs may not have an installedReleaseTag yet.
-                // Allow a concrete tag selection so the first successful install records it.
-                return _selectedReleaseOption;
-            }
-
-            var currentVersion = _config.Status.InstalledVersion ?? _config.Version;
-            return UpdateManager.AreEquivalentVersionReferences(currentVersion, _selectedReleaseOption.ReleaseTag)
+            return UpdateManager.AreEquivalentVersionReferences(installedRef, _selectedReleaseOption.ReleaseTag)
                 ? null
                 : _selectedReleaseOption;
         }
@@ -1844,6 +1924,12 @@ namespace ASLM.Pages
         internal void ResetCompletedUpdateSession()
         {
             if (IsBusy)
+            {
+                return;
+            }
+
+            // Do not wipe in-flight install UI if flags were lost but status still reflects an active update.
+            if (string.Equals(UpdateStatus, "Updating...", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
