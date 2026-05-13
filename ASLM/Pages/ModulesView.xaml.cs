@@ -1839,7 +1839,7 @@ namespace ASLM.Pages
                 ? _config.Update.InstalledReleaseTag
                 : (_config.Status.InstalledVersion ?? _config.Version);
 
-            return UpdateManager.AreEquivalentVersionReferences(installedRef, _selectedReleaseOption.ReleaseTag)
+            return ReleaseTagOrdering.AreEquivalentVersionReferences(installedRef, _selectedReleaseOption.ReleaseTag)
                 ? null
                 : _selectedReleaseOption;
         }
