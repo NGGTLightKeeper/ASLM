@@ -118,7 +118,7 @@ namespace ASLM.Models
 
         // Indicates whether completed process sessions remain visible in per-module console lists.
         [JsonPropertyName("showCompletedProcesses")]
-        public bool ShowCompletedProcesses { get; set; } = true;
+        public bool ShowCompletedProcesses { get; set; } = false;
 
         // Indicates whether per-process consoles are available in addition to unified module consoles.
         [JsonPropertyName("showIndividualModuleConsoles")]
@@ -170,10 +170,10 @@ namespace ASLM.Models
         public bool CheckEnabled { get; set; } = true;
 
         [JsonPropertyName("autoUpdateEnabled")]
-        public bool AutoUpdateEnabled { get; set; }
+        public bool AutoUpdateEnabled { get; set; } = true;
 
         [JsonPropertyName("autoCheckPeriodHours")]
-        public int AutoCheckPeriodHours { get; set; } = 24;
+        public int AutoCheckPeriodHours { get; set; } = 12;
 
         [JsonPropertyName("lastAutoCheckUtc")]
         public string? LastAutoCheckUtc { get; set; }
