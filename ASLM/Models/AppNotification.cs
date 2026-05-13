@@ -46,6 +46,8 @@ namespace ASLM.Models
         private string _transferPercentDisplay = "0%";
         private bool _downloadHasKnownTotal;
         private bool _showDownloadMetricsRow;
+        private bool _offersUpdateActions;
+        private bool _suppressToastAutoDismiss;
 
         /// <summary>
         /// Creates a notification with stable identity and initial display fields.
@@ -91,7 +93,9 @@ namespace ASLM.Models
             double progressFraction,
             bool hasProgress,
             string statusText,
-            string detailText)
+            string detailText,
+            bool offersUpdateActions = false,
+            bool suppressToastAutoDismiss = false)
         {
             Id = id;
             Category = category;
@@ -107,6 +111,8 @@ namespace ASLM.Models
             _isInProgress = isInProgress;
             _progressFraction = Math.Clamp(progressFraction, 0, 1);
             _hasProgress = hasProgress;
+            _offersUpdateActions = offersUpdateActions;
+            _suppressToastAutoDismiss = suppressToastAutoDismiss;
             if (category == AppNotificationCategory.Downloads && hasProgress && isInProgress &&
                 detailText.Contains(" / ", StringComparison.Ordinal))
             {
@@ -116,6 +122,8 @@ namespace ASLM.Models
             RefreshTransferPercentDisplay();
             SyncShowDownloadMetricsRow();
             OnPropertyChanged(nameof(ShowActiveTransferInCard));
+            OnPropertyChanged(nameof(OffersUpdateActions));
+            OnPropertyChanged(nameof(SuppressToastAutoDismiss));
         }
 
         /// <inheritdoc />
@@ -356,6 +364,33 @@ namespace ASLM.Models
                 var detail = !string.IsNullOrWhiteSpace(DetailText) ? $" - {DetailText}" : string.Empty;
                 return $"{status}{detail} - {TimestampLabel}";
             }
+        }
+
+        /// <summary>
+        /// Gets whether this row should offer Update now / Update later actions (available update cards).
+        /// </summary>
+        public bool OffersUpdateActions => _offersUpdateActions;
+
+        /// <summary>
+        /// Gets whether an in-app toast for this notification should stay until the user dismisses it or acts.
+        /// </summary>
+        public bool SuppressToastAutoDismiss => _suppressToastAutoDismiss;
+
+        /// <summary>
+        /// Marks one available-update notification as showing inline update actions and a persistent toast.
+        /// </summary>
+        internal void SetUpdateAvailabilityPresentation(bool offersUpdateActions, bool suppressToastAutoDismiss)
+        {
+            SetField(ref _offersUpdateActions, offersUpdateActions, nameof(OffersUpdateActions));
+            SetField(ref _suppressToastAutoDismiss, suppressToastAutoDismiss, nameof(SuppressToastAutoDismiss));
+        }
+
+        /// <summary>
+        /// Hides inline update actions after the user defers from the notifications list.
+        /// </summary>
+        internal void ClearUpdateAvailabilityPresentation()
+        {
+            SetUpdateAvailabilityPresentation(false, false);
         }
 
         /// <summary>

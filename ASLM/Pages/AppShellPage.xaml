@@ -105,16 +105,30 @@
                      IsVisible="False"
                      BackgroundColor="Transparent" />
 
-        <!-- Toasts sit above the shell; pass input through the empty stack so WebView2 receives drag/drop (children stay interactive). -->
-        <VerticalStackLayout x:Name="ToastPanel"
-                             Grid.ColumnSpan="2"
-                             Spacing="8"
-                             Margin="0,0,16,16"
-                             WidthRequest="360"
-                             HorizontalOptions="End"
-                             VerticalOptions="End"
-                             CascadeInputTransparent="False"
-                             InputTransparent="True" />
+        <!-- Toasts sit above the shell: outer layer passes pointer through to WebView2 for drag/drop; only the bottom-right stack captures input. -->
+        <Grid Grid.ColumnSpan="2"
+              RowDefinitions="*,Auto"
+              HorizontalOptions="Fill"
+              VerticalOptions="Fill"
+              InputTransparent="True"
+              CascadeInputTransparent="False">
+            <BoxView Grid.Row="0"
+                     Color="Transparent"
+                     InputTransparent="True" />
+            <Grid Grid.Row="1"
+                  Margin="0,0,16,16"
+                  HorizontalOptions="End"
+                  VerticalOptions="End"
+                  WidthRequest="360"
+                  InputTransparent="False">
+                <VerticalStackLayout x:Name="ToastPanel"
+                                     Spacing="8"
+                                     WidthRequest="360"
+                                     HorizontalOptions="End"
+                                     VerticalOptions="End"
+                                     InputTransparent="False" />
+            </Grid>
+        </Grid>
 
     </Grid>
 

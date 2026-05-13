@@ -223,6 +223,43 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Forwards Update now from an update-available row to the shell notification action pipeline.
+        /// </summary>
+        private void OnUpdateNotificationNowClicked(object? sender, EventArgs e)
+        {
+            if (TryFindNotificationBindingContext(sender, out var notification))
+            {
+                _notifications.RequestUpdateNotificationAction(notification, updateNow: true);
+            }
+        }
+
+        /// <summary>
+        /// Hides inline update actions after the user defers from the list.
+        /// </summary>
+        private void OnUpdateNotificationLaterClicked(object? sender, EventArgs e)
+        {
+            if (TryFindNotificationBindingContext(sender, out var notification))
+            {
+                _notifications.RequestUpdateNotificationAction(notification, updateNow: false);
+            }
+        }
+
+        private static bool TryFindNotificationBindingContext(object? sender, out AppNotification notification)
+        {
+            for (var element = sender as Element; element != null; element = element.Parent)
+            {
+                if (element.BindingContext is AppNotification found)
+                {
+                    notification = found;
+                    return true;
+                }
+            }
+
+            notification = default!;
+            return false;
+        }
+
+        /// <summary>
         /// Rebuilds the visible list when service state changes.
         /// </summary>
         private void OnNotificationsChanged(object? sender, EventArgs e)

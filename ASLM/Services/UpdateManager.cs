@@ -98,7 +98,11 @@ namespace ASLM.Services
         /// <summary>
         /// Checks the configured GitHub release channel for an ASLM build update.
         /// </summary>
-        public async Task<UpdateCandidate?> CheckAppUpdateAsync(CancellationToken ct = default)
+        /// <param name="ct">Cancellation token.</param>
+        /// <param name="publishUpdateNotification">When false, skips publishing an update-available notification (used when auto-updates will apply immediately).</param>
+        public async Task<UpdateCandidate?> CheckAppUpdateAsync(
+            CancellationToken ct = default,
+            bool publishUpdateNotification = true)
         {
             var source = await LoadAppUpdateSourceAsync(ct);
             if (!IsValidAppGitHubSource(source))
@@ -146,7 +150,11 @@ namespace ASLM.Services
                     IsPrerelease = release.Prerelease
                 };
 
-                _notifications.PublishUpdateCandidate(candidate);
+                if (publishUpdateNotification)
+                {
+                    _notifications.PublishUpdateCandidate(candidate);
+                }
+
                 return candidate;
             }
 
@@ -156,7 +164,11 @@ namespace ASLM.Services
         /// <summary>
         /// Checks one module for an available update.
         /// </summary>
-        public async Task<UpdateCandidate?> CheckModuleUpdateAsync(ModuleConfig module, CancellationToken ct = default)
+        /// <param name="publishUpdateNotification">When false, skips publishing an update-available notification (used when auto-updates will apply immediately).</param>
+        public async Task<UpdateCandidate?> CheckModuleUpdateAsync(
+            ModuleConfig module,
+            CancellationToken ct = default,
+            bool publishUpdateNotification = true)
         {
             module.Normalize();
             if (!string.Equals(module.Source.Type, "github", StringComparison.OrdinalIgnoreCase) ||
@@ -168,7 +180,7 @@ namespace ASLM.Services
             if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase))
             {
                 var branchCandidate = await CheckModuleBranchUpdateAsync(module, ct);
-                if (branchCandidate != null)
+                if (branchCandidate != null && publishUpdateNotification)
                 {
                     _notifications.PublishUpdateCandidate(branchCandidate);
                 }
@@ -177,7 +189,7 @@ namespace ASLM.Services
             }
 
             var releaseCandidate = await CheckModuleReleaseUpdateAsync(module, ct);
-            if (releaseCandidate != null)
+            if (releaseCandidate != null && publishUpdateNotification)
             {
                 _notifications.PublishUpdateCandidate(releaseCandidate);
             }
@@ -242,13 +254,16 @@ namespace ASLM.Services
         /// <summary>
         /// Checks ASLM and every installed module for available updates.
         /// </summary>
-        public async Task<List<UpdateCandidate>> CheckAllUpdatesAsync(CancellationToken ct = default)
+        /// <param name="publishUpdateNotifications">When false, skips publishing update-available notifications for every discovery (used when auto-updates will apply immediately).</param>
+        public async Task<List<UpdateCandidate>> CheckAllUpdatesAsync(
+            CancellationToken ct = default,
+            bool publishUpdateNotifications = true)
         {
             var candidates = new List<UpdateCandidate>();
 
             try
             {
-                var appCandidate = await CheckAppUpdateAsync(ct);
+                var appCandidate = await CheckAppUpdateAsync(ct, publishUpdateNotifications);
                 if (appCandidate != null)
                 {
                     candidates.Add(appCandidate);
@@ -266,7 +281,7 @@ namespace ASLM.Services
 
                 try
                 {
-                    var candidate = await CheckModuleUpdateAsync(module, ct);
+                    var candidate = await CheckModuleUpdateAsync(module, ct, publishUpdateNotifications);
                     if (candidate != null)
                     {
                         candidates.Add(candidate);
@@ -279,6 +294,36 @@ namespace ASLM.Services
             }
 
             return candidates;
+        }
+
+        /// <summary>
+        /// Applies automatic updates for a list returned by <see cref="CheckAllUpdatesAsync"/>: modules immediately,
+        /// ASLM self-update prepared for the next launcher start when not already staged.
+        /// </summary>
+        public async Task ApplyDiscoveredUpdatesAsync(
+            IReadOnlyList<UpdateCandidate> updates,
+            IProgress<string>? log,
+            CancellationToken ct = default)
+        {
+            foreach (var update in updates)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                if (string.Equals(update.TargetKind, "app", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!HasPendingAppUpdate)
+                    {
+                        await PrepareAppUpdateAsync(update, log, null, ct);
+                    }
+
+                    continue;
+                }
+
+                if (string.Equals(update.TargetKind, "module", StringComparison.OrdinalIgnoreCase))
+                {
+                    await ApplyModuleUpdateAsync(update, log, null, ct);
+                }
+            }
         }
 
         /// <summary>
