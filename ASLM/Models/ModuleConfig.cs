@@ -223,6 +223,12 @@ namespace ASLM.Models
         public string? SelectedReleaseTag { get; set; }
 
         /// <summary>
+        /// Last known available update remembered for the module card badge across UI refresh and app restart.
+        /// </summary>
+        [JsonPropertyName("pendingUpdate")]
+        public ModulePendingUpdate? PendingUpdate { get; set; }
+
+        /// <summary>
         /// Restores defaults and removes unsafe empty preservation entries.
         /// </summary>
         public void Normalize()
@@ -243,6 +249,15 @@ namespace ASLM.Models
                 .Where(static path => path.Length > 0 && path != "." && !path.Contains("..", StringComparison.Ordinal))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+
+            if (PendingUpdate != null)
+            {
+                PendingUpdate.Normalize();
+                if (string.IsNullOrWhiteSpace(PendingUpdate.RemoteVersion))
+                {
+                    PendingUpdate = null;
+                }
+            }
         }
 
         /// <summary>
@@ -296,6 +311,94 @@ namespace ASLM.Models
         {
             return string.Equals(value, "pre-release", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(value, "prerelease", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+
+    /// <summary>
+    /// Persisted snapshot of a discovered module update used to restore the card &quot;Update&quot; badge.
+    /// </summary>
+    public sealed class ModulePendingUpdate
+    {
+        [JsonPropertyName("updateMode")]
+        public string UpdateMode { get; set; } = "release";
+
+        [JsonPropertyName("branch")]
+        public string? Branch { get; set; }
+
+        [JsonPropertyName("releaseSelectionKey")]
+        public string? ReleaseSelectionKey { get; set; }
+
+        [JsonPropertyName("remoteVersion")]
+        public string RemoteVersion { get; set; } = string.Empty;
+
+        [JsonPropertyName("displayName")]
+        public string? DisplayName { get; set; }
+
+        [JsonPropertyName("releaseTag")]
+        public string? ReleaseTag { get; set; }
+
+        [JsonPropertyName("commitSha")]
+        public string? CommitSha { get; set; }
+
+        [JsonPropertyName("referenceName")]
+        public string? ReferenceName { get; set; }
+
+        [JsonPropertyName("downloadUrl")]
+        public string? DownloadUrl { get; set; }
+
+        [JsonPropertyName("isVirtualLatest")]
+        public bool IsVirtualLatest { get; set; }
+
+        [JsonPropertyName("isPrerelease")]
+        public bool IsPrerelease { get; set; }
+
+        [JsonPropertyName("channel")]
+        public string? Channel { get; set; }
+
+        [JsonPropertyName("checkedUtc")]
+        public string? CheckedUtc { get; set; }
+
+        /// <summary>
+        /// Trims optional fields and normalizes mode text after deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            UpdateMode = string.IsNullOrWhiteSpace(UpdateMode) ? "release" : UpdateMode.Trim();
+            Branch = string.IsNullOrWhiteSpace(Branch) ? null : Branch.Trim();
+            ReleaseSelectionKey = string.IsNullOrWhiteSpace(ReleaseSelectionKey) ? null : ReleaseSelectionKey.Trim();
+            RemoteVersion = RemoteVersion?.Trim() ?? string.Empty;
+            DisplayName = string.IsNullOrWhiteSpace(DisplayName) ? null : DisplayName.Trim();
+            ReleaseTag = string.IsNullOrWhiteSpace(ReleaseTag) ? null : ReleaseTag.Trim();
+            CommitSha = string.IsNullOrWhiteSpace(CommitSha) ? null : CommitSha.Trim();
+            ReferenceName = string.IsNullOrWhiteSpace(ReferenceName) ? null : ReferenceName.Trim();
+            DownloadUrl = string.IsNullOrWhiteSpace(DownloadUrl) ? null : DownloadUrl.Trim();
+            Channel = string.IsNullOrWhiteSpace(Channel) ? null : Channel.Trim();
+            CheckedUtc = string.IsNullOrWhiteSpace(CheckedUtc) ? null : CheckedUtc.Trim();
+        }
+
+        /// <summary>
+        /// Builds a persisted snapshot from the live update candidate and current update preferences.
+        /// </summary>
+        public static ModulePendingUpdate FromCandidate(ModuleConfig module, UpdateCandidate candidate)
+        {
+            var isBranch = string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase);
+            return new ModulePendingUpdate
+            {
+                UpdateMode = module.Update.Mode,
+                Branch = isBranch ? module.Update.Branch : null,
+                ReleaseSelectionKey = isBranch ? null : module.Update.SelectedReleaseTag,
+                RemoteVersion = candidate.RemoteVersion,
+                DisplayName = string.IsNullOrWhiteSpace(candidate.DisplayName) ? null : candidate.DisplayName,
+                ReleaseTag = candidate.ReleaseTag,
+                CommitSha = candidate.CommitSha,
+                ReferenceName = candidate.ReferenceName,
+                DownloadUrl = string.IsNullOrWhiteSpace(candidate.DownloadUrl) ? null : candidate.DownloadUrl,
+                IsVirtualLatest = candidate.IsVirtualLatest,
+                IsPrerelease = candidate.IsPrerelease,
+                Channel = string.IsNullOrWhiteSpace(candidate.Channel) ? null : candidate.Channel,
+                CheckedUtc = DateTime.UtcNow.ToString("o")
+            };
         }
     }
 

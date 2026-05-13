@@ -412,6 +412,7 @@ namespace ASLM.Pages
             CheckUpdateCommand = _checkUpdateCommand;
             UpdateCommand = _updateCommand;
             CloseMenuCommand = _closeMenuCommand;
+            TryHydratePendingUpdateFromConfig();
         }
 
 
@@ -541,9 +542,9 @@ namespace ASLM.Pages
                 _config.Update.Channel = string.Equals(_selectedSourceMode, "pre-release", StringComparison.OrdinalIgnoreCase)
                     ? "pre-release"
                     : "release";
-                PersistUpdatePreferences();
                 _updateCandidate = null;
                 HasUpdate = false;
+                PersistPendingUpdateSnapshot();
                 UpdateStatus = "Ready to check.";
                 SetUpdateActivityStatus(UpdateStatus);
                 OnPropertyChanged();
@@ -593,7 +594,7 @@ namespace ASLM.Pages
 
                 _selectedReleaseOption = value;
                 _config.Update.SelectedReleaseTag = selectedKey;
-                PersistUpdatePreferences();
+                PersistPendingUpdateSnapshot();
 
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SelectedTargetLabel));
@@ -1048,6 +1049,75 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Writes <see cref="ModuleUpdateConfig.PendingUpdate"/> so the card badge survives dashboard rebuilds and app restarts.
+        /// </summary>
+        private void PersistPendingUpdateSnapshot()
+        {
+            try
+            {
+                if (_hasUpdate && _updateCandidate != null)
+                {
+                    _config.Update.PendingUpdate = ModulePendingUpdate.FromCandidate(_config, _updateCandidate);
+                }
+                else
+                {
+                    _config.Update.PendingUpdate = null;
+                }
+
+                PersistUpdatePreferences();
+            }
+            catch
+            {
+                // Preference persistence must never break the module card UI.
+            }
+        }
+
+        /// <summary>
+        /// Restores update badge state from the manifest after startup or when a stale snapshot is on disk.
+        /// </summary>
+        private void TryHydratePendingUpdateFromConfig()
+        {
+            if (_hasUpdate || _updateCandidate != null)
+            {
+                return;
+            }
+
+            if (!_updateManager.TryRestorePendingUpdateCandidate(_config, out var candidate))
+            {
+                ClearStalePendingUpdateOnDisk();
+                return;
+            }
+
+            _updateCandidate = candidate;
+            HasUpdate = true;
+            UpdateStatus = $"Update available: {candidate.RemoteVersion}";
+            SetUpdateActivityStatus(UpdateStatus);
+            OnPropertyChanged(nameof(UpdateCandidate));
+            OnPropertyChanged(nameof(AvailableUpdateLabel));
+            ApplyCheckResultSelection();
+        }
+
+        /// <summary>
+        /// Removes an invalid <see cref="ModuleUpdateConfig.PendingUpdate"/> block from disk when it no longer applies.
+        /// </summary>
+        private void ClearStalePendingUpdateOnDisk()
+        {
+            if (_config.Update.PendingUpdate == null)
+            {
+                return;
+            }
+
+            _config.Update.PendingUpdate = null;
+            try
+            {
+                PersistUpdatePreferences();
+            }
+            catch
+            {
+            }
+        }
+
+        /// <summary>
         /// Synchronizes the latest UI selection into the backing update config before check or install operations.
         /// </summary>
         private void SynchronizeSelectionForUpdateOperation()
@@ -1113,9 +1183,9 @@ namespace ASLM.Pages
 
             _selectedBranch = normalized;
             _config.Update.Branch = normalized;
-            PersistUpdatePreferences();
             _updateCandidate = null;
             HasUpdate = false;
+            PersistPendingUpdateSnapshot();
             UpdateStatus = "Ready to check.";
             SetUpdateActivityStatus(UpdateStatus);
             OnPropertyChanged(nameof(SelectedBranch));
@@ -1185,6 +1255,7 @@ namespace ASLM.Pages
             }
             finally
             {
+                PersistPendingUpdateSnapshot();
                 IsCheckingUpdate = false;
             }
         }
@@ -1257,7 +1328,7 @@ namespace ASLM.Pages
                     OnPropertyChanged(nameof(SelectedBranch));
                     OnPropertyChanged(nameof(SelectedTargetLabel));
                     OnPropertyChanged(nameof(BranchOptions));
-                    PersistUpdatePreferences();
+                    PersistPendingUpdateSnapshot();
                 });
             }
             catch
@@ -1285,7 +1356,7 @@ namespace ASLM.Pages
                     OnPropertyChanged(nameof(SelectedBranch));
                     OnPropertyChanged(nameof(SelectedTargetLabel));
                     OnPropertyChanged(nameof(BranchOptions));
-                    PersistUpdatePreferences();
+                    PersistPendingUpdateSnapshot();
                 });
             }
             finally
@@ -1340,7 +1411,7 @@ namespace ASLM.Pages
                     OnPropertyChanged(nameof(CanInstallSelectedUpdate));
                     OnPropertyChanged(nameof(ShowInstallAction));
                     RefreshCommandStates();
-                    PersistUpdatePreferences();
+                    PersistPendingUpdateSnapshot();
                 });
             }
             finally
@@ -1684,6 +1755,7 @@ namespace ASLM.Pages
 
             NotifyModuleMetadataChanged();
             NotifyStateChanged();
+            TryHydratePendingUpdateFromConfig();
         }
 
 
