@@ -181,6 +181,9 @@ namespace ASLM.Pages
         private void OnPageUnloaded(object? sender, EventArgs e)
         {
             UnhookShellEvents();
+#if WINDOWS
+            ReleaseModuleWebViewDropTarget();
+#endif
         }
 
         /// <summary>
@@ -1113,6 +1116,51 @@ namespace ASLM.Pages
             await Task.WhenAll(startTasks);
         }
 
+#if WINDOWS
+        // Module WebView: WinUI WebView2 does not accept external or in-page HTML5 drag/drop unless AllowDrop is enabled.
+
+        private Microsoft.UI.Xaml.Controls.WebView2? _moduleWebView2;
+
+        /// <summary>
+        /// Wires the native WebView2 once the MAUI handler attaches so module pages can receive drag-and-drop.
+        /// </summary>
+        private void Browser_HandlerChanged(object? sender, EventArgs e)
+        {
+            ReleaseModuleWebViewDropTarget();
+
+            if (Browser.Handler?.PlatformView is not Microsoft.UI.Xaml.Controls.WebView2 native)
+            {
+                return;
+            }
+
+            _moduleWebView2 = native;
+            _moduleWebView2.CoreWebView2Initialized += OnModuleWebViewCoreInitialized;
+            ApplyModuleWebViewDropTarget(_moduleWebView2);
+        }
+
+        private void OnModuleWebViewCoreInitialized(
+            Microsoft.UI.Xaml.Controls.WebView2 sender,
+            Microsoft.UI.Xaml.Controls.CoreWebView2InitializedEventArgs e)
+        {
+            ApplyModuleWebViewDropTarget(sender);
+        }
+
+        private void ReleaseModuleWebViewDropTarget()
+        {
+            if (_moduleWebView2 is null)
+            {
+                return;
+            }
+
+            _moduleWebView2.CoreWebView2Initialized -= OnModuleWebViewCoreInitialized;
+            _moduleWebView2 = null;
+        }
+
+        private static void ApplyModuleWebViewDropTarget(Microsoft.UI.Xaml.Controls.WebView2 native)
+        {
+            native.AllowDrop = true;
+        }
+#endif
 
         // Browser safety
 
