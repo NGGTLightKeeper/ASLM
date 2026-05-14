@@ -98,7 +98,11 @@ namespace ASLM.Services
         /// <summary>
         /// Checks the configured GitHub release channel for an ASLM build update.
         /// </summary>
-        public async Task<UpdateCandidate?> CheckAppUpdateAsync(CancellationToken ct = default)
+        /// <param name="ct">Cancellation token.</param>
+        /// <param name="publishUpdateNotification">When false, skips publishing an update-available notification (used when auto-updates will apply immediately).</param>
+        public async Task<UpdateCandidate?> CheckAppUpdateAsync(
+            CancellationToken ct = default,
+            bool publishUpdateNotification = true)
         {
             var source = await LoadAppUpdateSourceAsync(ct);
             if (!IsValidAppGitHubSource(source))
@@ -127,7 +131,7 @@ namespace ASLM.Services
                     continue;
                 }
 
-                if (!ShouldOfferAppUpdate(release.TagName, includePrerelease))
+                if (!ShouldOfferAppUpdate(release.TagName))
                 {
                     continue;
                 }
@@ -137,7 +141,7 @@ namespace ASLM.Services
                     TargetKind = "app",
                     TargetId = "aslm",
                     Name = "ASLM",
-                    CurrentVersion = ResolveCurrentAppReleaseReference(),
+                    CurrentVersion = _appData.Data.Updates.InstalledReleaseTag ?? string.Empty,
                     RemoteVersion = release.TagName,
                     Channel = includePrerelease ? "pre-release" : "release",
                     Mode = "release",
@@ -146,7 +150,11 @@ namespace ASLM.Services
                     IsPrerelease = release.Prerelease
                 };
 
-                _notifications.PublishUpdateCandidate(candidate);
+                if (publishUpdateNotification)
+                {
+                    _notifications.PublishUpdateCandidate(candidate);
+                }
+
                 return candidate;
             }
 
@@ -156,7 +164,11 @@ namespace ASLM.Services
         /// <summary>
         /// Checks one module for an available update.
         /// </summary>
-        public async Task<UpdateCandidate?> CheckModuleUpdateAsync(ModuleConfig module, CancellationToken ct = default)
+        /// <param name="publishUpdateNotification">When false, skips publishing an update-available notification (used when auto-updates will apply immediately).</param>
+        public async Task<UpdateCandidate?> CheckModuleUpdateAsync(
+            ModuleConfig module,
+            CancellationToken ct = default,
+            bool publishUpdateNotification = true)
         {
             module.Normalize();
             if (!string.Equals(module.Source.Type, "github", StringComparison.OrdinalIgnoreCase) ||
@@ -168,7 +180,7 @@ namespace ASLM.Services
             if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase))
             {
                 var branchCandidate = await CheckModuleBranchUpdateAsync(module, ct);
-                if (branchCandidate != null)
+                if (branchCandidate != null && publishUpdateNotification)
                 {
                     _notifications.PublishUpdateCandidate(branchCandidate);
                 }
@@ -177,7 +189,7 @@ namespace ASLM.Services
             }
 
             var releaseCandidate = await CheckModuleReleaseUpdateAsync(module, ct);
-            if (releaseCandidate != null)
+            if (releaseCandidate != null && publishUpdateNotification)
             {
                 _notifications.PublishUpdateCandidate(releaseCandidate);
             }
@@ -242,13 +254,16 @@ namespace ASLM.Services
         /// <summary>
         /// Checks ASLM and every installed module for available updates.
         /// </summary>
-        public async Task<List<UpdateCandidate>> CheckAllUpdatesAsync(CancellationToken ct = default)
+        /// <param name="publishUpdateNotifications">When false, skips publishing update-available notifications for every discovery (used when auto-updates will apply immediately).</param>
+        public async Task<List<UpdateCandidate>> CheckAllUpdatesAsync(
+            CancellationToken ct = default,
+            bool publishUpdateNotifications = true)
         {
             var candidates = new List<UpdateCandidate>();
 
             try
             {
-                var appCandidate = await CheckAppUpdateAsync(ct);
+                var appCandidate = await CheckAppUpdateAsync(ct, publishUpdateNotifications);
                 if (appCandidate != null)
                 {
                     candidates.Add(appCandidate);
@@ -266,7 +281,7 @@ namespace ASLM.Services
 
                 try
                 {
-                    var candidate = await CheckModuleUpdateAsync(module, ct);
+                    var candidate = await CheckModuleUpdateAsync(module, ct, publishUpdateNotifications);
                     if (candidate != null)
                     {
                         candidates.Add(candidate);
@@ -279,6 +294,36 @@ namespace ASLM.Services
             }
 
             return candidates;
+        }
+
+        /// <summary>
+        /// Applies automatic updates for a list returned by <see cref="CheckAllUpdatesAsync"/>: modules immediately,
+        /// ASLM self-update prepared for the next launcher start when not already staged.
+        /// </summary>
+        public async Task ApplyDiscoveredUpdatesAsync(
+            IReadOnlyList<UpdateCandidate> updates,
+            IProgress<string>? log,
+            CancellationToken ct = default)
+        {
+            foreach (var update in updates)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                if (string.Equals(update.TargetKind, "app", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!HasPendingAppUpdate)
+                    {
+                        await PrepareAppUpdateAsync(update, log, null, ct);
+                    }
+
+                    continue;
+                }
+
+                if (string.Equals(update.TargetKind, "module", StringComparison.OrdinalIgnoreCase))
+                {
+                    await ApplyModuleUpdateAsync(update, log, null, ct);
+                }
+            }
         }
 
         /// <summary>
@@ -372,7 +417,7 @@ namespace ASLM.Services
             }
 
             var installed = ResolveInstalledModuleReleaseTag(module);
-            if (AreEquivalentVersionReferences(pending.ReleaseTag, installed))
+            if (ReleaseTagOrdering.AreEquivalentVersionReferences(pending.ReleaseTag, installed))
             {
                 return false;
             }
@@ -740,11 +785,11 @@ namespace ASLM.Services
                     return null;
                 }
 
-                return !AreEquivalentVersionReferences(selected.ReleaseTag, currentTag) ? selected : null;
+                return !ReleaseTagOrdering.AreEquivalentVersionReferences(selected.ReleaseTag, currentTag) ? selected : null;
             }
 
             var latest = candidates[0];
-            return !AreEquivalentVersionReferences(latest.ReleaseTag ?? string.Empty, currentTag)
+            return !ReleaseTagOrdering.AreEquivalentVersionReferences(latest.ReleaseTag ?? string.Empty, currentTag)
                 ? latest
                 : null;
         }
@@ -781,7 +826,7 @@ namespace ASLM.Services
             }
 
             var installed = ResolveInstalledModuleReleaseTag(module);
-            return AreEquivalentVersionReferences(resolved.ReleaseTag, installed) ? null : resolved;
+            return ReleaseTagOrdering.AreEquivalentVersionReferences(resolved.ReleaseTag, installed) ? null : resolved;
         }
 
         /// <summary>
@@ -1106,7 +1151,7 @@ namespace ASLM.Services
             }
 
             var installed = ResolveInstalledModuleReleaseTag(module);
-            return AreEquivalentVersionReferences(candidate.ReleaseTag, installed);
+            return ReleaseTagOrdering.AreEquivalentVersionReferences(candidate.ReleaseTag, installed);
         }
 
         /// <summary>
@@ -1129,103 +1174,81 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Resolves the best local reference used to compare ASLM against GitHub release tags.
+        /// Returns the GitHub release tag stored with a prepared ASLM self-update when the manifest is present.
         /// </summary>
-        private string ResolveCurrentAppReleaseReference()
-        {
-            return _appData.Data.Updates.InstalledReleaseTag ?? CurrentAppVersion;
-        }
+        public string? TryGetPendingPreparedAppVersion() => TryReadPendingAppUpdateVersion();
 
         /// <summary>
         /// Returns whether the current ASLM installation should treat the release tag as an available update.
         /// </summary>
-        private bool ShouldOfferAppUpdate(string releaseTag, bool includePrerelease)
+        private bool ShouldOfferAppUpdate(string releaseTag)
         {
-            var currentReference = ResolveCurrentAppReleaseReference();
-            if (AreEquivalentVersionReferences(releaseTag, currentReference))
+            if (string.IsNullOrWhiteSpace(releaseTag))
             {
                 return false;
             }
 
-            // Once the app has a persisted GitHub tag, exact tag comparison becomes the source of truth.
-            if (!string.IsNullOrWhiteSpace(_appData.Data.Updates.InstalledReleaseTag))
+            var baseline = MergeInstalledAndPendingReleaseBaselines(
+                _appData.Data.Updates.InstalledReleaseTag,
+                TryReadPendingAppUpdateVersion());
+
+            if (baseline == null)
             {
+                // No persisted GitHub baseline from the patcher yet, and no staged self-update — product/assembly
+                // versions are not aligned with repository tags, so the semantically newest channel release applies.
                 return true;
             }
 
-            if (IsRemoteVersionNewer(releaseTag, currentReference))
-            {
-                return true;
-            }
-
-            // Fresh local builds often only carry the base display version plus build metadata.
-            // In the pre-release channel we still want the latest GitHub tag to win when the tags differ.
-            return includePrerelease && !AreEquivalentVersionReferences(releaseTag, CurrentAppVersion);
+            return ReleaseTagOrdering.ComparePrecedence(releaseTag.Trim(), baseline) > 0;
         }
 
         /// <summary>
-        /// Returns whether a remote version should be treated as newer than the current version.
+        /// Returns the higher-precedence reference between the installed tag and an already staged self-update.
         /// </summary>
-        private static bool IsRemoteVersionNewer(string remoteVersion, string currentVersion)
+        private static string? MergeInstalledAndPendingReleaseBaselines(string? installedReleaseTag, string? pendingVersion)
         {
-            var remote = NormalizeVersion(remoteVersion);
-            var current = NormalizeVersion(currentVersion);
-            if (Version.TryParse(remote, out var remoteParsed) && Version.TryParse(current, out var currentParsed))
+            var installed = string.IsNullOrWhiteSpace(installedReleaseTag) ? null : installedReleaseTag.Trim();
+            var pending = string.IsNullOrWhiteSpace(pendingVersion) ? null : pendingVersion.Trim();
+            if (installed == null)
             {
-                return remoteParsed > currentParsed;
+                return pending;
             }
 
-            return !string.Equals(remoteVersion, currentVersion, StringComparison.OrdinalIgnoreCase);
+            if (pending == null)
+            {
+                return installed;
+            }
+
+            return ReleaseTagOrdering.ComparePrecedence(installed, pending) >= 0 ? installed : pending;
         }
 
         /// <summary>
-        /// Normalizes common Git tag prefixes and suffixes before semantic comparison.
+        /// Reads the target tag stored with a prepared ASLM self-update without failing callers when the file is invalid.
         /// </summary>
-        private static string NormalizeVersion(string value)
+        private string? TryReadPendingAppUpdateVersion()
         {
-            var normalized = (value ?? string.Empty).Trim();
-            if (normalized.StartsWith('v') || normalized.StartsWith('V'))
+            try
             {
-                normalized = normalized[1..];
+                var path = GetPendingUpdatePath();
+                if (!File.Exists(path))
+                {
+                    return null;
+                }
+
+                var json = File.ReadAllText(path);
+                var pending = JsonSerializer.Deserialize<PendingAppUpdate>(json, _jsonOptions);
+                if (pending == null || string.IsNullOrWhiteSpace(pending.Version))
+                {
+                    return null;
+                }
+
+                return pending.Version.Trim();
             }
-
-            var suffixIndex = normalized.IndexOfAny(['-', '+']);
-            return suffixIndex > 0 ? normalized[..suffixIndex] : normalized;
-        }
-
-        /// <summary>
-        /// Returns whether two local or remote version references point at the same GitHub tag identity.
-        /// </summary>
-        internal static bool AreEquivalentVersionReferences(string left, string right)
-        {
-            var leftNormalized = NormalizeVersionReference(left);
-            var rightNormalized = NormalizeVersionReference(right);
-
-            // Stable numeric versions should compare semantically so 1.0 and 1.0.0 are treated as the same release.
-            if (!leftNormalized.Contains('-', StringComparison.Ordinal) &&
-                !rightNormalized.Contains('-', StringComparison.Ordinal) &&
-                Version.TryParse(leftNormalized, out var leftVersion) &&
-                Version.TryParse(rightNormalized, out var rightVersion))
+            catch (Exception ex)
             {
-                return leftVersion == rightVersion;
+                _logger.LogDebug(ex, "Unable to read pending ASLM self-update version.");
+                return null;
             }
-
-            return string.Equals(leftNormalized, rightNormalized, StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Normalizes a version or release tag while preserving pre-release identifiers and removing build metadata.
-        /// </summary>
-        private static string NormalizeVersionReference(string value)
-        {
-            var normalized = (value ?? string.Empty).Trim();
-            if (normalized.StartsWith('v') || normalized.StartsWith('V'))
-            {
-                normalized = normalized[1..];
-            }
-
-            var buildMetadataIndex = normalized.IndexOf('+');
-            return buildMetadataIndex > 0 ? normalized[..buildMetadataIndex] : normalized;
         }
 
         /// <summary>

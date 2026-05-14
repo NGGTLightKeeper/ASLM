@@ -4,6 +4,7 @@ using Microsoft.Maui.Handlers;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using WinUIColor = Windows.UI.Color;
 using WinUICornerRadius = Microsoft.UI.Xaml.CornerRadius;
@@ -19,6 +20,12 @@ namespace ASLM.Services
     /// <summary>
     /// Maps <see cref="ConsoleOutputView"/> to a native WinUI text box with stable selection, sizing, and scrolling.
     /// </summary>
+    /// <remarks>
+    /// WinUI 3 <see cref="TextBox"/> text selection can lag at very high USB mouse report rates (for example 1000 Hz);
+    /// most of that work runs inside the framework before application handlers. Lowering the device polling rate is a known workaround.
+    /// The native host is a derived <see cref="TextBox"/> that forwards mouse <see cref="UIElement.PointerMoved"/> to the base implementation
+    /// at a bounded rate during left-button drags so selection work is not invoked once per USB report.
+    /// </remarks>
     public sealed class ConsoleOutputViewHandler : ViewHandler<ConsoleOutputView, TextBox>
     {
         private static readonly WinUIColor ConsoleSurfaceColor = WinUIColor.FromArgb(255, 10, 10, 12);
@@ -40,6 +47,9 @@ namespace ASLM.Services
         private string _lastSessionKey = string.Empty;
         private int _viewportRefreshQueued;
         private int _queuedViewportPasses;
+        private bool _pointerDownOnConsole;
+        private bool _deferScrollAfterInteraction;
+        private bool _suppressNativeTextChanged;
 
         /// <summary>
         /// Creates the handler instance for the native console host.
@@ -53,7 +63,7 @@ namespace ASLM.Services
         /// </summary>
         protected override TextBox CreatePlatformView()
         {
-            var textBox = new TextBox
+            var textBox = new ConsoleOutputHostTextBox
             {
                 AcceptsReturn = true,
                 IsReadOnly = true,
@@ -90,12 +100,16 @@ namespace ASLM.Services
             platformView.Loaded += OnPlatformViewLoaded;
             platformView.SizeChanged += OnPlatformViewSizeChanged;
             platformView.TextChanged += OnPlatformViewTextChanged;
-            platformView.LayoutUpdated += OnPlatformViewLayoutUpdated;
+            platformView.PointerPressed += OnPlatformViewPointerPressed;
+            platformView.PointerReleased += OnPlatformViewPointerEnded;
+            platformView.PointerCanceled += OnPlatformViewPointerEnded;
+            platformView.PointerCaptureLost += OnPlatformViewPointerCaptureLost;
+            platformView.SelectionChanged += OnPlatformViewSelectionChanged;
 
             EnsureScrollViewer();
             ApplySessionKey(VirtualView?.SessionKey);
             ApplyText(VirtualView?.Text);
-            QueueViewportRefresh(scrollToEnd: true, passCount: 4);
+            QueueViewportRefresh(scrollToEnd: true, passCount: 3);
         }
 
         /// <summary>
@@ -106,7 +120,11 @@ namespace ASLM.Services
             platformView.Loaded -= OnPlatformViewLoaded;
             platformView.SizeChanged -= OnPlatformViewSizeChanged;
             platformView.TextChanged -= OnPlatformViewTextChanged;
-            platformView.LayoutUpdated -= OnPlatformViewLayoutUpdated;
+            platformView.PointerPressed -= OnPlatformViewPointerPressed;
+            platformView.PointerReleased -= OnPlatformViewPointerEnded;
+            platformView.PointerCanceled -= OnPlatformViewPointerEnded;
+            platformView.PointerCaptureLost -= OnPlatformViewPointerCaptureLost;
+            platformView.SelectionChanged -= OnPlatformViewSelectionChanged;
 
             if (_scrollViewer != null)
             {
@@ -124,7 +142,7 @@ namespace ASLM.Services
         {
             EnsureScrollViewer();
             _pendingScrollToEnd = true;
-            QueueViewportRefresh(scrollToEnd: true, passCount: 5);
+            QueueViewportRefresh(scrollToEnd: true, passCount: 3);
         }
 
         /// <summary>
@@ -132,13 +150,18 @@ namespace ASLM.Services
         /// </summary>
         private void OnPlatformViewSizeChanged(object sender, SizeChangedEventArgs e)
         {
+            if (UserBlocksAutoscrollForScroll())
+            {
+                return;
+            }
+
             if (_pendingScrollToEnd || _isNearBottom)
             {
-                QueueViewportRefresh(scrollToEnd: true, passCount: 4);
+                QueueViewportRefresh(scrollToEnd: true, passCount: 2);
             }
             else
             {
-                QueueViewportRefresh(scrollToEnd: false, passCount: 2);
+                QueueViewportRefresh(scrollToEnd: false, passCount: 1);
             }
         }
 
@@ -147,23 +170,23 @@ namespace ASLM.Services
         /// </summary>
         private void OnPlatformViewTextChanged(object sender, Microsoft.UI.Xaml.Controls.TextChangedEventArgs e)
         {
-            if (_pendingScrollToEnd)
+            if (_suppressNativeTextChanged)
             {
-                QueueViewportRefresh(scrollToEnd: true, passCount: 4);
+                return;
             }
-        }
 
-        /// <summary>
-        /// Ensures the inner scroll viewer exists before deferred viewport work runs.
-        /// </summary>
-        private void OnPlatformViewLayoutUpdated(object? sender, object e)
-        {
-            EnsureScrollViewer();
-
-            if (_pendingScrollToEnd)
+            if (!_pendingScrollToEnd)
             {
-                QueueViewportRefresh(scrollToEnd: true, passCount: 2);
+                return;
             }
+
+            if (UserBlocksAutoscrollForScroll())
+            {
+                _deferScrollAfterInteraction = true;
+                return;
+            }
+
+            QueueViewportRefresh(scrollToEnd: true, passCount: 2);
         }
 
         /// <summary>
@@ -179,6 +202,57 @@ namespace ASLM.Services
             _isNearBottom = IsNearBottom();
         }
 
+        private void OnPlatformViewPointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            _pointerDownOnConsole = true;
+        }
+
+        private void OnPlatformViewPointerEnded(object sender, PointerRoutedEventArgs e)
+        {
+            _pointerDownOnConsole = false;
+            TryFlushDeferredScroll();
+        }
+
+        private void OnPlatformViewPointerCaptureLost(object sender, PointerRoutedEventArgs e)
+        {
+            _pointerDownOnConsole = false;
+            TryFlushDeferredScroll();
+        }
+
+        private void OnPlatformViewSelectionChanged(object sender, RoutedEventArgs e)
+        {
+            TryFlushDeferredScroll();
+        }
+
+        /// <summary>
+        /// Returns true while the user is dragging, holding pointer, or has an active text selection.
+        /// </summary>
+        private bool UserBlocksAutoscrollForScroll()
+        {
+            if (PlatformView == null)
+            {
+                return false;
+            }
+
+            return _pointerDownOnConsole || PlatformView.SelectionLength > 0;
+        }
+
+        private void TryFlushDeferredScroll()
+        {
+            if (!_deferScrollAfterInteraction || !_pendingScrollToEnd || PlatformView == null)
+            {
+                return;
+            }
+
+            if (UserBlocksAutoscrollForScroll())
+            {
+                return;
+            }
+
+            _deferScrollAfterInteraction = false;
+            QueueViewportRefresh(scrollToEnd: true, passCount: 3);
+        }
+
         /// <summary>
         /// Detects when the selected session changes so a new console opens pinned to the latest output.
         /// </summary>
@@ -191,9 +265,11 @@ namespace ASLM.Services
             }
 
             _lastSessionKey = resolvedSessionKey;
+            _pointerDownOnConsole = false;
+            _deferScrollAfterInteraction = false;
             _forceScrollToEnd = true;
             _pendingScrollToEnd = true;
-            QueueViewportRefresh(scrollToEnd: true, passCount: 4);
+            QueueViewportRefresh(scrollToEnd: true, passCount: 3);
         }
 
         /// <summary>
@@ -211,18 +287,39 @@ namespace ASLM.Services
 
             if (!string.Equals(PlatformView.Text, resolvedText, StringComparison.Ordinal))
             {
-                PlatformView.Text = resolvedText;
+                if (UserBlocksAutoscrollForScroll())
+                {
+                    _deferScrollAfterInteraction = true;
+                }
+
+                _suppressNativeTextChanged = true;
+                try
+                {
+                    PlatformView.Text = resolvedText;
+                }
+                finally
+                {
+                    _suppressNativeTextChanged = false;
+                }
             }
 
             if (shouldPinToBottom)
             {
                 _pendingScrollToEnd = true;
-                QueueViewportRefresh(scrollToEnd: true, passCount: 4);
+                if (UserBlocksAutoscrollForScroll())
+                {
+                    _deferScrollAfterInteraction = true;
+                }
+                else
+                {
+                    QueueViewportRefresh(scrollToEnd: true, passCount: 2);
+                }
             }
             else
             {
                 _pendingScrollToEnd = false;
-                QueueViewportRefresh(scrollToEnd: false, passCount: 2);
+                _deferScrollAfterInteraction = false;
+                QueueViewportRefresh(scrollToEnd: false, passCount: 1);
             }
 
             _forceScrollToEnd = false;
@@ -268,11 +365,23 @@ namespace ASLM.Services
                 var remainingPasses = _queuedViewportPasses;
                 _queuedViewportPasses = Math.Max(0, remainingPasses - 1);
 
-                RefreshViewport();
+                var userBlocks = UserBlocksAutoscrollForScroll();
+                if (!userBlocks || !_pendingScrollToEnd)
+                {
+                    RefreshViewport();
+                }
+                else
+                {
+                    _deferScrollAfterInteraction = true;
+                }
 
-                if (_pendingScrollToEnd)
+                if (_pendingScrollToEnd && !userBlocks)
                 {
                     ScrollToEnd();
+                }
+                else if (_pendingScrollToEnd && userBlocks)
+                {
+                    _deferScrollAfterInteraction = true;
                 }
 
                 if (_queuedViewportPasses > 0)
@@ -303,13 +412,23 @@ namespace ASLM.Services
                 return;
             }
 
+            if (_pointerDownOnConsole)
+            {
+                return;
+            }
+
+            if (PlatformView.SelectionLength > 0 && _pendingScrollToEnd)
+            {
+                return;
+            }
+
             EnsureScrollViewer();
             PlatformView.UpdateLayout();
             _scrollViewer?.UpdateLayout();
         }
 
         /// <summary>
-        /// Moves the native selection and viewport to the end of the console output.
+        /// Scrolls the inner viewer to the end without moving the caret, unless the scroll viewer is not ready yet.
         /// </summary>
         private void ScrollToEnd()
         {
@@ -318,19 +437,27 @@ namespace ASLM.Services
                 return;
             }
 
-            var textLength = PlatformView.Text?.Length ?? 0;
-            PlatformView.Select(textLength, 0);
+            if (UserBlocksAutoscrollForScroll())
+            {
+                _deferScrollAfterInteraction = true;
+                return;
+            }
 
             if (_scrollViewer != null)
             {
                 _isApplyingProgrammaticScroll = true;
                 _scrollViewer.ChangeView(null, _scrollViewer.ScrollableHeight, null, true);
-                _scrollViewer.UpdateLayout();
                 _isApplyingProgrammaticScroll = false;
+            }
+            else
+            {
+                var textLength = PlatformView.Text?.Length ?? 0;
+                PlatformView.Select(textLength, 0);
             }
 
             _isNearBottom = true;
             _pendingScrollToEnd = false;
+            _deferScrollAfterInteraction = false;
         }
 
         /// <summary>
@@ -427,6 +554,55 @@ namespace ASLM.Services
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Native console <see cref="TextBox"/> that caps how often mouse-move updates reach WinUI text selection during LMB drags.
+        /// </summary>
+        private sealed class ConsoleOutputHostTextBox : TextBox
+        {
+            /// <summary>Minimum milliseconds between forwarded <see cref="UIElement.PointerMoved"/> events while selecting with the mouse.</summary>
+            private const int PointerMoveMinIntervalMs = 10;
+
+            private long _lastForwardedPointerMoveTicks;
+
+            protected override void OnPointerPressed(PointerRoutedEventArgs e)
+            {
+                // Allow the first move after a press to reach the base implementation even if a prior gesture forwarded recently.
+                _lastForwardedPointerMoveTicks = Environment.TickCount64 - PointerMoveMinIntervalMs;
+                base.OnPointerPressed(e);
+            }
+
+            protected override void OnPointerMoved(PointerRoutedEventArgs e)
+            {
+                // WinRT projects PointerDeviceType under a distinct enum type from Windows.Devices.Input; values align with Mouse == 0.
+                if ((int)e.Pointer.PointerDeviceType != (int)Windows.Devices.Input.PointerDeviceType.Mouse)
+                {
+                    _lastForwardedPointerMoveTicks = Environment.TickCount64;
+                    base.OnPointerMoved(e);
+                    return;
+                }
+
+                var current = e.GetCurrentPoint(this);
+                if (!current.Properties.IsLeftButtonPressed)
+                {
+                    _lastForwardedPointerMoveTicks = Environment.TickCount64;
+                    base.OnPointerMoved(e);
+                    return;
+                }
+
+                var now = Environment.TickCount64;
+                var elapsed = now - _lastForwardedPointerMoveTicks;
+                if (elapsed >= PointerMoveMinIntervalMs || elapsed < 0)
+                {
+                    _lastForwardedPointerMoveTicks = now;
+                    base.OnPointerMoved(e);
+                    return;
+                }
+
+                // Do not invoke TextBox pointer-move selection for this report (high-Hz mice).
+                e.Handled = true;
+            }
         }
     }
 }

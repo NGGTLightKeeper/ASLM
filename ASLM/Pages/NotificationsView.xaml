@@ -161,6 +161,31 @@
                                                          IsVisible="{Binding HasProgress}"
                                                          HeightRequest="4"
                                                          ProgressColor="{StaticResource ActionBlue}" />
+
+                                            <HorizontalStackLayout Spacing="8"
+                                                                     Margin="0,6,0,0"
+                                                                     IsVisible="{Binding OffersUpdateActions}">
+                                                <Button Text="Update now"
+                                                        FontSize="11"
+                                                        HeightRequest="28"
+                                                        MinimumHeightRequest="28"
+                                                        Padding="10,0"
+                                                        Margin="0"
+                                                        BackgroundColor="{StaticResource ActionBlue}"
+                                                        TextColor="{StaticResource LabelPrimary}"
+                                                        CornerRadius="6"
+                                                        Clicked="OnUpdateNotificationNowClicked" />
+                                                <Button Text="Update later"
+                                                        FontSize="11"
+                                                        HeightRequest="28"
+                                                        MinimumHeightRequest="28"
+                                                        Padding="10,0"
+                                                        Margin="0"
+                                                        BackgroundColor="#333334"
+                                                        TextColor="{StaticResource LabelSecondary}"
+                                                        CornerRadius="6"
+                                                        Clicked="OnUpdateNotificationLaterClicked" />
+                                            </HorizontalStackLayout>
                                         </VerticalStackLayout>
 
                                         <!-- Ghost icon (same pattern as HomeView process row actions) -->

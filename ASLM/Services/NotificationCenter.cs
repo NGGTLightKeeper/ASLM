@@ -9,6 +9,31 @@ using Microsoft.Maui.ApplicationModel;
 namespace ASLM.Services
 {
     /// <summary>
+    /// Carries one user action on an update-available notification row or toast.
+    /// </summary>
+    public sealed class UpdateNotificationActionEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Creates the event payload.
+        /// </summary>
+        public UpdateNotificationActionEventArgs(AppNotification notification, bool updateNow)
+        {
+            Notification = notification;
+            UpdateNow = updateNow;
+        }
+
+        /// <summary>
+        /// Gets the notification that was acted on.
+        /// </summary>
+        public AppNotification Notification { get; }
+
+        /// <summary>
+        /// Gets whether the user chose Update now (true) or Update later from the list (false).
+        /// </summary>
+        public bool UpdateNow { get; }
+    }
+
+    /// <summary>
     /// Stores internal ASLM notifications, persists them, and exposes helpers for update and download events.
     /// </summary>
     public sealed class NotificationCenter
@@ -48,6 +73,11 @@ namespace ASLM.Services
         /// Raised when a new notification should be shown as an in-app toast.
         /// </summary>
         public event EventHandler<AppNotification>? NotificationPublished;
+
+        /// <summary>
+        /// Raised when the user requests Update now or Update later on an update-available notification.
+        /// </summary>
+        public event EventHandler<UpdateNotificationActionEventArgs>? UpdateNotificationActionRequested;
 
         /// <summary>
         /// Gets the live notification collection sorted by newest update first.
@@ -102,7 +132,33 @@ namespace ASLM.Services
                 detailText: detail,
                 sourceKind: candidate.TargetKind,
                 sourceId: candidate.TargetId,
-                showToastForNew: true);
+                showToastForNew: true,
+                afterUpdate: notification =>
+                    notification.SetUpdateAvailabilityPresentation(
+                        offersUpdateActions: true,
+                        suppressToastAutoDismiss: true));
+        }
+
+        /// <summary>
+        /// Raises the update notification action event on the UI thread for shell routing.
+        /// </summary>
+        public void RequestUpdateNotificationAction(AppNotification notification, bool updateNow)
+        {
+            RunOnMainThread(() =>
+                UpdateNotificationActionRequested?.Invoke(this, new UpdateNotificationActionEventArgs(notification, updateNow)));
+        }
+
+        /// <summary>
+        /// Hides inline update actions after the user defers from the notifications list.
+        /// </summary>
+        public void ClearUpdateNotificationDeferredActions(AppNotification notification)
+        {
+            RunOnMainThread(() =>
+            {
+                notification.ClearUpdateAvailabilityPresentation();
+                RaiseNotificationsChanged();
+                QueueSave(0);
+            });
         }
 
         /// <summary>
@@ -321,7 +377,9 @@ namespace ASLM.Services
                         item.ProgressFraction,
                         item.HasProgress,
                         item.StatusText,
-                        item.DetailText));
+                        item.DetailText,
+                        item.OffersUpdateActions,
+                        item.SuppressToastAutoDismiss));
                 }
 
                 RaiseNotificationsChanged();
@@ -566,7 +624,9 @@ namespace ASLM.Services
                 UpdatedAt = notification.UpdatedAt,
                 IsInProgress = notification.IsInProgress,
                 ProgressFraction = notification.ProgressFraction,
-                HasProgress = notification.HasProgress
+                HasProgress = notification.HasProgress,
+                OffersUpdateActions = notification.OffersUpdateActions,
+                SuppressToastAutoDismiss = notification.SuppressToastAutoDismiss
             };
         }
 
@@ -668,6 +728,8 @@ namespace ASLM.Services
             public bool IsInProgress { get; set; }
             public double ProgressFraction { get; set; }
             public bool HasProgress { get; set; }
+            public bool OffersUpdateActions { get; set; }
+            public bool SuppressToastAutoDismiss { get; set; }
         }
 
     }

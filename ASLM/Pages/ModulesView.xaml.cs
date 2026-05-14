@@ -160,6 +160,24 @@ namespace ASLM.Pages
             }
         }
 
+        /// <summary>
+        /// Builds a card view model for overlay flows when the modules dashboard has not created one yet.
+        /// </summary>
+        internal static ModuleViewModel CreateViewModelForDeferredUpdateOverlay(
+            ModuleConfig config,
+            ModuleInstaller installer,
+            ModuleRunner runner,
+            UpdateManager updateManager,
+            Action onStateChanged) =>
+            new ModuleViewModel(
+                config,
+                installer,
+                runner,
+                updateManager,
+                onStateChanged,
+                static _ => { },
+                static _ => { },
+                static _ => { });
 
         // State callback
 
@@ -1839,7 +1857,7 @@ namespace ASLM.Pages
                 ? _config.Update.InstalledReleaseTag
                 : (_config.Status.InstalledVersion ?? _config.Version);
 
-            return UpdateManager.AreEquivalentVersionReferences(installedRef, _selectedReleaseOption.ReleaseTag)
+            return ReleaseTagOrdering.AreEquivalentVersionReferences(installedRef, _selectedReleaseOption.ReleaseTag)
                 ? null
                 : _selectedReleaseOption;
         }

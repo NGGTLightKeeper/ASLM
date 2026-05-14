@@ -344,6 +344,16 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Builds optional copy for the Updates manual-check card when the patcher persisted a GitHub release tag.
+        /// </summary>
+        public static string? BuildAslmInstalledReleaseSummary(AppDataStore appData)
+        {
+            appData.Data.Updates.Normalize();
+            var tag = appData.Data.Updates.InstalledReleaseTag;
+            return string.IsNullOrWhiteSpace(tag) ? null : $"Installed release (GitHub): {tag.Trim()}";
+        }
+
+        /// <summary>
         /// Creates the default update baseline used by reset actions in settings UI.
         /// </summary>
         public static UpdateBaseline BuildDefaultUpdateBaseline()

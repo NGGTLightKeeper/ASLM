@@ -49,6 +49,7 @@ namespace ASLM.Pages
         private readonly NotificationCenter _notifications;
         private readonly UpdateManager _updateManager;
         private readonly AslmApiServer _apiServer;
+        private readonly SettingsService _settingsService;
         private readonly IServiceProvider _services;
 
         private List<ModuleConfig> _allModules = [];
@@ -85,6 +86,7 @@ namespace ASLM.Pages
             NotificationCenter notifications,
             UpdateManager updateManager,
             AslmApiServer apiServer,
+            SettingsService settingsService,
             IServiceProvider services)
         {
             _moduleInstaller = moduleInstaller;
@@ -94,6 +96,7 @@ namespace ASLM.Pages
             _notifications = notifications;
             _updateManager = updateManager;
             _apiServer = apiServer;
+            _settingsService = settingsService;
             _services = services;
 
             InitializeComponent();
@@ -197,6 +200,7 @@ namespace ASLM.Pages
             }
 
             _notifications.NotificationPublished += OnNotificationPublished;
+            _notifications.UpdateNotificationActionRequested += OnUpdateNotificationActionRequested;
             _apiServer.StateChanged += OnApiServerStateChanged;
             _moduleInstaller.ModulesChanged += OnModulesChanged;
             _shellEventsHooked = true;
@@ -213,6 +217,7 @@ namespace ASLM.Pages
             }
 
             _notifications.NotificationPublished -= OnNotificationPublished;
+            _notifications.UpdateNotificationActionRequested -= OnUpdateNotificationActionRequested;
             _apiServer.StateChanged -= OnApiServerStateChanged;
             _moduleInstaller.ModulesChanged -= OnModulesChanged;
             _shellEventsHooked = false;
@@ -225,7 +230,17 @@ namespace ASLM.Pages
         {
             try
             {
-                await Task.Run(() => _updateManager.CheckAllUpdatesAsync());
+                _appData.Data.Updates.Normalize();
+                var autoUpdate = _appData.Data.Updates.AutoUpdateEnabled;
+                var publishNotifications = !autoUpdate;
+                var updates = await Task.Run(() => _updateManager.CheckAllUpdatesAsync(
+                    CancellationToken.None,
+                    publishNotifications));
+
+                if (autoUpdate && updates.Count > 0)
+                {
+                    await Task.Run(() => _updateManager.ApplyDiscoveredUpdatesAsync(updates, null, CancellationToken.None));
+                }
             }
             catch (Exception ex)
             {
@@ -589,7 +604,10 @@ namespace ASLM.Pages
 
             toast.Opacity = 0;
             _ = toast.FadeToAsync(1, 120, Easing.CubicOut);
-            _ = RemoveToastAfterDelayAsync(toast, TimeSpan.FromSeconds(10));
+            if (!notification.SuppressToastAutoDismiss)
+            {
+                _ = RemoveToastAfterDelayAsync(toast, TimeSpan.FromSeconds(10));
+            }
         }
 
         /// <summary>
@@ -599,6 +617,8 @@ namespace ASLM.Pages
         /// </summary>
         private Border CreateToast(AppNotification notification)
         {
+            Border toastHost = null!;
+
             var title = new Label
             {
                 Text = notification.Title,
@@ -664,13 +684,58 @@ namespace ASLM.Pages
             textStack.Children.Add(title);
             textStack.Children.Add(message);
             textStack.Children.Add(detail);
-            outerGrid.Children.Add(textStack);
-            Grid.SetColumn(textStack, 1);
+
+            var bodyColumn = new VerticalStackLayout { Spacing = 8 };
+            bodyColumn.Children.Add(textStack);
+
+            if (notification.OffersUpdateActions)
+            {
+                var actionRow = new HorizontalStackLayout { Spacing = 8 };
+
+                var updateNowButton = new Button
+                {
+                    Text = "Update now",
+                    FontSize = 11,
+                    HeightRequest = 28,
+                    MinimumHeightRequest = 28,
+                    Padding = new Thickness(10, 0),
+                    Margin = new Thickness(0),
+                    BackgroundColor = Color.FromArgb("#0A84FF"),
+                    TextColor = Colors.White,
+                    CornerRadius = 6
+                };
+                updateNowButton.Clicked += (_, _) =>
+                {
+                    RemoveToast(toastHost);
+                    _notifications.RequestUpdateNotificationAction(notification, updateNow: true);
+                };
+
+                var updateLaterButton = new Button
+                {
+                    Text = "Update later",
+                    FontSize = 11,
+                    HeightRequest = 28,
+                    MinimumHeightRequest = 28,
+                    Padding = new Thickness(10, 0),
+                    Margin = new Thickness(0),
+                    BackgroundColor = Color.FromArgb("#333334"),
+                    TextColor = Color.FromArgb("#D8D8DC"),
+                    CornerRadius = 6
+                };
+                updateLaterButton.Clicked += (_, _) => RemoveToast(toastHost);
+
+                actionRow.Children.Add(updateNowButton);
+                actionRow.Children.Add(updateLaterButton);
+                bodyColumn.Children.Add(actionRow);
+            }
+
+            outerGrid.Children.Add(bodyColumn);
+            Grid.SetColumn(bodyColumn, 1);
 
             outerGrid.Children.Add(closeButton);
             Grid.SetColumn(closeButton, 2);
 
-            var toast = new Border
+            toastHost = new Border
             {
                 BindingContext = notification,
                 BackgroundColor = Color.FromArgb("#28282A"),
@@ -679,6 +744,7 @@ namespace ASLM.Pages
                 StrokeShape = new RoundRectangle { CornerRadius = 8 },
                 Padding = new Thickness(10),
                 Content = outerGrid,
+                InputTransparent = false,
                 Shadow = new Shadow
                 {
                     Brush = Brush.Black,
@@ -689,18 +755,141 @@ namespace ASLM.Pages
             };
 
             // Close button: dismiss only, does not open the notifications panel.
-            closeButton.Clicked += (_, _) => RemoveToast(toast);
+            closeButton.Clicked += (_, _) => RemoveToast(toastHost);
 
             // Tap on the toast body: open notifications panel and dismiss the toast.
             var bodyTap = new TapGestureRecognizer();
             bodyTap.Tapped += (_, _) =>
             {
-                RemoveToast(toast);
+                RemoveToast(toastHost);
                 OpenNotificationsOverlay();
             };
-            toast.GestureRecognizers.Add(bodyTap);
+            textStack.GestureRecognizers.Add(bodyTap);
 
-            return toast;
+            return toastHost;
+        }
+
+        /// <summary>
+        /// Routes update notification actions from toasts and the notifications popover.
+        /// </summary>
+        private void OnUpdateNotificationActionRequested(object? sender, UpdateNotificationActionEventArgs e)
+        {
+            if (!e.UpdateNow)
+            {
+                _notifications.ClearUpdateNotificationDeferredActions(e.Notification);
+                return;
+            }
+
+            _ = ProcessUpdateNotificationNowAsync(e.Notification);
+        }
+
+        /// <summary>
+        /// Opens module update configuration or runs the ASLM self-update pipeline for one notification.
+        /// </summary>
+        private async Task ProcessUpdateNotificationNowAsync(AppNotification notification)
+        {
+            try
+            {
+                if (OverlayContainer.IsVisible && ReferenceEquals(OverlayContainer.Content, _notificationsView))
+                {
+                    OverlayContainer.IsVisible = false;
+                    OverlayContainer.Content = null;
+                }
+
+                if (string.Equals(notification.SourceKind, "module", StringComparison.OrdinalIgnoreCase))
+                {
+                    await OpenModuleUpdateFromNotificationAsync(notification.SourceId);
+                    return;
+                }
+
+                if (string.Equals(notification.SourceKind, "app", StringComparison.OrdinalIgnoreCase))
+                {
+                    await RunAppSelfUpdateFromNotificationAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[UpdateNotification] Action failed: {ex.Message}");
+                _notifications.PublishSystemToast(
+                    "Update",
+                    ex.Message,
+                    "Action failed",
+                    "update-action");
+            }
+        }
+
+        /// <summary>
+        /// Opens the module update overlay in configure mode for the module referenced by the notification.
+        /// </summary>
+        private async Task OpenModuleUpdateFromNotificationAsync(string moduleId)
+        {
+            var modules = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync());
+            var config = modules.FirstOrDefault(module =>
+                string.Equals(module.Id, moduleId, StringComparison.OrdinalIgnoreCase));
+
+            if (config == null)
+            {
+                _notifications.PublishSystemToast(
+                    "Module update",
+                    "That module is no longer installed.",
+                    "Unavailable",
+                    moduleId);
+                return;
+            }
+
+            ModuleViewModel? viewModel = null;
+            if (_modulesView is ModulesView modulesView)
+            {
+                viewModel = modulesView.Modules.FirstOrDefault(module =>
+                    string.Equals(module.SourcePath, config.SourcePath, StringComparison.OrdinalIgnoreCase));
+            }
+
+            viewModel ??= ModulesView.CreateViewModelForDeferredUpdateOverlay(
+                config,
+                _moduleInstaller,
+                _moduleRunner,
+                _updateManager,
+                OnModuleStateChanged);
+
+            OpenModuleUpdateOverlay(viewModel, ModuleUpdateMode.Configure);
+        }
+
+        /// <summary>
+        /// Prepares a pending ASLM build when needed and restarts through the launcher.
+        /// </summary>
+        private async Task RunAppSelfUpdateFromNotificationAsync()
+        {
+            var candidate = await Task.Run(() =>
+                _updateManager.CheckAppUpdateAsync(CancellationToken.None, publishUpdateNotification: false));
+
+            if (candidate == null && !_updateManager.HasPendingAppUpdate)
+            {
+                _notifications.PublishSystemToast(
+                    "ASLM update",
+                    "No ASLM update is available right now.",
+                    "Up to date",
+                    "aslm");
+                return;
+            }
+
+            if (!_updateManager.HasPendingAppUpdate && candidate != null)
+            {
+                var prepared = await Task.Run(() =>
+                    _updateManager.PrepareAppUpdateAsync(candidate, null, null, CancellationToken.None));
+                if (!prepared)
+                {
+                    _notifications.PublishSystemToast(
+                        "ASLM update",
+                        "The ASLM update could not be downloaded.",
+                        "Prepare failed",
+                        "aslm");
+                    return;
+                }
+            }
+
+            await _settingsService.StopAllModulesAsync();
+            await Task.Run(SettingsService.StartLauncherForSelfUpdate);
+            Application.Current?.Quit();
         }
 
         /// <summary>

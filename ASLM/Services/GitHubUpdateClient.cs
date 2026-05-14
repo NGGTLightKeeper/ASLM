@@ -69,11 +69,12 @@ namespace ASLM.Services
                 fetch: async cancellationToken => await FetchReleasesAsync(repo, cancellationToken),
                 ct);
 
-            return releases
+            var filtered = releases
                 .Where(release => !release.Draft)
                 .Where(release => includePrerelease || !release.Prerelease)
-                .OrderByDescending(release => release.PublishedAt ?? release.CreatedAt ?? DateTimeOffset.MinValue)
                 .ToList();
+            filtered.Sort(ReleaseTagOrdering.CompareGitHubReleasesNewestFirst);
+            return filtered;
         }
 
         /// <summary>

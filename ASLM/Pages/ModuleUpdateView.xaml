@@ -2,6 +2,7 @@
 
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:services="clr-namespace:ASLM.Services"
              x:Class="ASLM.Pages.ModuleUpdateView"
              x:Name="RootView"
              BackgroundColor="#40000000">
@@ -228,23 +229,14 @@
                                          HeightRequest="4"
                                          IsVisible="{Binding HasActivityProgress, Source={x:Reference RootView}}" />
 
-                            <ScrollView x:Name="LogScroll"
-                                        Grid.Row="5"
-                                        IsVisible="{Binding HasLog, Source={x:Reference RootView}}"
-                                        Orientation="Vertical"
-                                        VerticalScrollBarVisibility="Always"
-                                        VerticalOptions="Fill"
-                                        BackgroundColor="#19191C"
-                                        Margin="0,4,0,0">
-                                <Label x:Name="LogEditor"
-                                       Text="{Binding LogText, Source={x:Reference RootView}}"
-                                       FontSize="12"
-                                       FontFamily="Consolas"
-                                       TextColor="{StaticResource LabelPrimary}"
-                                       BackgroundColor="#19191C"
-                                       LineBreakMode="WordWrap"
-                                       Padding="8" />
-                            </ScrollView>
+                            <services:ConsoleOutputView x:Name="UpdateLogConsole"
+                                                        Grid.Row="5"
+                                                        IsVisible="{Binding HasLog, Source={x:Reference RootView}}"
+                                                        Text="{Binding LogText, Source={x:Reference RootView}}"
+                                                        SessionKey="{Binding UpdateLogSessionKey, Source={x:Reference RootView}}"
+                                                        HorizontalOptions="Fill"
+                                                        VerticalOptions="Fill"
+                                                        Margin="0,4,0,0" />
                         </Grid>
                     </Border>
             </Grid>

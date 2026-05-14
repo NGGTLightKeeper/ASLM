@@ -1248,11 +1248,13 @@ namespace ASLM.Pages
             var content = new VerticalStackLayout { Spacing = TitleDescriptionSpacing };
 
             content.Children.Add(CreateCardTitle("Manual check"));
-            content.Children.Add(CreateCardDescription($"Current ASLM version: {_updateManager.CurrentAppVersion}"));
+            var installedReleaseSummary = SettingsService.BuildAslmInstalledReleaseSummary(_appData);
+            if (!string.IsNullOrWhiteSpace(installedReleaseSummary))
+            {
+                content.Children.Add(CreateCardDescription(installedReleaseSummary));
+            }
 
-            _updateStatusLabel = CreateSecondaryLabel(_updateManager.HasPendingAppUpdate
-                ? "ASLM update is prepared and will be applied on restart."
-                : "No update check has been run in this session.");
+            _updateStatusLabel = CreateSecondaryLabel(BuildInitialManualUpdateStatusText());
 
             var actions = new HorizontalStackLayout { Spacing = 8, Margin = new Thickness(0, 8, 0, 0) };
             var checkButton = CreateInlineActionButton("Check now", OnCheckUpdatesNowClicked);
@@ -1268,6 +1270,80 @@ namespace ASLM.Pages
             content.Children.Add(_updateStatusLabel);
             card.Content = content;
             return card;
+        }
+
+        /// <summary>
+        /// Builds the manual-check status label shown before a check runs in this session.
+        /// </summary>
+        private string BuildInitialManualUpdateStatusText()
+        {
+            if (_updateManager.HasPendingAppUpdate)
+            {
+                var pending = _updateManager.TryGetPendingPreparedAppVersion()?.Trim();
+                return string.IsNullOrWhiteSpace(pending)
+                    ? "ASLM update is prepared and will be applied on restart."
+                    : $"ASLM update {pending} is prepared and will be applied on restart.";
+            }
+
+            return "No update check has been run in this session.";
+        }
+
+        /// <summary>
+        /// Builds the manual-check summary after <see cref="UpdateManager.CheckAllUpdatesAsync"/> completes.
+        /// </summary>
+        private string BuildManualUpdateCheckStatusMessage(IReadOnlyList<UpdateCandidate> updates)
+        {
+            var appTag = _pendingAppUpdateCandidate != null
+                ? (_pendingAppUpdateCandidate.ReleaseTag ?? _pendingAppUpdateCandidate.RemoteVersion).Trim()
+                : string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(appTag))
+            {
+                if (_updateManager.HasPendingAppUpdate)
+                {
+                    var pending = _updateManager.TryGetPendingPreparedAppVersion()?.Trim();
+                    if (!string.IsNullOrWhiteSpace(pending) &&
+                        string.Equals(pending, appTag, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return $"ASLM {appTag} is prepared and will be applied on restart.";
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(pending))
+                    {
+                        return $"ASLM update {appTag} is available; {pending} is already staged for restart.";
+                    }
+                }
+
+                return $"ASLM update {appTag} is available. Use \"Prepare ASLM update\" to download it.";
+            }
+
+            if (updates.Count == 0)
+            {
+                if (_updateManager.HasPendingAppUpdate)
+                {
+                    var pendingOnly = _updateManager.TryGetPendingPreparedAppVersion()?.Trim();
+                    return string.IsNullOrWhiteSpace(pendingOnly)
+                        ? "ASLM update is prepared and will be applied on restart."
+                        : $"ASLM update {pendingOnly} is prepared and will be applied on restart.";
+                }
+
+                return "Everything is up to date.";
+            }
+
+            var moduleSummary =
+                $"{updates.Count} update(s) available. Module updates can be applied from the Modules page.";
+            if (_updateManager.HasPendingAppUpdate)
+            {
+                var pendingStaged = _updateManager.TryGetPendingPreparedAppVersion()?.Trim();
+                if (!string.IsNullOrWhiteSpace(pendingStaged))
+                {
+                    return $"{moduleSummary} ASLM {pendingStaged} is staged for restart.";
+                }
+
+                return $"{moduleSummary} An ASLM self-update is staged for restart.";
+            }
+
+            return moduleSummary;
         }
 
         /// <summary>
@@ -1314,9 +1390,7 @@ namespace ASLM.Pages
 
                 if (_updateStatusLabel != null)
                 {
-                    _updateStatusLabel.Text = updates.Count == 0
-                        ? "Everything is up to date."
-                        : $"{updates.Count} update(s) available. Module updates can be applied from the Modules page.";
+                    _updateStatusLabel.Text = BuildManualUpdateCheckStatusMessage(updates);
                 }
             }
             catch (Exception ex)
@@ -1368,9 +1442,17 @@ namespace ASLM.Pages
                 var success = await Task.Run(() => _updateManager.PrepareAppUpdateAsync(_pendingAppUpdateCandidate, log));
                 if (_updateStatusLabel != null)
                 {
-                    _updateStatusLabel.Text = success
-                        ? "ASLM update prepared. Restart ASLM to apply it."
-                        : "ASLM update could not be prepared.";
+                    if (success)
+                    {
+                        var preparedTag = _pendingAppUpdateCandidate?.ReleaseTag ?? _pendingAppUpdateCandidate?.RemoteVersion;
+                        _updateStatusLabel.Text = string.IsNullOrWhiteSpace(preparedTag)
+                            ? "ASLM update is prepared and will be applied on restart."
+                            : $"ASLM update {preparedTag.Trim()} is prepared and will be applied on restart.";
+                    }
+                    else
+                    {
+                        _updateStatusLabel.Text = "ASLM update could not be prepared.";
+                    }
                 }
 
                 if (_prepareAppUpdateButton != null)

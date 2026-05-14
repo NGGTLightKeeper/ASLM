@@ -14,13 +14,13 @@
     },
     "consoles": {
         "sidebarVisible": true,
-        "showCompletedProcesses": true,
-        "showIndividualModuleConsoles": true
+        "showIndividualModuleConsoles": true,
+        "showCompletedProcesses": false
     },
     "updates": {
         "checkEnabled": true,
-        "autoUpdateEnabled": false,
-        "autoCheckPeriodHours": 24,
+        "autoUpdateEnabled": true,
+        "autoCheckPeriodHours": 12,
         "lastAutoCheckUtc": null,
         "appChannel": "release",
         "installedReleaseTag": null,

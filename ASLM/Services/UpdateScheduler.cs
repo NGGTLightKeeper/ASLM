@@ -131,7 +131,8 @@ namespace ASLM.Services
             settings.LastAutoCheckUtc = DateTime.UtcNow.ToString("o");
             await _appData.SaveAsync();
 
-            var updates = await _updateManager.CheckAllUpdatesAsync(ct);
+            var publishNotifications = !settings.AutoUpdateEnabled;
+            var updates = await _updateManager.CheckAllUpdatesAsync(ct, publishNotifications);
             if (!settings.AutoUpdateEnabled || updates.Count == 0)
             {
                 return;
@@ -140,26 +141,7 @@ namespace ASLM.Services
             var log = new Progress<string>(message =>
                 _logger.LogInformation("[Updater] {Message}", message));
 
-            foreach (var update in updates)
-            {
-                ct.ThrowIfCancellationRequested();
-
-                // App self-updates must stay in a pending state until restart, while modules can be applied immediately.
-                if (string.Equals(update.TargetKind, "app", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (!_updateManager.HasPendingAppUpdate)
-                    {
-                        await _updateManager.PrepareAppUpdateAsync(update, log, null, ct);
-                    }
-
-                    continue;
-                }
-
-                if (string.Equals(update.TargetKind, "module", StringComparison.OrdinalIgnoreCase))
-                {
-                    await _updateManager.ApplyModuleUpdateAsync(update, log, null, ct);
-                }
-            }
+            await _updateManager.ApplyDiscoveredUpdatesAsync(updates, log, ct);
         }
 
 
