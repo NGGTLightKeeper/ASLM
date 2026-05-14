@@ -35,6 +35,10 @@ namespace ASLM.Models
         [JsonPropertyName("updates")]
         public AppUpdateSettings Updates { get; set; } = new();
 
+        // Stores UI personalization preferences (theme mode and custom theme selection).
+        [JsonPropertyName("personalization")]
+        public AppPersonalizationConfig Personalization { get; set; } = new();
+
         /// <summary>
         /// Restores nested objects after JSON deserialization.
         /// </summary>
@@ -58,6 +62,10 @@ namespace ASLM.Models
             // Recreate and normalize update preferences when the section is absent.
             Updates ??= new();
             Updates.Normalize();
+
+            // Recreate and normalize personalization preferences when the section is absent.
+            Personalization ??= new();
+            Personalization.Normalize();
         }
     }
 
@@ -213,5 +221,45 @@ namespace ASLM.Models
             string.Equals(value, "branch", StringComparison.OrdinalIgnoreCase)
                 ? "branch"
                 : "release";
+    }
+
+
+    // Personalization
+
+    /// <summary>
+    /// Stores the selected appearance mode and the active custom theme identifier.
+    /// </summary>
+    public class AppPersonalizationConfig
+    {
+        // One of: Dark, Light, System, Custom.
+        [JsonPropertyName("appearance")]
+        public string Appearance { get; set; } = "Dark";
+
+        // Identifier of the selected custom theme when Appearance is "Custom".
+        [JsonPropertyName("customThemeId")]
+        public string? CustomThemeId { get; set; }
+
+        /// <summary>
+        /// Restores safe defaults after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            Appearance = NormalizeAppearance(Appearance);
+            if (!string.Equals(Appearance, "Custom", StringComparison.OrdinalIgnoreCase))
+            {
+                CustomThemeId = null;
+            }
+        }
+
+        /// <summary>
+        /// Returns the canonical appearance string, falling back to Dark for unknown values.
+        /// </summary>
+        public static string NormalizeAppearance(string? value)
+        {
+            if (string.Equals(value, "Light", StringComparison.OrdinalIgnoreCase)) return "Light";
+            if (string.Equals(value, "System", StringComparison.OrdinalIgnoreCase)) return "System";
+            if (string.Equals(value, "Custom", StringComparison.OrdinalIgnoreCase)) return "Custom";
+            return "Dark";
+        }
     }
 }

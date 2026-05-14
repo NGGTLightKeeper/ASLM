@@ -1,5 +1,6 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
+using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Handlers;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
@@ -28,9 +29,13 @@ namespace ASLM.Services
     /// </remarks>
     public sealed class ConsoleOutputViewHandler : ViewHandler<ConsoleOutputView, TextBox>
     {
-        private static readonly WinUIColor ConsoleSurfaceColor = WinUIColor.FromArgb(255, 10, 10, 12);
-        private static readonly WinUIColor ConsoleTextColor = WinUIColor.FromArgb(255, 232, 232, 236);
-        private static readonly WinUIColor ConsoleSelectionColor = WinUIColor.FromArgb(96, 42, 118, 255);
+        private static readonly WinUIColor DarkConsoleSurfaceColor = WinUIColor.FromArgb(255, 10, 10, 12);
+        private static readonly WinUIColor DarkConsoleTextColor = WinUIColor.FromArgb(255, 232, 232, 236);
+        private static readonly WinUIColor DarkConsoleSelectionColor = WinUIColor.FromArgb(96, 42, 118, 255);
+
+        private static readonly WinUIColor LightConsoleSurfaceColor = WinUIColor.FromArgb(255, 240, 240, 240);
+        private static readonly WinUIColor LightConsoleTextColor = WinUIColor.FromArgb(255, 0, 0, 0);
+        private static readonly WinUIColor LightConsoleSelectionColor = WinUIColor.FromArgb(96, 0, 122, 255);
 
         public static readonly IPropertyMapper<ConsoleOutputView, ConsoleOutputViewHandler> Mapper =
             new PropertyMapper<ConsoleOutputView, ConsoleOutputViewHandler>(ViewHandler.ViewMapper)
@@ -74,9 +79,6 @@ namespace ASLM.Services
                 VerticalContentAlignment = WinUIVerticalAlignment.Stretch,
                 BorderThickness = new WinUIThickness(0),
                 Padding = new WinUIThickness(10, 8, 10, 8),
-                Background = new WinUISolidColorBrush(ConsoleSurfaceColor),
-                Foreground = new WinUISolidColorBrush(ConsoleTextColor),
-                SelectionHighlightColor = new WinUISolidColorBrush(ConsoleSelectionColor),
                 FontFamily = new FontFamily("Consolas"),
                 FontSize = 12,
                 TextReadingOrder = TextReadingOrder.DetectFromContent,
@@ -86,7 +88,7 @@ namespace ASLM.Services
                 CornerRadius = new WinUICornerRadius(10)
             };
 
-            ApplyConsoleChrome(textBox);
+            ApplyConsoleTheme(textBox);
             return textBox;
         }
 
@@ -96,6 +98,14 @@ namespace ASLM.Services
         protected override void ConnectHandler(TextBox platformView)
         {
             base.ConnectHandler(platformView);
+
+            if (Microsoft.Maui.Controls.Application.Current is { } app)
+            {
+                app.RequestedThemeChanged -= OnApplicationRequestedThemeChanged;
+                app.RequestedThemeChanged += OnApplicationRequestedThemeChanged;
+            }
+
+            ApplyConsoleTheme(platformView);
 
             platformView.Loaded += OnPlatformViewLoaded;
             platformView.SizeChanged += OnPlatformViewSizeChanged;
@@ -117,6 +127,11 @@ namespace ASLM.Services
         /// </summary>
         protected override void DisconnectHandler(TextBox platformView)
         {
+            if (Microsoft.Maui.Controls.Application.Current is { } app)
+            {
+                app.RequestedThemeChanged -= OnApplicationRequestedThemeChanged;
+            }
+
             platformView.Loaded -= OnPlatformViewLoaded;
             platformView.SizeChanged -= OnPlatformViewSizeChanged;
             platformView.TextChanged -= OnPlatformViewTextChanged;
@@ -133,6 +148,33 @@ namespace ASLM.Services
             }
 
             base.DisconnectHandler(platformView);
+        }
+
+        private void OnApplicationRequestedThemeChanged(object? sender, AppThemeChangedEventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (PlatformView != null)
+                {
+                    ApplyConsoleTheme(PlatformView);
+                }
+            });
+        }
+
+        /// <summary>
+        /// Applies console surface, text, selection, and WinUI text control chrome for the current app theme.
+        /// </summary>
+        private static void ApplyConsoleTheme(TextBox textBox)
+        {
+            var isLight = Microsoft.Maui.Controls.Application.Current?.RequestedTheme == AppTheme.Light;
+            var surface = isLight ? LightConsoleSurfaceColor : DarkConsoleSurfaceColor;
+            var text = isLight ? LightConsoleTextColor : DarkConsoleTextColor;
+            var selection = isLight ? LightConsoleSelectionColor : DarkConsoleSelectionColor;
+
+            textBox.Background = new WinUISolidColorBrush(surface);
+            textBox.Foreground = new WinUISolidColorBrush(text);
+            textBox.SelectionHighlightColor = new WinUISolidColorBrush(selection);
+            ApplyConsoleChrome(textBox, surface, text);
         }
 
         /// <summary>
@@ -507,12 +549,12 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Applies the dark console surface resources so hover and focus states do not brighten the background.
+        /// Applies text control resource brushes so hover and focus states match the console surface and text colors.
         /// </summary>
-        private static void ApplyConsoleChrome(TextBox textBox)
+        private static void ApplyConsoleChrome(TextBox textBox, WinUIColor surfaceColor, WinUIColor textColor)
         {
-            var surfaceBrush = new WinUISolidColorBrush(ConsoleSurfaceColor);
-            var textBrush = new WinUISolidColorBrush(ConsoleTextColor);
+            var surfaceBrush = new WinUISolidColorBrush(surfaceColor);
+            var textBrush = new WinUISolidColorBrush(textColor);
             var transparentBrush = new WinUISolidColorBrush(WinUIColor.FromArgb(0, 0, 0, 0));
 
             textBox.Resources["TextControlBackground"] = surfaceBrush;

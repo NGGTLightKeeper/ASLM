@@ -26,14 +26,14 @@
                 <Label Text="Modules"
                        FontSize="24"
                        FontAttributes="Bold"
-                       TextColor="{StaticResource LabelPrimary}" />
+                       TextColor="{DynamicResource LabelPrimary}" />
             </VerticalStackLayout>
         </CollectionView.Header>
 
         <CollectionView.EmptyView>
             <Label Text="No modules found. Install modules via the Setup Wizard."
                    FontSize="14"
-                   TextColor="{StaticResource LabelSecondary}"
+                   TextColor="{DynamicResource LabelSecondary}"
                    HorizontalOptions="Center"
                    VerticalOptions="Center"
                    Margin="0,20,0,0" />
@@ -41,8 +41,8 @@
 
         <CollectionView.ItemTemplate>
             <DataTemplate>
-                <Border BackgroundColor="{StaticResource BackgroundSecondary}"
-                        Stroke="{StaticResource Separator}"
+                <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
+                        Stroke="{DynamicResource Separator}"
                         StrokeThickness="1"
                         StrokeShape="RoundRectangle 8"
                         Padding="0">
@@ -53,7 +53,7 @@
                                     IsVisible="{Binding HasIcon}"
                                     StrokeThickness="0"
                                     StrokeShape="RoundRectangle 4"
-                                    BackgroundColor="{StaticResource BackgroundSecondary}"
+                                    BackgroundColor="{DynamicResource BackgroundSecondary}"
                                     WidthRequest="164"
                                     HeightRequest="164"
                                     Padding="0"
@@ -75,7 +75,7 @@
                                            FontSize="16"
                                            HeightRequest="24"
                                            FontAttributes="Bold"
-                                           TextColor="{StaticResource LabelPrimary}"
+                                           TextColor="{DynamicResource LabelPrimary}"
                                            VerticalOptions="Center"
                                            MaxLines="1"
                                            LineBreakMode="TailTruncation" />
@@ -86,11 +86,11 @@
                                                        WidthRequest="24"
                                                        HeightRequest="24"
                                                        VerticalOptions="Center"
-                                                       Color="{StaticResource LabelSecondary}" />
+                                                       Color="{DynamicResource LabelSecondary}" />
 
                                     <Border Grid.Column="2"
                                             IsVisible="{Binding ShowCardUpdateAction}"
-                                            Background="{SolidColorBrush {StaticResource SystemGreen}}"
+                                            Background="{SolidColorBrush {DynamicResource SystemGreen}}"
                                             StrokeThickness="0"
                                             StrokeShape="RoundRectangle 2"
                                             MinimumWidthRequest="50"
@@ -112,14 +112,14 @@
                                             <Label Grid.Column="1"
                                                    Text="Update"
                                                    FontSize="14"
-                                                   TextColor="{StaticResource LabelPrimary}"
+                                                   TextColor="{DynamicResource PrimaryDarkText}"
                                                    VerticalOptions="Center"
                                                    Padding="4,0,0,0" />
                                         </Grid>
                                     </Border>
 
                                     <Border Grid.Column="3"
-                                            BackgroundColor="{StaticResource BackgroundSecondary}"
+                                            BackgroundColor="{DynamicResource BackgroundSecondary}"
                                             StrokeThickness="0"
                                             StrokeShape="RoundRectangle 4"
                                             WidthRequest="24"
@@ -145,7 +145,7 @@
                                                      Margin="0,4">
                                     <Label Text="{Binding VersionString}"
                                            FontSize="14"
-                                           TextColor="{StaticResource LabelSecondary}" />
+                                           TextColor="{DynamicResource LabelSecondary}" />
                                 </VerticalStackLayout>
 
                                 <Grid Grid.Row="2"
@@ -157,8 +157,8 @@
                                             ImageSource="icon_stop.png"
                                             ContentLayout="Left,4"
                                             Command="{Binding StopCommand}"
-                                            BackgroundColor="{StaticResource ActionRed}"
-                                            TextColor="{StaticResource LabelPrimary}"
+                                            BackgroundColor="{DynamicResource ActionRed}"
+                                            TextColor="{DynamicResource PrimaryDarkText}"
                                             FontSize="13"
                                             HeightRequest="32"
                                             CornerRadius="4"
@@ -168,8 +168,8 @@
                                             ImageSource="icon_restart.png"
                                             ContentLayout="Left,4"
                                             Command="{Binding RestartCommand}"
-                                            BackgroundColor="{StaticResource ActionBlue}"
-                                            TextColor="{StaticResource LabelPrimary}"
+                                            BackgroundColor="{DynamicResource ActionBlue}"
+                                            TextColor="{DynamicResource PrimaryDarkText}"
                                             FontSize="13"
                                             HeightRequest="32"
                                             CornerRadius="4"
@@ -177,8 +177,8 @@
                                 </Grid>
 
                                 <Border Grid.Row="2"
-                                        BackgroundColor="{StaticResource SystemBlueOverlay}"
-                                        Stroke="{StaticResource ActionBlue}"
+                                        BackgroundColor="{DynamicResource SystemBlueOverlay}"
+                                        Stroke="{DynamicResource ActionBlue}"
                                         StrokeShape="RoundRectangle 4"
                                         StrokeThickness="1"
                                         StrokeDashArray="4,2"
@@ -192,20 +192,20 @@
                                                            VerticalOptions="Center"
                                                            Spacing="8">
                                         <ActivityIndicator IsRunning="{Binding IsRestarting}"
-                                                           Color="{StaticResource LabelPrimary}"
+                                                           Color="{DynamicResource LabelPrimary}"
                                                            WidthRequest="16"
                                                            HeightRequest="16"
                                                            VerticalOptions="Center" />
                                         <Label Text="Restarting"
-                                               TextColor="{StaticResource LabelPrimary}"
+                                               TextColor="{DynamicResource LabelPrimary}"
                                                FontSize="13"
                                                VerticalOptions="Center" />
                                     </HorizontalStackLayout>
                                 </Border>
 
                                 <Border Grid.Row="2"
-                                        BackgroundColor="{StaticResource SystemBlueOverlay}"
-                                        Stroke="{StaticResource ActionBlue}"
+                                        BackgroundColor="{DynamicResource SystemBlueOverlay}"
+                                        Stroke="{DynamicResource ActionBlue}"
                                         StrokeShape="RoundRectangle 4"
                                         StrokeThickness="1"
                                         StrokeDashArray="4,2"
@@ -219,12 +219,12 @@
                                                            VerticalOptions="Center"
                                                            Spacing="8">
                                         <ActivityIndicator IsRunning="{Binding ShowStartingStatus}"
-                                                           Color="{StaticResource LabelPrimary}"
+                                                           Color="{DynamicResource LabelPrimary}"
                                                            WidthRequest="16"
                                                            HeightRequest="16"
                                                            VerticalOptions="Center" />
                                         <Label Text="Starting"
-                                               TextColor="{StaticResource LabelPrimary}"
+                                               TextColor="{DynamicResource LabelPrimary}"
                                                FontSize="13"
                                                VerticalOptions="Center" />
                                     </HorizontalStackLayout>
@@ -232,7 +232,7 @@
 
                                 <Border Grid.Row="2"
                                         BackgroundColor="#2032D74B"
-                                        Stroke="{StaticResource SystemGreen}"
+                                        Stroke="{DynamicResource SystemGreen}"
                                         StrokeShape="RoundRectangle 4"
                                         StrokeThickness="1"
                                         StrokeDashArray="4,2"
@@ -246,12 +246,12 @@
                                                            VerticalOptions="Center"
                                                            Spacing="8">
                                         <ActivityIndicator IsRunning="{Binding ShowUpdatingStatus}"
-                                                           Color="{StaticResource LabelPrimary}"
+                                                           Color="{DynamicResource LabelPrimary}"
                                                            WidthRequest="16"
                                                            HeightRequest="16"
                                                            VerticalOptions="Center" />
                                         <Label Text="Updating"
-                                               TextColor="{StaticResource LabelPrimary}"
+                                               TextColor="{DynamicResource LabelPrimary}"
                                                FontSize="13"
                                                VerticalOptions="Center" />
                                     </HorizontalStackLayout>
@@ -263,8 +263,8 @@
                                         ContentLayout="Left,4"
                                         Command="{Binding LaunchCommand}"
                                         IsVisible="{Binding CanShowLaunchAction}"
-                                        BackgroundColor="{StaticResource ActionBlue}"
-                                        TextColor="{StaticResource LabelPrimary}"
+                                        BackgroundColor="{DynamicResource ActionBlue}"
+                                        TextColor="{DynamicResource PrimaryDarkText}"
                                         FontSize="13"
                                         HeightRequest="32"
                                         CornerRadius="4"
@@ -282,8 +282,8 @@
                                 </BoxView.GestureRecognizers>
                             </BoxView>
 
-                            <Border BackgroundColor="{StaticResource BackgroundTertiary}"
-                                    Stroke="{StaticResource Separator}"
+                            <Border BackgroundColor="{DynamicResource BackgroundTertiary}"
+                                    Stroke="{DynamicResource Separator}"
                                     StrokeThickness="1"
                                     StrokeShape="RoundRectangle 8"
                                     Padding="4"
@@ -298,7 +298,7 @@
                                         </Grid.GestureRecognizers>
                                         <Label Text="Check updates"
                                                FontSize="13"
-                                               TextColor="{StaticResource LabelPrimary}"
+                                               TextColor="{DynamicResource LabelPrimary}"
                                                HorizontalOptions="Start"
                                                VerticalOptions="Center" />
                                     </Grid>
@@ -309,7 +309,7 @@
                                         </Grid.GestureRecognizers>
                                         <Label Text="Configure updates"
                                                FontSize="13"
-                                               TextColor="{StaticResource LabelPrimary}"
+                                               TextColor="{DynamicResource LabelPrimary}"
                                                HorizontalOptions="Start"
                                                VerticalOptions="Center" />
                                     </Grid>

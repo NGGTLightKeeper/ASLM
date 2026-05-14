@@ -15,8 +15,8 @@
                 HeightRequest="480"
                 HorizontalOptions="Start"
                 VerticalOptions="Start"
-                BackgroundColor="#252526"
-                Stroke="#454548"
+                BackgroundColor="{DynamicResource BackgroundElevated}"
+                Stroke="{DynamicResource PopoverBorderColor}"
                 StrokeThickness="1"
                 Padding="0"
                 StrokeShape="RoundRectangle 12">
@@ -37,7 +37,7 @@
                            Text="Notifications"
                            FontSize="16"
                            FontAttributes="Bold"
-                           TextColor="{StaticResource LabelPrimary}"
+                           TextColor="{DynamicResource LabelPrimary}"
                            VerticalOptions="Center" />
 
                     <Button Grid.Column="1"
@@ -47,8 +47,8 @@
                             MinimumHeightRequest="28"
                             Padding="8,0"
                             Margin="0"
-                            BackgroundColor="#333334"
-                            TextColor="{StaticResource LabelSecondary}"
+                            BackgroundColor="{DynamicResource PopoverButtonSecondary}"
+                            TextColor="{DynamicResource LabelSecondary}"
                             CornerRadius="6"
                             VerticalOptions="Center"
                             IsEnabled="{Binding HasAnyNotifications}"
@@ -64,7 +64,7 @@
                             Padding="0"
                             Margin="0"
                             BackgroundColor="Transparent"
-                            TextColor="{StaticResource LabelSecondary}"
+                            TextColor="{DynamicResource LabelSecondary}"
                             CornerRadius="6"
                             VerticalOptions="Center"
                             Clicked="OnCloseClicked" />
@@ -75,7 +75,7 @@
                       ColumnDefinitions="*">
                     <Label Text="{Binding SectionTitle}"
                            FontSize="12"
-                           TextColor="{StaticResource LabelPrimary}" />
+                           TextColor="{DynamicResource LabelPrimary}" />
                 </Grid>
 
                 <!-- Notification list -->
@@ -106,20 +106,20 @@
                                             <Label Text="{Binding Title}"
                                                    FontSize="14"
                                                    FontAttributes="Bold"
-                                                   TextColor="{StaticResource LabelPrimary}"
+                                                   TextColor="{DynamicResource LabelPrimary}"
                                                    MaxLines="1"
                                                    LineBreakMode="TailTruncation" />
 
                                             <Label Text="{Binding Message}"
                                                    FontSize="12"
-                                                   TextColor="{StaticResource LabelPrimary}"
+                                                   TextColor="{DynamicResource LabelPrimary}"
                                                    MaxLines="1"
                                                    LineBreakMode="TailTruncation" />
 
                                             <!-- Active transfer filename: only when it adds info beyond Message -->
                                             <Label Text="{Binding ActiveTransferLabel}"
                                                    FontSize="12"
-                                                   TextColor="{StaticResource LabelSecondary}"
+                                                   TextColor="{DynamicResource LabelSecondary}"
                                                    MaxLines="1"
                                                    LineBreakMode="TailTruncation"
                                                    IsVisible="{Binding ShowActiveTransferInCard}" />
@@ -127,7 +127,7 @@
                                             <!-- Status message: hidden during active download, shown after completion -->
                                             <Label Text="{Binding StatusText}"
                                                    FontSize="12"
-                                                   TextColor="{StaticResource LabelSecondary}"
+                                                   TextColor="{DynamicResource LabelSecondary}"
                                                    MaxLines="1"
                                                    LineBreakMode="TailTruncation"
                                                    IsVisible="{Binding ShowStatusInCard}" />
@@ -140,27 +140,27 @@
                                                 <Label Grid.Column="0"
                                                        Text="{Binding DetailText}"
                                                        FontSize="11"
-                                                       TextColor="{StaticResource LabelSecondary}"
+                                                       TextColor="{DynamicResource LabelSecondary}"
                                                        VerticalTextAlignment="Center"
                                                        LineBreakMode="TailTruncation"
                                                        IsVisible="{Binding HasDetailText}" />
                                                 <Label Grid.Column="1"
                                                        Text="{Binding TransferSpeedDisplay}"
                                                        FontSize="11"
-                                                       TextColor="{StaticResource LabelSecondary}"
+                                                       TextColor="{DynamicResource LabelSecondary}"
                                                        VerticalTextAlignment="Center"
                                                        LineBreakMode="TailTruncation" />
                                                 <Label Grid.Column="2"
                                                        Text="{Binding TransferPercentDisplay}"
                                                        FontSize="11"
-                                                       TextColor="{StaticResource LabelSecondary}"
+                                                       TextColor="{DynamicResource LabelSecondary}"
                                                        VerticalTextAlignment="Center" />
                                             </Grid>
 
                                             <ProgressBar Progress="{Binding ProgressFraction}"
                                                          IsVisible="{Binding HasProgress}"
                                                          HeightRequest="4"
-                                                         ProgressColor="{StaticResource ActionBlue}" />
+                                                         ProgressColor="{DynamicResource ActionBlue}" />
 
                                             <HorizontalStackLayout Spacing="8"
                                                                      Margin="0,6,0,0"
@@ -171,8 +171,8 @@
                                                         MinimumHeightRequest="28"
                                                         Padding="10,0"
                                                         Margin="0"
-                                                        BackgroundColor="{StaticResource ActionBlue}"
-                                                        TextColor="{StaticResource LabelPrimary}"
+                                                        BackgroundColor="{DynamicResource ActionBlue}"
+                                                        TextColor="{DynamicResource PrimaryDarkText}"
                                                         CornerRadius="6"
                                                         Clicked="OnUpdateNotificationNowClicked" />
                                                 <Button Text="Update later"
@@ -181,8 +181,8 @@
                                                         MinimumHeightRequest="28"
                                                         Padding="10,0"
                                                         Margin="0"
-                                                        BackgroundColor="#333334"
-                                                        TextColor="{StaticResource LabelSecondary}"
+                                                        BackgroundColor="{DynamicResource PopoverButtonSecondary}"
+                                                        TextColor="{DynamicResource LabelSecondary}"
                                                         CornerRadius="6"
                                                         Clicked="OnUpdateNotificationLaterClicked" />
                                             </HorizontalStackLayout>
@@ -210,7 +210,7 @@
 
                                     <BoxView Grid.Row="1"
                                              HeightRequest="1"
-                                             Color="#343436"
+                                             Color="{DynamicResource PopoverButtonSecondary}"
                                              Margin="0,0,0,8" />
                                 </Grid>
                             </DataTemplate>
@@ -225,11 +225,11 @@
                         <Label Text="No notifications"
                                FontSize="16"
                                FontAttributes="Bold"
-                               TextColor="{StaticResource LabelPrimary}"
+                               TextColor="{DynamicResource LabelPrimary}"
                                HorizontalOptions="Center" />
                         <Label Text="New ASLM events will appear here."
                                FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}"
+                               TextColor="{DynamicResource LabelSecondary}"
                                HorizontalTextAlignment="Center" />
                     </VerticalStackLayout>
                 </Grid>
@@ -239,12 +239,12 @@
                       RowDefinitions="Auto, Auto">
                     <BoxView Grid.Row="0"
                              HeightRequest="2"
-                             Color="#343436"
+                             Color="{DynamicResource PopoverButtonSecondary}"
                              Margin="0,8,0,4"/>
                     <Label Grid.Row="1"
                            Text="{Binding SummaryText}"
                            FontSize="11"
-                           TextColor="{StaticResource LabelSecondary}"
+                           TextColor="{DynamicResource LabelSecondary}"
                            HorizontalTextAlignment="End"
                            VerticalTextAlignment="Center" />
                 </Grid>

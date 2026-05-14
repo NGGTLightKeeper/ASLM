@@ -24,7 +24,8 @@ namespace ASLM.Services
         AslmProfile,
         Updates,
         Ollama,
-        Module
+        Module,
+        Personalization
     }
 
     /// <summary>
@@ -162,6 +163,13 @@ namespace ASLM.Services
                     "Display name used by ASLM and shared with modules.",
                     SettingsCategoryKind.AslmProfile,
                     null,
+                    false),
+                new(
+                    "aslm-personalization",
+                    "Personalization",
+                    "Theme mode and custom theme settings.",
+                    SettingsCategoryKind.Personalization,
+                    null,
                     false)
             };
 
@@ -275,6 +283,10 @@ namespace ASLM.Services
         /// <summary>
         /// Builds the save confirmation message, including deferred runtime updates when present.
         /// </summary>
+        /// <param name="hasAslmChanges">
+        /// True when built-in ASLM settings (account, ports, consoles, updates) or personalization
+        /// (appearance, custom themes) were persisted in this save operation.
+        /// </param>
         public static string BuildSaveMessage(bool hasAslmChanges, bool hasModuleChanges, List<string> deferredSettings)
         {
             if (!hasAslmChanges && !hasModuleChanges)

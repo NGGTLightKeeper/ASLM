@@ -9,27 +9,27 @@
 
     <!-- Core controls -->
     <Style TargetType="ActivityIndicator">
-        <Setter Property="Color" Value="{StaticResource Primary}" />
+        <Setter Property="Color" Value="{DynamicResource Primary}" />
     </Style>
 
     <Style TargetType="IndicatorView">
-        <Setter Property="IndicatorColor" Value="{StaticResource Separator}" />
-        <Setter Property="SelectedIndicatorColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="IndicatorColor" Value="{DynamicResource Separator}" />
+        <Setter Property="SelectedIndicatorColor" Value="{DynamicResource LabelPrimary}" />
     </Style>
 
     <Style TargetType="Border">
-        <Setter Property="Stroke" Value="{StaticResource Separator}" />
+        <Setter Property="Stroke" Value="{DynamicResource Separator}" />
         <Setter Property="StrokeShape" Value="Rectangle" />
         <Setter Property="StrokeThickness" Value="1" />
     </Style>
 
     <Style TargetType="BoxView">
-        <Setter Property="BackgroundColor" Value="{StaticResource Separator}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource Separator}" />
     </Style>
 
     <Style TargetType="Button">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="18" />
         <Setter Property="BorderWidth" Value="0" />
@@ -43,8 +43,8 @@
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelSecondary}" />
-                            <Setter Property="BackgroundColor" Value="{StaticResource BackgroundTertiary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelSecondary}" />
+                            <Setter Property="BackgroundColor" Value="{DynamicResource BackgroundTertiary}" />
                         </VisualState.Setters>
                     </VisualState>
                     <VisualState x:Name="PointerOver" />
@@ -54,7 +54,7 @@
     </Style>
 
     <Style x:Key="SidebarButton" TargetType="Button">
-        <Setter Property="TextColor" Value="{StaticResource LabelSecondary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelSecondary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="14" />
@@ -83,7 +83,7 @@
                     </VisualState>
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelQuaternary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelQuaternary}" />
                             <Setter Property="BackgroundColor" Value="Transparent" />
                         </VisualState.Setters>
                     </VisualState>
@@ -94,8 +94,8 @@
 
     <!-- Settings overlay -->
     <Style x:Key="SettingsFooterButtonStyle" TargetType="Button">
-        <Setter Property="TextColor" Value="{StaticResource LabelSecondary}" />
-        <Setter Property="BackgroundColor" Value="{StaticResource BackgroundTertiary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelSecondary}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource BackgroundTertiary}" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="BorderWidth" Value="0" />
@@ -113,8 +113,8 @@
                     <VisualState x:Name="PointerOver" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelTertiary}" />
-                            <Setter Property="BackgroundColor" Value="{StaticResource BackgroundTertiary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelTertiary}" />
+                            <Setter Property="BackgroundColor" Value="{DynamicResource BackgroundTertiary}" />
                             <Setter Property="Opacity" Value="0.65" />
                         </VisualState.Setters>
                     </VisualState>
@@ -126,21 +126,21 @@
     <Style x:Key="SettingsFooterPrimaryButtonStyle"
            TargetType="Button"
            BasedOn="{StaticResource SettingsFooterButtonStyle}">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="BackgroundColor" Value="{StaticResource ActionBlue}" />
+        <Setter Property="TextColor" Value="{DynamicResource PrimaryDarkText}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource ActionBlue}" />
     </Style>
 
     <Style x:Key="SettingsFooterDangerButtonStyle"
            TargetType="Button"
            BasedOn="{StaticResource SettingsFooterButtonStyle}">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="BackgroundColor" Value="{StaticResource ActionRed}" />
+        <Setter Property="TextColor" Value="{DynamicResource PrimaryDarkText}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource ActionRed}" />
     </Style>
 
     <Style x:Key="SettingsSelectorHeaderLabelStyle" TargetType="Label">
         <Setter Property="FontSize" Value="12" />
         <Setter Property="FontAttributes" Value="Bold" />
-        <Setter Property="TextColor" Value="{StaticResource SystemGray}" />
+        <Setter Property="TextColor" Value="{DynamicResource SystemGray}" />
         <Setter Property="Margin" Value="4,0,0,0" />
     </Style>
 
@@ -157,7 +157,7 @@
 
     <Style x:Key="SettingsSelectorButtonLabelStyle" TargetType="Label">
         <Setter Property="FontSize" Value="14" />
-        <Setter Property="TextColor" Value="{StaticResource LabelSecondary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelSecondary}" />
         <Setter Property="VerticalOptions" Value="Center" />
         <Setter Property="HorizontalOptions" Value="Start" />
         <Setter Property="VerticalTextAlignment" Value="Center" />
@@ -176,12 +176,12 @@
         <Setter Property="StrokeShape" Value="RoundRectangle 6" />
         <Setter Property="Padding" Value="8,0" />
         <Setter Property="MinimumHeightRequest" Value="36" />
-        <Setter Property="BackgroundColor" Value="#19191C" />
-        <Setter Property="Stroke" Value="{StaticResource Separator}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource FieldBackground}" />
+        <Setter Property="Stroke" Value="{DynamicResource Separator}" />
     </Style>
 
     <Style x:Key="SettingsTextEntryStyle" TargetType="Entry">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="13" />
@@ -193,12 +193,12 @@
     </Style>
 
     <Style x:Key="SettingsPickerStyle" TargetType="Picker">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="TitleColor" Value="{StaticResource LabelSecondary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
+        <Setter Property="TitleColor" Value="{DynamicResource LabelSecondary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="13" />
-        <Setter Property="HeightRequest" Value="32" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="HeightRequest" Value="28" />
         <Setter Property="MinimumHeightRequest" Value="32" />
         <Setter Property="HorizontalOptions" Value="Fill" />
     </Style>
@@ -206,26 +206,26 @@
     <Style x:Key="SettingsSubGroupHeaderLabelStyle" TargetType="Label">
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontAttributes" Value="Bold" />
-        <Setter Property="TextColor" Value="{StaticResource LabelTertiary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelTertiary}" />
         <Setter Property="Margin" Value="0,4,0,0" />
     </Style>
 
     <Style x:Key="SettingsCardTitleLabelStyle" TargetType="Label">
         <Setter Property="FontSize" Value="14" />
         <Setter Property="FontAttributes" Value="Bold" />
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
     </Style>
 
     <Style x:Key="SettingsCardDescriptionLabelStyle" TargetType="Label">
         <Setter Property="FontSize" Value="12" />
-        <Setter Property="TextColor" Value="{StaticResource LabelSecondary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelSecondary}" />
         <Setter Property="LineBreakMode" Value="WordWrap" />
         <Setter Property="MaxLines" Value="3" />
     </Style>
 
     <Style x:Key="SettingsSecondaryLabelStyle" TargetType="Label">
         <Setter Property="FontSize" Value="12" />
-        <Setter Property="TextColor" Value="{StaticResource LabelSecondary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelSecondary}" />
     </Style>
 
     <Style x:Key="SettingsInlineActionButtonStyle"
@@ -248,7 +248,7 @@
 
     <!-- Input controls -->
     <Style TargetType="CheckBox">
-        <Setter Property="Color" Value="{StaticResource Primary}" />
+        <Setter Property="Color" Value="{DynamicResource Primary}" />
         <Setter Property="MinimumHeightRequest" Value="44" />
         <Setter Property="MinimumWidthRequest" Value="44" />
         <Setter Property="VisualStateManager.VisualStateGroups">
@@ -257,7 +257,7 @@
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="Color" Value="{StaticResource SystemGray4}" />
+                            <Setter Property="Color" Value="{DynamicResource SystemGray4}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -266,7 +266,7 @@
     </Style>
 
     <Style TargetType="DatePicker">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="14" />
@@ -278,7 +278,7 @@
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelTertiary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelTertiary}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -287,11 +287,11 @@
     </Style>
 
     <Style TargetType="Editor">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="14" />
-        <Setter Property="PlaceholderColor" Value="{StaticResource PlaceholderText}" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource PlaceholderText}" />
         <Setter Property="MinimumHeightRequest" Value="44" />
         <Setter Property="MinimumWidthRequest" Value="44" />
         <Setter Property="VisualStateManager.VisualStateGroups">
@@ -300,7 +300,7 @@
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelTertiary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelTertiary}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -309,11 +309,11 @@
     </Style>
 
     <Style TargetType="Entry">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="{OnIdiom 18, Desktop=24}" />
-        <Setter Property="PlaceholderColor" Value="{StaticResource PlaceholderText}" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource PlaceholderText}" />
         <Setter Property="MinimumHeightRequest" Value="44" />
         <Setter Property="MinimumWidthRequest" Value="44" />
         <Setter Property="VisualStateManager.VisualStateGroups">
@@ -322,7 +322,7 @@
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelTertiary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelTertiary}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -337,7 +337,7 @@
         <Setter Property="CornerRadius" Value="0" />
         <Setter Property="MinimumHeightRequest" Value="44" />
         <Setter Property="MinimumWidthRequest" Value="44" />
-        <Setter Property="Background" Value="{StaticResource BackgroundPrimary}" />
+        <Setter Property="Background" Value="{DynamicResource BackgroundPrimary}" />
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
@@ -354,7 +354,7 @@
     </Style>
 
     <Style TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="14" />
@@ -364,7 +364,7 @@
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelTertiary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelTertiary}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -373,22 +373,22 @@
     </Style>
 
     <Style x:Key="Headline" TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
         <Setter Property="FontSize" Value="32" />
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="HorizontalTextAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="SubHeadline" TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
         <Setter Property="FontSize" Value="24" />
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="HorizontalTextAlignment" Value="Center" />
     </Style>
 
     <Style TargetType="Picker">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="TitleColor" Value="{StaticResource LabelSecondary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
+        <Setter Property="TitleColor" Value="{DynamicResource LabelSecondary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="{OnIdiom 18, Desktop=24}" />
@@ -400,8 +400,8 @@
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelTertiary}" />
-                            <Setter Property="TitleColor" Value="{StaticResource LabelTertiary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelTertiary}" />
+                            <Setter Property="TitleColor" Value="{DynamicResource LabelTertiary}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -411,7 +411,7 @@
 
     <Style TargetType="RadioButton">
         <Setter Property="BackgroundColor" Value="Transparent" />
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="MinimumHeightRequest" Value="44" />
@@ -422,7 +422,7 @@
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelTertiary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelTertiary}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -431,9 +431,9 @@
     </Style>
 
     <Style TargetType="SearchBar">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="PlaceholderColor" Value="{StaticResource PlaceholderText}" />
-        <Setter Property="CancelButtonColor" Value="{StaticResource LabelSecondary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource PlaceholderText}" />
+        <Setter Property="CancelButtonColor" Value="{DynamicResource LabelSecondary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="14" />
@@ -445,8 +445,8 @@
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelTertiary}" />
-                            <Setter Property="PlaceholderColor" Value="{StaticResource LabelTertiary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelTertiary}" />
+                            <Setter Property="PlaceholderColor" Value="{DynamicResource LabelTertiary}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -455,8 +455,8 @@
     </Style>
 
     <Style TargetType="SearchHandler">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="PlaceholderColor" Value="{StaticResource PlaceholderText}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource PlaceholderText}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="14" />
@@ -466,8 +466,8 @@
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelTertiary}" />
-                            <Setter Property="PlaceholderColor" Value="{StaticResource LabelTertiary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelTertiary}" />
+                            <Setter Property="PlaceholderColor" Value="{DynamicResource LabelTertiary}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -476,27 +476,27 @@
     </Style>
 
     <Style TargetType="Switch">
-        <Setter Property="OnColor" Value="{StaticResource SystemGreen}" />
-        <Setter Property="ThumbColor" Value="{StaticResource White}" />
+        <Setter Property="OnColor" Value="{DynamicResource SystemGreen}" />
+        <Setter Property="ThumbColor" Value="{DynamicResource White}" />
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="OnColor" Value="{StaticResource SystemGray4}" />
-                            <Setter Property="ThumbColor" Value="{StaticResource SystemGray4}" />
+                            <Setter Property="OnColor" Value="{DynamicResource SystemGray4}" />
+                            <Setter Property="ThumbColor" Value="{DynamicResource SystemGray4}" />
                         </VisualState.Setters>
                     </VisualState>
                     <VisualState x:Name="On">
                         <VisualState.Setters>
-                            <Setter Property="OnColor" Value="{StaticResource SystemGreen}" />
-                            <Setter Property="ThumbColor" Value="{StaticResource White}" />
+                            <Setter Property="OnColor" Value="{DynamicResource SystemGreen}" />
+                            <Setter Property="ThumbColor" Value="{DynamicResource White}" />
                         </VisualState.Setters>
                     </VisualState>
                     <VisualState x:Name="Off">
                         <VisualState.Setters>
-                            <Setter Property="ThumbColor" Value="{StaticResource SystemGray2}" />
+                            <Setter Property="ThumbColor" Value="{DynamicResource SystemGray2}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -505,7 +505,7 @@
     </Style>
 
     <Style TargetType="TimePicker">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="14" />
@@ -517,7 +517,7 @@
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelTertiary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelTertiary}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -527,14 +527,14 @@
 
     <!-- Feedback and effects -->
     <Style TargetType="ProgressBar">
-        <Setter Property="ProgressColor" Value="{StaticResource Primary}" />
+        <Setter Property="ProgressColor" Value="{DynamicResource Primary}" />
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="ProgressColor" Value="{StaticResource SystemGray4}" />
+                            <Setter Property="ProgressColor" Value="{DynamicResource SystemGray4}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -543,29 +543,29 @@
     </Style>
 
     <Style TargetType="RefreshView">
-        <Setter Property="RefreshColor" Value="{StaticResource Primary}" />
+        <Setter Property="RefreshColor" Value="{DynamicResource Primary}" />
     </Style>
 
     <Style TargetType="Shadow">
         <Setter Property="Radius" Value="15" />
         <Setter Property="Opacity" Value="0.5" />
-        <Setter Property="Brush" Value="{StaticResource Separator}" />
+        <Setter Property="Brush" Value="{DynamicResource Separator}" />
         <Setter Property="Offset" Value="10,10" />
     </Style>
 
     <Style TargetType="Slider">
-        <Setter Property="MinimumTrackColor" Value="{StaticResource Primary}" />
-        <Setter Property="MaximumTrackColor" Value="{StaticResource Separator}" />
-        <Setter Property="ThumbColor" Value="{StaticResource Primary}" />
+        <Setter Property="MinimumTrackColor" Value="{DynamicResource Primary}" />
+        <Setter Property="MaximumTrackColor" Value="{DynamicResource Separator}" />
+        <Setter Property="ThumbColor" Value="{DynamicResource Primary}" />
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="MinimumTrackColor" Value="{StaticResource SystemGray4}" />
-                            <Setter Property="MaximumTrackColor" Value="{StaticResource SystemGray4}" />
-                            <Setter Property="ThumbColor" Value="{StaticResource SystemGray4}" />
+                            <Setter Property="MinimumTrackColor" Value="{DynamicResource SystemGray4}" />
+                            <Setter Property="MaximumTrackColor" Value="{DynamicResource SystemGray4}" />
+                            <Setter Property="ThumbColor" Value="{DynamicResource SystemGray4}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -574,43 +574,43 @@
     </Style>
 
     <Style TargetType="SwipeItem">
-        <Setter Property="BackgroundColor" Value="{StaticResource BackgroundSecondary}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource BackgroundSecondary}" />
     </Style>
 
     <Style TargetType="shimmer:SfShimmer">
-        <Setter Property="Fill" Value="{StaticResource BackgroundSecondary}" />
-        <Setter Property="WaveColor" Value="{StaticResource BackgroundTertiary}" />
+        <Setter Property="Fill" Value="{DynamicResource BackgroundSecondary}" />
+        <Setter Property="WaveColor" Value="{DynamicResource BackgroundTertiary}" />
     </Style>
 
     <!-- Page containers -->
     <Style TargetType="Page" ApplyToDerivedTypes="True">
         <Setter Property="Padding" Value="0" />
-        <Setter Property="BackgroundColor" Value="{StaticResource BackgroundPrimary}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource BackgroundPrimary}" />
     </Style>
 
     <Style TargetType="Shell" ApplyToDerivedTypes="True">
-        <Setter Property="Shell.BackgroundColor" Value="{StaticResource BackgroundPrimary}" />
-        <Setter Property="Shell.ForegroundColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="Shell.TitleColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="Shell.DisabledColor" Value="{StaticResource LabelQuaternary}" />
-        <Setter Property="Shell.UnselectedColor" Value="{StaticResource LabelSecondary}" />
+        <Setter Property="Shell.BackgroundColor" Value="{DynamicResource BackgroundPrimary}" />
+        <Setter Property="Shell.ForegroundColor" Value="{DynamicResource LabelPrimary}" />
+        <Setter Property="Shell.TitleColor" Value="{DynamicResource LabelPrimary}" />
+        <Setter Property="Shell.DisabledColor" Value="{DynamicResource LabelQuaternary}" />
+        <Setter Property="Shell.UnselectedColor" Value="{DynamicResource LabelSecondary}" />
         <Setter Property="Shell.NavBarHasShadow" Value="False" />
-        <Setter Property="Shell.TabBarBackgroundColor" Value="{StaticResource BackgroundPrimary}" />
-        <Setter Property="Shell.TabBarForegroundColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="Shell.TabBarTitleColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="Shell.TabBarUnselectedColor" Value="{StaticResource LabelSecondary}" />
+        <Setter Property="Shell.TabBarBackgroundColor" Value="{DynamicResource BackgroundPrimary}" />
+        <Setter Property="Shell.TabBarForegroundColor" Value="{DynamicResource LabelPrimary}" />
+        <Setter Property="Shell.TabBarTitleColor" Value="{DynamicResource LabelPrimary}" />
+        <Setter Property="Shell.TabBarUnselectedColor" Value="{DynamicResource LabelSecondary}" />
     </Style>
 
     <Style TargetType="NavigationPage">
-        <Setter Property="BarBackgroundColor" Value="{StaticResource BackgroundSecondary}" />
-        <Setter Property="BarTextColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="IconColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="BarBackgroundColor" Value="{DynamicResource BackgroundSecondary}" />
+        <Setter Property="BarTextColor" Value="{DynamicResource LabelPrimary}" />
+        <Setter Property="IconColor" Value="{DynamicResource LabelPrimary}" />
     </Style>
 
     <Style TargetType="TabbedPage">
-        <Setter Property="BarBackgroundColor" Value="{StaticResource BackgroundSecondary}" />
-        <Setter Property="BarTextColor" Value="{StaticResource LabelPrimary}" />
-        <Setter Property="UnselectedTabColor" Value="{StaticResource LabelSecondary}" />
-        <Setter Property="SelectedTabColor" Value="{StaticResource Primary}" />
+        <Setter Property="BarBackgroundColor" Value="{DynamicResource BackgroundSecondary}" />
+        <Setter Property="BarTextColor" Value="{DynamicResource LabelPrimary}" />
+        <Setter Property="UnselectedTabColor" Value="{DynamicResource LabelSecondary}" />
+        <Setter Property="SelectedTabColor" Value="{DynamicResource Primary}" />
     </Style>
 </ResourceDictionary>

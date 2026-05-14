@@ -57,60 +57,60 @@
     <FontImageSource x:Key="IconDashboard"
                      Glyph="&#xe4b5;"
                      FontFamily="FluentUI"
-                     Color="{StaticResource LabelPrimary}"
+                     Color="{DynamicResource LabelPrimary}"
                      Size="{StaticResource IconSize}" />
 
     <FontImageSource x:Key="IconProjects"
                      Glyph="&#xf4ee;"
                      FontFamily="FluentUI"
-                     Color="{StaticResource LabelPrimary}"
+                     Color="{DynamicResource LabelPrimary}"
                      Size="{StaticResource IconSize}" />
 
     <FontImageSource x:Key="IconMeta"
                      Glyph="&#xf4a4;"
                      FontFamily="FluentUI"
-                     Color="{StaticResource LabelPrimary}"
+                     Color="{DynamicResource LabelPrimary}"
                      Size="{StaticResource IconSize}" />
 
     <FontImageSource x:Key="IconRibbon"
                      Glyph="&#xea27;"
                      FontFamily="FluentUI"
-                     Color="{StaticResource LabelPrimary}"
+                     Color="{DynamicResource LabelPrimary}"
                      Size="{StaticResource IconSize}" />
 
     <FontImageSource x:Key="IconAdd"
                      Glyph="&#xf58d;"
                      FontFamily="FluentUI"
-                     Color="{StaticResource LabelPrimary}"
+                     Color="{DynamicResource LabelPrimary}"
                      Size="{StaticResource IconSize}" />
 
     <FontImageSource x:Key="IconDelete"
                      Glyph="&#xeea6;"
                      FontFamily="FluentUI"
-                     Color="{StaticResource LabelPrimary}"
+                     Color="{DynamicResource LabelPrimary}"
                      Size="{StaticResource IconSize}" />
 
     <FontImageSource x:Key="IconClean"
                      Glyph="&#xF0429;"
                      FontFamily="FluentUI"
-                     Color="{StaticResource LabelPrimary}"
+                     Color="{DynamicResource LabelPrimary}"
                      Size="{StaticResource size240}" />
 
     <FontImageSource x:Key="IconLight"
                      Glyph="&#xee4d;"
                      FontFamily="FluentUI"
-                     Color="{StaticResource LabelPrimary}"
+                     Color="{DynamicResource LabelPrimary}"
                      Size="{StaticResource size240}" />
 
     <FontImageSource x:Key="IconDark"
                      Glyph="&#xee45;"
                      FontFamily="FluentUI"
-                     Color="{StaticResource LabelPrimary}"
+                     Color="{DynamicResource LabelPrimary}"
                      Size="{StaticResource size240}" />
 
     <!-- Typography -->
     <Style TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
+        <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontSize" Value="17" />
         <Setter Property="LineHeight" Value="1.29" />
@@ -120,7 +120,7 @@
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Property="TextColor" Value="{StaticResource LabelTertiary}" />
+                            <Setter Property="TextColor" Value="{DynamicResource LabelTertiary}" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -217,36 +217,36 @@
     <!-- Surfaces -->
     <Style TargetType="Border">
         <Setter Property="StrokeShape" Value="RoundRectangle 20" />
-        <Setter Property="Background" Value="{StaticResource BackgroundSecondary}" />
+        <Setter Property="Background" Value="{DynamicResource BackgroundSecondary}" />
         <Setter Property="StrokeThickness" Value="0" />
         <Setter Property="Padding" Value="{OnIdiom 15, Desktop=20}" />
     </Style>
 
     <Style x:Key="CardStyle" TargetType="Border">
         <Setter Property="StrokeShape" Value="RoundRectangle 20" />
-        <Setter Property="Background" Value="{StaticResource BackgroundSecondary}" />
+        <Setter Property="Background" Value="{DynamicResource BackgroundSecondary}" />
         <Setter Property="StrokeThickness" Value="0" />
         <Setter Property="Padding" Value="{OnIdiom 15, Desktop=20}" />
     </Style>
 
     <!-- Syncfusion styles -->
     <sf:LabelStyle x:Key="lightThemeLabelStyle"
-                   TextColor="{StaticResource LabelSecondary}"
+                   TextColor="{DynamicResource LabelSecondary}"
                    FontSize="{OnIdiom 18, Desktop=24}" />
 
     <sf:LabelStyle x:Key="darkThemeLabelStyle"
-                   TextColor="{StaticResource LabelSecondary}"
+                   TextColor="{DynamicResource LabelSecondary}"
                    FontSize="{OnIdiom 18, Desktop=24}" />
 
     <Style TargetType="sf:SfTextInputLayout">
         <Setter Property="ContainerType" Value="Outlined" />
         <Setter Property="ContainerBackground" Value="Transparent" />
-        <Setter Property="Stroke" Value="{StaticResource Separator}" />
+        <Setter Property="Stroke" Value="{DynamicResource Separator}" />
         <Setter Property="HintLabelStyle" Value="{StaticResource darkThemeLabelStyle}" />
     </Style>
 
     <Style x:Key="ShimmerCustomViewStyle" TargetType="BoxView">
-        <Setter Property="BackgroundColor" Value="{StaticResource Separator}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource Separator}" />
         <Setter Property="HorizontalOptions" Value="Fill" />
         <Setter Property="VerticalOptions" Value="Center" />
     </Style>
@@ -254,6 +254,6 @@
     <Style TargetType="pullToRefresh:SfPullToRefresh">
         <Setter Property="TransitionMode" Value="SlideOnTop" />
         <Setter Property="PullingThreshold" Value="100" />
-        <Setter Property="ProgressColor" Value="{StaticResource Primary}" />
+        <Setter Property="ProgressColor" Value="{DynamicResource Primary}" />
     </Style>
 </ResourceDictionary>

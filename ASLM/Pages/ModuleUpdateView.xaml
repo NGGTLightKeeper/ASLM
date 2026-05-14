@@ -5,7 +5,7 @@
              xmlns:services="clr-namespace:ASLM.Services"
              x:Class="ASLM.Pages.ModuleUpdateView"
              x:Name="RootView"
-             BackgroundColor="#40000000">
+             BackgroundColor="{DynamicResource OverlayBackground}">
 
     <ContentView.GestureRecognizers>
         <TapGestureRecognizer Tapped="OnBackgroundTapped" />
@@ -16,8 +16,8 @@
             HeightRequest="620"
             HorizontalOptions="Center"
             VerticalOptions="Center"
-            BackgroundColor="{StaticResource BackgroundSecondary}"
-            Stroke="{StaticResource Separator}"
+            BackgroundColor="{DynamicResource BackgroundSecondary}"
+            Stroke="{DynamicResource Separator}"
             StrokeThickness="1"
             Padding="0"
             StrokeShape="RoundRectangle 10">
@@ -37,10 +37,10 @@
                     <Label Text="{Binding DialogTitle, Source={x:Reference RootView}}"
                            FontSize="20"
                            FontAttributes="Bold"
-                           TextColor="{StaticResource LabelPrimary}" />
+                           TextColor="{DynamicResource LabelPrimary}" />
                     <Label Text="{Binding DialogSubtitle, Source={x:Reference RootView}}"
                            FontSize="14"
-                           TextColor="{StaticResource LabelSecondary}"
+                           TextColor="{DynamicResource LabelSecondary}"
                            MaxLines="2"
                            LineBreakMode="TailTruncation" />
                 </VerticalStackLayout>
@@ -54,7 +54,7 @@
                         Margin="0"
                         ToolTipProperties.Text="Close module updates"
                         BackgroundColor="Transparent"
-                        TextColor="{StaticResource LabelSecondary}"
+                        TextColor="{DynamicResource LabelSecondary}"
                         CornerRadius="6"
                         VerticalOptions="Center"
                         Clicked="OnCloseClicked" />
@@ -65,8 +65,8 @@
                   RowSpacing="8"
                   Padding="0">
                     <Border Grid.Row="0"
-                            BackgroundColor="{StaticResource BackgroundTertiary}"
-                            Stroke="{StaticResource Separator}"
+                            BackgroundColor="{DynamicResource BackgroundTertiary}"
+                            Stroke="{DynamicResource Separator}"
                             StrokeThickness="1"
                             StrokeShape="RoundRectangle 6"
                             Padding="8">
@@ -75,29 +75,29 @@
                             <VerticalStackLayout Spacing="4">
                                 <Label Text="Current version"
                                        FontSize="13"
-                                       TextColor="{StaticResource LabelSecondary}" />
+                                       TextColor="{DynamicResource LabelSecondary}" />
                                 <Label Text="{Binding CurrentVersionLabel, Source={x:Reference RootView}}"
                                        FontSize="14"
                                        FontAttributes="Bold"
-                                       TextColor="{StaticResource LabelPrimary}" />
+                                       TextColor="{DynamicResource LabelPrimary}" />
                             </VerticalStackLayout>
 
                             <VerticalStackLayout Grid.Column="1"
                                                  Spacing="4">
                                 <Label Text="Selected target"
                                        FontSize="13"
-                                       TextColor="{StaticResource LabelSecondary}" />
+                                       TextColor="{DynamicResource LabelSecondary}" />
                                 <Label Text="{Binding TargetVersionLabel, Source={x:Reference RootView}}"
                                        FontSize="14"
                                        FontAttributes="Bold"
-                                       TextColor="{StaticResource LabelPrimary}" />
+                                       TextColor="{DynamicResource LabelPrimary}" />
                             </VerticalStackLayout>
                         </Grid>
                     </Border>
 
                     <Border Grid.Row="1"
-                            BackgroundColor="{StaticResource BackgroundTertiary}"
-                            Stroke="{StaticResource Separator}"
+                            BackgroundColor="{DynamicResource BackgroundTertiary}"
+                            Stroke="{DynamicResource Separator}"
                             StrokeThickness="0"
                             StrokeShape="RoundRectangle 0"
                             Padding="0,8,0,0">
@@ -106,10 +106,10 @@
                                 <Label Text="Update source"
                                        FontSize="16"
                                        FontAttributes="Bold"
-                                       TextColor="{StaticResource LabelPrimary}" />
+                                       TextColor="{DynamicResource LabelPrimary}" />
                                 <Label Text="Preferences are saved automatically."
                                        FontSize="13"
-                                       TextColor="{StaticResource LabelSecondary}" />
+                                       TextColor="{DynamicResource LabelSecondary}" />
                             </VerticalStackLayout>
 
                             <Grid ColumnDefinitions="*,*"
@@ -117,9 +117,9 @@
                                 <VerticalStackLayout Spacing="6">
                                     <Label Text="Search mode"
                                            FontSize="13"
-                                           TextColor="{StaticResource LabelSecondary}" />
-                                    <Border BackgroundColor="#19191C"
-                                            Stroke="{StaticResource Separator}"
+                                           TextColor="{DynamicResource LabelSecondary}" />
+                                    <Border BackgroundColor="{DynamicResource FieldBackground}"
+                                            Stroke="{DynamicResource Separator}"
                                             StrokeThickness="1"
                                             StrokeShape="RoundRectangle 6"
                                             Padding="8,0">
@@ -130,8 +130,8 @@
                                                 FontSize="13"
                                                 HeightRequest="44"
                                                 BackgroundColor="Transparent"
-                                                TextColor="{StaticResource LabelPrimary}"
-                                                TitleColor="{StaticResource LabelSecondary}" />
+                                                TextColor="{DynamicResource LabelPrimary}"
+                                                TitleColor="{DynamicResource LabelSecondary}" />
                                     </Border>
                                 </VerticalStackLayout>
 
@@ -140,9 +140,9 @@
                                                      IsVisible="{Binding IsReleaseMode, Source={x:Reference RootView}}">
                                     <Label Text="Release version"
                                            FontSize="13"
-                                           TextColor="{StaticResource LabelSecondary}" />
-                                    <Border BackgroundColor="#19191C"
-                                            Stroke="{StaticResource Separator}"
+                                           TextColor="{DynamicResource LabelSecondary}" />
+                                    <Border BackgroundColor="{DynamicResource FieldBackground}"
+                                            Stroke="{DynamicResource Separator}"
                                             StrokeThickness="1"
                                             StrokeShape="RoundRectangle 8"
                                             Padding="12,0">
@@ -154,8 +154,8 @@
                                                 FontSize="13"
                                                 HeightRequest="44"
                                                 BackgroundColor="Transparent"
-                                                TextColor="{StaticResource LabelPrimary}"
-                                                TitleColor="{StaticResource LabelSecondary}" />
+                                                TextColor="{DynamicResource LabelPrimary}"
+                                                TitleColor="{DynamicResource LabelSecondary}" />
                                     </Border>
                                 </VerticalStackLayout>
 
@@ -164,9 +164,9 @@
                                                      IsVisible="{Binding IsBranchMode, Source={x:Reference RootView}}">
                                     <Label Text="Repository branch"
                                            FontSize="12"
-                                           TextColor="{StaticResource LabelSecondary}" />
-                                    <Border BackgroundColor="#19191C"
-                                            Stroke="{StaticResource Separator}"
+                                           TextColor="{DynamicResource LabelSecondary}" />
+                                    <Border BackgroundColor="{DynamicResource FieldBackground}"
+                                            Stroke="{DynamicResource Separator}"
                                             StrokeThickness="1"
                                             StrokeShape="RoundRectangle 6"
                                             Padding="8,0">
@@ -176,8 +176,8 @@
                                                 FontSize="13"
                                                 HeightRequest="44"
                                                 BackgroundColor="Transparent"
-                                                TextColor="{StaticResource LabelPrimary}"
-                                                TitleColor="{StaticResource LabelSecondary}" />
+                                                TextColor="{DynamicResource LabelPrimary}"
+                                                TitleColor="{DynamicResource LabelSecondary}" />
                                     </Border>
                                 </VerticalStackLayout>
                             </Grid>
@@ -185,8 +185,8 @@
                     </Border>
 
                     <Border Grid.Row="2"
-                            BackgroundColor="{StaticResource BackgroundTertiary}"
-                            Stroke="{StaticResource Separator}"
+                            BackgroundColor="{DynamicResource BackgroundTertiary}"
+                            Stroke="{DynamicResource Separator}"
                             StrokeThickness="0"
                             StrokeShape="RoundRectangle 0"
                             Padding="0,8,0,0"
@@ -197,10 +197,10 @@
                                 <Label Text="{Binding ActivityTitle, Source={x:Reference RootView}}"
                                        FontSize="16"
                                        FontAttributes="Bold"
-                                       TextColor="{StaticResource LabelPrimary}" />
+                                       TextColor="{DynamicResource LabelPrimary}" />
                                 <Label Text="{Binding ActivityStatus, Source={x:Reference RootView}}"
                                        FontSize="13"
-                                       TextColor="{StaticResource LabelSecondary}"
+                                       TextColor="{DynamicResource LabelSecondary}"
                                        MaxLines="2"
                                        LineBreakMode="TailTruncation" />
                             </VerticalStackLayout>
@@ -208,24 +208,24 @@
                             <Label Grid.Row="1"
                                    Text="Overall progress"
                                    FontSize="10"
-                                   TextColor="{StaticResource LabelSecondary}"
+                                   TextColor="{DynamicResource LabelSecondary}"
                                    IsVisible="{Binding HasActivityProgress, Source={x:Reference RootView}}" />
 
                             <ProgressBar Grid.Row="2"
                                          Progress="{Binding OverallProgress, Source={x:Reference RootView}}"
-                                         ProgressColor="{StaticResource ActionBlue}"
+                                         ProgressColor="{DynamicResource ActionBlue}"
                                          HeightRequest="6"
                                          IsVisible="{Binding HasActivityProgress, Source={x:Reference RootView}}" />
 
                             <Label Grid.Row="3"
                                    Text="{Binding DownloadDetail, Source={x:Reference RootView}}"
                                    FontSize="10"
-                                   TextColor="{StaticResource LabelSecondary}"
+                                   TextColor="{DynamicResource LabelSecondary}"
                                    IsVisible="{Binding HasDownloadDetail, Source={x:Reference RootView}}" />
 
                             <ProgressBar Grid.Row="4"
                                          Progress="{Binding FileProgress, Source={x:Reference RootView}}"
-                                         ProgressColor="{StaticResource ActionGreen}"
+                                         ProgressColor="{DynamicResource ActionGreen}"
                                          HeightRequest="4"
                                          IsVisible="{Binding HasActivityProgress, Source={x:Reference RootView}}" />
 
@@ -248,7 +248,7 @@
                 <ActivityIndicator Grid.Column="1"
                                    IsVisible="{Binding IsBusy, Source={x:Reference RootView}}"
                                    IsRunning="{Binding IsBusy, Source={x:Reference RootView}}"
-                                   Color="{StaticResource LabelPrimary}"
+                                   Color="{DynamicResource LabelPrimary}"
                                    VerticalOptions="Center" />
 
                 <Button Grid.Column="2"
@@ -257,8 +257,8 @@
                         MinimumHeightRequest="36"
                         CornerRadius="6"
                         Padding="8,0"
-                        BackgroundColor="{StaticResource SystemGray4}"
-                        TextColor="{StaticResource LabelPrimary}"
+                        BackgroundColor="{DynamicResource SystemGray4}"
+                        TextColor="{DynamicResource LabelPrimary}"
                         IsEnabled="{Binding CanCheckUpdates, Source={x:Reference RootView}}"
                         Clicked="OnCheckUpdatesClicked" />
 
@@ -268,8 +268,8 @@
                         MinimumHeightRequest="36"
                         CornerRadius="6"
                         Padding="8,0"
-                        BackgroundColor="{StaticResource ActionBlue}"
-                        TextColor="{StaticResource LabelPrimary}"
+                        BackgroundColor="{DynamicResource ActionBlue}"
+                        TextColor="{DynamicResource PrimaryDarkText}"
                         IsVisible="{Binding ShowInstallAction, Source={x:Reference RootView}}"
                         IsEnabled="{Binding CanInstallUpdate, Source={x:Reference RootView}}"
                         Clicked="OnInstallUpdateClicked" />

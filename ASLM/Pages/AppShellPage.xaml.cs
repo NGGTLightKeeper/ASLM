@@ -37,10 +37,7 @@ namespace ASLM.Pages
         private const string LabelSettings = "Settings";
         private const int MaxConcurrentModuleStarts = 2;
 
-        private static readonly Color ActiveTextColor = Colors.White;
-        private static readonly Color InactiveTextColor = Color.FromArgb("#8E8E93");
-        private static readonly Color ActiveBackground = Color.FromArgb("#2C2C2E");
-        private static readonly Color TransparentBackground = Colors.Transparent;
+        private static Color TransparentBackground => Colors.Transparent;
 
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
@@ -624,28 +621,28 @@ namespace ASLM.Pages
                 Text = notification.Title,
                 FontSize = 13,
                 FontAttributes = FontAttributes.Bold,
-                TextColor = Colors.White,
                 MaxLines = 1,
                 LineBreakMode = LineBreakMode.TailTruncation
             };
+            title.SetDynamicResource(Label.TextColorProperty, "LabelPrimary");
 
             var message = new Label
             {
                 Text = notification.Message,
                 FontSize = 11,
-                TextColor = Color.FromArgb("#D8D8DC"),
                 MaxLines = 2,
                 LineBreakMode = LineBreakMode.TailTruncation
             };
+            message.SetDynamicResource(Label.TextColorProperty, "PopoverButtonSecondaryText");
 
             var detail = new Label
             {
                 Text = notification.DetailLine,
                 FontSize = 11,
-                TextColor = Color.FromArgb("#9A9AA0"),
                 MaxLines = 1,
                 LineBreakMode = LineBreakMode.TailTruncation
             };
+            detail.SetDynamicResource(Label.TextColorProperty, "PopoverTextSecondary");
 
             var closeButton = new Button
             {
@@ -656,11 +653,11 @@ namespace ASLM.Pages
                 Padding = new Thickness(0),
                 Margin = new Thickness(0),
                 BackgroundColor = Colors.Transparent,
-                TextColor = Color.FromArgb("#9A9AA0"),
                 CornerRadius = 4,
                 HorizontalOptions = LayoutOptions.End,
                 VerticalOptions = LayoutOptions.Start
             };
+            closeButton.SetDynamicResource(Button.TextColorProperty, "PopoverTextSecondary");
 
             var outerGrid = new Grid
             {
@@ -700,10 +697,10 @@ namespace ASLM.Pages
                     MinimumHeightRequest = 28,
                     Padding = new Thickness(10, 0),
                     Margin = new Thickness(0),
-                    BackgroundColor = Color.FromArgb("#0A84FF"),
-                    TextColor = Colors.White,
                     CornerRadius = 6
                 };
+                updateNowButton.SetDynamicResource(Button.BackgroundColorProperty, "ActionBlue");
+                updateNowButton.SetDynamicResource(Button.TextColorProperty, "PrimaryDarkText");
                 updateNowButton.Clicked += (_, _) =>
                 {
                     RemoveToast(toastHost);
@@ -718,10 +715,10 @@ namespace ASLM.Pages
                     MinimumHeightRequest = 28,
                     Padding = new Thickness(10, 0),
                     Margin = new Thickness(0),
-                    BackgroundColor = Color.FromArgb("#333334"),
-                    TextColor = Color.FromArgb("#D8D8DC"),
                     CornerRadius = 6
                 };
+                updateLaterButton.SetDynamicResource(Button.BackgroundColorProperty, "PopoverButtonSecondary");
+                updateLaterButton.SetDynamicResource(Button.TextColorProperty, "PopoverButtonSecondaryText");
                 updateLaterButton.Clicked += (_, _) => RemoveToast(toastHost);
 
                 actionRow.Children.Add(updateNowButton);
@@ -738,8 +735,6 @@ namespace ASLM.Pages
             toastHost = new Border
             {
                 BindingContext = notification,
-                BackgroundColor = Color.FromArgb("#28282A"),
-                Stroke = Color.FromArgb("#454548"),
                 StrokeThickness = 1,
                 StrokeShape = new RoundRectangle { CornerRadius = 8 },
                 Padding = new Thickness(10),
@@ -753,6 +748,8 @@ namespace ASLM.Pages
                     Offset = new Point(0, 4)
                 }
             };
+            toastHost.SetDynamicResource(Border.BackgroundColorProperty, "PopoverBackground");
+            toastHost.SetDynamicResource(Border.StrokeProperty, "PopoverBorderColor");
 
             // Close button: dismiss only, does not open the notifications panel.
             closeButton.Clicked += (_, _) => RemoveToast(toastHost);
@@ -948,21 +945,18 @@ namespace ASLM.Pages
             // Clear active styling from both fixed shell buttons and dynamic module buttons.
             foreach (var button in _navButtons)
             {
-                button.TextColor = InactiveTextColor;
-                button.BackgroundColor = TransparentBackground;
+                ApplyShellNavInactiveStyle(button);
             }
 
             foreach (var child in ModulePagePanel.Children)
             {
                 if (child is Button button)
                 {
-                    button.TextColor = InactiveTextColor;
-                    button.BackgroundColor = TransparentBackground;
+                    ApplyShellNavInactiveStyle(button);
                 }
             }
 
-            navButton.TextColor = ActiveTextColor;
-            navButton.BackgroundColor = ActiveBackground;
+            ApplyShellNavActiveStyle(navButton);
             _activeNavButton = navButton;
 
             ContentArea.Content = GetViewForButton(navButton);
@@ -1090,7 +1084,9 @@ namespace ASLM.Pages
                 return _aslmApiView;
             }
 
-            return new Label { Text = "Unknown page", TextColor = Colors.White };
+            var unknown = new Label { Text = "Unknown page" };
+            unknown.SetDynamicResource(Label.TextColorProperty, "LabelPrimary");
+            return unknown;
         }
 
         // Button labels
@@ -1174,7 +1170,6 @@ namespace ASLM.Pages
                     ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 0),
                     Style = (Style)Application.Current!.Resources["SidebarButton"],
                     BackgroundColor = TransparentBackground,
-                    TextColor = InactiveTextColor,
                     HeightRequest = 36,
                     HorizontalOptions = LayoutOptions.Fill
                 };
@@ -1244,8 +1239,7 @@ namespace ASLM.Pages
             // Clear active styling from shell buttons before highlighting the module page button.
             foreach (var button in _navButtons)
             {
-                button.TextColor = InactiveTextColor;
-                button.BackgroundColor = TransparentBackground;
+                ApplyShellNavInactiveStyle(button);
             }
 
             _activeNavButton = null;
@@ -1259,13 +1253,11 @@ namespace ASLM.Pages
 
                 if (button.ClassId == "PAGE" && button.AutomationId == module.Id)
                 {
-                    button.TextColor = ActiveTextColor;
-                    button.BackgroundColor = ActiveBackground;
+                    ApplyShellNavActiveStyle(button);
                     continue;
                 }
 
-                button.TextColor = InactiveTextColor;
-                button.BackgroundColor = TransparentBackground;
+                ApplyShellNavInactiveStyle(button);
             }
         }
 
@@ -1398,6 +1390,18 @@ namespace ASLM.Pages
                 nativeButton.HorizontalContentAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Left;
             }
 #endif
+        }
+
+        private static void ApplyShellNavInactiveStyle(Button button)
+        {
+            button.SetDynamicResource(Button.TextColorProperty, "LabelSecondary");
+            button.BackgroundColor = Colors.Transparent;
+        }
+
+        private static void ApplyShellNavActiveStyle(Button button)
+        {
+            button.SetDynamicResource(Button.TextColorProperty, "LabelPrimary");
+            button.SetDynamicResource(Button.BackgroundColorProperty, "BackgroundTertiary");
         }
     }
 }

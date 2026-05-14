@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- Copyright NGGT.LightKeeper. All Rights Reserved. -->
+
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- System palette -->
+    <Color x:Key="SystemBlue">#007AFF</Color>
+    <Color x:Key="SystemGreen">#34C759</Color>
+    <Color x:Key="SystemIndigo">#5856D6</Color>
+    <Color x:Key="SystemOrange">#FF9500</Color>
+    <Color x:Key="SystemPink">#FF2D55</Color>
+    <Color x:Key="SystemPurple">#AF52DE</Color>
+    <Color x:Key="SystemRed">#FF3B30</Color>
+    <Color x:Key="SystemTeal">#5AC8FA</Color>
+    <Color x:Key="SystemYellow">#FFCC00</Color>
+    <Color x:Key="SystemMint">#00C7BE</Color>
+    <Color x:Key="SystemCyan">#55BEF0</Color>
+
+    <Color x:Key="SystemGray">#8E8E93</Color>
+    <Color x:Key="SystemGray2">#AEAEB2</Color>
+    <Color x:Key="SystemGray3">#C7C7CC</Color>
+    <Color x:Key="SystemGray4">#D1D1D6</Color>
+    <Color x:Key="SystemGray5">#E5E5EA</Color>
+    <Color x:Key="SystemGray6">#F2F2F7</Color>
+
+    <!-- Backgrounds -->
+    <Color x:Key="BackgroundPrimary">#F2F2F7</Color>
+    <Color x:Key="BackgroundSecondary">#FFFFFF</Color>
+    <Color x:Key="BackgroundTertiary">#E5E5EA</Color>
+
+    <!-- Labels -->
+    <Color x:Key="LabelPrimary">#000000</Color>
+    <Color x:Key="LabelSecondary">#636366</Color>
+    <Color x:Key="LabelTertiary">#8E8E93</Color>
+    <Color x:Key="LabelQuaternary">#AEAEB2</Color>
+
+    <!-- Utility colors -->
+    <Color x:Key="Separator">#B0B0B6</Color>
+    <Color x:Key="OpaqueSeparator">#B0B0B6</Color>
+    <Color x:Key="PlaceholderText">#8E8E93</Color>
+    <Color x:Key="LinkColor">#007AFF</Color>
+    <Color x:Key="SystemBlueOverlay">#20007AFF</Color>
+
+    <!-- Legacy aliases -->
+    <Color x:Key="Primary">#007AFF</Color>
+    <Color x:Key="PrimaryDark">#5856D6</Color>
+    <Color x:Key="PrimaryDarkText">#FFFFFF</Color>
+    <Color x:Key="Secondary">#E5E5EA</Color>
+    <Color x:Key="SecondaryDarkText">#3A3A3C</Color>
+    <Color x:Key="Tertiary">#D1D1D6</Color>
+
+    <Color x:Key="DarkBackground">#1C1C1E</Color>
+    <Color x:Key="LightOnDarkBackground">#FFFFFF</Color>
+    <Color x:Key="LightBackground">#FFFFFF</Color>
+    <Color x:Key="DarkOnLightBackground">#1C1C1E</Color>
+
+    <Color x:Key="LightSecondaryBackground">#E5E5EA</Color>
+    <Color x:Key="DarkSecondaryBackground">#3A3A3C</Color>
+
+    <Color x:Key="White">#FFFFFF</Color>
+    <Color x:Key="Black">#000000</Color>
+    <Color x:Key="Magenta">#FF2D55</Color>
+    <Color x:Key="MidnightBlue">#1C1C1E</Color>
+    <Color x:Key="OffBlack">#3A3A3C</Color>
+
+    <!-- Action colors -->
+    <Color x:Key="ActionRed">#FF3B30</Color>
+    <Color x:Key="ActionBlue">#007AFF</Color>
+    <Color x:Key="ActionGreen">#34C759</Color>
+
+    <!-- Neutral scale -->
+    <Color x:Key="Gray100">#F2F2F7</Color>
+    <Color x:Key="Gray200">#E5E5EA</Color>
+    <Color x:Key="Gray300">#D1D1D6</Color>
+    <Color x:Key="Gray400">#C7C7CC</Color>
+    <Color x:Key="Gray500">#AEAEB2</Color>
+    <Color x:Key="Gray600">#8E8E93</Color>
+    <Color x:Key="Gray900">#636366</Color>
+    <Color x:Key="Gray950">#3A3A3C</Color>
+
+    <!-- Surface variants -->
+    <Color x:Key="OverlayBackground">#59000000</Color>
+    <Color x:Key="BackgroundSidebar">#EDEDF0</Color>
+    <Color x:Key="FieldBackground">#FFFFFF</Color>
+    <Color x:Key="BackgroundDeep">#EBEBEF</Color>
+    <Color x:Key="BackgroundElevated">#FFFFFF</Color>
+
+    <!-- Popover / toast -->
+    <Color x:Key="PopoverBackground">#FFFFFF</Color>
+    <Color x:Key="PopoverBorderColor">#D8D8DC</Color>
+    <Color x:Key="PopoverButtonSecondary">#EFEFF4</Color>
+    <Color x:Key="PopoverButtonSecondaryText">#1C1C1E</Color>
+    <Color x:Key="PopoverTextSecondary">#636366</Color>
+
+    <!-- Downloads dialog -->
+    <Color x:Key="DownloadActiveSurface">#E8F1FF</Color>
+    <Color x:Key="DownloadActiveBorder">#2C7CF6</Color>
+    <Color x:Key="DownloadPassiveSurface">#F5F5F7</Color>
+    <Color x:Key="DownloadPassiveListSurface">#FAFAFC</Color>
+    <Color x:Key="DownloadPassiveBorder">#DDDDDF</Color>
+    <Color x:Key="DownloadActiveSubtitle">#194D99</Color>
+
+    <!-- Error overlay -->
+    <Color x:Key="BackgroundErrorOverlay">#FFEBEC</Color>
+
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}" />
+    <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}" />
+    <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}" />
+    <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource White}" />
+    <SolidColorBrush x:Key="BlackBrush" Color="{StaticResource Black}" />
+
+    <SolidColorBrush x:Key="Gray100Brush" Color="{StaticResource Gray100}" />
+    <SolidColorBrush x:Key="Gray200Brush" Color="{StaticResource Gray200}" />
+    <SolidColorBrush x:Key="Gray300Brush" Color="{StaticResource Gray300}" />
+    <SolidColorBrush x:Key="Gray400Brush" Color="{StaticResource Gray400}" />
+    <SolidColorBrush x:Key="Gray500Brush" Color="{StaticResource Gray500}" />
+    <SolidColorBrush x:Key="Gray600Brush" Color="{StaticResource Gray600}" />
+    <SolidColorBrush x:Key="Gray900Brush" Color="{StaticResource Gray900}" />
+    <SolidColorBrush x:Key="Gray950Brush" Color="{StaticResource Gray950}" />
+</ResourceDictionary>
