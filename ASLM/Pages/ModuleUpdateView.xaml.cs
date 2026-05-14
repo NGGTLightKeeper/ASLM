@@ -241,6 +241,11 @@ namespace ASLM.Pages
         /// </summary>
         public bool HasLog => _module?.HasUpdateLog ?? false;
 
+        /// <summary>
+        /// Gets the session key passed to the native log host so changing the module resets scroll position.
+        /// </summary>
+        public string UpdateLogSessionKey => _module?.SourcePath ?? string.Empty;
+
 
         // Overlay opening
 
@@ -685,7 +690,7 @@ namespace ASLM.Pages
         // Logging
 
         /// <summary>
-        /// Reapplies the current cached log text and scrolls the console to the newest line.
+        /// Pushes the latest log text through bindings so the native log host can refresh immediately.
         /// </summary>
         private void SyncLogView()
         {
@@ -693,13 +698,11 @@ namespace ASLM.Pages
             _logSyncCts = null;
             Interlocked.Exchange(ref _logSyncQueued, 0);
             Interlocked.Exchange(ref _logSyncRequested, 0);
-            var text = LogText;
 
-            MainThread.BeginInvokeOnMainThread(async () =>
+            MainThread.BeginInvokeOnMainThread(() =>
             {
-                LogEditor.Text = text;
-                await Task.Yield();
-                _ = ScrollLogToEndAsync();
+                OnPropertyChanged(nameof(LogText));
+                OnPropertyChanged(nameof(HasLog));
             });
         }
 
@@ -737,9 +740,7 @@ namespace ASLM.Pages
                             return;
                         }
 
-                        var text = LogText;
-                        LogEditor.Text = text;
-                        _ = ScrollLogToEndAsync();
+                        OnPropertyChanged(nameof(LogText));
                     });
                 }
                 while (!ct.IsCancellationRequested &&
@@ -760,20 +761,6 @@ namespace ASLM.Pages
             }
         }
 
-        /// <summary>
-        /// Scrolls the update log without blocking subsequent text flushes.
-        /// </summary>
-        private async Task ScrollLogToEndAsync()
-        {
-            try
-            {
-                await LogScroll.ScrollToAsync(0, LogScroll.ContentSize.Height, false);
-            }
-            catch
-            {
-                // Best-effort scroll only; log text must continue updating if a scroll pass fails.
-            }
-        }
 
         /// <summary>
         /// Keeps picker controls aligned with the module view model after option lists are rebuilt.
@@ -995,6 +982,7 @@ namespace ASLM.Pages
             OnPropertyChanged(nameof(ShowInstallAction));
             OnPropertyChanged(nameof(IsBusy));
             RaiseActivityProperties();
+            OnPropertyChanged(nameof(UpdateLogSessionKey));
         }
 
         /// <summary>
