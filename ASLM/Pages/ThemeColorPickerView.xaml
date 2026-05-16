@@ -41,13 +41,22 @@
                    TextColor="{DynamicResource LabelPrimary}"
                    Margin="0,0,0,8" />
 
-            <GraphicsView x:Name="HsPlane"
-                          Grid.Row="1"
-                          Grid.ColumnSpan="5"
-                          HeightRequest="240"
-                          HorizontalOptions="Fill"
-                          VerticalOptions="Start"
-                          Margin="0,0,0,12" />
+            <Grid x:Name="HsPlaneHost"
+                  Grid.Row="1"
+                  Grid.ColumnSpan="5"
+                  HeightRequest="232"
+                  HorizontalOptions="Fill"
+                  VerticalOptions="Start"
+                  Margin="0,0,0,12">
+                <GraphicsView x:Name="HsGradient"
+                              HorizontalOptions="Fill"
+                              VerticalOptions="Fill"
+                              InputTransparent="True" />
+                <GraphicsView x:Name="HsCursor"
+                              HorizontalOptions="Fill"
+                              VerticalOptions="Fill"
+                              BackgroundColor="Transparent" />
+            </Grid>
 
             <Label Grid.Row="2"
                    Grid.ColumnSpan="5"

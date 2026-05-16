@@ -7,7 +7,10 @@ namespace ASLM.Pages
 {
     /// <summary>
     /// Modal color picker (360×240 card) on the same dimmed overlay resource as Settings and Downloads.
-    /// HS plane updates only while the pointer is pressed; value and alpha use sliders.
+    /// HS plane: the saturation/hue field depends only on brightness (<see cref="_value"/>) and size, so it is painted on a
+    /// bottom <see cref="GraphicsView"/> that is not invalidated on pointer moves. The selector ring is a top layer
+    /// invalidated on every move for smooth tracking. Value/alpha sliders are not written on every HS move; hex/RGB
+    /// entries and preview update live while dragging.
     /// </summary>
     public partial class ThemeColorPickerView : ContentView
     {
@@ -27,12 +30,20 @@ namespace ASLM.Pages
             RgbToHsv(initial, out _hue, out _saturation, out _value);
             _alpha = initial.Alpha;
 
-            HsPlane.Drawable = new HsPlaneDrawable(this);
+            HsGradient.Drawable = new HsGradientDrawable(this);
+            HsCursor.Drawable = new HsCursorDrawable(this);
+
+            HsPlaneHost.SizeChanged += (_, _) =>
+            {
+                HsGradient.Invalidate();
+                HsCursor.Invalidate();
+            };
+
             var ptr = new PointerGestureRecognizer();
             ptr.PointerPressed += OnHsPointerPressed;
             ptr.PointerMoved += OnHsPointerMoved;
             ptr.PointerReleased += OnHsPointerReleased;
-            HsPlane.GestureRecognizers.Add(ptr);
+            HsCursor.GestureRecognizers.Add(ptr);
 
             ValueSlider.ValueChanged += (_, _) =>
             {
@@ -42,7 +53,8 @@ namespace ASLM.Pages
                 }
 
                 _value = ValueSlider.Value;
-                HsPlane.Invalidate();
+                HsGradient.Invalidate();
+                HsCursor.Invalidate();
                 SyncFromHsv();
             };
 
@@ -70,6 +82,8 @@ namespace ASLM.Pages
             ValueSlider.Value = _value;
             AlphaSlider.Value = _alpha;
             SyncFromHsv();
+            HsGradient.Invalidate();
+            HsCursor.Invalidate();
         }
 
         public Task<Color?> WaitForResultAsync() => _completion.Task;
@@ -125,7 +139,7 @@ namespace ASLM.Pages
         private void OnHsPointerPressed(object? sender, PointerEventArgs e)
         {
             _hsPointerDown = true;
-            ApplyHsFromPointer(sender, e);
+            ApplyHsFromPointer(e, syncTextFields: true);
         }
 
         private void OnHsPointerMoved(object? sender, PointerEventArgs e)
@@ -135,33 +149,56 @@ namespace ASLM.Pages
                 return;
             }
 
-            ApplyHsFromPointer(sender, e);
+            ApplyHsFromPointer(e, syncTextFields: false);
         }
 
         private void OnHsPointerReleased(object? sender, PointerEventArgs e)
         {
-            _hsPointerDown = false;
-        }
-
-        private void ApplyHsFromPointer(object? sender, PointerEventArgs e)
-        {
-            if (sender is not View view)
+            if (!_hsPointerDown)
             {
                 return;
             }
 
-            var pt = e.GetPosition(view);
+            _hsPointerDown = false;
+            ApplyHsFromPointer(e, syncTextFields: true);
+        }
+
+        private void ApplyHsFromPointer(PointerEventArgs e, bool syncTextFields)
+        {
+            var pt = e.GetPosition(HsPlaneHost);
             if (!pt.HasValue)
             {
                 return;
             }
 
-            var w = Math.Max(1, view.Width);
-            var h = Math.Max(1, view.Height);
+            var w = Math.Max(1, HsPlaneHost.Width);
+            var h = Math.Max(1, HsPlaneHost.Height);
             _hue = Math.Clamp(pt.Value.X / w, 0, 1);
             _saturation = Math.Clamp(1 - pt.Value.Y / h, 0, 1);
-            HsPlane.Invalidate();
-            SyncFromHsv();
+            HsCursor.Invalidate();
+            if (syncTextFields)
+            {
+                SyncFromHsv();
+            }
+            else
+            {
+                ApplyPreviewColor(GetCurrentColor());
+                SyncHexRgbEntriesFromHsv();
+            }
+        }
+
+        /// <summary>
+        /// Updates hex and RGB entries from current HSV without touching sliders (HS drag does not change V/A).
+        /// </summary>
+        private void SyncHexRgbEntriesFromHsv()
+        {
+            var c = GetCurrentColor();
+            _suppressSync = true;
+            HexEntry.Text = ThemePaletteResolver.ToHex(c);
+            REntry.Text = ((int)(c.Red * 255)).ToString();
+            GEntry.Text = ((int)(c.Green * 255)).ToString();
+            BEntry.Text = ((int)(c.Blue * 255)).ToString();
+            _suppressSync = false;
         }
 
         private async Task CompleteAsync(Color? result)
@@ -225,7 +262,8 @@ namespace ASLM.Pages
 
             RgbToHsv(c, out _hue, out _saturation, out _value);
             _alpha = c.Alpha;
-            HsPlane.Invalidate();
+            HsGradient.Invalidate();
+            HsCursor.Invalidate();
             _suppressSync = true;
             ApplyPreviewColor(c);
             REntry.Text = ((int)(c.Red * 255)).ToString();
@@ -258,7 +296,8 @@ namespace ASLM.Pages
             var withAlpha = Color.FromRgba(ri, gi, bi, ai);
             RgbToHsv(withAlpha, out _hue, out _saturation, out _value);
             ValueSlider.Value = _value;
-            HsPlane.Invalidate();
+            HsGradient.Invalidate();
+            HsCursor.Invalidate();
             _suppressSync = true;
             ApplyPreviewColor(withAlpha);
             HexEntry.Text = ThemePaletteResolver.ToHex(withAlpha);
@@ -338,11 +377,12 @@ namespace ASLM.Pages
             return new Color((float)r, (float)g, (float)b, (float)a);
         }
 
-        private sealed class HsPlaneDrawable : IDrawable
+        /// <summary>HS field at fixed value V; redraw only when brightness or size changes.</summary>
+        private sealed class HsGradientDrawable : IDrawable
         {
             private readonly ThemeColorPickerView _owner;
 
-            public HsPlaneDrawable(ThemeColorPickerView owner) => _owner = owner;
+            public HsGradientDrawable(ThemeColorPickerView owner) => _owner = owner;
 
             public void Draw(ICanvas canvas, RectF dirtyRect)
             {
@@ -356,11 +396,24 @@ namespace ASLM.Pages
                     {
                         var hue = x / w;
                         var sat = 1 - y / h;
-                        canvas.FillColor = HsvToColor(hue, sat, v, 1);
+                        canvas.FillColor = HsvToColor(hue, sat, v, 1f);
                         canvas.FillRectangle(x, y, step, step);
                     }
                 }
+            }
+        }
 
+        /// <summary>Selector ring only; redraws on every hue/sat change.</summary>
+        private sealed class HsCursorDrawable : IDrawable
+        {
+            private readonly ThemeColorPickerView _owner;
+
+            public HsCursorDrawable(ThemeColorPickerView owner) => _owner = owner;
+
+            public void Draw(ICanvas canvas, RectF dirtyRect)
+            {
+                var w = dirtyRect.Width;
+                var h = dirtyRect.Height;
                 var px = (float)(_owner._hue * w);
                 var py = (float)((1 - _owner._saturation) * h);
                 canvas.StrokeColor = Colors.White;
