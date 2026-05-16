@@ -51,6 +51,7 @@ namespace ASLM
             builder.Services.AddSingleton<ModuleConsoleStore>();
             builder.Services.AddSingleton<ProcessSnapshotReader>();
             builder.Services.AddSingleton<ProcessTracker>();
+            builder.Services.AddSingleton<ModuleThemePayloadBuilder>();
             builder.Services.AddSingleton<ModuleRunner>();
             builder.Services.AddSingleton<PortRegistry>();
             builder.Services.AddSingleton<ModuleDownloadBridge>();

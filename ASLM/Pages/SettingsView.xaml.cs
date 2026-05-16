@@ -1013,17 +1013,17 @@ namespace ASLM.Pages
                 return;
             }
 
-            var canShowRestart = hasChanges && HasPendingRestartChanges();
+            var canShowRestart = hasChanges &&
+                (HasPendingRestartChanges() || HasUnsavedPersonalizationChanges());
 
-            SaveAndRestartButton.IsVisible = canShowRestart;
             SaveAndRestartButton.IsEnabled = canInteract && canShowRestart;
             SaveAndRestartButton.Text = "Save and restart";
 
             SaveButton.IsVisible = hasChanges;
-            SaveAndRestartButton.IsVisible = hasChanges && canShowRestart;
+            SaveAndRestartButton.IsVisible = canShowRestart;
 
-            var highlightRestart = hasChanges && canShowRestart;
-            var highlightSave = hasChanges && !canShowRestart;
+            var highlightRestart = canShowRestart;
+            var highlightSave = hasChanges && !highlightRestart;
 
             ApplyActionButtonState(SaveButton, highlightSave);
             ApplyActionButtonState(SaveAndRestartButton, highlightRestart);
@@ -2409,6 +2409,11 @@ namespace ASLM.Pages
                 {
                     return;
                 }
+
+                if (restartAfterSave && hadPersonalizationChanges)
+                {
+                    await RestartModulesForPersistedHostThemeAsync(touchedModules);
+                }
             }
             finally
             {
@@ -2435,6 +2440,29 @@ namespace ASLM.Pages
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Restarts enabled modules that were not already restarted so they can reload the persisted host theme.
+        /// </summary>
+        private async Task RestartModulesForPersistedHostThemeAsync(IEnumerable<ModuleConfig> alreadyRestarted)
+        {
+            var skip = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var module in alreadyRestarted)
+            {
+                if (!string.IsNullOrWhiteSpace(module.SourcePath))
+                {
+                    skip.Add(module.SourcePath);
+                }
+            }
+
+            foreach (var module in _loadedModules.Where(m =>
+                         CanRestartModule(m) &&
+                         !string.IsNullOrWhiteSpace(m.SourcePath) &&
+                         !skip.Contains(m.SourcePath)))
+            {
+                await _settingsService.RestartModuleAsync(module);
+            }
         }
 
         /// <summary>

@@ -564,7 +564,8 @@ namespace ASLM.Services
         /// Filters out settings that should never be shown in the UI editor.
         /// </summary>
         public static bool ShouldDisplaySetting(ModuleSetting setting) =>
-            !string.Equals(setting.NormalizedType, "port", StringComparison.OrdinalIgnoreCase);
+            !string.Equals(setting.NormalizedType, "port", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Evaluates whether a setting should currently be visible based on its controlling toggle.

@@ -3,7 +3,7 @@
     "id": "aslm-chat",
     "name": "ASLM Chat",
     "description": "ASLM Chat Module",
-    "version": "0.5.0.27",
+    "version": "0.6.0.31",
     "author": "NGGT-ASLM",
     "type": "ui",
     "hasPage": true,
@@ -82,6 +82,14 @@
             "engine": "python-runtime",
             "getExec": "main.py get_setting --key api-port",
             "setExec": "main.py set_setting --key api-port --value {value}"
+        },
+        {
+            "key": "aslm-host-theme",
+            "name": "ASLM host theme",
+            "description": "Theme snapshot from the host ASLM app; applied on each module start. Managed only by ASLM.",
+            "type": "theme",
+            "engine": "python-runtime",
+            "setExec": "main.py apply_aslm_host_theme --file {value}"
         },
         {
             "key": "console_log_level",
