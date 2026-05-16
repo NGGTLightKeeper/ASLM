@@ -3622,7 +3622,7 @@ namespace ASLM.Pages
 
             _editingThemeDraft.Colors.TryGetValue(key, out var existingHex);
             var initial = ResolveThemeEditorColor(key, existingHex);
-            Color? picked = await ThemeColorPickerPage.PickAsync(initial);
+            Color? picked = await ThemeColorPickerView.PickAsync(initial);
             if (picked is not { } chosen)
             {
                 return;
