@@ -27,7 +27,7 @@
         <Grid ColumnDefinitions="220,*" ColumnSpacing="0">
 
             <Border Grid.Column="0"
-                    BackgroundColor="{DynamicResource BackgroundSidebar}"
+                    BackgroundColor="{DynamicResource BackgroundSecondary}"
                     StrokeThickness="0"
                     StrokeShape="RoundRectangle 0"
                     Margin="12"
@@ -108,7 +108,7 @@
                                 <Label Text="Name shown in ASLM and shared with modules."
                                        FontSize="12"
                                        TextColor="{DynamicResource LabelSecondary}" />
-                                <Border BackgroundColor="{DynamicResource FieldBackground}"
+                                <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
                                         Stroke="{DynamicResource Separator}"
                                         StrokeThickness="1"
                                         StrokeShape="RoundRectangle 5"
@@ -136,7 +136,7 @@
                                     <Label Text="Starting point for official modules. 100 ports are reserved from this value."
                                            FontSize="12"
                                            TextColor="{DynamicResource LabelSecondary}" />
-                                    <Border BackgroundColor="{DynamicResource FieldBackground}"
+                                    <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
                                             Stroke="{DynamicResource Separator}"
                                             StrokeThickness="1"
                                             StrokeShape="RoundRectangle 4"
@@ -158,7 +158,7 @@
                                     <Label Text="Starting point for external modules. 1000 ports are reserved from this value."
                                            FontSize="12"
                                            TextColor="{DynamicResource LabelSecondary}" />
-                                    <Border BackgroundColor="{DynamicResource FieldBackground}"
+                                    <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
                                             Stroke="{DynamicResource Separator}"
                                             StrokeThickness="1"
                                             StrokeShape="RoundRectangle 4"

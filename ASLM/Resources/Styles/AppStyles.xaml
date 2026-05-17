@@ -254,6 +254,6 @@
     <Style TargetType="pullToRefresh:SfPullToRefresh">
         <Setter Property="TransitionMode" Value="SlideOnTop" />
         <Setter Property="PullingThreshold" Value="100" />
-        <Setter Property="ProgressColor" Value="{DynamicResource Primary}" />
+        <Setter Property="ProgressColor" Value="{DynamicResource ActionBlue}" />
     </Style>
 </ResourceDictionary>

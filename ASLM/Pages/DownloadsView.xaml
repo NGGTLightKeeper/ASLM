@@ -28,7 +28,7 @@
               Padding="0">
 
             <Border Grid.Column="0"
-                    BackgroundColor="{DynamicResource BackgroundSidebar}"
+                    BackgroundColor="{DynamicResource BackgroundSecondary}"
                     StrokeThickness="0"
                     Padding="8">
                 <Grid RowDefinitions="Auto,*"
@@ -94,7 +94,7 @@
                      Opacity="0.45" />
 
             <Border Grid.Column="1"
-                    BackgroundColor="{DynamicResource BackgroundDeep}"
+                    BackgroundColor="{DynamicResource BackgroundTertiary}"
                     StrokeThickness="0"
                     Padding="8">
                 <Grid RowDefinitions="Auto,Auto,Auto,*"
@@ -110,7 +110,7 @@
                     </VerticalStackLayout>
 
                     <Border Grid.Row="1"
-                            BackgroundColor="{DynamicResource FieldBackground}"
+                            BackgroundColor="{DynamicResource BackgroundSecondary}"
                             Stroke="{DynamicResource Separator}"
                             StrokeThickness="1"
                             StrokeShape="RoundRectangle 6"
@@ -280,7 +280,7 @@
                             CornerRadius="6"
                             Padding="8,0"
                             BackgroundColor="{DynamicResource ActionBlue}"
-                            TextColor="{DynamicResource PrimaryDarkText}"
+                            TextColor="{DynamicResource White}"
                             FontSize="13"
                             Clicked="OnRefreshClicked" />
 
@@ -387,7 +387,7 @@
                                                     CornerRadius="6"
                                                     Padding="8,0"
                                                     BackgroundColor="{DynamicResource ActionBlue}"
-                                                    TextColor="{DynamicResource PrimaryDarkText}"
+                                                    TextColor="{DynamicResource White}"
                                                     FontSize="12"
                                                     Clicked="OnInstallClicked" />
 

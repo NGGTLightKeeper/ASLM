@@ -15,8 +15,8 @@
                 HeightRequest="480"
                 HorizontalOptions="Start"
                 VerticalOptions="Start"
-                BackgroundColor="{DynamicResource BackgroundElevated}"
-                Stroke="{DynamicResource PopoverBorderColor}"
+                BackgroundColor="{DynamicResource BackgroundTertiary}"
+                Stroke="{DynamicResource Separator}"
                 StrokeThickness="1"
                 Padding="0"
                 StrokeShape="RoundRectangle 12">
@@ -47,7 +47,7 @@
                             MinimumHeightRequest="28"
                             Padding="8,0"
                             Margin="0"
-                            BackgroundColor="{DynamicResource PopoverButtonSecondary}"
+                            BackgroundColor="{DynamicResource BackgroundTertiary}"
                             TextColor="{DynamicResource LabelSecondary}"
                             CornerRadius="6"
                             VerticalOptions="Center"
@@ -172,7 +172,7 @@
                                                         Padding="10,0"
                                                         Margin="0"
                                                         BackgroundColor="{DynamicResource ActionBlue}"
-                                                        TextColor="{DynamicResource PrimaryDarkText}"
+                                                        TextColor="{DynamicResource White}"
                                                         CornerRadius="6"
                                                         Clicked="OnUpdateNotificationNowClicked" />
                                                 <Button Text="Update later"
@@ -181,7 +181,7 @@
                                                         MinimumHeightRequest="28"
                                                         Padding="10,0"
                                                         Margin="0"
-                                                        BackgroundColor="{DynamicResource PopoverButtonSecondary}"
+                                                        BackgroundColor="{DynamicResource BackgroundTertiary}"
                                                         TextColor="{DynamicResource LabelSecondary}"
                                                         CornerRadius="6"
                                                         Clicked="OnUpdateNotificationLaterClicked" />
@@ -210,7 +210,7 @@
 
                                     <BoxView Grid.Row="1"
                                              HeightRequest="1"
-                                             Color="{DynamicResource PopoverButtonSecondary}"
+                                             Color="{DynamicResource Separator}"
                                              Margin="0,0,0,8" />
                                 </Grid>
                             </DataTemplate>
@@ -239,7 +239,7 @@
                       RowDefinitions="Auto, Auto">
                     <BoxView Grid.Row="0"
                              HeightRequest="2"
-                             Color="{DynamicResource PopoverButtonSecondary}"
+                             Color="{DynamicResource Separator}"
                              Margin="0,8,0,4"/>
                     <Label Grid.Row="1"
                            Text="{Binding SummaryText}"

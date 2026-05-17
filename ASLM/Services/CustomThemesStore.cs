@@ -85,6 +85,7 @@ namespace ASLM.Services
         {
             EnsureDirectoryExists();
 
+            Root.Normalize();
             var json = JsonSerializer.Serialize(Root, _jsonOptions);
             await File.WriteAllTextAsync(_filePath, json);
         }

@@ -53,7 +53,7 @@
                        Margin="0,0,0,24" />
                 <Button Text="Setup"
                         BackgroundColor="{DynamicResource ActionBlue}"
-                        TextColor="{DynamicResource PrimaryDarkText}"
+                        TextColor="{DynamicResource White}"
                         FontSize="16"
                         HeightRequest="48"
                         WidthRequest="280"
@@ -202,7 +202,7 @@
             <Button x:Name="NextButton"
                     Text="Next"
                     BackgroundColor="{DynamicResource ActionBlue}"
-                    TextColor="{DynamicResource PrimaryDarkText}"
+                    TextColor="{DynamicResource White}"
                     FontSize="14"
                     WidthRequest="100"
                     Clicked="OnNextClicked" />

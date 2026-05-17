@@ -112,7 +112,7 @@
                    MinimumHeightRequest="32"
                    VerticalOptions="Center"
                    TextColor="{DynamicResource LabelPrimary}"
-                   BackgroundColor="{DynamicResource FieldBackground}"
+                   BackgroundColor="{DynamicResource BackgroundTertiary}"
                    Placeholder="#AARRGGBB" />
 
             <Entry x:Name="REntry"
@@ -126,7 +126,7 @@
                    MaxLength="3"
                    HorizontalTextAlignment="Center"
                    TextColor="{DynamicResource LabelPrimary}"
-                   BackgroundColor="{DynamicResource FieldBackground}" />
+                   BackgroundColor="{DynamicResource BackgroundTertiary}" />
 
             <Entry x:Name="GEntry"
                    Grid.Row="6"
@@ -139,7 +139,7 @@
                    MaxLength="3"
                    HorizontalTextAlignment="Center"
                    TextColor="{DynamicResource LabelPrimary}"
-                   BackgroundColor="{DynamicResource FieldBackground}" />
+                   BackgroundColor="{DynamicResource BackgroundTertiary}" />
 
             <Entry x:Name="BEntry"
                    Grid.Row="6"
@@ -152,7 +152,7 @@
                    MaxLength="3"
                    HorizontalTextAlignment="Center"
                    TextColor="{DynamicResource LabelPrimary}"
-                   BackgroundColor="{DynamicResource FieldBackground}" />
+                   BackgroundColor="{DynamicResource BackgroundTertiary}" />
 
             <Grid Grid.Row="7"
                   Grid.ColumnSpan="5"

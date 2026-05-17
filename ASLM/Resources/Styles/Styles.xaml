@@ -9,7 +9,7 @@
 
     <!-- Core controls -->
     <Style TargetType="ActivityIndicator">
-        <Setter Property="Color" Value="{DynamicResource Primary}" />
+        <Setter Property="Color" Value="{DynamicResource ActionBlue}" />
     </Style>
 
     <Style TargetType="IndicatorView">
@@ -29,7 +29,7 @@
 
     <Style TargetType="Button">
         <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
-        <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource ActionBlue}" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
         <Setter Property="FontSize" Value="18" />
         <Setter Property="BorderWidth" Value="0" />
@@ -126,14 +126,14 @@
     <Style x:Key="SettingsFooterPrimaryButtonStyle"
            TargetType="Button"
            BasedOn="{StaticResource SettingsFooterButtonStyle}">
-        <Setter Property="TextColor" Value="{DynamicResource PrimaryDarkText}" />
+        <Setter Property="TextColor" Value="{DynamicResource White}" />
         <Setter Property="BackgroundColor" Value="{DynamicResource ActionBlue}" />
     </Style>
 
     <Style x:Key="SettingsFooterDangerButtonStyle"
            TargetType="Button"
            BasedOn="{StaticResource SettingsFooterButtonStyle}">
-        <Setter Property="TextColor" Value="{DynamicResource PrimaryDarkText}" />
+        <Setter Property="TextColor" Value="{DynamicResource White}" />
         <Setter Property="BackgroundColor" Value="{DynamicResource ActionRed}" />
     </Style>
 
@@ -176,7 +176,7 @@
         <Setter Property="StrokeShape" Value="RoundRectangle 6" />
         <Setter Property="Padding" Value="8,0" />
         <Setter Property="MinimumHeightRequest" Value="36" />
-        <Setter Property="BackgroundColor" Value="{DynamicResource FieldBackground}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource BackgroundTertiary}" />
         <Setter Property="Stroke" Value="{DynamicResource Separator}" />
     </Style>
 
@@ -248,7 +248,7 @@
 
     <!-- Input controls -->
     <Style TargetType="CheckBox">
-        <Setter Property="Color" Value="{DynamicResource Primary}" />
+        <Setter Property="Color" Value="{DynamicResource ActionBlue}" />
         <Setter Property="MinimumHeightRequest" Value="44" />
         <Setter Property="MinimumWidthRequest" Value="44" />
         <Setter Property="VisualStateManager.VisualStateGroups">
@@ -527,7 +527,7 @@
 
     <!-- Feedback and effects -->
     <Style TargetType="ProgressBar">
-        <Setter Property="ProgressColor" Value="{DynamicResource Primary}" />
+        <Setter Property="ProgressColor" Value="{DynamicResource ActionBlue}" />
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
@@ -543,7 +543,7 @@
     </Style>
 
     <Style TargetType="RefreshView">
-        <Setter Property="RefreshColor" Value="{DynamicResource Primary}" />
+        <Setter Property="RefreshColor" Value="{DynamicResource ActionBlue}" />
     </Style>
 
     <Style TargetType="Shadow">
@@ -554,9 +554,9 @@
     </Style>
 
     <Style TargetType="Slider">
-        <Setter Property="MinimumTrackColor" Value="{DynamicResource Primary}" />
+        <Setter Property="MinimumTrackColor" Value="{DynamicResource ActionBlue}" />
         <Setter Property="MaximumTrackColor" Value="{DynamicResource Separator}" />
-        <Setter Property="ThumbColor" Value="{DynamicResource Primary}" />
+        <Setter Property="ThumbColor" Value="{DynamicResource ActionBlue}" />
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
@@ -611,6 +611,6 @@
         <Setter Property="BarBackgroundColor" Value="{DynamicResource BackgroundSecondary}" />
         <Setter Property="BarTextColor" Value="{DynamicResource LabelPrimary}" />
         <Setter Property="UnselectedTabColor" Value="{DynamicResource LabelSecondary}" />
-        <Setter Property="SelectedTabColor" Value="{DynamicResource Primary}" />
+        <Setter Property="SelectedTabColor" Value="{DynamicResource ActionBlue}" />
     </Style>
 </ResourceDictionary>

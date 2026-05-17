@@ -6,7 +6,7 @@
              BackgroundColor="{DynamicResource BackgroundPrimary}">
     <Grid>
         <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="20">
-            <ActivityIndicator IsRunning="True" Color="{DynamicResource Primary}" />
+            <ActivityIndicator IsRunning="True" Color="{DynamicResource ActionBlue}" />
             <Label Text="Loading..." HorizontalOptions="Center" Style="{StaticResource Body1}" />
         </VerticalStackLayout>
     </Grid>

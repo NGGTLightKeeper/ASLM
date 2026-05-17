@@ -25,15 +25,15 @@ namespace ASLM.Pages
         private const double MaxDialogHeight = 920;
 
         // Download item colors read from the active theme palette so they update with theme changes.
-        private static Color ActiveSurfaceColor => GetColorResource("DownloadActiveSurface", Color.FromArgb("#202733"));
-        private static Color ActiveBorderColor => GetColorResource("DownloadActiveBorder", Color.FromArgb("#2C7CF6"));
-        private static Color PassiveSurfaceColor => GetColorResource("DownloadPassiveSurface", Color.FromArgb("#1F1F22"));
-        private static Color PassiveListSurfaceColor => GetColorResource("DownloadPassiveListSurface", Color.FromArgb("#1B1B1E"));
-        private static Color PassiveBorderColor => GetColorResource("DownloadPassiveBorder", Color.FromArgb("#343438"));
+        private static Color ActiveSurfaceColor => GetColorResource("BackgroundTertiary", Color.FromArgb("#202733"));
+        private static Color ActiveBorderColor => GetColorResource("ActionBlue", Color.FromArgb("#2C7CF6"));
+        private static Color PassiveSurfaceColor => GetColorResource("BackgroundSecondary", Color.FromArgb("#1F1F22"));
+        private static Color PassiveListSurfaceColor => GetColorResource("BackgroundPrimary", Color.FromArgb("#1B1B1E"));
+        private static Color PassiveBorderColor => GetColorResource("Separator", Color.FromArgb("#343438"));
         private static Color ActiveTextColor => GetColorResource("LabelPrimary", Colors.White);
         private static Color InactiveTextColor => GetColorResource("LabelPrimary", Color.FromArgb("#E6E6EA"));
         private static Color SecondaryTextColor => GetColorResource("LabelSecondary", Color.FromArgb("#99EBEBF5"));
-        private static Color ActiveSubtitleColor => GetColorResource("DownloadActiveSubtitle", Color.FromArgb("#E7F1FF"));
+        private static Color ActiveSubtitleColor => GetColorResource("LinkColor", Color.FromArgb("#E7F1FF"));
         private readonly DownloadCatalog _catalog;
         private readonly DownloadInstaller _installer;
         private CancellationTokenSource? _catalogRefreshCts;

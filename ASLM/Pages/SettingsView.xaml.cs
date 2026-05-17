@@ -3293,7 +3293,7 @@ namespace ASLM.Pages
                 CornerRadius = 6,
                 IsEnabled = themes.Count > 0
             };
-            deleteButton.SetDynamicResource(Button.TextColorProperty, "PrimaryDarkText");
+            deleteButton.SetDynamicResource(Button.TextColorProperty, "White");
             deleteButton.Clicked += OnDeleteCurrentCustomThemeClicked;
 
             var pickerShell = CreatePickerContainer(_customThemePicker, PersonalizationPickerMaxWidth);
@@ -4102,7 +4102,7 @@ namespace ASLM.Pages
             button.BackgroundColor = isSignedIn
                 ? GetColorResource("ActionRed", Color.FromArgb("#FF453A"))
                 : GetColorResource("ActionBlue", Color.FromArgb("#0A84FF"));
-            button.TextColor = GetColorResource("PrimaryDarkText", Colors.White);
+            button.TextColor = GetColorResource("White", Colors.White);
             button.BorderWidth = 0;
             button.Opacity = button.IsEnabled ? 1.0 : 0.55;
         }
@@ -4484,7 +4484,7 @@ namespace ASLM.Pages
             };
 
             label.TextColor = isPositive
-                ? GetColorResource("DownloadActiveSubtitle", Color.FromArgb("#D8E8FF"))
+                ? GetColorResource("LinkColor", Color.FromArgb("#D8E8FF"))
                 : GetColorResource("LabelSecondary", Color.FromArgb("#99EBEBF5"));
 
             return new Border

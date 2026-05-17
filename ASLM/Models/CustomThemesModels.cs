@@ -1,6 +1,7 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
 using System.Text.Json.Serialization;
+using ASLM.Services;
 
 namespace ASLM.Models
 {
@@ -70,6 +71,8 @@ namespace ASLM.Models
             {
                 Colors.Remove(key);
             }
+
+            ThemePaletteResolver.RemoveUnknownColorKeys(Colors);
         }
 
         /// <summary>

@@ -118,7 +118,7 @@
                                     <Label Text="Search mode"
                                            FontSize="13"
                                            TextColor="{DynamicResource LabelSecondary}" />
-                                    <Border BackgroundColor="{DynamicResource FieldBackground}"
+                                    <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
                                             Stroke="{DynamicResource Separator}"
                                             StrokeThickness="1"
                                             StrokeShape="RoundRectangle 6"
@@ -141,7 +141,7 @@
                                     <Label Text="Release version"
                                            FontSize="13"
                                            TextColor="{DynamicResource LabelSecondary}" />
-                                    <Border BackgroundColor="{DynamicResource FieldBackground}"
+                                    <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
                                             Stroke="{DynamicResource Separator}"
                                             StrokeThickness="1"
                                             StrokeShape="RoundRectangle 8"
@@ -165,7 +165,7 @@
                                     <Label Text="Repository branch"
                                            FontSize="12"
                                            TextColor="{DynamicResource LabelSecondary}" />
-                                    <Border BackgroundColor="{DynamicResource FieldBackground}"
+                                    <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
                                             Stroke="{DynamicResource Separator}"
                                             StrokeThickness="1"
                                             StrokeShape="RoundRectangle 6"
@@ -269,7 +269,7 @@
                         CornerRadius="6"
                         Padding="8,0"
                         BackgroundColor="{DynamicResource ActionBlue}"
-                        TextColor="{DynamicResource PrimaryDarkText}"
+                        TextColor="{DynamicResource White}"
                         IsVisible="{Binding ShowInstallAction, Source={x:Reference RootView}}"
                         IsEnabled="{Binding CanInstallUpdate, Source={x:Reference RootView}}"
                         Clicked="OnInstallUpdateClicked" />

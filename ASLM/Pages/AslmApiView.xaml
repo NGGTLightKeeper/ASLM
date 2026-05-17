@@ -27,7 +27,7 @@
                     FontSize="13"
                     IsEnabled="{Binding CanOpenServer}"
                     BackgroundColor="{DynamicResource ActionBlue}"
-                    TextColor="{DynamicResource PrimaryDarkText}"
+                    TextColor="{DynamicResource White}"
                     VerticalOptions="Center"
                     Clicked="OnOpenServerClicked" />
         </Grid>

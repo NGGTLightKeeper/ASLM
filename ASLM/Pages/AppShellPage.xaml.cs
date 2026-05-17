@@ -633,7 +633,7 @@ namespace ASLM.Pages
                 MaxLines = 2,
                 LineBreakMode = LineBreakMode.TailTruncation
             };
-            message.SetDynamicResource(Label.TextColorProperty, "PopoverButtonSecondaryText");
+            message.SetDynamicResource(Label.TextColorProperty, "LabelPrimary");
 
             var detail = new Label
             {
@@ -642,7 +642,7 @@ namespace ASLM.Pages
                 MaxLines = 1,
                 LineBreakMode = LineBreakMode.TailTruncation
             };
-            detail.SetDynamicResource(Label.TextColorProperty, "PopoverTextSecondary");
+            detail.SetDynamicResource(Label.TextColorProperty, "LabelSecondary");
 
             var closeButton = new Button
             {
@@ -657,7 +657,7 @@ namespace ASLM.Pages
                 HorizontalOptions = LayoutOptions.End,
                 VerticalOptions = LayoutOptions.Start
             };
-            closeButton.SetDynamicResource(Button.TextColorProperty, "PopoverTextSecondary");
+            closeButton.SetDynamicResource(Button.TextColorProperty, "LabelSecondary");
 
             var outerGrid = new Grid
             {
@@ -700,7 +700,7 @@ namespace ASLM.Pages
                     CornerRadius = 6
                 };
                 updateNowButton.SetDynamicResource(Button.BackgroundColorProperty, "ActionBlue");
-                updateNowButton.SetDynamicResource(Button.TextColorProperty, "PrimaryDarkText");
+                updateNowButton.SetDynamicResource(Button.TextColorProperty, "White");
                 updateNowButton.Clicked += (_, _) =>
                 {
                     RemoveToast(toastHost);
@@ -717,8 +717,8 @@ namespace ASLM.Pages
                     Margin = new Thickness(0),
                     CornerRadius = 6
                 };
-                updateLaterButton.SetDynamicResource(Button.BackgroundColorProperty, "PopoverButtonSecondary");
-                updateLaterButton.SetDynamicResource(Button.TextColorProperty, "PopoverButtonSecondaryText");
+                updateLaterButton.SetDynamicResource(Button.BackgroundColorProperty, "BackgroundTertiary");
+                updateLaterButton.SetDynamicResource(Button.TextColorProperty, "LabelPrimary");
                 updateLaterButton.Clicked += (_, _) => RemoveToast(toastHost);
 
                 actionRow.Children.Add(updateNowButton);
@@ -748,8 +748,8 @@ namespace ASLM.Pages
                     Offset = new Point(0, 4)
                 }
             };
-            toastHost.SetDynamicResource(Border.BackgroundColorProperty, "PopoverBackground");
-            toastHost.SetDynamicResource(Border.StrokeProperty, "PopoverBorderColor");
+            toastHost.SetDynamicResource(Border.BackgroundColorProperty, "BackgroundSecondary");
+            toastHost.SetDynamicResource(Border.StrokeProperty, "Separator");
 
             // Close button: dismiss only, does not open the notifications panel.
             closeButton.Clicked += (_, _) => RemoveToast(toastHost);
