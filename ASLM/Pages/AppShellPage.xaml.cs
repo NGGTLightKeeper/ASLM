@@ -124,6 +124,8 @@ namespace ASLM.Pages
             DownloadsButton.ImageSource = IconDownload;
             SettingsButton.ImageSource = IconSettings;
 
+            ApplySidebarButtonIconFromPalette(CollapseButton, "LabelSecondary");
+
             // Initialize button labels and image layout based on the current sidebar width.
             foreach (var button in _navButtons)
             {
@@ -200,6 +202,7 @@ namespace ASLM.Pages
             _notifications.UpdateNotificationActionRequested += OnUpdateNotificationActionRequested;
             _apiServer.StateChanged += OnApiServerStateChanged;
             _moduleInstaller.ModulesChanged += OnModulesChanged;
+            ThemeService.PaletteApplied += OnAppPaletteApplied;
             _shellEventsHooked = true;
         }
 
@@ -217,7 +220,47 @@ namespace ASLM.Pages
             _notifications.UpdateNotificationActionRequested -= OnUpdateNotificationActionRequested;
             _apiServer.StateChanged -= OnApiServerStateChanged;
             _moduleInstaller.ModulesChanged -= OnModulesChanged;
+            ThemeService.PaletteApplied -= OnAppPaletteApplied;
             _shellEventsHooked = false;
+        }
+
+        /// <summary>
+        /// Refreshes sidebar icon tints after the application palette is rewritten.
+        /// </summary>
+        private void OnAppPaletteApplied()
+        {
+            ApplySidebarButtonIconFromPalette(CollapseButton, "LabelSecondary");
+
+            foreach (var button in _navButtons)
+            {
+                ApplyShellNavInactiveStyle(button);
+            }
+
+            foreach (var child in ModulePagePanel.Children)
+            {
+                if (child is Button button)
+                {
+                    ApplyShellNavInactiveStyle(button);
+                }
+            }
+
+            if (_activeNavButton != null)
+            {
+                ApplyShellNavActiveStyle(_activeNavButton);
+            }
+            else if (_activeModule != null)
+            {
+                foreach (var child in ModulePagePanel.Children)
+                {
+                    if (child is Button button &&
+                        button.ClassId == "PAGE" &&
+                        string.Equals(button.AutomationId, _activeModule.Id, StringComparison.Ordinal))
+                    {
+                        ApplyShellNavActiveStyle(button);
+                        break;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -1178,6 +1221,7 @@ namespace ASLM.Pages
                 button.Clicked += (_, _) => ActivateModulePage(capturedModule);
                 button.HandlerChanged += (sender, _) => UpdateButtonAlignment((Button)sender!);
                 ModulePagePanel.Children.Add(button);
+                ApplyShellNavInactiveStyle(button);
             }
 
             _pageButtonLayoutCts?.Cancel();
@@ -1392,16 +1436,120 @@ namespace ASLM.Pages
 #endif
         }
 
-        private static void ApplyShellNavInactiveStyle(Button button)
+        private void ApplyShellNavInactiveStyle(Button button)
         {
             button.SetDynamicResource(Button.TextColorProperty, "LabelSecondary");
             button.BackgroundColor = Colors.Transparent;
+            ApplySidebarButtonIconFromPalette(button, "LabelPrimary");
         }
 
-        private static void ApplyShellNavActiveStyle(Button button)
+        private void ApplyShellNavActiveStyle(Button button)
         {
             button.SetDynamicResource(Button.TextColorProperty, "LabelPrimary");
             button.SetDynamicResource(Button.BackgroundColorProperty, "BackgroundTertiary");
+            ApplySidebarButtonIconFromPalette(button, GetActiveNavIconPaletteKey(button));
+        }
+
+        /// <summary>
+        /// Replaces the sidebar button image with a Skia-tinted PNG so colors track the palette without WinUI behavior crashes.
+        /// </summary>
+        private void ApplySidebarButtonIconFromPalette(Button button, string paletteResourceKey)
+        {
+            var path = ResolveSidebarIconFile(button);
+            if (string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            var tint = IconTintHelper.ResolvePaletteColor(paletteResourceKey);
+            button.ImageSource = PackagedIconTintCache.Get(path, tint);
+        }
+
+        /// <summary>
+        /// Resolves the logical packaged icon file name or an absolute module asset path for one sidebar button.
+        /// </summary>
+        private string? ResolveSidebarIconFile(Button button)
+        {
+            if (button == CollapseButton)
+            {
+                return IconMenu;
+            }
+
+            if (button == HomeButton)
+            {
+                return IconHome;
+            }
+
+            if (button == ConsolesButton)
+            {
+                return IconConsole;
+            }
+
+            if (button == ModulesButton)
+            {
+                return IconModules;
+            }
+
+            if (button == AslmApiButton)
+            {
+                return IconApi;
+            }
+
+            if (button == NotificationsButton)
+            {
+                return IconNotifications;
+            }
+
+            if (button == DownloadsButton)
+            {
+                return IconDownload;
+            }
+
+            if (button == SettingsButton)
+            {
+                return IconSettings;
+            }
+
+            if (string.Equals(button.ClassId, "PAGE", StringComparison.Ordinal) &&
+                button.BindingContext is ModuleConfig module)
+            {
+                if (!string.IsNullOrEmpty(module.SidebarIconFullPath) && File.Exists(module.SidebarIconFullPath))
+                {
+                    return module.SidebarIconFullPath;
+                }
+
+                return IconPage;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns the palette resource key used to tint the sidebar icon when this navigation row is active.
+        /// </summary>
+        private string GetActiveNavIconPaletteKey(Button button)
+        {
+            if (button == HomeButton)
+            {
+                return "SystemBlue";
+            }
+
+            if (button == ConsolesButton)
+            {
+                return "SystemPurple";
+            }
+
+            if (button == ModulesButton)
+            {
+                return "SystemGreen";
+            }
+
+            if (button == AslmApiButton)
+            {
+                return "SystemOrange";
+            }
+
+            return "LabelPrimary";
         }
     }
 }

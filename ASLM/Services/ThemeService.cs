@@ -192,6 +192,13 @@ namespace ASLM.Services
         }
 
 
+        /// <summary>
+        /// Raised on the main thread after the application palette dictionary is rewritten.
+        /// Icon tint behaviors read concrete <see cref="Color"/> values and must be refreshed explicitly.
+        /// </summary>
+        public static event Action? PaletteApplied;
+
+
         // Resource writing
 
         /// <summary>
@@ -218,6 +225,9 @@ namespace ASLM.Services
                     resources[brushKey] = new SolidColorBrush(color);
                 }
             }
+
+            PackagedIconTintCache.Clear();
+            PaletteApplied?.Invoke();
         }
     }
 }
