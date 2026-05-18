@@ -85,6 +85,10 @@ namespace ASLM.Models
         [JsonPropertyName("downloadsBridge")]
         public ModuleDownloadsBridge? DownloadsBridge { get; set; }
 
+        // Optional declaration that the module consumes the host module interop API and env injection.
+        [JsonPropertyName("moduleInterop")]
+        public ModuleInteropManifest? ModuleInterop { get; set; }
+
         // Update behavior for this module package.
         [JsonPropertyName("update")]
         public ModuleUpdateConfig Update { get; set; } = new();
@@ -142,6 +146,9 @@ namespace ASLM.Models
 
             // Normalize the optional downloads bridge only when the manifest declares it.
             DownloadsBridge?.Normalize();
+
+            // Normalize optional module interop client declaration.
+            ModuleInterop?.Normalize();
 
             // Normalize module update preferences and preservation rules.
             Update ??= new();

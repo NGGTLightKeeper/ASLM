@@ -52,8 +52,10 @@ namespace ASLM
             builder.Services.AddSingleton<ProcessSnapshotReader>();
             builder.Services.AddSingleton<ProcessTracker>();
             builder.Services.AddSingleton<ModuleThemePayloadBuilder>();
-            builder.Services.AddSingleton<ModuleRunner>();
+            builder.Services.AddSingleton<ModuleInteropHostState>();
+            builder.Services.AddSingleton<ModuleStartThrottle>();
             builder.Services.AddSingleton<PortRegistry>();
+            builder.Services.AddSingleton<ModuleRunner>();
             builder.Services.AddSingleton<ModuleDownloadBridge>();
             builder.Services.AddSingleton<DownloadStateStore>();
             builder.Services.AddSingleton<DownloadCatalog>();
@@ -63,6 +65,8 @@ namespace ASLM
             builder.Services.AddSingleton<GitHubUpdateClient>();
             builder.Services.AddSingleton<UpdateManager>();
             builder.Services.AddSingleton<UpdateScheduler>();
+            builder.Services.AddSingleton<ModuleLaunchCoordinator>();
+            builder.Services.AddSingleton<AslmModuleInteropServer>();
             builder.Services.AddSingleton<AslmApiServer>();
             builder.Services.AddSingleton<SettingsService>();
             builder.Services.AddSingleton<CustomThemesStore>();

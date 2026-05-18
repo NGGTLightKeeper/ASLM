@@ -16,6 +16,7 @@ namespace ASLM.Pages
         private readonly NotificationCenter _notifications;
         private readonly UpdateScheduler _updateScheduler;
         private readonly AslmApiServer _apiServer;
+        private readonly AslmModuleInteropServer _moduleInteropServer;
         private readonly ThemeService _themeService;
         private readonly CustomThemesStore _customThemesStore;
         private readonly IServiceProvider _services;
@@ -31,6 +32,7 @@ namespace ASLM.Pages
             NotificationCenter notifications,
             UpdateScheduler updateScheduler,
             AslmApiServer apiServer,
+            AslmModuleInteropServer moduleInteropServer,
             ThemeService themeService,
             CustomThemesStore customThemesStore,
             IServiceProvider services)
@@ -40,6 +42,7 @@ namespace ASLM.Pages
             _notifications = notifications;
             _updateScheduler = updateScheduler;
             _apiServer = apiServer;
+            _moduleInteropServer = moduleInteropServer;
             _themeService = themeService;
             _customThemesStore = customThemesStore;
             _services = services;
@@ -64,6 +67,7 @@ namespace ASLM.Pages
             await Task.Run(() => _customThemesStore.LoadAsync());
             await Task.Run(() => _notifications.InitializeAsync());
             await Task.Run(() => _apiServer.StartIfEnabledAsync());
+            await Task.Run(() => _moduleInteropServer.EnsureStartedAsync());
             await Task.Run(_updateScheduler.Start);
             _themeService.ApplyFromSettings();
 

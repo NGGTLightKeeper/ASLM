@@ -21,6 +21,7 @@ namespace ASLM.Pages
         private const double MinCardWidth = 400;
 
         private readonly UpdateManager _updateManager;
+        private readonly ModuleLaunchCoordinator _launchCoordinator;
         private AppShellPage? _shell;
         private int _gridSpan = 1;
 
@@ -59,9 +60,10 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the module management view and hooks the resize handler.
         /// </summary>
-        public ModulesView(UpdateManager updateManager)
+        public ModulesView(UpdateManager updateManager, ModuleLaunchCoordinator launchCoordinator)
         {
             _updateManager = updateManager;
+            _launchCoordinator = launchCoordinator;
             InitializeComponent();
             BindingContext = this;
             DashboardView.HandlerChanged += OnDashboardViewHandlerChanged;
@@ -152,6 +154,7 @@ namespace ASLM.Pages
                     module,
                     installer,
                     runner,
+                    _launchCoordinator,
                     _updateManager,
                     OnModuleStateChanged,
                     OnMenuToggleRequested,
@@ -167,12 +170,14 @@ namespace ASLM.Pages
             ModuleConfig config,
             ModuleInstaller installer,
             ModuleRunner runner,
+            ModuleLaunchCoordinator launchCoordinator,
             UpdateManager updateManager,
             Action onStateChanged) =>
             new ModuleViewModel(
                 config,
                 installer,
                 runner,
+                launchCoordinator,
                 updateManager,
                 onStateChanged,
                 static _ => { },
@@ -337,6 +342,7 @@ namespace ASLM.Pages
         private readonly ModuleConfig _config;
         private readonly ModuleInstaller _installer;
         private readonly ModuleRunner _runner;
+        private readonly ModuleLaunchCoordinator _launchCoordinator;
         private readonly UpdateManager _updateManager;
         private readonly Action _onStateChanged;
         private readonly Action<ModuleViewModel> _onMenuToggleRequested;
@@ -393,6 +399,7 @@ namespace ASLM.Pages
             ModuleConfig config,
             ModuleInstaller installer,
             ModuleRunner runner,
+            ModuleLaunchCoordinator launchCoordinator,
             UpdateManager updateManager,
             Action onStateChanged,
             Action<ModuleViewModel> onMenuToggleRequested,
@@ -402,6 +409,7 @@ namespace ASLM.Pages
             _config = config;
             _installer = installer;
             _runner = runner;
+            _launchCoordinator = launchCoordinator;
             _updateManager = updateManager;
             _onStateChanged = onStateChanged;
             _onMenuToggleRequested = onMenuToggleRequested;
@@ -1624,33 +1632,26 @@ namespace ASLM.Pages
 
             try
             {
-                // First-run setup must complete before the normal run commands can start.
-                if (!_config.Status.FirstRunCompleted)
+                var launchLog = new Progress<string>(message => Debug.WriteLine($"[Launch] {message}"));
+                var result = await _launchCoordinator.LaunchOrEnsureRunningAsync(_config.Id, launchLog, CancellationToken.None);
+
+                if (result.EffectiveConfig != null &&
+                    string.Equals(result.EffectiveConfig.SourcePath, _config.SourcePath, StringComparison.OrdinalIgnoreCase))
                 {
-                    var setupLog = new Progress<string>(message => Debug.WriteLine($"[Setup] {message}"));
-                    var setupSuccess = await Task.Run(() =>
-                        _runner.ExecuteFirstRunAsync(_config, setupLog, CancellationToken.None));
-
-                    if (!setupSuccess)
-                    {
-                        Debug.WriteLine("Setup failed, cannot launch.");
-                        return;
-                    }
-
-                    _config.Status.FirstRunCompleted = true;
-                    await Task.Run(() => _installer.SaveConfigAsync(_config));
+                    _config.Settings = result.EffectiveConfig.Settings;
+                    _config.Commands = result.EffectiveConfig.Commands;
+                    _config.Status.FirstRunCompleted = result.EffectiveConfig.Status.FirstRunCompleted;
+                    _config.Status.Enabled = result.EffectiveConfig.Status.Enabled;
                 }
 
-                _config.Status.Enabled = true;
-                await Task.Run(() => _installer.SaveConfigAsync(_config));
-                NotifyStateChanged();
-                _onStateChanged?.Invoke();
-
-                // Start background run commands only when the module exposes them.
-                if (_config.Commands.Run.Count > 0)
+                if (result.Status is ModuleLaunchStatus.Started or ModuleLaunchStatus.AlreadyRunning)
                 {
-                    var launchLog = new Progress<string>(message => Debug.WriteLine($"[Launch] {message}"));
-                    _ = Task.Run(() => _runner.ExecuteRunAsync(_config, launchLog, CancellationToken.None));
+                    NotifyStateChanged();
+                    _onStateChanged?.Invoke();
+                }
+                else
+                {
+                    Debug.WriteLine($"Launch failed ({result.Status}): {result.Message}");
                 }
             }
             finally

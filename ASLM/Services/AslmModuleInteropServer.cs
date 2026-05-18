@@ -1,0 +1,490 @@
+// Copyright NGGT.LightKeeper. All Rights Reserved.
+
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using ASLM.Models;
+using Microsoft.Extensions.Logging;
+
+namespace ASLM.Services
+{
+    // Module interop JSON server
+
+    /// <summary>
+    /// Hosts a local JSON HTTP API that exposes module registry data and coordinates module starts.
+    /// </summary>
+    public sealed class AslmModuleInteropServer : IDisposable
+    {
+        private readonly AppDataStore _appData;
+        private readonly PortRegistry _ports;
+        private readonly ModuleInstaller _moduleInstaller;
+        private readonly ModuleRunner _moduleRunner;
+        private readonly ModuleLaunchCoordinator _launchCoordinator;
+        private readonly ModuleInteropHostState _interopHostState;
+        private readonly ILogger<AslmModuleInteropServer> _logger;
+
+        private readonly object _stateLock = new();
+        private readonly JsonSerializerOptions _jsonReadOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        private readonly JsonSerializerOptions _jsonWriteOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
+        private HttpListener? _listener;
+        private CancellationTokenSource? _listenerCts;
+        private Task? _listenerTask;
+        private int? _activePort;
+        private bool _disposed;
+        private string _lastError = string.Empty;
+
+        /// <summary>
+        /// Raised when the server state changes and bound views should refresh.
+        /// </summary>
+        public event EventHandler? StateChanged;
+
+        /// <summary>
+        /// Creates the module interop server.
+        /// </summary>
+        public AslmModuleInteropServer(
+            AppDataStore appData,
+            PortRegistry ports,
+            ModuleInstaller moduleInstaller,
+            ModuleRunner moduleRunner,
+            ModuleLaunchCoordinator launchCoordinator,
+            ModuleInteropHostState interopHostState,
+            ILogger<AslmModuleInteropServer> logger)
+        {
+            _appData = appData;
+            _ports = ports;
+            _moduleInstaller = moduleInstaller;
+            _moduleRunner = moduleRunner;
+            _launchCoordinator = launchCoordinator;
+            _interopHostState = interopHostState;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Gets whether the JSON server is currently listening.
+        /// </summary>
+        public bool IsRunning
+        {
+            get
+            {
+                lock (_stateLock)
+                {
+                    return _listener?.IsListening == true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the localhost port reserved for the interop server.
+        /// </summary>
+        public int Port
+        {
+            get
+            {
+                lock (_stateLock)
+                {
+                    return _activePort ??
+                           _ports.TryGetInternalServicePort(
+                               PortRegistry.AslmModuleInteropServiceId,
+                               PortRegistry.AslmModuleInteropPortKey) ??
+                           _appData.Data.Ports.OfficialStart;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the root URL clients should use for interop requests.
+        /// </summary>
+        public string BaseUrl => BuildBaseUrl(Port);
+
+        /// <summary>
+        /// Gets the most recent server startup error, if any.
+        /// </summary>
+        public string LastError
+        {
+            get
+            {
+                lock (_stateLock)
+                {
+                    return _lastError;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reserves the interop port in the shared map and starts the JSON listener. This host service is always enabled.
+        /// </summary>
+        public async Task EnsureStartedAsync()
+        {
+            _ports.RedistributePorts(_appData.Data.Api.ServerEnabled);
+            await StartAsync();
+        }
+
+        /// <summary>
+        /// Starts the local listener and background request loop.
+        /// </summary>
+        public Task StartAsync()
+        {
+            lock (_stateLock)
+            {
+                if (_listener?.IsListening == true)
+                {
+                    return Task.CompletedTask;
+                }
+
+                try
+                {
+                    var assignedPort = GetAssignedPort();
+                    _listenerCts = new CancellationTokenSource();
+                    _listener = new HttpListener();
+                    _listener.Prefixes.Add(BuildBaseUrl(assignedPort));
+                    _listener.Start();
+                    _activePort = assignedPort;
+                    _lastError = string.Empty;
+                    _interopHostState.SetListening(BuildBaseUrl(assignedPort), assignedPort);
+                    _listenerTask = Task.Run(() => RunListenerLoopAsync(_listener, _listenerCts.Token));
+                }
+                catch (Exception ex)
+                {
+                    _lastError = ex.Message;
+                    _logger.LogError(ex, "Failed to start module interop server.");
+                    _interopHostState.Clear();
+                    CleanupListener();
+                }
+            }
+
+            RaiseStateChanged();
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Stops the local listener and waits briefly for the request loop to exit.
+        /// </summary>
+        public async Task StopAsync()
+        {
+            Task? listenerTask;
+
+            lock (_stateLock)
+            {
+                _listenerCts?.Cancel();
+
+                try
+                {
+                    _listener?.Stop();
+                    _listener?.Close();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Module interop listener stop failed.");
+                }
+
+                listenerTask = _listenerTask;
+                CleanupListener();
+            }
+
+            _interopHostState.Clear();
+
+            if (listenerTask != null)
+            {
+                try
+                {
+                    await listenerTask.WaitAsync(TimeSpan.FromSeconds(2));
+                }
+                catch
+                {
+                    // Best-effort shutdown.
+                }
+            }
+
+            RaiseStateChanged();
+        }
+
+        private async Task RunListenerLoopAsync(HttpListener listener, CancellationToken ct)
+        {
+            while (!ct.IsCancellationRequested && listener.IsListening)
+            {
+                HttpListenerContext context;
+
+                try
+                {
+                    context = await listener.GetContextAsync();
+                }
+                catch (ObjectDisposedException)
+                {
+                    break;
+                }
+                catch (HttpListenerException)
+                {
+                    break;
+                }
+                catch (InvalidOperationException)
+                {
+                    break;
+                }
+
+                _ = Task.Run(() => HandleContextAsync(context), ct);
+            }
+        }
+
+        private async Task HandleContextAsync(HttpListenerContext context)
+        {
+            try
+            {
+                if (!IsLoopback(context.Request))
+                {
+                    await WriteJsonAsync(context, 403, new ErrorEnvelope("forbidden", "Only loopback clients are allowed."), CancellationToken.None);
+                    return;
+                }
+
+                var path = NormalizePath(context.Request.Url?.AbsolutePath ?? "/");
+                if (string.Equals(context.Request.HttpMethod, "GET", StringComparison.OrdinalIgnoreCase) &&
+                    path.Equals("/v1/registry", StringComparison.OrdinalIgnoreCase))
+                {
+                    await HandleRegistryGetAsync(context);
+                    return;
+                }
+
+                if (string.Equals(context.Request.HttpMethod, "POST", StringComparison.OrdinalIgnoreCase) &&
+                    path.Equals("/v1/modules/start", StringComparison.OrdinalIgnoreCase))
+                {
+                    await HandleModulesStartPostAsync(context);
+                    return;
+                }
+
+                await WriteJsonAsync(context, 404, new ErrorEnvelope("not_found", "No route matches this URL."), CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Module interop request failed.");
+                await WriteJsonAsync(context, 500, new ErrorEnvelope("error", ex.Message), CancellationToken.None);
+            }
+        }
+
+        private async Task HandleRegistryGetAsync(HttpListenerContext context)
+        {
+            var installed = await BuildInstalledModulesAsync();
+            var running = _moduleRunner.GetRunningModulesSnapshot()
+                .Select(static snapshot => new RunningModuleDto(
+                    snapshot.Id,
+                    snapshot.Name,
+                    Path.GetFileName(Path.GetDirectoryName(snapshot.SourcePath)) ?? string.Empty,
+                    snapshot.SourcePath))
+                .ToList();
+
+            var payload = new RegistryResponse(
+                BaseUrl.TrimEnd('/') + "/",
+                installed,
+                running);
+
+            await WriteJsonAsync(context, 200, payload, CancellationToken.None);
+        }
+
+        private async Task<List<InstalledModuleDto>> BuildInstalledModulesAsync()
+        {
+            var modules = await _moduleInstaller.DiscoverModulesAsync();
+            var byId = modules
+                .GroupBy(m => m.Id, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var list = new List<InstalledModuleDto>();
+            foreach (var group in byId.OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                var ordered = group.OrderBy(m => m.SourcePath, StringComparer.OrdinalIgnoreCase).ToList();
+                var hasMultiple = ordered.Count > 1;
+                foreach (var module in ordered)
+                {
+                    list.Add(new InstalledModuleDto(
+                        module.Id,
+                        module.Name,
+                        module.Version,
+                        module.Status.Installed,
+                        module.Status.Enabled,
+                        module.Status.FirstRunCompleted,
+                        module.Commands.Run.Count > 0,
+                        hasMultiple,
+                        Path.GetFileName(Path.GetDirectoryName(module.SourcePath)) ?? string.Empty));
+                }
+            }
+
+            return list;
+        }
+
+        private async Task HandleModulesStartPostAsync(HttpListenerContext context)
+        {
+            if (!context.Request.HasEntityBody)
+            {
+                await WriteJsonAsync(context, 400, new ErrorEnvelope("bad_request", "JSON body is required."), CancellationToken.None);
+                return;
+            }
+
+            StartModulesRequest? body;
+            try
+            {
+                await using var ms = new MemoryStream();
+                await context.Request.InputStream.CopyToAsync(ms);
+                body = JsonSerializer.Deserialize<StartModulesRequest>(ms.ToArray(), _jsonReadOptions);
+            }
+            catch (Exception ex)
+            {
+                await WriteJsonAsync(context, 400, new ErrorEnvelope("bad_request", $"Invalid JSON: {ex.Message}"), CancellationToken.None);
+                return;
+            }
+
+            if (body == null || string.IsNullOrWhiteSpace(body.CallerModuleId))
+            {
+                await WriteJsonAsync(context, 400, new ErrorEnvelope("bad_request", "callerModuleId is required."), CancellationToken.None);
+                return;
+            }
+
+            if (body.ModuleIds == null || body.ModuleIds.Count == 0)
+            {
+                await WriteJsonAsync(context, 400, new ErrorEnvelope("bad_request", "moduleIds must contain at least one id."), CancellationToken.None);
+                return;
+            }
+
+            var callerId = body.CallerModuleId.Trim();
+            var running = _moduleRunner.GetRunningModulesSnapshot();
+            if (!running.Any(m => string.Equals(m.Id, callerId, StringComparison.OrdinalIgnoreCase)))
+            {
+                await WriteJsonAsync(
+                    context,
+                    403,
+                    new ErrorEnvelope("caller_not_running", "callerModuleId must match a module that is currently running."),
+                    CancellationToken.None);
+                return;
+            }
+
+            var results = new List<StartModuleItemResult>();
+            foreach (var rawId in body.ModuleIds)
+            {
+                if (string.IsNullOrWhiteSpace(rawId))
+                {
+                    results.Add(new StartModuleItemResult(string.Empty, "error", "Empty module id."));
+                    continue;
+                }
+
+                var id = rawId.Trim();
+                var log = new Progress<string>(message => _logger.LogDebug("Interop launch {ModuleId}: {Message}", id, message));
+                var launch = await _launchCoordinator.LaunchOrEnsureRunningAsync(id, log, CancellationToken.None);
+                var (status, message) = MapLaunchStatus(launch.Status, launch.Message);
+                results.Add(new StartModuleItemResult(id, status, message));
+            }
+
+            await WriteJsonAsync(context, 200, new StartModulesResponse(results), CancellationToken.None);
+        }
+
+        private static (string status, string? message) MapLaunchStatus(ModuleLaunchStatus status, string? message)
+        {
+            return status switch
+            {
+                ModuleLaunchStatus.Started => ("started", null),
+                ModuleLaunchStatus.AlreadyRunning => ("alreadyRunning", null),
+                ModuleLaunchStatus.NotFound => ("notFound", message),
+                ModuleLaunchStatus.NoRunCommands => ("noRunCommands", message),
+                ModuleLaunchStatus.FirstRunFailed => ("firstRunFailed", message),
+                ModuleLaunchStatus.Error => ("error", message),
+                _ => ("error", message ?? "Unknown launch status.")
+            };
+        }
+
+        private static bool IsLoopback(HttpListenerRequest request)
+        {
+            var remote = request.RemoteEndPoint?.Address;
+            return remote != null && IPAddress.IsLoopback(remote);
+        }
+
+        private static string NormalizePath(string path)
+        {
+            var trimmed = path.Trim();
+            if (trimmed.Length > 1 && trimmed.EndsWith('/'))
+            {
+                trimmed = trimmed.TrimEnd('/');
+            }
+
+            return trimmed.Length == 0 ? "/" : trimmed;
+        }
+
+        private async Task WriteJsonAsync<T>(HttpListenerContext context, int statusCode, T payload, CancellationToken ct)
+        {
+            var json = JsonSerializer.Serialize(payload, _jsonWriteOptions);
+            var bytes = Encoding.UTF8.GetBytes(json);
+            context.Response.StatusCode = statusCode;
+            context.Response.ContentType = "application/json; charset=utf-8";
+            context.Response.ContentLength64 = bytes.Length;
+            await context.Response.OutputStream.WriteAsync(bytes, ct);
+            context.Response.Close();
+        }
+
+        private void RaiseStateChanged() => StateChanged?.Invoke(this, EventArgs.Empty);
+
+        private void CleanupListener()
+        {
+            _listener = null;
+            _activePort = null;
+            _listenerCts?.Dispose();
+            _listenerCts = null;
+            _listenerTask = null;
+        }
+
+        private int GetAssignedPort()
+        {
+            return _ports.GetOrAssignInternalServicePort(
+                PortRegistry.AslmModuleInteropServiceId,
+                PortRegistry.AslmModuleInteropPortKey);
+        }
+
+        private static string BuildBaseUrl(int port) => $"http://127.0.0.1:{port}/";
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            StopAsync().GetAwaiter().GetResult();
+        }
+
+        private sealed record ErrorEnvelope(string Code, string Message);
+
+        private sealed record RegistryResponse(
+            string InteropBaseUrl,
+            List<InstalledModuleDto> InstalledModules,
+            List<RunningModuleDto> RunningModules);
+
+        private sealed record InstalledModuleDto(
+            string Id,
+            string Name,
+            string Version,
+            bool Installed,
+            bool Enabled,
+            bool FirstRunCompleted,
+            bool HasRunCommands,
+            bool HasMultipleInstances,
+            string InstanceFolder);
+
+        private sealed record RunningModuleDto(
+            string Id,
+            string Name,
+            string InstanceFolder,
+            string SourcePath);
+
+        private sealed record StartModulesRequest(string? CallerModuleId, List<string>? ModuleIds);
+
+        private sealed record StartModuleItemResult(string ModuleId, string Status, string? Message);
+
+        private sealed record StartModulesResponse(List<StartModuleItemResult> Results);
+    }
+}

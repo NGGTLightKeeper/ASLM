@@ -35,7 +35,6 @@ namespace ASLM.Pages
         private const string LabelNotifications = "Notifications";
         private const string LabelDownload = "Download";
         private const string LabelSettings = "Settings";
-        private const int MaxConcurrentModuleStarts = 2;
 
         private static Color TransparentBackground => Colors.Transparent;
 
@@ -46,6 +45,8 @@ namespace ASLM.Pages
         private readonly NotificationCenter _notifications;
         private readonly UpdateManager _updateManager;
         private readonly AslmApiServer _apiServer;
+        private readonly ModuleStartThrottle _moduleStartThrottle;
+        private readonly ModuleLaunchCoordinator _moduleLaunchCoordinator;
         private readonly SettingsService _settingsService;
         private readonly IServiceProvider _services;
 
@@ -83,6 +84,8 @@ namespace ASLM.Pages
             NotificationCenter notifications,
             UpdateManager updateManager,
             AslmApiServer apiServer,
+            ModuleStartThrottle moduleStartThrottle,
+            ModuleLaunchCoordinator moduleLaunchCoordinator,
             SettingsService settingsService,
             IServiceProvider services)
         {
@@ -93,6 +96,8 @@ namespace ASLM.Pages
             _notifications = notifications;
             _updateManager = updateManager;
             _apiServer = apiServer;
+            _moduleStartThrottle = moduleStartThrottle;
+            _moduleLaunchCoordinator = moduleLaunchCoordinator;
             _settingsService = settingsService;
             _services = services;
 
@@ -888,6 +893,7 @@ namespace ASLM.Pages
                 config,
                 _moduleInstaller,
                 _moduleRunner,
+                _moduleLaunchCoordinator,
                 _updateManager,
                 OnModuleStateChanged);
 
@@ -1322,10 +1328,9 @@ namespace ASLM.Pages
                 return;
             }
 
-            using var startThrottle = new SemaphoreSlim(MaxConcurrentModuleStarts);
             var startTasks = enabledModules.Select(async module =>
             {
-                await startThrottle.WaitAsync();
+                await _moduleStartThrottle.WaitAsync();
                 try
                 {
                     var logProgress = new Progress<string>(message => System.Diagnostics.Debug.WriteLine($"[ModuleStart:{module.Name}] {message}"));
@@ -1334,7 +1339,7 @@ namespace ASLM.Pages
                 }
                 finally
                 {
-                    startThrottle.Release();
+                    _moduleStartThrottle.Release();
                 }
             });
 

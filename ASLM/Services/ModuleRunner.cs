@@ -2,6 +2,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using ASLM.Models;
 using Microsoft.Extensions.Logging;
@@ -22,6 +23,7 @@ namespace ASLM.Services
         private readonly ModuleConsoleStore _consoleStore;
         private readonly ProcessSnapshotReader _processSnapshots;
         private readonly ModuleThemePayloadBuilder _themePayloadBuilder;
+        private readonly ModuleInteropHostState _interopHostState;
         private readonly ILogger<ModuleRunner> _logger;
         private readonly SemaphoreSlim _settingCommandThrottle = new(4, 4);
         private static readonly Encoding Utf8NoBom = new UTF8Encoding(false);
@@ -47,6 +49,7 @@ namespace ASLM.Services
         /// <param name="consoleStore">Service to report console output and process sessions.</param>
         /// <param name="processSnapshots">Service that shares cached process-table snapshots.</param>
         /// <param name="themePayloadBuilder">Builds host theme JSON for modules that declare a theme setting.</param>
+        /// <param name="interopHostState">Tracks the module interop listener URL for opted-in modules.</param>
         /// <param name="logger">Logger instance.</param>
         public ModuleRunner(
             EngineInstaller engineInstaller,
@@ -56,6 +59,7 @@ namespace ASLM.Services
             ModuleConsoleStore consoleStore,
             ProcessSnapshotReader processSnapshots,
             ModuleThemePayloadBuilder themePayloadBuilder,
+            ModuleInteropHostState interopHostState,
             ILogger<ModuleRunner> logger)
         {
             _engineInstaller = engineInstaller;
@@ -65,6 +69,7 @@ namespace ASLM.Services
             _consoleStore = consoleStore;
             _processSnapshots = processSnapshots;
             _themePayloadBuilder = themePayloadBuilder;
+            _interopHostState = interopHostState;
             _logger = logger;
             _ports.PortsRedistributed += OnPortsRedistributed;
         }
@@ -279,6 +284,44 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Returns stable identifiers for modules that currently have tracked live processes.
+        /// </summary>
+        public IReadOnlyList<RunningModuleSnapshot> GetRunningModulesSnapshot()
+        {
+            lock (_processLock)
+            {
+                var results = new List<RunningModuleSnapshot>();
+
+                foreach (var pair in _runningProcesses)
+                {
+                    var hasLiveProcess = pair.Value.Any(static process =>
+                    {
+                        try
+                        {
+                            return !process.HasExited;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    });
+
+                    if (!hasLiveProcess)
+                    {
+                        continue;
+                    }
+
+                    if (_runningModules.TryGetValue(pair.Key, out var module))
+                    {
+                        results.Add(new RunningModuleSnapshot(module.Id, module.Name, module.SourcePath));
+                    }
+                }
+
+                return results;
+            }
+        }
+
+        /// <summary>
         /// Restarts currently running modules after the shared port map changes.
         /// </summary>
         private void OnPortsRedistributed(object? sender, EventArgs e)
@@ -394,6 +437,13 @@ namespace ASLM.Services
             // Also expose some useful module context values to child processes.
             psi.Environment["ASLM_MODULE_ID"] = module.Id;
             psi.Environment["ASLM_MODULE_DIR"] = Path.GetDirectoryName(module.SourcePath) ?? "";
+
+            if (module.ModuleInterop?.IsClientEnabled == true &&
+                _interopHostState.TryGetListening(out var interopBaseUrl, out var interopPort))
+            {
+                psi.Environment["ASLM_MODULE_INTEROP_BASE_URL"] = interopBaseUrl;
+                psi.Environment["ASLM_MODULE_INTEROP_PORT"] = interopPort.ToString(CultureInfo.InvariantCulture);
+            }
         }
 
         /// <summary>

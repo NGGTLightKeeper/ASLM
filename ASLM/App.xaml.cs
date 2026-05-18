@@ -88,6 +88,9 @@ namespace ASLM
 
                 var apiServer = _services.GetService<AslmApiServer>();
                 apiServer?.Dispose();
+
+                var moduleInteropServer = _services.GetService<AslmModuleInteropServer>();
+                moduleInteropServer?.Dispose();
             }
             catch (Exception ex)
             {
