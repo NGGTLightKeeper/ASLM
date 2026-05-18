@@ -6,7 +6,9 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using ASLM.Models;
 using ASLM.Services;
+using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.ApplicationModel.DataTransfer;
+using Microsoft.Maui.Controls;
 
 namespace ASLM.Pages
 {
@@ -105,6 +107,15 @@ namespace ASLM.Pages
         private void OnLoaded(object? sender, EventArgs e)
         {
             _isVisible = true;
+            ThemeService.PaletteApplied -= OnPaletteAppliedForCopyButtons;
+            ThemeService.PaletteApplied += OnPaletteAppliedForCopyButtons;
+            if (Application.Current is { } app)
+            {
+                app.RequestedThemeChanged -= OnApplicationRequestedThemeChanged;
+                app.RequestedThemeChanged += OnApplicationRequestedThemeChanged;
+            }
+
+            RefreshHostCopyButtonChrome();
             _ = RefreshAsync();
             StartRefreshLoop();
         }
@@ -115,7 +126,31 @@ namespace ASLM.Pages
         private void OnUnloaded(object? sender, EventArgs e)
         {
             _isVisible = false;
+            ThemeService.PaletteApplied -= OnPaletteAppliedForCopyButtons;
+            if (Application.Current is { } app)
+            {
+                app.RequestedThemeChanged -= OnApplicationRequestedThemeChanged;
+            }
+
             StopRefreshLoop();
+        }
+
+        private void OnPaletteAppliedForCopyButtons()
+        {
+            MainThread.BeginInvokeOnMainThread(RefreshHostCopyButtonChrome);
+        }
+
+        private void OnApplicationRequestedThemeChanged(object? sender, AppThemeChangedEventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(RefreshHostCopyButtonChrome);
+        }
+
+        private void RefreshHostCopyButtonChrome()
+        {
+            foreach (var host in Hosts)
+            {
+                host.RefreshCopyButtonChrome();
+            }
         }
 
 
@@ -412,6 +447,8 @@ namespace ASLM.Pages
         private bool _isModuleDisabled;
         private Command? _copyCommand;
         private readonly NotificationCenter _notifications;
+        private Color _copyButtonBackground = Colors.Black;
+        private ImageSource _copyIconSource = ImageSource.FromFile("icon_copy.png");
 
         /// <summary>
         /// Creates a host row from the current service host info.
@@ -423,6 +460,7 @@ namespace ASLM.Pages
         {
             _notifications = notifications;
             Update(host, moduleState);
+            RefreshCopyButtonChrome();
         }
 
         /// <inheritdoc />
@@ -507,9 +545,53 @@ namespace ASLM.Pages
         public string ModuleStatusText => IsModuleDisabled ? "Disabled" : string.Empty;
 
         /// <summary>
+        /// Gets the solid background for the copy action (white in dark theme, black in light theme).
+        /// </summary>
+        public Color CopyButtonBackground
+        {
+            get => _copyButtonBackground;
+            private set => SetProperty(ref _copyButtonBackground, value);
+        }
+
+        /// <summary>
+        /// Gets the theme-tinted copy glyph for the current appearance.
+        /// </summary>
+        public ImageSource CopyIconSource
+        {
+            get => _copyIconSource;
+            private set => SetProperty(ref _copyIconSource, value);
+        }
+
+        /// <summary>
         /// Gets the command that copies this host URL to the system clipboard.
         /// </summary>
         public Command CopyCommand => _copyCommand ??= new Command(async () => await CopyMirrorUrlAsync());
+
+        /// <summary>
+        /// Recomputes copy-button fill and tinted icon after theme or palette changes.
+        /// </summary>
+        public void RefreshCopyButtonChrome()
+        {
+            var dark = IsAppDarkAppearance();
+            CopyButtonBackground = dark ? Color.FromArgb("#FFFFFFFF") : Color.FromArgb("#FF000000");
+            var iconTint = IconTintHelper.ResolvePaletteColor("LabelPrimary");
+            CopyIconSource = PackagedIconTintCache.Get("icon_copy.png", iconTint);
+        }
+
+        private static bool IsAppDarkAppearance()
+        {
+            if (Application.Current is not { } app)
+            {
+                return false;
+            }
+
+            return app.RequestedTheme switch
+            {
+                AppTheme.Dark => true,
+                AppTheme.Light => false,
+                _ => ThemeService.IsSystemDark()
+            };
+        }
 
         /// <summary>
         /// Copies the host URL and publishes a shared toast confirmation.

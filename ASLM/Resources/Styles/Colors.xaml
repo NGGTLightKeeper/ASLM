@@ -17,7 +17,6 @@
     <Color x:Key="SystemTeal">#64D2FF</Color>
     <Color x:Key="SystemYellow">#FFD60A</Color>
     <Color x:Key="SystemMint">#66D4CF</Color>
-    <Color x:Key="SystemCyan">#64D2FF</Color>
 
     <Color x:Key="SystemGray">#8E8E93</Color>
     <Color x:Key="SystemGray2">#636366</Color>
@@ -39,61 +38,25 @@
 
     <!-- Utility colors -->
     <Color x:Key="Separator">#38383A</Color>
-    <Color x:Key="OpaqueSeparator">#38383A</Color>
     <Color x:Key="PlaceholderText">#4DEBEBF5</Color>
     <Color x:Key="LinkColor">#0984FF</Color>
     <Color x:Key="SystemBlueOverlay">#200A84FF</Color>
 
-    <!-- Legacy aliases -->
-    <Color x:Key="Primary">#0A84FF</Color>
-    <Color x:Key="PrimaryDark">#5E5CE6</Color>
-    <Color x:Key="PrimaryDarkText">#FFFFFF</Color>
-    <Color x:Key="Secondary">#2C2C2E</Color>
-    <Color x:Key="SecondaryDarkText">#99EBEBF5</Color>
-    <Color x:Key="Tertiary">#3A3A3C</Color>
-
-    <Color x:Key="DarkBackground">#000000</Color>
-    <Color x:Key="LightOnDarkBackground">#FFFFFF</Color>
-    <Color x:Key="LightBackground">#000000</Color>
-    <Color x:Key="DarkOnLightBackground">#FFFFFF</Color>
-
-    <Color x:Key="LightSecondaryBackground">#1C1C1E</Color>
-    <Color x:Key="DarkSecondaryBackground">#1C1C1E</Color>
-
     <Color x:Key="White">#FFFFFF</Color>
     <Color x:Key="Black">#000000</Color>
-    <Color x:Key="Magenta">#FF375F</Color>
-    <Color x:Key="MidnightBlue">#FFFFFF</Color>
-    <Color x:Key="OffBlack">#1C1C1E</Color>
 
     <!-- Action colors -->
     <Color x:Key="ActionRed">#FF453A</Color>
     <Color x:Key="ActionBlue">#0A84FF</Color>
     <Color x:Key="ActionGreen">#32D74B</Color>
 
-    <!-- Neutral scale -->
-    <Color x:Key="Gray100">#EBEBF5</Color>
-    <Color x:Key="Gray200">#8E8E93</Color>
-    <Color x:Key="Gray300">#636366</Color>
-    <Color x:Key="Gray400">#48484A</Color>
-    <Color x:Key="Gray500">#3A3A3C</Color>
-    <Color x:Key="Gray600">#2C2C2E</Color>
-    <Color x:Key="Gray900">#1C1C1E</Color>
-    <Color x:Key="Gray950">#000000</Color>
+    <Color x:Key="OverlayBackground">#40000000</Color>
+
+    <!-- Error overlay -->
+    <Color x:Key="BackgroundErrorOverlay">#4C1F24</Color>
 
     <!-- Brushes -->
-    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}" />
-    <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}" />
-    <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}" />
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource ActionBlue}" />
     <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource White}" />
     <SolidColorBrush x:Key="BlackBrush" Color="{StaticResource Black}" />
-
-    <SolidColorBrush x:Key="Gray100Brush" Color="{StaticResource Gray100}" />
-    <SolidColorBrush x:Key="Gray200Brush" Color="{StaticResource Gray200}" />
-    <SolidColorBrush x:Key="Gray300Brush" Color="{StaticResource Gray300}" />
-    <SolidColorBrush x:Key="Gray400Brush" Color="{StaticResource Gray400}" />
-    <SolidColorBrush x:Key="Gray500Brush" Color="{StaticResource Gray500}" />
-    <SolidColorBrush x:Key="Gray600Brush" Color="{StaticResource Gray600}" />
-    <SolidColorBrush x:Key="Gray900Brush" Color="{StaticResource Gray900}" />
-    <SolidColorBrush x:Key="Gray950Brush" Color="{StaticResource Gray950}" />
 </ResourceDictionary>

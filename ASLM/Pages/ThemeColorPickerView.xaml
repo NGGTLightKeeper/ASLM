@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<!-- Copyright NGGT.LightKeeper. All Rights Reserved. -->
+
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ASLM.Pages.ThemeColorPickerView"
+             HorizontalOptions="Fill"
+             VerticalOptions="Fill"
+             BackgroundColor="{DynamicResource OverlayBackground}">
+
+    <ContentView.GestureRecognizers>
+        <TapGestureRecognizer Tapped="OnBackdropTapped" />
+    </ContentView.GestureRecognizers>
+
+    <Border x:Name="PickerCard"
+            WidthRequest="360"
+            HeightRequest="480"
+            HorizontalOptions="Center"
+            VerticalOptions="Center"
+            BackgroundColor="{DynamicResource BackgroundSecondary}"
+            Stroke="{DynamicResource Separator}"
+            StrokeThickness="1"
+            Padding="12"
+            StrokeShape="RoundRectangle 12">
+
+        <Border.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnCardTapped" />
+        </Border.GestureRecognizers>
+
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+              ColumnDefinitions="36,*,48,48,48"
+              RowSpacing="0"
+              ColumnSpacing="4">
+
+            <Label Grid.Row="0"
+                   Grid.ColumnSpan="5"
+                   Text="Custom color"
+                   FontSize="16"
+                   FontAttributes="Bold"
+                   TextColor="{DynamicResource LabelPrimary}"
+                   Margin="0,0,0,8" />
+
+            <Grid x:Name="HsPlaneHost"
+                  Grid.Row="1"
+                  Grid.ColumnSpan="5"
+                  HeightRequest="232"
+                  HorizontalOptions="Fill"
+                  VerticalOptions="Start"
+                  Margin="0,0,0,12">
+                <GraphicsView x:Name="HsGradient"
+                              HorizontalOptions="Fill"
+                              VerticalOptions="Fill"
+                              InputTransparent="True" />
+                <GraphicsView x:Name="HsCursor"
+                              HorizontalOptions="Fill"
+                              VerticalOptions="Fill"
+                              BackgroundColor="Transparent" />
+            </Grid>
+
+            <Label Grid.Row="2"
+                   Grid.ColumnSpan="5"
+                   Text="Brightness"
+                   FontSize="12"
+                   TextColor="{DynamicResource LabelPrimary}"
+                   VerticalOptions="End" />
+
+            <Slider x:Name="ValueSlider"
+                    Grid.Row="3"
+                    Grid.ColumnSpan="5"
+                    Minimum="0"
+                    Maximum="1"
+                    HorizontalOptions="Fill" />
+
+            <Label Grid.Row="4"
+                   Grid.ColumnSpan="5"
+                   Text="Opacity"
+                   FontSize="12"
+                   TextColor="{DynamicResource LabelPrimary}"
+                   VerticalOptions="End" />
+
+            <Slider x:Name="AlphaSlider"
+                    Grid.Row="5"
+                    Grid.ColumnSpan="5"
+                    Minimum="0"
+                    Maximum="1"
+                    HorizontalOptions="Fill"
+                    Margin="0,0,0,8" />
+
+            <Border x:Name="PreviewBorder"
+                    Grid.Row="6"
+                    Grid.Column="0"
+                    WidthRequest="32"
+                    HeightRequest="32"
+                    BackgroundColor="Transparent"
+                    StrokeThickness="1.5"
+                    Padding="0"
+                    StrokeShape="RoundRectangle 6"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center">
+                <BoxView x:Name="PreviewFill"
+                         HorizontalOptions="Fill"
+                         VerticalOptions="Fill"
+                         CornerRadius="4" />
+            </Border>
+
+            <Entry x:Name="HexEntry"
+                   Grid.Row="6"
+                   Grid.Column="1"
+                   FontSize="12"
+                   HeightRequest="32"
+                   MinimumHeightRequest="32"
+                   VerticalOptions="Center"
+                   TextColor="{DynamicResource LabelPrimary}"
+                   BackgroundColor="{DynamicResource BackgroundTertiary}"
+                   Placeholder="#AARRGGBB" />
+
+            <Entry x:Name="REntry"
+                   Grid.Row="6"
+                   Grid.Column="2"
+                   FontSize="12"
+                   HeightRequest="32"
+                   MinimumHeightRequest="32"
+                   VerticalOptions="Center"
+                   Keyboard="Numeric"
+                   MaxLength="3"
+                   HorizontalTextAlignment="Center"
+                   TextColor="{DynamicResource LabelPrimary}"
+                   BackgroundColor="{DynamicResource BackgroundTertiary}" />
+
+            <Entry x:Name="GEntry"
+                   Grid.Row="6"
+                   Grid.Column="3"
+                   FontSize="12"
+                   HeightRequest="32"
+                   MinimumHeightRequest="32"
+                   VerticalOptions="Center"
+                   Keyboard="Numeric"
+                   MaxLength="3"
+                   HorizontalTextAlignment="Center"
+                   TextColor="{DynamicResource LabelPrimary}"
+                   BackgroundColor="{DynamicResource BackgroundTertiary}" />
+
+            <Entry x:Name="BEntry"
+                   Grid.Row="6"
+                   Grid.Column="4"
+                   FontSize="12"
+                   HeightRequest="32"
+                   MinimumHeightRequest="32"
+                   VerticalOptions="Center"
+                   Keyboard="Numeric"
+                   MaxLength="3"
+                   HorizontalTextAlignment="Center"
+                   TextColor="{DynamicResource LabelPrimary}"
+                   BackgroundColor="{DynamicResource BackgroundTertiary}" />
+
+            <Grid Grid.Row="7"
+                  Grid.ColumnSpan="5"
+                  ColumnDefinitions="*,*"
+                  ColumnSpacing="10"
+                  Margin="0,8,0,0">
+                <Button x:Name="DoneButton"
+                        Grid.Column="0"
+                        Text="Done"
+                        HorizontalOptions="Fill"
+                        HeightRequest="34"
+                        CornerRadius="6"
+                        FontSize="13" />
+                <Button x:Name="CancelButton"
+                        Grid.Column="1"
+                        Text="Cancel"
+                        HorizontalOptions="Fill"
+                        HeightRequest="34"
+                        CornerRadius="6"
+                        FontSize="13" />
+            </Grid>
+        </Grid>
+    </Border>
+</ContentView>

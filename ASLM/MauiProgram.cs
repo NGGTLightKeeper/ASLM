@@ -51,6 +51,7 @@ namespace ASLM
             builder.Services.AddSingleton<ModuleConsoleStore>();
             builder.Services.AddSingleton<ProcessSnapshotReader>();
             builder.Services.AddSingleton<ProcessTracker>();
+            builder.Services.AddSingleton<ModuleThemePayloadBuilder>();
             builder.Services.AddSingleton<ModuleRunner>();
             builder.Services.AddSingleton<PortRegistry>();
             builder.Services.AddSingleton<ModuleDownloadBridge>();
@@ -64,6 +65,8 @@ namespace ASLM
             builder.Services.AddSingleton<UpdateScheduler>();
             builder.Services.AddSingleton<AslmApiServer>();
             builder.Services.AddSingleton<SettingsService>();
+            builder.Services.AddSingleton<CustomThemesStore>();
+            builder.Services.AddSingleton<ThemeService>();
 
             // Page registrations
             builder.Services.AddTransient<AppShellPage>();

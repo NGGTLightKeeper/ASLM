@@ -19,6 +19,28 @@ namespace ASLM.Pages
     // Home dashboard view
 
     /// <summary>
+    /// Reads semantic colors from the active app palette so presenter snapshots stay readable in light and dark themes.
+    /// </summary>
+    internal static class HomePaletteColors
+    {
+        public static Color LabelPrimary =>
+            Resolve("LabelPrimary", Color.FromArgb("#FF000000"));
+
+        public static Color LabelSecondary =>
+            Resolve("LabelSecondary", Color.FromArgb("#FF636366"));
+
+        private static Color Resolve(string key, Color fallback)
+        {
+            if (Application.Current?.Resources.TryGetValue(key, out var v) == true && v is Color c)
+            {
+                return c;
+            }
+
+            return fallback;
+        }
+    }
+
+    /// <summary>
     /// Displays the main ASLM dashboard with live runtime metrics, module controls, and the managed process tree.
     /// </summary>
     public partial class HomeView : ContentView, IHomeDashboardView
@@ -1731,7 +1753,7 @@ namespace ASLM.Pages
     {
         private string _key = string.Empty;
         private string _title = string.Empty;
-        private Color _titleColor = Color.FromArgb("#FFFFFFFF");
+        private Color _titleColor = HomePaletteColors.LabelPrimary;
         private FontAttributes _titleFontAttributes = FontAttributes.None;
         private string _cpuText = string.Empty;
         private string _gpuText = string.Empty;
@@ -2310,7 +2332,7 @@ namespace ASLM.Pages
                 {
                     Key = "module:aslm_internal",
                     Title = "ASLM Internal",
-                    TitleColor = Color.FromArgb("#FFFFFFFF"),
+                    TitleColor = HomePaletteColors.LabelPrimary,
                     TitleFontAttributes = FontAttributes.Bold,
                     CpuText = HomeDashboardPresenter.FormatPercent(internalUsage.CpuPercent),
                     GpuText = HomeDashboardPresenter.FormatPercentOrNa(internalUsage.GpuPercent),
@@ -2330,7 +2352,7 @@ namespace ASLM.Pages
             {
                 Key = "root:aslm",
                 Title = "ASLM",
-                TitleColor = Color.FromArgb("#FFFFFFFF"),
+                TitleColor = HomePaletteColors.LabelPrimary,
                 TitleFontAttributes = FontAttributes.Bold,
                 CpuText = HomeDashboardPresenter.FormatPercent(rootUsage.CpuPercent),
                 GpuText = HomeDashboardPresenter.FormatPercentOrNa(rootUsage.GpuPercent),
@@ -2388,7 +2410,7 @@ namespace ASLM.Pages
             {
                 Key = $"module:{moduleDiagnostics.Module.SourcePath}",
                 Title = moduleDiagnostics.Module.Name,
-                TitleColor = Color.FromArgb("#FFFFFFFF"),
+                TitleColor = HomePaletteColors.LabelPrimary,
                 TitleFontAttributes = FontAttributes.Bold,
                 CpuText = HomeDashboardPresenter.FormatPercent(moduleDiagnostics.Usage.CpuPercent),
                 GpuText = HomeDashboardPresenter.FormatPercentOrNa(moduleDiagnostics.Usage.GpuPercent),
@@ -2461,7 +2483,7 @@ namespace ASLM.Pages
                 Title = title,
                 TitleColor = isObservedService
                     ? Color.FromArgb("#FFFFD60A")
-                    : Color.FromArgb("#FFEBEBF5"),
+                    : HomePaletteColors.LabelPrimary,
                 TitleFontAttributes = FontAttributes.None,
                 CpuText = HomeDashboardPresenter.FormatPercent(process.Usage.CpuPercent),
                 GpuText = HomeDashboardPresenter.FormatPercentOrNa(process.Usage.GpuPercent),
@@ -3661,7 +3683,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Gets or sets the row title color.
         /// </summary>
-        public Color TitleColor { get; set; } = Color.FromArgb("#FFFFFFFF");
+        public Color TitleColor { get; set; } = HomePaletteColors.LabelPrimary;
 
         /// <summary>
         /// Gets or sets the title font weight.

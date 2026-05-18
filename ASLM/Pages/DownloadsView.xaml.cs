@@ -24,15 +24,16 @@ namespace ASLM.Pages
         private const double MaxDialogWidth = 1520;
         private const double MaxDialogHeight = 920;
 
-        private static readonly Color ActiveSurfaceColor = Color.FromArgb("#202733");
-        private static readonly Color ActiveBorderColor = Color.FromArgb("#2C7CF6");
-        private static readonly Color PassiveSurfaceColor = Color.FromArgb("#1F1F22");
-        private static readonly Color PassiveListSurfaceColor = Color.FromArgb("#1B1B1E");
-        private static readonly Color PassiveBorderColor = Color.FromArgb("#343438");
-        private static readonly Color ActiveTextColor = Colors.White;
-        private static readonly Color InactiveTextColor = Color.FromArgb("#E6E6EA");
-        private static readonly Color SecondaryTextColor = Color.FromArgb("#99EBEBF5");
-        private static readonly Color ActiveSubtitleColor = Color.FromArgb("#E7F1FF");
+        // Download item colors read from the active theme palette so they update with theme changes.
+        private static Color ActiveSurfaceColor => GetColorResource("BackgroundTertiary", Color.FromArgb("#202733"));
+        private static Color ActiveBorderColor => GetColorResource("ActionBlue", Color.FromArgb("#2C7CF6"));
+        private static Color PassiveSurfaceColor => GetColorResource("BackgroundSecondary", Color.FromArgb("#1F1F22"));
+        private static Color PassiveListSurfaceColor => GetColorResource("BackgroundPrimary", Color.FromArgb("#1B1B1E"));
+        private static Color PassiveBorderColor => GetColorResource("Separator", Color.FromArgb("#343438"));
+        private static Color ActiveTextColor => GetColorResource("LabelPrimary", Colors.White);
+        private static Color InactiveTextColor => GetColorResource("LabelPrimary", Color.FromArgb("#E6E6EA"));
+        private static Color SecondaryTextColor => GetColorResource("LabelSecondary", Color.FromArgb("#99EBEBF5"));
+        private static Color ActiveSubtitleColor => GetColorResource("LinkColor", Color.FromArgb("#E7F1FF"));
         private readonly DownloadCatalog _catalog;
         private readonly DownloadInstaller _installer;
         private CancellationTokenSource? _catalogRefreshCts;
@@ -2041,5 +2042,13 @@ namespace ASLM.Pages
                 return candidate ?? string.Empty;
             }
         }
+
+        /// <summary>
+        /// Finds a named color resource with a defensive fallback when the key is absent.
+        /// </summary>
+        private static Color GetColorResource(string key, Color fallback) =>
+            Application.Current?.Resources.TryGetValue(key, out var value) == true && value is Color c
+                ? c
+                : fallback;
     }
 }

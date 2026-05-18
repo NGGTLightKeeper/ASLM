@@ -142,33 +142,38 @@ namespace ASLM.Pages
                 {
                     Text = $"Failed to load module list: {ex.Message}",
                     FontSize = 14,
-                    TextColor = Color.FromArgb("#FF453A")
+                    TextColor = GetColorResource("ActionRed", Color.FromArgb("#FF453A"))
                 });
                 return;
             }
 
             foreach (var module in modules)
             {
-                var check = new CheckBox { IsChecked = true, Color = Colors.White };
+                var check = new CheckBox { IsChecked = true };
+                check.SetDynamicResource(CheckBox.ColorProperty, "LabelPrimary");
                 var row = new HorizontalStackLayout { Spacing = 10 };
 
-                row.Children.Add(check);
-                row.Children.Add(new Label
+                var nameLabel = new Label
                 {
                     Text = module.Version.All(c => char.IsDigit(c) || c == '.')
                         ? $"{module.Name} v{module.Version}"
                         : $"{module.Name} {module.Version}",
                     FontSize = 14,
-                    TextColor = Colors.White,
                     VerticalOptions = LayoutOptions.Center
-                });
-                row.Children.Add(new Label
+                };
+                nameLabel.SetDynamicResource(Label.TextColorProperty, "LabelPrimary");
+
+                var descLabel = new Label
                 {
                     Text = module.Description,
                     FontSize = 12,
-                    TextColor = Color.FromArgb("#8E8E93"),
                     VerticalOptions = LayoutOptions.Center
-                });
+                };
+                descLabel.SetDynamicResource(Label.TextColorProperty, "SystemGray");
+
+                row.Children.Add(check);
+                row.Children.Add(nameLabel);
+                row.Children.Add(descLabel);
 
                 ModuleList.Children.Add(row);
                 _moduleChecks.Add((module, check));
@@ -176,12 +181,13 @@ namespace ASLM.Pages
 
             if (modules.Count == 0)
             {
-                ModuleList.Children.Add(new Label
+                var emptyLabel = new Label
                 {
                     Text = "No modules found in Modules/ directory.",
-                    FontSize = 14,
-                    TextColor = Color.FromArgb("#8E8E93")
-                });
+                    FontSize = 14
+                };
+                emptyLabel.SetDynamicResource(Label.TextColorProperty, "SystemGray");
+                ModuleList.Children.Add(emptyLabel);
             }
         }
 
@@ -547,8 +553,8 @@ namespace ASLM.Pages
             BackButton.Clicked -= OnBackClicked;
             BackButton.Clicked += OnBackClicked;
 
-            NextButton.BackgroundColor = Color.FromArgb("#007AFF");
-            BackButton.BackgroundColor = Color.FromArgb("#3A3A3C");
+            NextButton.BackgroundColor = GetColorResource("ActionBlue", Color.FromArgb("#007AFF"));
+            BackButton.BackgroundColor = GetColorResource("BackgroundTertiary", Color.FromArgb("#3A3A3C"));
             BackButton.Text = "Back";
         }
 
@@ -838,6 +844,14 @@ namespace ASLM.Pages
         /// <summary>
         /// Reports progress synchronously on the producer thread so UI updates can be throttled explicitly.
         /// </summary>
+        /// <summary>
+        /// Finds a named color resource with a defensive fallback when the key is absent.
+        /// </summary>
+        private static Color GetColorResource(string key, Color fallback) =>
+            Application.Current?.Resources.TryGetValue(key, out var value) == true && value is Color c
+                ? c
+                : fallback;
+
         private sealed class InlineProgress<T>(Action<T> handler) : IProgress<T>
         {
             public void Report(T value)

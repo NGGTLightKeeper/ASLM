@@ -3,7 +3,7 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ASLM.Pages.DownloadsView"
-             BackgroundColor="#40000000">
+             BackgroundColor="{DynamicResource OverlayBackground}">
     <ContentView.GestureRecognizers>
         <TapGestureRecognizer Tapped="OnBackgroundTapped" />
     </ContentView.GestureRecognizers>
@@ -13,8 +13,8 @@
             HeightRequest="720"
             HorizontalOptions="Center"
             VerticalOptions="Center"
-            BackgroundColor="{StaticResource BackgroundSecondary}"
-            Stroke="{StaticResource Separator}"
+            BackgroundColor="{DynamicResource BackgroundSecondary}"
+            Stroke="{DynamicResource Separator}"
             StrokeThickness="1"
             Padding="0"
             StrokeShape="RoundRectangle 12">
@@ -28,7 +28,7 @@
               Padding="0">
 
             <Border Grid.Column="0"
-                    BackgroundColor="#18181A"
+                    BackgroundColor="{DynamicResource BackgroundSecondary}"
                     StrokeThickness="0"
                     Padding="8">
                 <Grid RowDefinitions="Auto,*"
@@ -37,10 +37,10 @@
                         <Label Text="Download"
                                FontSize="16"
                                FontAttributes="Bold"
-                               TextColor="{StaticResource LabelPrimary}" />
+                               TextColor="{DynamicResource LabelPrimary}" />
                         <Label Text="{Binding CategoryCountLabel}"
                                FontSize="13"
-                               TextColor="{StaticResource LabelSecondary}" />
+                               TextColor="{DynamicResource LabelSecondary}" />
                     </VerticalStackLayout>
 
                     <CollectionView Grid.Row="1"
@@ -90,11 +90,11 @@
             <BoxView Grid.Column="0"
                      HorizontalOptions="End"
                      WidthRequest="1"
-                     Color="{StaticResource Separator}"
+                     Color="{DynamicResource Separator}"
                      Opacity="0.45" />
 
             <Border Grid.Column="1"
-                    BackgroundColor="#161618"
+                    BackgroundColor="{DynamicResource BackgroundTertiary}"
                     StrokeThickness="0"
                     Padding="8">
                 <Grid RowDefinitions="Auto,Auto,Auto,*"
@@ -103,15 +103,15 @@
                         <Label Text="{Binding ActiveCategoryTitle}"
                                FontSize="16"
                                FontAttributes="Bold"
-                               TextColor="{StaticResource LabelPrimary}" />
+                               TextColor="{DynamicResource LabelPrimary}" />
                         <Label Text="{Binding ActiveCategoryItemCountLabel}"
                                FontSize="13"
-                               TextColor="{StaticResource LabelSecondary}" />
+                               TextColor="{DynamicResource LabelSecondary}" />
                     </VerticalStackLayout>
 
                     <Border Grid.Row="1"
-                            BackgroundColor="#19191C"
-                            Stroke="{StaticResource Separator}"
+                            BackgroundColor="{DynamicResource BackgroundSecondary}"
+                            Stroke="{DynamicResource Separator}"
                             StrokeThickness="1"
                             StrokeShape="RoundRectangle 6"
                             Padding="8,0"
@@ -126,8 +126,8 @@
                                TextChanged="OnSearchTextChanged"
                                HandlerChanged="OnSearchEntryHandlerChanged"
                                BackgroundColor="Transparent"
-                               TextColor="{StaticResource LabelPrimary}"
-                               PlaceholderColor="{StaticResource LabelSecondary}" />
+                               TextColor="{DynamicResource LabelPrimary}"
+                               PlaceholderColor="{DynamicResource LabelSecondary}" />
                     </Border>
 
                     <ScrollView Grid.Row="2"
@@ -202,14 +202,14 @@
                                             <Label Text="{Binding Summary}"
                                                    IsVisible="{Binding HasSummary}"
                                                    FontSize="13"
-                                                   TextColor="{StaticResource LabelSecondary}"
+                                                   TextColor="{DynamicResource LabelSecondary}"
                                                    MaxLines="2"
                                                    LineBreakMode="TailTruncation" />
 
                                             <Label Text="{Binding MetadataLine}"
                                                    IsVisible="{Binding HasMetadata}"
                                                    FontSize="12"
-                                                   TextColor="{StaticResource LabelSecondary}"
+                                                   TextColor="{DynamicResource LabelSecondary}"
                                                    MaxLines="1"
                                                    LineBreakMode="TailTruncation" />
                                         </VerticalStackLayout>
@@ -226,11 +226,11 @@
                             <Label Text="No items"
                                    FontSize="17"
                                    FontAttributes="Bold"
-                                   TextColor="{StaticResource LabelPrimary}"
+                                   TextColor="{DynamicResource LabelPrimary}"
                                    HorizontalOptions="Center" />
                             <Label Text="{Binding ItemListEmptyMessage}"
                                    FontSize="13"
-                                   TextColor="{StaticResource LabelSecondary}"
+                                   TextColor="{DynamicResource LabelSecondary}"
                                    HorizontalTextAlignment="Center" />
                         </VerticalStackLayout>
                     </Grid>
@@ -240,7 +240,7 @@
             <BoxView Grid.Column="1"
                      HorizontalOptions="End"
                      WidthRequest="1"
-                     Color="{StaticResource Separator}"
+                     Color="{DynamicResource Separator}"
                      Opacity="0.45" />
 
             <Grid Grid.Column="2"
@@ -257,10 +257,10 @@
                                HeightRequest="21"
                                MinimumHeightRequest="21"
                                FontAttributes="Bold"
-                               TextColor="{StaticResource LabelPrimary}" />
+                               TextColor="{DynamicResource LabelPrimary}" />
                         <Label Text="{Binding StatusText}"
                                FontSize="13"
-                               TextColor="{StaticResource LabelSecondary}"
+                               TextColor="{DynamicResource LabelSecondary}"
                                MaxLines="1"
                                LineBreakMode="TailTruncation" />
                     </VerticalStackLayout>
@@ -269,7 +269,7 @@
                                        IsVisible="{Binding IsBusy}"
                                        IsRunning="{Binding IsBusy}"
                                        VerticalOptions="Center"
-                                       Color="{StaticResource LabelPrimary}"
+                                       Color="{DynamicResource LabelPrimary}"
                                        WidthRequest="24"
                                        HeightRequest="24"/>
 
@@ -279,8 +279,8 @@
                             MinimumHeightRequest="36"
                             CornerRadius="6"
                             Padding="8,0"
-                            BackgroundColor="{StaticResource ActionBlue}"
-                            TextColor="{StaticResource LabelPrimary}"
+                            BackgroundColor="{DynamicResource ActionBlue}"
+                            TextColor="{DynamicResource White}"
                             FontSize="13"
                             Clicked="OnRefreshClicked" />
 
@@ -293,7 +293,7 @@
                             MinimumHeightRequest="36"
                             Padding="0"
                             BackgroundColor="Transparent"
-                            TextColor="{StaticResource LabelSecondary}"
+                            TextColor="{DynamicResource LabelSecondary}"
                             CornerRadius="6"
                             Clicked="OnCloseClicked" />
                 </Grid>
@@ -305,8 +305,8 @@
                             <VerticalStackLayout Spacing="8"
                                                  Padding="0">
                                 <Border IsVisible="{Binding HasSelectedItem}"
-                                        BackgroundColor="{StaticResource BackgroundTertiary}"
-                                        Stroke="{StaticResource Separator}"
+                                        BackgroundColor="{DynamicResource BackgroundTertiary}"
+                                        Stroke="{DynamicResource Separator}"
                                         StrokeThickness="1"
                                         StrokeShape="RoundRectangle 6"
                                         Padding="12">
@@ -314,7 +314,7 @@
                                         <Label Text="{Binding SelectedItemTitle}"
                                                FontSize="16"
                                                FontAttributes="Bold"
-                                               TextColor="{StaticResource LabelPrimary}"
+                                               TextColor="{DynamicResource LabelPrimary}"
                                                MaxLines="1"
                                                LineBreakMode="TailTruncation"
                                                HeightRequest="21"
@@ -323,26 +323,26 @@
                                         <Label Text="{Binding SelectedItemSummary}"
                                                IsVisible="{Binding HasSelectedItemSummary}"
                                                FontSize="12"
-                                               TextColor="{StaticResource LabelSecondary}"
+                                               TextColor="{DynamicResource LabelSecondary}"
                                                MaxLines="3"
                                                LineBreakMode="TailTruncation" />
                                         <Label Text="{Binding SelectedItemMetadataLine}"
                                                IsVisible="{Binding HasSelectedItemMetadata}"
                                                FontSize="12"
-                                               TextColor="{StaticResource LabelSecondary}"
+                                               TextColor="{DynamicResource LabelSecondary}"
                                                MaxLines="1"
                                                LineBreakMode="TailTruncation" />
                                         <Label Text="{Binding SelectedItemTagsLine}"
                                                IsVisible="{Binding HasSelectedItemTags}"
                                                FontSize="11"
-                                               TextColor="{StaticResource LabelSecondary}"
+                                               TextColor="{DynamicResource LabelSecondary}"
                                                MaxLines="1"
                                                LineBreakMode="TailTruncation" />
                                     </VerticalStackLayout>
                                 </Border>
 
-                                <Border BackgroundColor="{StaticResource BackgroundTertiary}"
-                                        Stroke="{StaticResource Separator}"
+                                <Border BackgroundColor="{DynamicResource BackgroundTertiary}"
+                                        Stroke="{DynamicResource Separator}"
                                         StrokeThickness="1"
                                         StrokeShape="RoundRectangle 8"
                                         Padding="8"
@@ -354,19 +354,19 @@
                                             <VerticalStackLayout Spacing="2">
                                                 <Label Text="Variant"
                                                        FontSize="13"
-                                                       TextColor="{StaticResource LabelSecondary}" />
+                                                       TextColor="{DynamicResource LabelSecondary}" />
                                                 <Label Text="{Binding SelectedVariantTitle}"
                                                        FontSize="15"
                                                        FontAttributes="Bold"
-                                                       TextColor="{StaticResource LabelPrimary}"
+                                                       TextColor="{DynamicResource LabelPrimary}"
                                                        MaxLines="1"
                                                        LineBreakMode="TailTruncation" />
                                             </VerticalStackLayout>
 
                                             <Border Grid.Column="1"
                                                     IsVisible="{Binding ShowSelectedVariantInstalledBadge}"
-                                                    BackgroundColor="{StaticResource SystemBlueOverlay}"
-                                                    Stroke="{StaticResource ActionBlue}"
+                                                    BackgroundColor="{DynamicResource SystemBlueOverlay}"
+                                                    Stroke="{DynamicResource ActionBlue}"
                                                     StrokeThickness="1"
                                                     StrokeShape="RoundRectangle 6"
                                                     Padding="8"
@@ -375,7 +375,7 @@
                                                     MinimumHeightRequest="36">
                                                 <Label Text="{Binding SelectedVariantInstalledLabel}"
                                                        FontSize="12"
-                                                       TextColor="{StaticResource LabelPrimary}"
+                                                       TextColor="{DynamicResource LabelPrimary}"
                                                        VerticalTextAlignment="Center"/>
                                             </Border>
 
@@ -386,8 +386,8 @@
                                                     MinimumHeightRequest="36"
                                                     CornerRadius="6"
                                                     Padding="8,0"
-                                                    BackgroundColor="{StaticResource ActionBlue}"
-                                                    TextColor="{StaticResource LabelPrimary}"
+                                                    BackgroundColor="{DynamicResource ActionBlue}"
+                                                    TextColor="{DynamicResource White}"
                                                     FontSize="12"
                                                     Clicked="OnInstallClicked" />
 
@@ -398,8 +398,8 @@
                                                     MinimumHeightRequest="36"
                                                     CornerRadius="6"
                                                     Padding="8,0"
-                                                    BackgroundColor="{StaticResource BackgroundSecondary}"
-                                                    TextColor="{StaticResource LabelPrimary}"
+                                                    BackgroundColor="{DynamicResource BackgroundSecondary}"
+                                                    TextColor="{DynamicResource LabelPrimary}"
                                                     FontSize="12"
                                                     Clicked="OnOpenClicked" />
 
@@ -410,8 +410,8 @@
                                                     MinimumHeightRequest="36"
                                                     CornerRadius="6"
                                                     Padding="8,0"
-                                                    BackgroundColor="#4C1F24"
-                                                    TextColor="{StaticResource LabelPrimary}"
+                                                    BackgroundColor="{DynamicResource BackgroundErrorOverlay}"
+                                                    TextColor="{DynamicResource LabelPrimary}"
                                                     FontSize="12"
                                                     Clicked="OnDeleteClicked" />
                                         </Grid>
@@ -420,7 +420,7 @@
                                                Text="{Binding SelectedVariantMetadataLine}"
                                                IsVisible="{Binding HasSelectedVariantMetadata}"
                                                FontSize="11"
-                                               TextColor="{StaticResource LabelSecondary}"
+                                               TextColor="{DynamicResource LabelSecondary}"
                                                MaxLines="1"
                                                LineBreakMode="TailTruncation" />
 
@@ -465,29 +465,29 @@
                                                                 <Label Text="{Binding SelectorDetailLine}"
                                                                        IsVisible="{Binding HasSelectorDetailLine}"
                                                                        FontSize="12"
-                                                                       TextColor="{StaticResource LabelSecondary}"
+                                                                       TextColor="{DynamicResource LabelSecondary}"
                                                                        MaxLines="1"
                                                                        LineBreakMode="TailTruncation" />
                                                             </VerticalStackLayout>
 
                                                             <Border Grid.Column="2"
                                                                     IsVisible="{Binding ShowInstalledBadge}"
-                                                                    BackgroundColor="{StaticResource SystemBlueOverlay}"
-                                                                    Stroke="{StaticResource ActionBlue}"
+                                                                    BackgroundColor="{DynamicResource SystemBlueOverlay}"
+                                                                    Stroke="{DynamicResource ActionBlue}"
                                                                     StrokeThickness="1"
                                                                     StrokeShape="RoundRectangle 6"
                                                                     Padding="8"
                                                                     VerticalOptions="Center">
                                                                 <Label Text="{Binding InstalledLabel}"
                                                                        FontSize="12"
-                                                                       TextColor="{StaticResource LabelPrimary}" />
+                                                                       TextColor="{DynamicResource LabelPrimary}" />
                                                             </Border>
 
                                                             <Label Grid.Column="3"
                                                                    Text="{Binding SizeLabel}"
                                                                    IsVisible="{Binding HasSizeLabel}"
                                                                    FontSize="12"
-                                                                   TextColor="{StaticResource LabelSecondary}"
+                                                                   TextColor="{DynamicResource LabelSecondary}"
                                                                    VerticalOptions="Center"
                                                                    HorizontalTextAlignment="End" />
                                                         </Grid>
@@ -503,7 +503,7 @@
                                     <Label Text="{Binding SelectedInfoBlockTitle}"
                                            FontSize="14"
                                            FontAttributes="Bold"
-                                           TextColor="{StaticResource LabelPrimary}"
+                                           TextColor="{DynamicResource LabelPrimary}"
                                            VerticalOptions="Center" />
 
                                     <ScrollView Orientation="Vertical"
@@ -539,20 +539,20 @@
                                     </ScrollView>
 
                                     <Border IsVisible="{Binding HasSelectedInfoBlockText}"
-                                            BackgroundColor="{StaticResource BackgroundTertiary}"
-                                            Stroke="{StaticResource Separator}"
+                                            BackgroundColor="{DynamicResource BackgroundTertiary}"
+                                            Stroke="{DynamicResource Separator}"
                                             StrokeThickness="1"
                                             StrokeShape="RoundRectangle 8"
                                             Padding="14">
                                         <Label Text="{Binding SelectedInfoBlockText}"
                                                FontSize="12"
-                                               TextColor="{StaticResource LabelSecondary}"
+                                               TextColor="{DynamicResource LabelSecondary}"
                                                LineBreakMode="WordWrap" />
                                     </Border>
 
                                     <Border IsVisible="{Binding HasSelectedInfoBlockWebContent}"
-                                            BackgroundColor="{StaticResource BackgroundTertiary}"
-                                            Stroke="{StaticResource Separator}"
+                                            BackgroundColor="{DynamicResource BackgroundTertiary}"
+                                            Stroke="{DynamicResource Separator}"
                                             StrokeThickness="1"
                                             StrokeShape="RoundRectangle 6"
                                             Padding="0">
@@ -577,11 +577,11 @@
                         <Label Text="Select an item"
                                FontSize="16"
                                FontAttributes="Bold"
-                               TextColor="{StaticResource LabelPrimary}"
+                               TextColor="{DynamicResource LabelPrimary}"
                                HorizontalOptions="Center" />
                         <Label Text="{Binding DetailEmptyMessage}"
                                FontSize="14"
-                               TextColor="{StaticResource LabelSecondary}"
+                               TextColor="{DynamicResource LabelSecondary}"
                                HorizontalTextAlignment="Center" />
                     </VerticalStackLayout>
                 </Grid>

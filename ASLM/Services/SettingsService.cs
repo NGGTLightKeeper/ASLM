@@ -24,7 +24,8 @@ namespace ASLM.Services
         AslmProfile,
         Updates,
         Ollama,
-        Module
+        Module,
+        Personalization
     }
 
     /// <summary>
@@ -162,6 +163,13 @@ namespace ASLM.Services
                     "Display name used by ASLM and shared with modules.",
                     SettingsCategoryKind.AslmProfile,
                     null,
+                    false),
+                new(
+                    "aslm-personalization",
+                    "Personalization",
+                    "Theme mode and custom theme settings.",
+                    SettingsCategoryKind.Personalization,
+                    null,
                     false)
             };
 
@@ -275,6 +283,10 @@ namespace ASLM.Services
         /// <summary>
         /// Builds the save confirmation message, including deferred runtime updates when present.
         /// </summary>
+        /// <param name="hasAslmChanges">
+        /// True when built-in ASLM settings (account, ports, consoles, updates) or personalization
+        /// (appearance, custom themes) were persisted in this save operation.
+        /// </param>
         public static string BuildSaveMessage(bool hasAslmChanges, bool hasModuleChanges, List<string> deferredSettings)
         {
             if (!hasAslmChanges && !hasModuleChanges)
@@ -552,7 +564,8 @@ namespace ASLM.Services
         /// Filters out settings that should never be shown in the UI editor.
         /// </summary>
         public static bool ShouldDisplaySetting(ModuleSetting setting) =>
-            !string.Equals(setting.NormalizedType, "port", StringComparison.OrdinalIgnoreCase);
+            !string.Equals(setting.NormalizedType, "port", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Evaluates whether a setting should currently be visible based on its controlling toggle.

@@ -26,6 +26,9 @@ namespace ASLM.Pages
         private static readonly TimeSpan OllamaSignInPollInterval = TimeSpan.FromSeconds(3);
         private static readonly TimeSpan OllamaSignInPollDuration = TimeSpan.FromMinutes(5);
 
+        /// <summary>Keeps picker fields from stretching across the whole settings pane.</summary>
+        private const double PersonalizationPickerMaxWidth = 256;
+
         private const string FooterButtonStyleKey = "SettingsFooterButtonStyle";
         private const string FooterPrimaryButtonStyleKey = "SettingsFooterPrimaryButtonStyle";
         private const string FooterDangerButtonStyleKey = "SettingsFooterDangerButtonStyle";
@@ -51,6 +54,8 @@ namespace ASLM.Pages
         private readonly UpdateManager _updateManager;
         private readonly AslmApiServer _apiServer;
         private readonly NotificationCenter _notifications;
+        private readonly ThemeService _themeService;
+        private readonly CustomThemesStore _customThemesStore;
         private readonly List<SettingControlMapping> _settingMappings = [];
         private readonly Dictionary<string, SettingBaseline> _settingBaselines = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Border> _categoryButtons = new(StringComparer.OrdinalIgnoreCase);
@@ -97,6 +102,16 @@ namespace ASLM.Pages
         private bool _settingsReconcileTimerStarted;
         private bool _settingsReconcileTimerStopRequested;
 
+        // Personalization drafts
+        private AppPersonalizationConfig _personalizationDraft = new();
+        private AppPersonalizationConfig _personalizationBaseline = new();
+        private CustomTheme? _editingThemeDraft;
+        private Picker? _appearancePicker;
+        private VerticalStackLayout? _customThemeSection;
+        private Picker? _customThemePicker;
+        private VerticalStackLayout? _themeEditorSection;
+        private bool _suppressCustomThemePickerEvents;
+
         /// <summary>
         /// Raised when the user asks to close the settings overlay.
         /// </summary>
@@ -118,9 +133,10 @@ namespace ASLM.Pages
         /// </summary>
         private sealed class CompactToggle
         {
-            private static readonly Color ToggleOnColor = Color.FromArgb("#0A84FF");
-            private static readonly Color ToggleOffColor = Color.FromArgb("#3A3A3C");
-            private static readonly Color ToggleThumbColor = Colors.White;
+            // Toggle colors read from the active palette so they respond to theme changes.
+            private static Color ToggleOnColor => Application.Current?.Resources.TryGetValue("ActionBlue", out var v) == true && v is Color c ? c : Color.FromArgb("#0A84FF");
+            private static Color ToggleOffColor => Application.Current?.Resources.TryGetValue("BackgroundTertiary", out var v) == true && v is Color c ? c : Color.FromArgb("#3A3A3C");
+            private static Color ToggleThumbColor => Application.Current?.Resources.TryGetValue("LabelPrimary", out var v) == true && v is Color c ? c : Colors.White;
             private const double TrackWidth = 36;
             private const double TrackHeight = 20;
             private const double ThumbSize = 16;
@@ -332,7 +348,9 @@ namespace ASLM.Pages
             OllamaSettingsStore ollamaSettings,
             UpdateManager updateManager,
             AslmApiServer apiServer,
-            NotificationCenter notifications)
+            NotificationCenter notifications,
+            ThemeService themeService,
+            CustomThemesStore customThemesStore)
         {
             _appData = appData;
             _settingsService = settingsService;
@@ -340,6 +358,8 @@ namespace ASLM.Pages
             _updateManager = updateManager;
             _apiServer = apiServer;
             _notifications = notifications;
+            _themeService = themeService;
+            _customThemesStore = customThemesStore;
             InitializeComponent();
             ApplyFlatEntryStyle(UsernameEntry);
             ApplyFlatEntryStyle(OfficialPortEntry);
@@ -416,6 +436,7 @@ namespace ASLM.Pages
             var previousCategoryId = _activeCategory?.Id;
 
             LoadAslmDraftsFromAppData();
+            LoadPersonalizationDraftsFromAppData();
             await Task.Run(LoadOllamaDraftsFromService);
             await LoadModuleDraftsAsync(reloadModules: true, reloadRuntimeValues: false);
 
@@ -502,6 +523,24 @@ namespace ASLM.Pages
             Math.Max(min, Math.Min(max, value));
 
         // Loading helpers
+
+        /// <summary>
+        /// Copies the persisted personalization settings into the editable page draft.
+        /// </summary>
+        private void LoadPersonalizationDraftsFromAppData()
+        {
+            var stored = _appData.Data.Personalization;
+            _personalizationDraft = new AppPersonalizationConfig
+            {
+                Appearance = AppPersonalizationConfig.NormalizeAppearance(stored.Appearance),
+                CustomThemeId = stored.CustomThemeId
+            };
+            _personalizationBaseline = new AppPersonalizationConfig
+            {
+                Appearance = _personalizationDraft.Appearance,
+                CustomThemeId = _personalizationDraft.CustomThemeId
+            };
+        }
 
         /// <summary>
         /// Copies the persisted shared settings into the editable page draft.
@@ -680,6 +719,15 @@ namespace ASLM.Pages
                     return;
                 }
 
+                var leavingPersonalization =
+                    _activeCategory?.Kind == SettingsCategoryKind.Personalization &&
+                    resolvedCategory.Kind != SettingsCategoryKind.Personalization;
+
+                if (leavingPersonalization)
+                {
+                    _themeService.ApplyFromSettings();
+                }
+
                 ActivateCategory(resolvedCategory);
             }
             finally
@@ -713,6 +761,9 @@ namespace ASLM.Pages
                 case SettingsCategoryKind.Module:
                     RenderModuleCategory(category.Module!);
                     _ = RefreshActiveModuleRuntimeValuesAsync(category);
+                    break;
+                case SettingsCategoryKind.Personalization:
+                    RenderPersonalizationCategory();
                     break;
             }
 
@@ -816,6 +867,21 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Reapplies category selector colors and footer action button styles after the palette is rewritten
+        /// (preview or apply). Selector rows use explicit <see cref="Color"/> values; footer buttons reuse keyed
+        /// <see cref="Style"/> instances, so <see cref="ApplyActionButtonState"/> must run again for
+        /// <see cref="DynamicResource"/> bindings to pick up updated resource entries.
+        /// </summary>
+        private void RefreshCategorySelectorChromeFromResources()
+        {
+            UpdateSelectorButtonStates();
+            if (_hasLoaded)
+            {
+                UpdateActionButtons();
+            }
+        }
+
+        /// <summary>
         /// Applies the selected visual state to one selector button.
         /// </summary>
         private static void ApplySelectorButtonState(Border button, bool isActive)
@@ -823,13 +889,13 @@ namespace ASLM.Pages
             if (button.Content is Label label)
             {
                 label.TextColor = isActive
-                    ? Colors.White
+                    ? GetColorResource("LabelPrimary", Colors.White)
                     : GetColorResource("LabelSecondary", Color.FromArgb("#99EBEBF5"));
                 label.FontAttributes = FontAttributes.None;
             }
 
             button.BackgroundColor = isActive
-                ? GetColorResource("ActionBlue", Color.FromArgb("#0A84FF"))
+                ? GetColorResource("BackgroundTertiary", Color.FromArgb("#FF2C2C2E"))
                 : Colors.Transparent;
             button.Opacity = isActive ? 1.0 : 0.92;
         }
@@ -947,17 +1013,17 @@ namespace ASLM.Pages
                 return;
             }
 
-            var canShowRestart = hasChanges && HasPendingRestartChanges();
+            var canShowRestart = hasChanges &&
+                (HasPendingRestartChanges() || HasUnsavedPersonalizationChanges());
 
-            SaveAndRestartButton.IsVisible = canShowRestart;
             SaveAndRestartButton.IsEnabled = canInteract && canShowRestart;
             SaveAndRestartButton.Text = "Save and restart";
 
             SaveButton.IsVisible = hasChanges;
-            SaveAndRestartButton.IsVisible = hasChanges && canShowRestart;
+            SaveAndRestartButton.IsVisible = canShowRestart;
 
-            var highlightRestart = hasChanges && canShowRestart;
-            var highlightSave = hasChanges && !canShowRestart;
+            var highlightRestart = canShowRestart;
+            var highlightSave = hasChanges && !highlightRestart;
 
             ApplyActionButtonState(SaveButton, highlightSave);
             ApplyActionButtonState(SaveAndRestartButton, highlightRestart);
@@ -1008,11 +1074,25 @@ namespace ASLM.Pages
         private static void ApplyActionButtonState(Button button, bool isPrimary, bool isDanger = false)
         {
             button.BorderWidth = 0;
-            button.Style = GetStyleResource(isDanger
+            var key = isDanger
                 ? FooterDangerButtonStyleKey
                 : isPrimary
                     ? FooterPrimaryButtonStyleKey
-                    : FooterButtonStyleKey);
+                    : FooterButtonStyleKey;
+            var style = GetStyleResource(key);
+            if (style == null)
+            {
+                return;
+            }
+
+            // Reassigning the same Style instance is often a no-op; clearing first forces DynamicResource setters to rebind
+            // after Application.Resources palette updates (theme preview, custom colors).
+            if (ReferenceEquals(button.Style, style))
+            {
+                button.Style = null;
+            }
+
+            button.Style = style;
         }
 
         // Rendering
@@ -1684,6 +1764,12 @@ namespace ASLM.Pages
                 return;
             }
 
+            if (_activeCategory.Kind == SettingsCategoryKind.Personalization)
+            {
+                // Personalization drafts are updated in-place by picker/toggle event handlers.
+                return;
+            }
+
             SyncAslmDraftValuesFromControls();
             SyncBuiltInDraftValuesFromControls();
         }
@@ -1781,9 +1867,12 @@ namespace ASLM.Pages
             }
 
             LoadAslmDraftsFromAppData();
+            LoadPersonalizationDraftsFromAppData();
             LoadOllamaDraftsFromService();
             await LoadModuleDraftsAsync(reloadModules: false, reloadRuntimeValues: true);
             _categories = _settingsService.CreateOrderedCategories(_loadedModules);
+
+            _themeService.ApplyFromSettings();
 
             return true;
         }
@@ -1805,6 +1894,7 @@ namespace ASLM.Pages
                 SettingsCategoryKind.Updates => HasUnsavedUpdateChanges(),
                 SettingsCategoryKind.Ollama => false,
                 SettingsCategoryKind.Module => HasUnsavedModuleChanges(),
+                SettingsCategoryKind.Personalization => HasUnsavedPersonalizationChanges(),
                 _ => false
             };
         }
@@ -1815,7 +1905,52 @@ namespace ASLM.Pages
         private bool HasAnyUnsavedChanges() =>
             HasUnsavedAccountChanges() ||
             HasUnsavedAslmSettingsChanges() ||
+            HasUnsavedPersonalizationChanges() ||
             _loadedModules.Any(m => _settingsService.ModuleHasChangesComparedToBaseline(m, _settingBaselines));
+
+        /// <summary>
+        /// Determines whether the personalization draft differs from the saved baseline.
+        /// </summary>
+        private bool HasUnsavedPersonalizationChanges() =>
+            !string.Equals(_personalizationDraft.Appearance, _personalizationBaseline.Appearance, StringComparison.Ordinal) ||
+            !string.Equals(_personalizationDraft.CustomThemeId, _personalizationBaseline.CustomThemeId, StringComparison.Ordinal) ||
+            HasUnsavedThemeColorChanges();
+
+        private bool HasUnsavedThemeColorChanges()
+        {
+            if (_editingThemeDraft == null)
+            {
+                return false;
+            }
+
+            var saved = _customThemesStore.FindById(_editingThemeDraft.Id);
+            if (saved == null)
+            {
+                // New unsaved theme
+                return true;
+            }
+
+            if (!string.Equals(_editingThemeDraft.Name, saved.Name, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (!string.Equals(_editingThemeDraft.BaseAppearance, saved.BaseAppearance, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            foreach (var (key, value) in _editingThemeDraft.Colors)
+            {
+                if (!saved.Colors.TryGetValue(key, out var savedValue) ||
+                    !string.Equals(value, savedValue, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return saved.Colors.Count != _editingThemeDraft.Colors.Count;
+        }
 
         /// <summary>
         /// Determines whether the account display name differs from the saved baseline.
@@ -2052,6 +2187,11 @@ namespace ASLM.Pages
                     SettingsService.ResetModuleToDefaults(_activeCategory.Module!);
                     RenderModuleCategory(_activeCategory.Module!);
                     break;
+                case SettingsCategoryKind.Personalization:
+                    _personalizationDraft = new AppPersonalizationConfig();
+                    _editingThemeDraft = null;
+                    RenderPersonalizationCategory();
+                    break;
             }
 
             SyncDraftValuesFromControls();
@@ -2099,6 +2239,7 @@ namespace ASLM.Pages
             var activeCategoryId = _activeCategory?.Id;
 
             LoadAslmDraftsFromAppData();
+            LoadPersonalizationDraftsFromAppData();
             LoadOllamaDraftsFromService();
             await LoadModuleDraftsAsync(reloadModules: false, reloadRuntimeValues: true);
 
@@ -2188,6 +2329,12 @@ namespace ASLM.Pages
                     }
                 }
 
+                var hadPersonalizationChanges = HasUnsavedPersonalizationChanges();
+                if (hadPersonalizationChanges)
+                {
+                    await SavePersonalizationAsync();
+                }
+
                 var hadAppRestartChanges = HasUnsavedAslmSettingsChanges();
                 var hadAslmChanges = HasUnsavedAccountChanges() || hadAppRestartChanges;
                 var modulesWithChanges = GetModulesWithUnsavedChanges();
@@ -2240,7 +2387,11 @@ namespace ASLM.Pages
                     ActivateCategory(resolvedCategory);
                 }
 
-                var successMessage = SettingsService.BuildSaveMessage(hadAslmChanges, touchedModules.Count > 0, deferredSettings);
+                var hadAnyPersistedSettingsChanges = hadAslmChanges || hadPersonalizationChanges;
+                var successMessage = SettingsService.BuildSaveMessage(
+                    hadAnyPersistedSettingsChanges,
+                    touchedModules.Count > 0,
+                    deferredSettings);
                 if (restartAfterSave)
                 {
                     _ = Task.Run(async () =>
@@ -2257,6 +2408,11 @@ namespace ASLM.Pages
                 if (restartAfterSave && await RestartChangedTargetsAsync(hadAppRestartChanges, touchedModules))
                 {
                     return;
+                }
+
+                if (restartAfterSave && hadPersonalizationChanges)
+                {
+                    await RestartModulesForPersistedHostThemeAsync(touchedModules);
                 }
             }
             finally
@@ -2284,6 +2440,29 @@ namespace ASLM.Pages
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Restarts enabled modules that were not already restarted so they can reload the persisted host theme.
+        /// </summary>
+        private async Task RestartModulesForPersistedHostThemeAsync(IEnumerable<ModuleConfig> alreadyRestarted)
+        {
+            var skip = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var module in alreadyRestarted)
+            {
+                if (!string.IsNullOrWhiteSpace(module.SourcePath))
+                {
+                    skip.Add(module.SourcePath);
+                }
+            }
+
+            foreach (var module in _loadedModules.Where(m =>
+                         CanRestartModule(m) &&
+                         !string.IsNullOrWhiteSpace(m.SourcePath) &&
+                         !skip.Contains(m.SourcePath)))
+            {
+                await _settingsService.RestartModuleAsync(module);
+            }
         }
 
         /// <summary>
@@ -2977,6 +3156,812 @@ namespace ASLM.Pages
                 baseline.UseCustomValue));
         }
 
+        // Personalization rendering
+
+        /// <summary>
+        /// Renders the personalization category: appearance picker, custom theme list, and color editor.
+        /// </summary>
+        private void RenderPersonalizationCategory()
+        {
+            _settingMappings.Clear();
+            ResetRenderedControlReferences();
+            ResetPersonalizationControlReferences();
+            PrepareCategorySurface(showAslmContainer: false, showModuleContainer: true, showEmptyState: false);
+
+            var section = CreateModuleSectionBorder();
+            var content = new VerticalStackLayout { Spacing = 8 };
+
+            _appearancePicker = CreatePicker(string.Empty, 13);
+            _appearancePicker.Items.Add("Dark");
+            _appearancePicker.Items.Add("Light");
+            _appearancePicker.Items.Add("System");
+            _appearancePicker.Items.Add("Custom");
+            _appearancePicker.SelectedItem = _personalizationDraft.Appearance;
+            _appearancePicker.SelectedIndexChanged += OnAppearancePickerChanged;
+            ApplyCompactPickerStyle(_appearancePicker);
+
+            content.Children.Add(CreateUpdateCard(
+                "Mode",
+                "Sets how the app chooses its overall interface appearance.",
+                CreatePickerContainer(_appearancePicker, PersonalizationPickerMaxWidth)));
+
+            _customThemeSection = new VerticalStackLayout { Spacing = 8 };
+            _customThemeSection.IsVisible = string.Equals(_personalizationDraft.Appearance, "Custom", StringComparison.Ordinal);
+            content.Children.Add(_customThemeSection);
+            RebuildCustomThemeSection();
+
+            _themeEditorSection = new VerticalStackLayout { Spacing = 8 };
+            _themeEditorSection.IsVisible = false;
+            content.Children.Add(_themeEditorSection);
+            if (string.Equals(_personalizationDraft.Appearance, "Custom", StringComparison.Ordinal) &&
+                !string.IsNullOrWhiteSpace(_personalizationDraft.CustomThemeId))
+            {
+                var selectedTheme = _customThemesStore.FindById(_personalizationDraft.CustomThemeId);
+                if (selectedTheme != null)
+                {
+                    ApplyCustomThemeSelection(selectedTheme.Id);
+                }
+            }
+
+            section.Content = content;
+            ModuleSettingsContainer.Children.Add(section);
+
+            _themeService.ApplyPersonalization(_personalizationDraft, _editingThemeDraft);
+            RefreshCategorySelectorChromeFromResources();
+        }
+
+        /// <summary>
+        /// Clears the personalization-specific control references before a rebuild.
+        /// </summary>
+        private void ResetPersonalizationControlReferences()
+        {
+            _appearancePicker = null;
+            _customThemeSection = null;
+            _customThemePicker = null;
+            _themeEditorSection = null;
+        }
+
+        /// <summary>
+        /// Rebuilds the custom theme picker when the Custom appearance mode is active.
+        /// </summary>
+        private void RebuildCustomThemeSection()
+        {
+            if (_customThemeSection == null)
+            {
+                return;
+            }
+
+            _customThemeSection.Children.Clear();
+
+            var themes = _customThemesStore.Root.Themes;
+
+            var manageActions = new HorizontalStackLayout
+            {
+                Spacing = 8,
+                HorizontalOptions = LayoutOptions.End
+            };
+
+            var createButton = CreateInlineActionButton("New", OnCreateThemeClicked);
+            createButton.FontSize = 13;
+            createButton.HeightRequest = 32;
+            createButton.MinimumHeightRequest = 32;
+            createButton.Padding = new Thickness(12, 0);
+
+            var importButton = CreateInlineActionButton("Import", OnImportThemeClicked);
+            importButton.FontSize = 13;
+            importButton.HeightRequest = 32;
+            importButton.MinimumHeightRequest = 32;
+            importButton.Padding = new Thickness(12, 0);
+
+            var exportButton = CreateInlineActionButton("Export", OnExportThemeClicked);
+            exportButton.FontSize = 13;
+            exportButton.HeightRequest = 32;
+            exportButton.MinimumHeightRequest = 32;
+            exportButton.Padding = new Thickness(12, 0);
+            exportButton.IsEnabled = themes.Count > 0;
+
+            manageActions.Children.Add(createButton);
+            manageActions.Children.Add(importButton);
+            manageActions.Children.Add(exportButton);
+
+            _customThemeSection.Children.Add(CreateUpdateCard(
+                "Themes",
+                "Add, bring in, or share palette definitions stored as files.",
+                manageActions));
+
+            _customThemePicker = new Picker
+            {
+                HorizontalOptions = LayoutOptions.Fill,
+                Title = string.Empty,
+                ItemDisplayBinding = new Binding(nameof(CustomTheme.Name)),
+                IsEnabled = themes.Count > 0
+            };
+            _customThemePicker.Style = GetStyleResource(PickerStyleKey);
+            _customThemePicker.FontSize = 13;
+            ApplyCompactPickerStyle(_customThemePicker);
+            _customThemePicker.ItemsSource = themes;
+            _customThemePicker.SelectedIndexChanged += OnCustomThemePickerSelectionChanged;
+
+            var deleteButton = new Button
+            {
+                Text = "Delete",
+                Style = GetStyleResource(FooterDangerButtonStyleKey),
+                FontSize = 13,
+                HeightRequest = 32,
+                MinimumHeightRequest = 32,
+                Padding = new Thickness(12, 0),
+                CornerRadius = 6,
+                IsEnabled = themes.Count > 0
+            };
+            deleteButton.SetDynamicResource(Button.TextColorProperty, "White");
+            deleteButton.Clicked += OnDeleteCurrentCustomThemeClicked;
+
+            var pickerShell = CreatePickerContainer(_customThemePicker, PersonalizationPickerMaxWidth);
+            var selectThemeControls = new Grid
+            {
+                ColumnSpacing = 8,
+                HorizontalOptions = LayoutOptions.Fill,
+                MinimumWidthRequest = 0,
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition(GridLength.Star),
+                    new ColumnDefinition(GridLength.Auto)
+                }
+            };
+            pickerShell.HorizontalOptions = LayoutOptions.Fill;
+            selectThemeControls.Children.Add(pickerShell);
+            Grid.SetColumn(pickerShell, 0);
+            selectThemeControls.Children.Add(deleteButton);
+            Grid.SetColumn(deleteButton, 1);
+
+            var selectDescription = themes.Count == 0
+                ? "Create a palette first; it will show up here for selection."
+                : "Which saved palette the token rows below belong to.";
+
+            _customThemeSection.Children.Add(CreateUpdateCard(
+                "Active theme",
+                selectDescription,
+                selectThemeControls));
+
+            _suppressCustomThemePickerEvents = true;
+            if (themes.Count > 0)
+            {
+                // Match the picker to the persisted draft only. Do not assign a default theme id here:
+                // that would mutate the draft (e.g. Light/Dark mode with null CustomThemeId but themes on disk)
+                // and falsely trip HasUnsavedPersonalizationChanges on first open.
+                var selected = themes.FirstOrDefault(t =>
+                    string.Equals(t.Id, _personalizationDraft.CustomThemeId, StringComparison.OrdinalIgnoreCase));
+                _customThemePicker.SelectedItem = selected;
+            }
+            else
+            {
+                _customThemePicker.SelectedItem = null;
+            }
+
+            _suppressCustomThemePickerEvents = false;
+        }
+
+        private void OnCustomThemePickerSelectionChanged(object? sender, EventArgs e)
+        {
+            if (_suppressCustomThemePickerEvents || _customThemePicker == null)
+            {
+                return;
+            }
+
+            if (_customThemePicker.SelectedItem is not CustomTheme t)
+            {
+                return;
+            }
+
+            ApplyCustomThemeSelection(t.Id);
+        }
+
+        /// <summary>
+        /// Loads the selected custom theme into the editor and updates the preview.
+        /// </summary>
+        private void ApplyCustomThemeSelection(string? themeId)
+        {
+            if (string.IsNullOrWhiteSpace(themeId) || _themeEditorSection == null)
+            {
+                return;
+            }
+
+            _personalizationDraft.CustomThemeId = themeId;
+            var theme = _customThemesStore.FindById(themeId);
+            if (theme == null)
+            {
+                return;
+            }
+
+            _editingThemeDraft = CloneCustomTheme(theme);
+
+            BuildThemeColorEditor(_themeEditorSection);
+            _themeEditorSection.IsVisible = true;
+            _themeService.PreviewCustomTheme(_editingThemeDraft);
+            RefreshCategorySelectorChromeFromResources();
+            QueueActionButtonUpdate();
+        }
+
+        private async void OnDeleteCurrentCustomThemeClicked(object? sender, EventArgs e)
+        {
+            if (_customThemePicker?.SelectedItem is not CustomTheme t)
+            {
+                return;
+            }
+
+            await OnDeleteThemeClickedAsync(t.Id);
+        }
+
+        /// <summary>
+        /// Builds the full color-key editor rows inside the provided container.
+        /// </summary>
+        private void BuildThemeColorEditor(VerticalStackLayout container)
+        {
+            if (_editingThemeDraft == null)
+            {
+                return;
+            }
+
+            container.Children.Clear();
+
+            container.Children.Add(CreateSubGroupHeader($"Colors · {_editingThemeDraft.Name}"));
+
+            var basePicker = CreatePicker(string.Empty, 13);
+            basePicker.Items.Add("Dark");
+            basePicker.Items.Add("Light");
+            basePicker.SelectedItem = _editingThemeDraft.BaseAppearance == "light" ? "Light" : "Dark";
+            basePicker.SelectedIndexChanged += (_, _) =>
+            {
+                if (_editingThemeDraft == null)
+                {
+                    return;
+                }
+
+                _editingThemeDraft.BaseAppearance = basePicker.SelectedItem as string == "Light" ? "light" : "dark";
+                _themeService.PreviewCustomTheme(_editingThemeDraft);
+                RefreshCategorySelectorChromeFromResources();
+                QueueActionButtonUpdate();
+            };
+            ApplyCompactPickerStyle(basePicker);
+            container.Children.Add(CreateUpdateCard(
+                "Base",
+                "Built-in semantic defaults for tokens you have not overridden yet.",
+                CreatePickerContainer(basePicker, PersonalizationPickerMaxWidth)));
+
+            var keys = ThemePaletteResolver.AllKeys.ToList();
+            var mid = (keys.Count + 1) / 2;
+            var columns = new Grid { ColumnSpacing = 0 };
+            columns.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+            columns.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Absolute)));
+            columns.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+
+            var colLeft = new VerticalStackLayout
+            {
+                Spacing = 4,
+                HorizontalOptions = LayoutOptions.Fill,
+                Margin = new Thickness(0, 0, 12, 0)
+            };
+            var colRight = new VerticalStackLayout
+            {
+                Spacing = 4,
+                HorizontalOptions = LayoutOptions.Fill,
+                Margin = new Thickness(10, 0, 0, 0)
+            };
+            for (var i = 0; i < keys.Count; i++)
+            {
+                var row = CreateCompactColorEditorRow(keys[i]);
+                if (i < mid)
+                {
+                    colLeft.Children.Add(row);
+                }
+                else
+                {
+                    colRight.Children.Add(row);
+                }
+            }
+
+            var columnDivider = new BoxView
+            {
+                WidthRequest = 1,
+                HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Fill,
+                Opacity = 0.55,
+                Margin = new Thickness(0, 2, 0, 2)
+            };
+            columnDivider.SetDynamicResource(BoxView.ColorProperty, "Separator");
+
+            columns.Children.Add(colLeft);
+            Grid.SetColumn(colLeft, 0);
+            columns.Children.Add(columnDivider);
+            Grid.SetColumn(columnDivider, 1);
+            columns.Children.Add(colRight);
+            Grid.SetColumn(colRight, 2);
+
+            var colorsCard = CreateSettingCardBorder();
+            colorsCard.Content = columns;
+            container.Children.Add(colorsCard);
+        }
+
+        private View CreateCompactColorEditorRow(string key)
+        {
+            _editingThemeDraft!.Colors.TryGetValue(key, out var existingValue);
+
+            var swatchFill = new BoxView
+            {
+                HorizontalOptions = LayoutOptions.Fill,
+                VerticalOptions = LayoutOptions.Fill,
+                CornerRadius = 4
+            };
+            var swatchFrame = new Border
+            {
+                WidthRequest = 24,
+                HeightRequest = 24,
+                BackgroundColor = Colors.Transparent,
+                StrokeThickness = 1,
+                StrokeShape = new RoundRectangle { CornerRadius = 6 },
+                Padding = new Thickness(1),
+                Content = swatchFill,
+                VerticalOptions = LayoutOptions.Center,
+                HorizontalOptions = LayoutOptions.Center
+            };
+            UpdateColorSwatch(swatchFrame, existingValue);
+
+            var hexLabel = new Label
+            {
+                FontSize = 12,
+                VerticalOptions = LayoutOptions.Center,
+                HorizontalOptions = LayoutOptions.Fill,
+                HorizontalTextAlignment = TextAlignment.Start,
+                LineBreakMode = LineBreakMode.TailTruncation,
+                MaxLines = 1,
+                Text = string.IsNullOrWhiteSpace(existingValue) ? "—" : existingValue,
+                MinimumWidthRequest = 0
+            };
+            hexLabel.SetDynamicResource(Label.TextColorProperty, "LabelPrimary");
+
+            var pickButton = new Button
+            {
+                Text = "Pick",
+                FontSize = 12,
+                HeightRequest = 24,
+                MinimumHeightRequest = 24,
+                Padding = new Thickness(8, 0),
+                CornerRadius = 5,
+                WidthRequest = 48,
+                HorizontalOptions = LayoutOptions.Center
+            };
+            pickButton.SetDynamicResource(Button.BackgroundColorProperty, "BackgroundTertiary");
+            pickButton.SetDynamicResource(Button.TextColorProperty, "LabelPrimary");
+
+            var clearButton = new Button
+            {
+                Text = "Clear",
+                FontSize = 12,
+                HeightRequest = 24,
+                MinimumHeightRequest = 24,
+                Padding = new Thickness(8, 0),
+                CornerRadius = 5,
+                WidthRequest = 48,
+                HorizontalOptions = LayoutOptions.Center
+            };
+            clearButton.SetDynamicResource(Button.BackgroundColorProperty, "BackgroundTertiary");
+            clearButton.SetDynamicResource(Button.TextColorProperty, "LabelSecondary");
+
+            var capturedKey = key;
+            pickButton.Clicked += async (_, _) =>
+            {
+                await OpenThemeColorPickerForKeyAsync(capturedKey, swatchFrame, hexLabel);
+            };
+
+            var swatchTap = new TapGestureRecognizer();
+            swatchTap.Tapped += async (_, _) =>
+            {
+                await OpenThemeColorPickerForKeyAsync(capturedKey, swatchFrame, hexLabel);
+            };
+            swatchFrame.GestureRecognizers.Add(swatchTap);
+
+            clearButton.Clicked += (_, _) =>
+            {
+                if (_editingThemeDraft == null)
+                {
+                    return;
+                }
+
+                _editingThemeDraft.Colors.Remove(capturedKey);
+                hexLabel.Text = "—";
+                UpdateColorSwatch(swatchFrame, null);
+                _themeService.PreviewCustomTheme(_editingThemeDraft);
+                RefreshCategorySelectorChromeFromResources();
+                QueueActionButtonUpdate();
+            };
+
+            var row = new Grid
+            {
+                ColumnSpacing = 8,
+                HeightRequest = 28,
+                MinimumHeightRequest = 28,
+                VerticalOptions = LayoutOptions.Center,
+                HorizontalOptions = LayoutOptions.Fill,
+                MinimumWidthRequest = 0
+            };
+            row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(2, GridUnitType.Star)));
+            row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(28, GridUnitType.Absolute)));
+            row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
+            row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(50, GridUnitType.Absolute)));
+            row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(50, GridUnitType.Absolute)));
+
+            var keyLabel = new Label
+            {
+                Text = key,
+                FontSize = 13,
+                VerticalOptions = LayoutOptions.Center,
+                HorizontalOptions = LayoutOptions.Fill,
+                HorizontalTextAlignment = TextAlignment.Start,
+                LineBreakMode = LineBreakMode.TailTruncation,
+                MaxLines = 1,
+                MinimumWidthRequest = 0
+            };
+            keyLabel.SetDynamicResource(Label.TextColorProperty, "LabelPrimary");
+
+            row.Children.Add(keyLabel);
+            Grid.SetColumn(keyLabel, 0);
+            row.Children.Add(swatchFrame);
+            Grid.SetColumn(swatchFrame, 1);
+            row.Children.Add(hexLabel);
+            Grid.SetColumn(hexLabel, 2);
+            row.Children.Add(pickButton);
+            Grid.SetColumn(pickButton, 3);
+            row.Children.Add(clearButton);
+            Grid.SetColumn(clearButton, 4);
+
+            return row;
+        }
+
+        /// <summary>
+        /// Updates a themed color swatch from a hex string (inherit uses neutral fill + separator stroke).
+        /// </summary>
+        private static void UpdateColorSwatch(Border swatchFrame, string? hex)
+        {
+            if (swatchFrame.Content is not BoxView fill)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(hex) && ThemePaletteResolver.TryParseHex(hex, out var color))
+            {
+                fill.BackgroundColor = color;
+                swatchFrame.Stroke = ThemePaletteResolver.SwatchContrastStroke(color);
+                swatchFrame.Opacity = 1;
+            }
+            else
+            {
+                fill.BackgroundColor = GetColorResource("BackgroundTertiary", Color.FromArgb("#FF2C2C2E"));
+                swatchFrame.Stroke = GetColorResource("Separator", Color.FromArgb("#FF48484A"));
+                swatchFrame.Opacity = 1;
+            }
+        }
+
+        private async Task OpenThemeColorPickerForKeyAsync(string key, Border swatchFrame, Label hexLabel)
+        {
+            if (_editingThemeDraft == null)
+            {
+                return;
+            }
+
+            _editingThemeDraft.Colors.TryGetValue(key, out var existingHex);
+            var initial = ResolveThemeEditorColor(key, existingHex);
+            Color? picked = await ThemeColorPickerView.PickAsync(initial);
+            if (picked is not { } chosen)
+            {
+                return;
+            }
+
+            var hex = ThemePaletteResolver.ToHex(chosen);
+            _editingThemeDraft.Colors[key] = hex;
+            hexLabel.Text = hex;
+            UpdateColorSwatch(swatchFrame, hex);
+            _themeService.PreviewCustomTheme(_editingThemeDraft);
+            RefreshCategorySelectorChromeFromResources();
+            QueueActionButtonUpdate();
+        }
+
+        private static Color ResolveThemeEditorColor(string key, string? existingHex)
+        {
+            if (!string.IsNullOrWhiteSpace(existingHex) && ThemePaletteResolver.TryParseHex(existingHex, out var parsed))
+            {
+                return parsed;
+            }
+
+            if (Application.Current?.Resources.TryGetValue(key, out var v) == true && v is Color c)
+            {
+                return c;
+            }
+
+            return Colors.Gray;
+        }
+
+        private void OnAppearancePickerChanged(object? sender, EventArgs e)
+        {
+            if (_appearancePicker == null)
+            {
+                return;
+            }
+
+            var selected = _appearancePicker.SelectedItem as string ?? "Dark";
+            _personalizationDraft.Appearance = AppPersonalizationConfig.NormalizeAppearance(selected);
+
+            var isCustom = string.Equals(selected, "Custom", StringComparison.OrdinalIgnoreCase);
+            if (_customThemeSection != null)
+            {
+                _customThemeSection.IsVisible = isCustom;
+                if (isCustom)
+                {
+                    RebuildCustomThemeSection();
+                    if (_customThemesStore.Root.Themes.Count > 0)
+                    {
+                        ApplyCustomThemeSelection(_personalizationDraft.CustomThemeId);
+                    }
+                    else if (_themeEditorSection != null)
+                    {
+                        _themeEditorSection.IsVisible = false;
+                        _editingThemeDraft = null;
+                    }
+                }
+            }
+
+            if (_themeEditorSection != null && !isCustom)
+            {
+                _themeEditorSection.IsVisible = false;
+            }
+
+            QueueActionButtonUpdate();
+
+            if (!string.Equals(selected, "Custom", StringComparison.OrdinalIgnoreCase))
+            {
+                _editingThemeDraft = null;
+            }
+
+            _themeService.ApplyPersonalization(_personalizationDraft, _editingThemeDraft);
+            RefreshCategorySelectorChromeFromResources();
+        }
+
+        private async void OnCreateThemeClicked(object? sender, EventArgs e)
+        {
+            var name = await PromptAsync("New Theme", "Enter a name for the new theme:", "My Theme");
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return;
+            }
+
+            var host = Application.Current?.Windows.FirstOrDefault()?.Page;
+            if (host == null)
+            {
+                return;
+            }
+
+            var inheritChoice = await host.DisplayActionSheetAsync(
+                "Inherit colors from",
+                "Cancel",
+                null,
+                "Dark (built-in)",
+                "Light (built-in)");
+
+            if (string.IsNullOrEmpty(inheritChoice) ||
+                string.Equals(inheritChoice, "Cancel", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            var baseAppearance = string.Equals(inheritChoice, "Light (built-in)", StringComparison.OrdinalIgnoreCase)
+                ? "light"
+                : "dark";
+
+            var newTheme = _customThemesStore.CreateTheme(name.Trim(), baseAppearance);
+            ThemePaletteResolver.PrefillCustomThemeFromBuiltIn(newTheme);
+            await _customThemesStore.SaveAsync();
+
+            _personalizationDraft.CustomThemeId = newTheme.Id;
+            RebuildCustomThemeSection();
+            ApplyCustomThemeSelection(newTheme.Id);
+        }
+
+        private async void OnImportThemeClicked(object? sender, EventArgs e)
+        {
+            var host = Application.Current?.Windows.FirstOrDefault()?.Page;
+            if (host == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var pick = await FilePicker.Default.PickAsync(new PickOptions
+                {
+                    PickerTitle = "Import theme",
+                    FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                    {
+                        [DevicePlatform.WinUI] = new[] { ".json" },
+                        [DevicePlatform.macOS] = new[] { "json" },
+                        [DevicePlatform.iOS] = new[] { "public.json" },
+                        [DevicePlatform.Android] = new[] { "application/json" }
+                    })
+                });
+
+                if (pick == null)
+                {
+                    return;
+                }
+
+                await using var stream = await pick.OpenReadAsync();
+                using var reader = new StreamReader(stream);
+                var json = await reader.ReadToEndAsync();
+                if (json.Length > 524_288)
+                {
+                    await ShowErrorAsync("The theme file is too large.");
+                    return;
+                }
+
+                var imported = _customThemesStore.DeserializeImportedTheme(json);
+                if (imported == null)
+                {
+                    await ShowErrorAsync("The file is not a valid ASLM theme.");
+                    return;
+                }
+
+                var added = _customThemesStore.ImportThemeCopy(imported);
+                await _customThemesStore.SaveAsync();
+                _personalizationDraft.CustomThemeId = added.Id;
+                RebuildCustomThemeSection();
+                ApplyCustomThemeSelection(added.Id);
+                QueueActionButtonUpdate();
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorAsync($"Could not import theme: {ex.Message}");
+            }
+        }
+
+        private async void OnExportThemeClicked(object? sender, EventArgs e)
+        {
+            if (_customThemePicker?.SelectedItem is not CustomTheme t)
+            {
+                await ShowErrorAsync("Select a theme to export.");
+                return;
+            }
+
+            try
+            {
+                var json = _customThemesStore.SerializeThemeForExport(t);
+#if WINDOWS
+                var path = await PickExportThemeFilePathAsync(SanitizeThemeFileName(t.Name));
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    return;
+                }
+
+                await File.WriteAllTextAsync(path, json);
+#endif
+            }
+            catch (Exception ex)
+            {
+                await ShowErrorAsync($"Could not export theme: {ex.Message}");
+            }
+        }
+
+        private static string SanitizeThemeFileName(string name)
+        {
+            var baseName = string.IsNullOrWhiteSpace(name) ? "ASLM_theme" : name.Trim();
+            var invalid = global::System.IO.Path.GetInvalidFileNameChars();
+            var buffer = new char[baseName.Length];
+            for (var i = 0; i < baseName.Length; i++)
+            {
+                var c = baseName[i];
+                buffer[i] = Array.IndexOf(invalid, c) >= 0 ? '_' : c;
+            }
+
+            var s = new string(buffer).Trim();
+            return string.IsNullOrEmpty(s) ? "ASLM_theme" : s;
+        }
+
+        private async Task OnDeleteThemeClickedAsync(string themeId)
+        {
+            var confirmed = await ShowAlertAsync(
+                "Delete theme",
+                "Are you sure you want to delete this theme? This cannot be undone.",
+                "Delete",
+                "Cancel");
+
+            if (!confirmed)
+            {
+                return;
+            }
+
+            _customThemesStore.DeleteTheme(themeId);
+            await _customThemesStore.SaveAsync();
+
+            if (string.Equals(_personalizationDraft.CustomThemeId, themeId, StringComparison.Ordinal))
+            {
+                _personalizationDraft.CustomThemeId = _customThemesStore.Root.Themes.FirstOrDefault()?.Id;
+                _editingThemeDraft = null;
+
+                if (_themeEditorSection != null)
+                {
+                    _themeEditorSection.IsVisible = false;
+                }
+            }
+
+            RebuildCustomThemeSection();
+
+            if (!string.IsNullOrWhiteSpace(_personalizationDraft.CustomThemeId) &&
+                _customThemesStore.FindById(_personalizationDraft.CustomThemeId) != null)
+            {
+                ApplyCustomThemeSelection(_personalizationDraft.CustomThemeId);
+            }
+            else if (_themeEditorSection != null)
+            {
+                _themeEditorSection.IsVisible = false;
+            }
+
+            QueueActionButtonUpdate();
+        }
+
+        /// <summary>
+        /// Persists the personalization draft to app data and applies the new theme.
+        /// </summary>
+        private async Task SavePersonalizationAsync()
+        {
+            // Persist custom theme color edits if any.
+            if (_editingThemeDraft != null)
+            {
+                var existingTheme = _customThemesStore.FindById(_editingThemeDraft.Id);
+                if (existingTheme != null)
+                {
+                    existingTheme.Name = _editingThemeDraft.Name;
+                    existingTheme.BaseAppearance = _editingThemeDraft.BaseAppearance;
+                    existingTheme.Colors = new Dictionary<string, string>(
+                        _editingThemeDraft.Colors,
+                        StringComparer.OrdinalIgnoreCase);
+                    await _customThemesStore.SaveAsync();
+                }
+            }
+
+            // Update app data personalization section.
+            _appData.Data.Personalization.Appearance = _personalizationDraft.Appearance;
+            _appData.Data.Personalization.CustomThemeId = _personalizationDraft.CustomThemeId;
+            _appData.Data.Personalization.Normalize();
+
+            // Reload baselines.
+            _personalizationBaseline = new AppPersonalizationConfig
+            {
+                Appearance = _personalizationDraft.Appearance,
+                CustomThemeId = _personalizationDraft.CustomThemeId
+            };
+
+            // Apply the saved theme immediately.
+            _themeService.ApplyFromSettings();
+        }
+
+        /// <summary>
+        /// Shows a simple text-input prompt dialog and returns the user's entry.
+        /// </summary>
+        private static Task<string?> PromptAsync(string title, string message, string defaultValue) =>
+            Application.Current?.Windows.Count > 0
+                ? Application.Current.Windows[0].Page!.DisplayPromptAsync(title, message, initialValue: defaultValue)
+                : Task.FromResult<string?>(null);
+
+        /// <summary>
+        /// Creates a deep copy of a custom theme for editing without modifying the stored version.
+        /// </summary>
+        private static CustomTheme CloneCustomTheme(CustomTheme source) =>
+            new()
+            {
+                Id = source.Id,
+                Name = source.Name,
+                BaseAppearance = source.BaseAppearance,
+                Colors = new Dictionary<string, string>(source.Colors, StringComparer.OrdinalIgnoreCase)
+            };
+
+
         // Styling helpers
 
         /// <summary>
@@ -3115,9 +4100,9 @@ namespace ASLM.Pages
         private static void ApplyOllamaAccountButtonState(Button button, bool isSignedIn)
         {
             button.BackgroundColor = isSignedIn
-                ? Color.FromArgb("#FF453A")
-                : Color.FromArgb("#0A84FF");
-            button.TextColor = Colors.White;
+                ? GetColorResource("ActionRed", Color.FromArgb("#FF453A"))
+                : GetColorResource("ActionBlue", Color.FromArgb("#0A84FF"));
+            button.TextColor = GetColorResource("White", Colors.White);
             button.BorderWidth = 0;
             button.Opacity = button.IsEnabled ? 1.0 : 0.55;
         }
@@ -3130,11 +4115,12 @@ namespace ASLM.Pages
             var picker = new Picker
             {
                 Title = title,
-                FontSize = fontSize,
                 Style = GetStyleResource(PickerStyleKey),
                 HorizontalOptions = LayoutOptions.Fill
             };
 
+            // Apply after Style so callers' fontSize wins over SettingsPickerStyle defaults.
+            picker.FontSize = fontSize;
             ApplyCompactPickerStyle(picker);
             return picker;
         }
@@ -3142,13 +4128,19 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates a subtle field container for pickers so they match the weight of text inputs.
         /// </summary>
-        private static Border CreatePickerContainer(Picker picker)
+        private static Border CreatePickerContainer(Picker picker, double? maximumWidth = null)
         {
             var border = new Border
             {
                 Style = GetStyleResource(FieldBorderStyleKey),
                 Content = picker
             };
+
+            if (maximumWidth is { } cap)
+            {
+                border.MaximumWidthRequest = cap;
+                border.HorizontalOptions = LayoutOptions.End;
+            }
 
             return border;
         }
@@ -3492,8 +4484,8 @@ namespace ASLM.Pages
             };
 
             label.TextColor = isPositive
-                ? Color.FromArgb("#D8E8FF")
-                : Color.FromArgb("#99EBEBF5");
+                ? GetColorResource("LinkColor", Color.FromArgb("#D8E8FF"))
+                : GetColorResource("LabelSecondary", Color.FromArgb("#99EBEBF5"));
 
             return new Border
             {
@@ -3506,6 +4498,51 @@ namespace ASLM.Pages
                 Content = label
             };
         }
+
+#if WINDOWS
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern nint GetForegroundWindow();
+
+        private static async Task<string?> PickExportThemeFilePathAsync(string suggestedFileName)
+        {
+            var native = Application.Current?.Windows.FirstOrDefault()?.Handler?.PlatformView;
+            nint hwnd = 0;
+            if (native is Microsoft.UI.Xaml.Window win)
+            {
+                hwnd = WinRT.Interop.WindowNative.GetWindowHandle(win);
+            }
+            else if (native != null)
+            {
+                try
+                {
+                    hwnd = WinRT.Interop.WindowNative.GetWindowHandle(native);
+                }
+                catch
+                {
+                    hwnd = GetForegroundWindow();
+                }
+            }
+            else
+            {
+                hwnd = GetForegroundWindow();
+            }
+
+            if (hwnd == 0)
+            {
+                return null;
+            }
+
+            var picker = new Windows.Storage.Pickers.FileSavePicker
+            {
+                SuggestedFileName = string.IsNullOrWhiteSpace(suggestedFileName) ? "ASLM_theme" : suggestedFileName
+            };
+
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+            picker.FileTypeChoices.Add("ASLM theme (.json)", new List<string> { ".json" });
+            var file = await picker.PickSaveFileAsync();
+            return file?.Path;
+        }
+#endif
 
     }
 }

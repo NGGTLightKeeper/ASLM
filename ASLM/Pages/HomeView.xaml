@@ -11,7 +11,7 @@
             <Setter Property="FontAttributes" Value="Bold" />
             <Setter Property="MaxLines" Value="1" />
             <Setter Property="LineBreakMode" Value="TailTruncation" />
-            <Setter Property="TextColor" Value="{StaticResource LabelPrimary}" />
+            <Setter Property="TextColor" Value="{DynamicResource LabelPrimary}" />
         </Style>
 
     </ContentView.Resources>
@@ -41,8 +41,8 @@
 
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Border BackgroundColor="{StaticResource BackgroundSecondary}"
-                            Stroke="{StaticResource Separator}"
+                    <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
+                            Stroke="{DynamicResource Separator}"
                             StrokeThickness="1"
                             StrokeShape="RoundRectangle 8"
                             Padding="8">
@@ -54,7 +54,7 @@
                                     <Label Text="{Binding Title}"
                                            FontSize="16"
                                            FontAttributes="Bold"
-                                           TextColor="{StaticResource LabelPrimary}"
+                                           TextColor="{DynamicResource LabelPrimary}"
                                            LineBreakMode="TailTruncation" />
                                 </VerticalStackLayout>
 
@@ -62,7 +62,7 @@
                                        Text="{Binding StatusText}"
                                        FontSize="12"
                                        FontAttributes="Bold"
-                                       TextColor="{StaticResource LabelPrimary}"
+                                       TextColor="{DynamicResource LabelPrimary}"
                                        VerticalOptions="Start" />
                             </Grid>
 
@@ -77,26 +77,26 @@
                                                   ColumnSpacing="8">
                                                 <Label Text="{Binding Name}"
                                                        FontSize="12"
-                                                       TextColor="{StaticResource LabelSecondary}"
+                                                       TextColor="{DynamicResource LabelSecondary}"
                                                        VerticalOptions="Center" />
                                                 <Label Grid.Column="1"
                                                        Text="{Binding DetailText}"
                                                        FontSize="12"
-                                                       TextColor="{StaticResource LabelSecondary}"
+                                                       TextColor="{DynamicResource LabelSecondary}"
                                                        LineBreakMode="TailTruncation"
                                                        VerticalOptions="Center" />
                                                 <Label Grid.Column="2"
                                                        Text="{Binding ValueText}"
                                                        FontSize="12"
                                                        FontAttributes="Bold"
-                                                       TextColor="{StaticResource LabelPrimary}"
+                                                       TextColor="{DynamicResource LabelPrimary}"
                                                        VerticalOptions="Center" />
                                             </Grid>
 
                                             <ProgressBar Grid.Row="1"
                                                          Progress="{Binding ProgressValue}"
                                                          ProgressColor="{Binding AccentColor}"
-                                                         BackgroundColor="{StaticResource BackgroundTertiary}"
+                                                         BackgroundColor="{DynamicResource BackgroundTertiary}"
                                                          HeightRequest="4"
                                                          IsVisible="{Binding HasProgress}" />
                                         </Grid>
@@ -115,8 +115,8 @@
               ColumnSpacing="8"
               RowSpacing="8">
             <Border x:Name="ProcessTreePanel"
-                    BackgroundColor="{StaticResource BackgroundSecondary}"
-                    Stroke="{StaticResource Separator}"
+                    BackgroundColor="{DynamicResource BackgroundSecondary}"
+                    Stroke="{DynamicResource Separator}"
                     StrokeThickness="1"
                     StrokeShape="RoundRectangle 8"
                     Padding="0">
@@ -127,13 +127,13 @@
                         <Label Text="Managed Processes"
                                FontSize="16"
                                FontAttributes="Bold"
-                               TextColor="{StaticResource LabelPrimary}" />
+                               TextColor="{DynamicResource LabelPrimary}" />
                     </VerticalStackLayout>
 
                     <Grid Grid.Row="1"
                           ColumnSpacing="0"
                           Padding="0"
-                          BackgroundColor="{StaticResource BackgroundTertiary}"
+                          BackgroundColor="{DynamicResource BackgroundTertiary}"
                           HeightRequest="30">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="2*" />
@@ -153,60 +153,60 @@
 
                         <Label Text="Name"
                                FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}"
+                               TextColor="{DynamicResource LabelSecondary}"
                                Padding="8,0"
                                VerticalOptions="Center" />
                         <BoxView Grid.Column="1"
-                                 BackgroundColor="{StaticResource Separator}" />
+                                 BackgroundColor="{DynamicResource Separator}" />
                         <Label Grid.Column="2"
                                Text="CPU"
                                FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}"
+                               TextColor="{DynamicResource LabelSecondary}"
                                Padding="8,0"
                                HorizontalTextAlignment="End"
                                VerticalOptions="Center" />
                         <BoxView Grid.Column="3"
-                                 BackgroundColor="{StaticResource Separator}" />
+                                 BackgroundColor="{DynamicResource Separator}" />
                         <Label Grid.Column="4"
                                Text="GPU"
                                FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}"
+                               TextColor="{DynamicResource LabelSecondary}"
                                Padding="8,0"
                                HorizontalTextAlignment="End"
                                VerticalOptions="Center" />
                         <BoxView Grid.Column="5"
-                                 BackgroundColor="{StaticResource Separator}" />
+                                 BackgroundColor="{DynamicResource Separator}" />
                         <Label Grid.Column="6"
                                Text="RAM"
                                FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}"
+                               TextColor="{DynamicResource LabelSecondary}"
                                Padding="8,0"
                                HorizontalTextAlignment="End"
                                VerticalOptions="Center" />
                         <BoxView Grid.Column="7"
-                                 BackgroundColor="{StaticResource Separator}" />
+                                 BackgroundColor="{DynamicResource Separator}" />
                         <Label Grid.Column="8"
                                Text="Disk"
                                FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}"
+                               TextColor="{DynamicResource LabelSecondary}"
                                Padding="8,0"
                                HorizontalTextAlignment="End"
                                VerticalOptions="Center" />
                         <BoxView Grid.Column="9"
-                                 BackgroundColor="{StaticResource Separator}" />
+                                 BackgroundColor="{DynamicResource Separator}" />
                         <Label Grid.Column="10"
                                Text="Net"
                                FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}"
+                               TextColor="{DynamicResource LabelSecondary}"
                                Padding="8,0"
                                HorizontalTextAlignment="End"
                                VerticalOptions="Center" />
                         <BoxView Grid.Column="11"
-                                 BackgroundColor="{StaticResource Separator}" />
+                                 BackgroundColor="{DynamicResource Separator}" />
                         <Label Grid.Column="12"
                                Text="Details"
                                FontSize="12"
-                               TextColor="{StaticResource LabelSecondary}"
+                               TextColor="{DynamicResource LabelSecondary}"
                                Padding="8,0"
                                VerticalOptions="Center" />
                     </Grid>
@@ -266,68 +266,68 @@
                                         </Grid>
 
                                         <BoxView Grid.Column="1"
-                                                 BackgroundColor="{StaticResource Separator}"
+                                                 BackgroundColor="{DynamicResource Separator}"
                                                  WidthRequest="1"
                                                  HorizontalOptions="Center" />
                                         <Label Grid.Column="2"
                                                Text="{Binding CpuText}"
                                                FontSize="12"
-                                               TextColor="{StaticResource LabelPrimary}"
+                                               TextColor="{DynamicResource LabelPrimary}"
                                                Padding="8,0"
                                                HorizontalTextAlignment="End"
                                                VerticalOptions="Center" />
                                         <BoxView Grid.Column="3"
-                                                 BackgroundColor="{StaticResource Separator}"
+                                                 BackgroundColor="{DynamicResource Separator}"
                                                  WidthRequest="1"
                                                  HorizontalOptions="Center" />
                                         <Label Grid.Column="4"
                                                Text="{Binding GpuText}"
                                                FontSize="12"
-                                               TextColor="{StaticResource LabelPrimary}"
+                                               TextColor="{DynamicResource LabelPrimary}"
                                                Padding="8,0"
                                                HorizontalTextAlignment="End"
                                                VerticalOptions="Center" />
                                         <BoxView Grid.Column="5"
-                                                 BackgroundColor="{StaticResource Separator}"
+                                                 BackgroundColor="{DynamicResource Separator}"
                                                  WidthRequest="1"
                                                  HorizontalOptions="Center" />
                                         <Label Grid.Column="6"
                                                Text="{Binding MemoryText}"
                                                FontSize="12"
-                                               TextColor="{StaticResource LabelPrimary}"
+                                               TextColor="{DynamicResource LabelPrimary}"
                                                Padding="8,0"
                                                HorizontalTextAlignment="End"
                                                VerticalOptions="Center" />
                                         <BoxView Grid.Column="7"
-                                                 BackgroundColor="{StaticResource Separator}"
+                                                 BackgroundColor="{DynamicResource Separator}"
                                                  WidthRequest="1"
                                                  HorizontalOptions="Center" />
                                         <Label Grid.Column="8"
                                                Text="{Binding DiskText}"
                                                FontSize="12"
-                                               TextColor="{StaticResource LabelPrimary}"
+                                               TextColor="{DynamicResource LabelPrimary}"
                                                Padding="8,0"
                                                HorizontalTextAlignment="End"
                                                VerticalOptions="Center" />
                                         <BoxView Grid.Column="9"
-                                                 BackgroundColor="{StaticResource Separator}"
+                                                 BackgroundColor="{DynamicResource Separator}"
                                                  WidthRequest="1"
                                                  HorizontalOptions="Center" />
                                         <Label Grid.Column="10"
                                                Text="{Binding NetworkText}"
                                                FontSize="12"
-                                               TextColor="{StaticResource LabelPrimary}"
+                                               TextColor="{DynamicResource LabelPrimary}"
                                                Padding="8,0"
                                                HorizontalTextAlignment="End"
                                                VerticalOptions="Center" />
                                         <BoxView Grid.Column="11"
-                                                 BackgroundColor="{StaticResource Separator}"
+                                                 BackgroundColor="{DynamicResource Separator}"
                                                  WidthRequest="1"
                                                  HorizontalOptions="Center" />
                                         <Label Grid.Column="12"
                                                Text="{Binding DetailsText}"
                                                FontSize="12"
-                                               TextColor="{StaticResource LabelSecondary}"
+                                               TextColor="{DynamicResource LabelSecondary}"
                                                Padding="8,0"
                                                VerticalOptions="Center"
                                                LineBreakMode="TailTruncation" />
@@ -335,7 +335,7 @@
 
                                     <BoxView Grid.Row="1"
                                              HeightRequest="1"
-                                             BackgroundColor="{StaticResource Separator}" />
+                                             BackgroundColor="{DynamicResource Separator}" />
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
@@ -344,8 +344,8 @@
             </Border>
 
             <Border x:Name="ModulesPanel"
-                    BackgroundColor="{StaticResource BackgroundSecondary}"
-                    Stroke="{StaticResource Separator}"
+                    BackgroundColor="{DynamicResource BackgroundSecondary}"
+                    Stroke="{DynamicResource Separator}"
                     StrokeThickness="1"
                     StrokeShape="RoundRectangle 8"
                     Padding="0">
@@ -356,7 +356,7 @@
                         <Label Text="Modules"
                                FontSize="16"
                                FontAttributes="Bold"
-                               TextColor="{StaticResource LabelPrimary}" />
+                               TextColor="{DynamicResource LabelPrimary}" />
                     </VerticalStackLayout>
 
                     <CollectionView x:Name="ModulesCollection"
@@ -381,11 +381,11 @@
                                             <Label Text="{Binding Name}"
                                                    FontSize="14"
                                                    FontAttributes="Bold"
-                                                   TextColor="{StaticResource LabelPrimary}"
+                                                   TextColor="{DynamicResource LabelPrimary}"
                                                    LineBreakMode="TailTruncation" />
                                             <Label Text="{Binding SecondaryText}"
                                                    FontSize="12"
-                                                   TextColor="{StaticResource LabelSecondary}"
+                                                   TextColor="{DynamicResource LabelSecondary}"
                                                    LineBreakMode="TailTruncation" />
                                         </VerticalStackLayout>
 
@@ -394,7 +394,7 @@
                                             <HorizontalStackLayout Spacing="8"
                                                                    HorizontalOptions="End"
                                                                    IsVisible="{Binding IsRunningAndIdle}">
-                                                <Border Background="{SolidColorBrush {StaticResource ActionRed}}"
+                                                <Border Background="{SolidColorBrush {DynamicResource ActionRed}}"
                                                         StrokeThickness="0"
                                                         StrokeShape="RoundRectangle 4"
                                                         HeightRequest="32"
@@ -408,7 +408,7 @@
                                                            HeightRequest="16"
                                                            Aspect="AspectFit" />
                                                 </Border>
-                                                <Border Background="{SolidColorBrush {StaticResource ActionBlue}}"
+                                                <Border Background="{SolidColorBrush {DynamicResource ActionBlue}}"
                                                         StrokeThickness="0"
                                                         StrokeShape="RoundRectangle 4"
                                                         HeightRequest="32"
@@ -422,7 +422,7 @@
                                                            HeightRequest="16"
                                                            Aspect="AspectFit" />
                                                 </Border>
-                                                <Border Background="{SolidColorBrush {StaticResource SystemGray4}}"
+                                                <Border Background="{SolidColorBrush {DynamicResource SystemGray4}}"
                                                         StrokeThickness="0"
                                                         StrokeShape="RoundRectangle 4"
                                                         HeightRequest="32"
@@ -437,7 +437,7 @@
                                                            HeightRequest="16"
                                                            Aspect="AspectFit" />
                                                 </Border>
-                                                <Border Background="{SolidColorBrush {StaticResource SystemGray3}}"
+                                                <Border Background="{SolidColorBrush {DynamicResource SystemGray3}}"
                                                         StrokeThickness="0"
                                                         StrokeShape="RoundRectangle 4"
                                                         HeightRequest="32"
@@ -457,7 +457,7 @@
                                             <HorizontalStackLayout Spacing="8"
                                                                    HorizontalOptions="End"
                                                                    IsVisible="{Binding IsStoppedAndIdle}">
-                                                <Border Background="{SolidColorBrush {StaticResource ActionBlue}}"
+                                                <Border Background="{SolidColorBrush {DynamicResource ActionBlue}}"
                                                         StrokeThickness="0"
                                                         StrokeShape="RoundRectangle 4"
                                                         HeightRequest="32"
@@ -471,7 +471,7 @@
                                                            HeightRequest="16"
                                                            Aspect="AspectFit" />
                                                 </Border>
-                                                <Border Background="{SolidColorBrush {StaticResource SystemGray4}}"
+                                                <Border Background="{SolidColorBrush {DynamicResource SystemGray4}}"
                                                         StrokeThickness="0"
                                                         StrokeShape="RoundRectangle 4"
                                                         HeightRequest="32"
@@ -493,10 +493,10 @@
                                                 <ActivityIndicator IsRunning="{Binding IsBusy}"
                                                                    WidthRequest="16"
                                                                    HeightRequest="16"
-                                                                   Color="{StaticResource LabelPrimary}" />
+                                                                   Color="{DynamicResource LabelPrimary}" />
                                                <Label Text="{Binding BusyText}"
                                                       FontSize="12"
-                                                      TextColor="{StaticResource LabelSecondary}"
+                                                      TextColor="{DynamicResource LabelSecondary}"
                                                       VerticalOptions="Center" />
                                             </HorizontalStackLayout>
                                         </Grid>
@@ -504,7 +504,7 @@
 
                                     <BoxView Grid.Row="1"
                                              HeightRequest="1"
-                                             BackgroundColor="{StaticResource Separator}" />
+                                             BackgroundColor="{DynamicResource Separator}" />
                                 </Grid>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>

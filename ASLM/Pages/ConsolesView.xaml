@@ -14,7 +14,7 @@
                 <Label Text="Consoles"
                        FontSize="24"
                        FontAttributes="Bold"
-                       TextColor="{StaticResource LabelPrimary}" />
+                       TextColor="{DynamicResource LabelPrimary}" />
             </VerticalStackLayout>
         </Grid>
 
@@ -27,8 +27,8 @@
 
             <Border x:Name="ModulesPanel"
                     Grid.Column="0"
-                    BackgroundColor="{StaticResource BackgroundSecondary}"
-                    Stroke="{StaticResource Separator}"
+                    BackgroundColor="{DynamicResource BackgroundSecondary}"
+                    Stroke="{DynamicResource Separator}"
                     StrokeThickness="1"
                     StrokeShape="RoundRectangle 8"
                     Padding="8">
@@ -38,7 +38,7 @@
                         <Label Text="Modules"
                                FontSize="16"
                                FontAttributes="Bold"
-                               TextColor="{StaticResource LabelPrimary}" />
+                               TextColor="{DynamicResource LabelPrimary}" />
                     </VerticalStackLayout>
 
                     <CollectionView x:Name="ModulesCollection"
@@ -50,7 +50,7 @@
                         <CollectionView.EmptyView>
                             <Label Text="No active modules"
                                    FontSize="13"
-                                   TextColor="{StaticResource LabelSecondary}"
+                                   TextColor="{DynamicResource LabelSecondary}"
                                    HorizontalOptions="Center"
                                    VerticalOptions="Center" />
                         </CollectionView.EmptyView>
@@ -65,10 +65,10 @@
                                         <Label Text="{Binding Name}"
                                                FontSize="14"
                                                FontAttributes="Bold"
-                                               TextColor="{StaticResource LabelPrimary}" />
+                                               TextColor="{DynamicResource LabelPrimary}" />
                                         <Label Text="{Binding StatusText}"
                                                FontSize="12"
-                                               TextColor="{StaticResource LabelSecondary}" />
+                                               TextColor="{DynamicResource LabelSecondary}" />
                                     </VerticalStackLayout>
                                 </Border>
                             </DataTemplate>
@@ -79,8 +79,8 @@
 
             <Border x:Name="SessionsPanel"
                     Grid.Column="1"
-                    BackgroundColor="{StaticResource BackgroundSecondary}"
-                    Stroke="{StaticResource Separator}"
+                    BackgroundColor="{DynamicResource BackgroundSecondary}"
+                    Stroke="{DynamicResource Separator}"
                     StrokeThickness="1"
                     StrokeShape="RoundRectangle 8"
                     Padding="8">
@@ -90,7 +90,7 @@
                         <Label Text="Consoles"
                                FontSize="16"
                                FontAttributes="Bold"
-                               TextColor="{StaticResource LabelPrimary}" />
+                               TextColor="{DynamicResource LabelPrimary}" />
                     </VerticalStackLayout>
 
                     <CollectionView x:Name="SessionsCollection"
@@ -102,7 +102,7 @@
                         <CollectionView.EmptyView>
                             <Label Text="No consoles"
                                    FontSize="13"
-                                   TextColor="{StaticResource LabelSecondary}"
+                                   TextColor="{DynamicResource LabelSecondary}"
                                    HorizontalOptions="Center"
                                    VerticalOptions="Center" />
                         </CollectionView.EmptyView>
@@ -117,10 +117,10 @@
                                         <Label Text="{Binding Title}"
                                                FontSize="14"
                                                FontAttributes="Bold"
-                                               TextColor="{StaticResource LabelPrimary}" />
+                                               TextColor="{DynamicResource LabelPrimary}" />
                                         <Label Text="{Binding StatusText}"
                                                FontSize="12"
-                                               TextColor="{StaticResource LabelSecondary}" />
+                                               TextColor="{DynamicResource LabelSecondary}" />
                                     </VerticalStackLayout>
                                 </Border>
                             </DataTemplate>
@@ -131,8 +131,8 @@
 
             <Border x:Name="OutputPanel"
                     Grid.Column="2"
-                    BackgroundColor="{StaticResource BackgroundSecondary}"
-                    Stroke="{StaticResource Separator}"
+                    BackgroundColor="{DynamicResource BackgroundSecondary}"
+                    Stroke="{DynamicResource Separator}"
                     StrokeThickness="1"
                     StrokeShape="RoundRectangle 8"
                     Padding="8">
@@ -143,7 +143,7 @@
                         <Label Text="{Binding SelectedSessionTitle}"
                                FontSize="16"
                                FontAttributes="Bold"
-                               TextColor="{StaticResource LabelPrimary}" />
+                               TextColor="{DynamicResource LabelPrimary}" />
                     </VerticalStackLayout>
 
                     <services:ConsoleOutputView x:Name="ConsoleOutputHost"

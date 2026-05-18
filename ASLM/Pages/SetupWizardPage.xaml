@@ -4,7 +4,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ASLM.Pages.SetupWizardPage"
              Title="ASLM Setup"
-             BackgroundColor="{StaticResource BackgroundPrimary}">
+             BackgroundColor="{DynamicResource BackgroundPrimary}">
 
     <Grid RowDefinitions="Auto, *, Auto" Padding="16">
 
@@ -15,17 +15,17 @@
                 <Label Text="ASLM Setup"
                        FontSize="28"
                        FontAttributes="Bold"
-                       TextColor="{StaticResource LabelPrimary}" />
+                       TextColor="{DynamicResource LabelPrimary}" />
                 <Label x:Name="StepLabel"
                        Text="Step 1 of 3 - User Profile"
                        FontSize="14"
-                       TextColor="{StaticResource LabelSecondary}" />
+                       TextColor="{DynamicResource LabelSecondary}" />
             </VerticalStackLayout>
             <Button x:Name="ToggleLogButton"
                     Grid.Column="1"
                     Text="Show Log"
-                    BackgroundColor="{StaticResource SystemGray4}"
-                    TextColor="{StaticResource LabelSecondary}"
+                    BackgroundColor="{DynamicResource SystemGray4}"
+                    TextColor="{DynamicResource LabelSecondary}"
                     FontSize="12"
                     HeightRequest="30"
                     WidthRequest="120"
@@ -44,24 +44,24 @@
                 <Label Text="Welcome to ASLM!"
                        FontSize="36"
                        FontAttributes="Bold"
-                       TextColor="{StaticResource LabelPrimary}"
+                       TextColor="{DynamicResource LabelPrimary}"
                        HorizontalTextAlignment="Center" />
                 <Label Text="Advanced System Language Models"
                        FontSize="16"
-                       TextColor="{StaticResource LabelSecondary}"
+                       TextColor="{DynamicResource LabelSecondary}"
                        HorizontalTextAlignment="Center"
                        Margin="0,0,0,24" />
                 <Button Text="Setup"
-                        BackgroundColor="{StaticResource ActionBlue}"
-                        TextColor="{StaticResource LabelPrimary}"
+                        BackgroundColor="{DynamicResource ActionBlue}"
+                        TextColor="{DynamicResource White}"
                         FontSize="16"
                         HeightRequest="48"
                         WidthRequest="280"
                         HorizontalOptions="Center"
                         Clicked="OnSetupClicked" />
                 <Button Text="Fast Setup"
-                        BackgroundColor="{StaticResource SystemGray4}"
-                        TextColor="{StaticResource LabelPrimary}"
+                        BackgroundColor="{DynamicResource SystemGray4}"
+                        TextColor="{DynamicResource LabelPrimary}"
                         FontSize="16"
                         HeightRequest="48"
                         WidthRequest="280"
@@ -69,7 +69,7 @@
                         Clicked="OnFastSetupClicked" />
                 <Label Text="Fast Setup uses your Windows username and default ports"
                        FontSize="12"
-                       TextColor="{StaticResource LabelSecondary}"
+                       TextColor="{DynamicResource LabelSecondary}"
                        HorizontalTextAlignment="Center"
                        Margin="0,4,0,0" />
             </VerticalStackLayout>
@@ -80,13 +80,13 @@
                                  WidthRequest="400">
                 <Label Text="Choose a display name"
                        FontSize="16"
-                       TextColor="{StaticResource LabelPrimary}" />
+                       TextColor="{DynamicResource LabelPrimary}" />
                 <Entry x:Name="UsernameEntry"
                        Placeholder="Your name"
                        FontSize="16"
-                       TextColor="{StaticResource LabelPrimary}"
-                       PlaceholderColor="{StaticResource PlaceholderText}"
-                       BackgroundColor="{StaticResource BackgroundSecondary}" />
+                       TextColor="{DynamicResource LabelPrimary}"
+                       PlaceholderColor="{DynamicResource PlaceholderText}"
+                       BackgroundColor="{DynamicResource BackgroundSecondary}" />
             </VerticalStackLayout>
 
             <!-- Step 2: Port Configuration -->
@@ -95,29 +95,29 @@
                                  WidthRequest="400">
                 <Label Text="Port Allocation"
                        FontSize="18"
-                       TextColor="{StaticResource LabelPrimary}" />
+                       TextColor="{DynamicResource LabelPrimary}" />
                 <Label Text="Official modules (100 ports)"
                        FontSize="13"
-                       TextColor="{StaticResource LabelSecondary}" />
+                       TextColor="{DynamicResource LabelSecondary}" />
                 <Entry x:Name="OfficialPortEntry"
                        Text="20000"
                        Keyboard="Numeric"
                        FontSize="16"
-                       TextColor="{StaticResource LabelPrimary}"
-                       BackgroundColor="{StaticResource BackgroundSecondary}" />
+                       TextColor="{DynamicResource LabelPrimary}"
+                       BackgroundColor="{DynamicResource BackgroundSecondary}" />
                 <Label Text="Third-party modules (1000 ports)"
                        FontSize="13"
-                       TextColor="{StaticResource LabelSecondary}" />
+                       TextColor="{DynamicResource LabelSecondary}" />
                 <Entry x:Name="ThirdPartyPortEntry"
                        Text="21000"
                        Keyboard="Numeric"
                        FontSize="16"
-                       TextColor="{StaticResource LabelPrimary}"
-                       BackgroundColor="{StaticResource BackgroundSecondary}" />
+                       TextColor="{DynamicResource LabelPrimary}"
+                       BackgroundColor="{DynamicResource BackgroundSecondary}" />
                 <Label x:Name="PortErrorLabel"
                        Text=""
                        FontSize="12"
-                       TextColor="{StaticResource ActionRed}"
+                       TextColor="{DynamicResource ActionRed}"
                        IsVisible="False" />
             </VerticalStackLayout>
 
@@ -139,20 +139,20 @@
                     <Label x:Name="InstallStatusLabel"
                            Text="Preparing..."
                            FontSize="14"
-                           TextColor="{StaticResource LabelPrimary}"
+                           TextColor="{DynamicResource LabelPrimary}"
                            Grid.Row="0"
                            Margin="0,0,0,8" />
 
                     <!-- Overall progress bar -->
                     <Label Text="Overall Progress"
                            FontSize="12"
-                           TextColor="{StaticResource LabelSecondary}"
+                           TextColor="{DynamicResource LabelSecondary}"
                            Grid.Row="1"
                            Margin="0,0,0,4" />
                     <ProgressBar x:Name="InstallProgress"
                                  Grid.Row="2"
                                  Progress="0"
-                                 ProgressColor="{StaticResource ActionBlue}"
+                                 ProgressColor="{DynamicResource ActionBlue}"
                                  HeightRequest="6"
                                  Margin="0,0,0,8" />
 
@@ -160,13 +160,13 @@
                     <Label x:Name="DownloadDetailLabel"
                            Text=""
                            FontSize="10"
-                           TextColor="{StaticResource LabelSecondary}"
+                           TextColor="{DynamicResource LabelSecondary}"
                            Grid.Row="3"
                            Margin="0,0,0,4" />
                     <ProgressBar x:Name="FileProgress"
                                  Grid.Row="4"
                                  Progress="0"
-                                 ProgressColor="{StaticResource ActionGreen}"
+                                 ProgressColor="{DynamicResource ActionGreen}"
                                  HeightRequest="4"
                                  Margin="0,0,0,8" />
 
@@ -175,8 +175,8 @@
                         <Editor x:Name="LogEditor"
                                 FontSize="12"
                                 FontFamily="Consolas"
-                                TextColor="{StaticResource LabelPrimary}"
-                                BackgroundColor="{StaticResource BackgroundSecondary}"
+                                TextColor="{DynamicResource LabelPrimary}"
+                                BackgroundColor="{DynamicResource BackgroundSecondary}"
                                 IsReadOnly="True"
                                 AutoSize="TextChanges"
                                 Margin="0,8,0,0" />
@@ -193,16 +193,16 @@
                                IsVisible="False">
             <Button x:Name="BackButton"
                     Text="Back"
-                    BackgroundColor="{StaticResource SystemGray4}"
-                    TextColor="{StaticResource LabelPrimary}"
+                    BackgroundColor="{DynamicResource SystemGray4}"
+                    TextColor="{DynamicResource LabelPrimary}"
                     FontSize="14"
                     WidthRequest="100"
                     IsVisible="False"
                     Clicked="OnBackClicked" />
             <Button x:Name="NextButton"
                     Text="Next"
-                    BackgroundColor="{StaticResource ActionBlue}"
-                    TextColor="{StaticResource LabelPrimary}"
+                    BackgroundColor="{DynamicResource ActionBlue}"
+                    TextColor="{DynamicResource White}"
                     FontSize="14"
                     WidthRequest="100"
                     Clicked="OnNextClicked" />

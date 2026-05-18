@@ -21,8 +21,10 @@ namespace ASLM.Services
         private readonly ProcessTracker _processTracker;
         private readonly ModuleConsoleStore _consoleStore;
         private readonly ProcessSnapshotReader _processSnapshots;
+        private readonly ModuleThemePayloadBuilder _themePayloadBuilder;
         private readonly ILogger<ModuleRunner> _logger;
         private readonly SemaphoreSlim _settingCommandThrottle = new(4, 4);
+        private static readonly Encoding Utf8NoBom = new UTF8Encoding(false);
         private bool _disposed;
 
         // Running processes
@@ -44,6 +46,7 @@ namespace ASLM.Services
         /// <param name="processTracker">Service that groups child processes under ASLM.</param>
         /// <param name="consoleStore">Service to report console output and process sessions.</param>
         /// <param name="processSnapshots">Service that shares cached process-table snapshots.</param>
+        /// <param name="themePayloadBuilder">Builds host theme JSON for modules that declare a theme setting.</param>
         /// <param name="logger">Logger instance.</param>
         public ModuleRunner(
             EngineInstaller engineInstaller,
@@ -52,6 +55,7 @@ namespace ASLM.Services
             ProcessTracker processTracker,
             ModuleConsoleStore consoleStore,
             ProcessSnapshotReader processSnapshots,
+            ModuleThemePayloadBuilder themePayloadBuilder,
             ILogger<ModuleRunner> logger)
         {
             _engineInstaller = engineInstaller;
@@ -60,6 +64,7 @@ namespace ASLM.Services
             _processTracker = processTracker;
             _consoleStore = consoleStore;
             _processSnapshots = processSnapshots;
+            _themePayloadBuilder = themePayloadBuilder;
             _logger = logger;
             _ports.PortsRedistributed += OnPortsRedistributed;
         }
@@ -81,6 +86,8 @@ namespace ASLM.Services
             // 1. Install engine dependencies (libraries) first
             if (!await InstallDependenciesAsync(module, moduleLog, ct))
                 return false;
+
+            await SynchronizeDeclaredModuleSettingsAsync(module, moduleLog, ct);
 
             // 2. Run firstRun commands
             if (module.Commands.FirstRun.Count == 0)
@@ -130,60 +137,7 @@ namespace ASLM.Services
                 return true;
             }
 
-            // Synchronize settings: resolve target values, check current values in parallel,
-            // then apply only the settings that actually need updating.
-            if (module.Settings != null && module.Settings.Count > 0)
-            {
-                moduleLog.Report("Synchronizing module settings...");
-
-                // Collect only settings that have a SetExec defined.
-                var settingsToSync = module.Settings
-                    .Where(s => !string.IsNullOrEmpty(s.SetExec))
-                    .ToList();
-
-                if (settingsToSync.Count > 0)
-                {
-                    // Resolve all target values up front (no I/O, very fast).
-                    var targets = settingsToSync
-                        .Select(s => (Setting: s, Target: ResolveSettingValue(module, s)))
-                        .ToList();
-
-                    // Fire GetExec checks in parallel, while ExecuteSettingCommandAsync keeps
-                    // the process-spawn concurrency bounded across the application.
-                    var checkTasks = targets.Select(async t =>
-                    {
-                        if (string.IsNullOrEmpty(t.Setting.GetExec))
-                        {
-                            return (t.Setting, t.Target, NeedsUpdate: true);
-                        }
-
-                        var current = await ExecuteSettingCommandAsync(module, t.Setting, isSet: false, newValue: null, ct);
-                        var upToDate = current != null &&
-                                       string.Equals(current.Trim(), t.Target.Trim(), StringComparison.OrdinalIgnoreCase);
-
-                        if (upToDate)
-                        {
-                            moduleLog.Report($"[Sync] '{t.Setting.Key}' is already up to date ({current!.Trim()})");
-                        }
-
-                        return (t.Setting, t.Target, NeedsUpdate: !upToDate);
-                    });
-
-                    var results = await Task.WhenAll(checkTasks);
-
-                    // Apply Set commands sequentially for those that need updating.
-                    foreach (var (setting, target, needsUpdate) in results)
-                    {
-                        if (ct.IsCancellationRequested) return false;
-
-                        if (needsUpdate)
-                        {
-                            moduleLog.Report($"[Sync] Applying '{setting.Key}' = {target}");
-                            await ExecuteSettingCommandAsync(module, setting, isSet: true, newValue: target, ct);
-                        }
-                    }
-                }
-            }
+            await SynchronizeDeclaredModuleSettingsAsync(module, moduleLog, ct);
 
             moduleLog.Report($"Starting {module.Name}...");
 
@@ -197,6 +151,68 @@ namespace ASLM.Services
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Resolves declared module settings with <c>setExec</c>, optionally compares <c>getExec</c> output,
+        /// and applies updates through the module's console commands (same path as the settings UI save flow).
+        /// </summary>
+        private async Task SynchronizeDeclaredModuleSettingsAsync(ModuleConfig module, IProgress<string> moduleLog, CancellationToken ct)
+        {
+            if (module.Settings == null || module.Settings.Count == 0)
+            {
+                return;
+            }
+
+            moduleLog.Report("Synchronizing module settings...");
+
+            var settingsToSync = module.Settings
+                .Where(s => !string.IsNullOrEmpty(s.SetExec))
+                .ToList();
+
+            if (settingsToSync.Count == 0)
+            {
+                return;
+            }
+
+            var targets = settingsToSync
+                .Select(s => (Setting: s, Target: ResolveSettingValue(module, s)))
+                .ToList();
+
+            var checkTasks = targets.Select(async t =>
+            {
+                if (string.IsNullOrEmpty(t.Setting.GetExec))
+                {
+                    return (t.Setting, t.Target, NeedsUpdate: true);
+                }
+
+                var current = await ExecuteSettingCommandAsync(module, t.Setting, isSet: false, newValue: null, ct);
+                var upToDate = current != null &&
+                               string.Equals(current.Trim(), t.Target.Trim(), StringComparison.OrdinalIgnoreCase);
+
+                if (upToDate)
+                {
+                    moduleLog.Report($"[Sync] '{t.Setting.Key}' is already up to date ({current!.Trim()})");
+                }
+
+                return (t.Setting, t.Target, NeedsUpdate: !upToDate);
+            });
+
+            var results = await Task.WhenAll(checkTasks);
+
+            foreach (var (setting, target, needsUpdate) in results)
+            {
+                if (ct.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                if (needsUpdate)
+                {
+                    moduleLog.Report($"[Sync] Applying '{setting.Key}' = {target}");
+                    await ExecuteSettingCommandAsync(module, setting, isSet: true, newValue: target, ct);
+                }
+            }
         }
 
         // Module stop
@@ -365,6 +381,11 @@ namespace ASLM.Services
 
             foreach (var setting in module.Settings)
             {
+                if (string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 var resolved = ResolveSettingValue(module, setting);
                 var envKey = $"ASLM_{setting.Key.ToUpperInvariant()}";
                 psi.Environment[envKey] = resolved;
@@ -450,6 +471,9 @@ namespace ASLM.Services
                 case "bool":
                     var rawBool = (setting.Value ?? setting.Default)?.ToString();
                     return rawBool != null && rawBool.Equals("true", StringComparison.OrdinalIgnoreCase) ? "true" : "false";
+
+                case "theme":
+                    return _themePayloadBuilder.BuildJson();
 
                 default:
                     return (setting.Value ?? setting.Default)?.ToString() ?? string.Empty;
@@ -763,12 +787,24 @@ namespace ASLM.Services
             if (string.IsNullOrEmpty(execStr)) return null;
 
             await _settingCommandThrottle.WaitAsync(ct);
+            string? themePayloadFile = null;
             try
             {
-                // Replace {value} placeholder specifically for setExec
                 if (isSet && newValue != null)
                 {
-                    execStr = execStr.Replace("{value}", newValue);
+                    if (string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Large JSON payloads are written to a temp file so the child process argv stays reliable on Windows.
+                        var safeId = SanitizeFileNameSegment(module.Id);
+                        themePayloadFile = Path.Combine(Path.GetTempPath(), $"aslm_theme_{safeId}_{Guid.NewGuid():N}.json");
+                        await File.WriteAllTextAsync(themePayloadFile, newValue, Utf8NoBom, ct).ConfigureAwait(false);
+                        // Paths must be quoted for CreateProcess argv parsing when the profile or temp dir contains spaces.
+                        execStr = execStr.Replace("{value}", QuoteWindowsArgument(themePayloadFile));
+                    }
+                    else
+                    {
+                        execStr = execStr.Replace("{value}", newValue);
+                    }
                 }
 
                 var cmd = new ModuleCommand
@@ -803,7 +839,15 @@ namespace ASLM.Services
                     trackProcess: false,
                     injectSettings: isSet,
                     sessionStage: "Settings");
-                if (!success) return null;
+                if (!success)
+                {
+                    _logger.LogWarning(
+                        "Module setting command failed (module {ModuleId}, setting {SettingKey}, set={IsSet}).",
+                        module.Id,
+                        setting.Key,
+                        isSet);
+                    return null;
+                }
 
                 // Get the last non-empty line (to ignore banners or headers)
                 var lines = outputBuilder.ToString()
@@ -816,6 +860,18 @@ namespace ASLM.Services
             }
             finally
             {
+                if (themePayloadFile != null)
+                {
+                    try
+                    {
+                        File.Delete(themePayloadFile);
+                    }
+                    catch
+                    {
+                        // Best-effort cleanup of the theme payload staging file.
+                    }
+                }
+
                 _settingCommandThrottle.Release();
             }
         }
@@ -1192,6 +1248,41 @@ namespace ASLM.Services
         }
 
         // Engine key parsing
+
+        /// <summary>
+        /// Wraps one argument in double quotes for Windows process command lines (temp paths, user profiles with spaces).
+        /// </summary>
+        private static string QuoteWindowsArgument(string argument)
+        {
+            if (string.IsNullOrEmpty(argument))
+            {
+                return "\"\"";
+            }
+
+            var escaped = argument.Replace("\"", "\\\"", StringComparison.Ordinal);
+            return $"\"{escaped}\"";
+        }
+
+        /// <summary>
+        /// Produces a short filesystem-safe fragment from a module identifier for temp file names.
+        /// </summary>
+        private static string SanitizeFileNameSegment(string moduleId)
+        {
+            if (string.IsNullOrWhiteSpace(moduleId))
+            {
+                return "module";
+            }
+
+            var invalid = Path.GetInvalidFileNameChars();
+            var builder = new StringBuilder(moduleId.Length);
+            foreach (var ch in moduleId)
+            {
+                builder.Append(Array.IndexOf(invalid, ch) >= 0 ? '_' : ch);
+            }
+
+            var trimmed = builder.ToString().Trim();
+            return trimmed.Length > 0 ? trimmed : "module";
+        }
 
         /// <summary>
         /// Removes known engine setting suffixes from a setting key.
