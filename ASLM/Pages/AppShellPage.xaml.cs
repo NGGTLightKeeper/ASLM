@@ -124,7 +124,7 @@ namespace ASLM.Pages
             DownloadsButton.ImageSource = IconDownload;
             SettingsButton.ImageSource = IconSettings;
 
-            ApplySidebarButtonIconFromPalette(CollapseButton, "LabelSecondary");
+            ApplySidebarButtonIconFromPalette(CollapseButton, "LabelPrimary");
 
             // Initialize button labels and image layout based on the current sidebar width.
             foreach (var button in _navButtons)
@@ -229,7 +229,7 @@ namespace ASLM.Pages
         /// </summary>
         private void OnAppPaletteApplied()
         {
-            ApplySidebarButtonIconFromPalette(CollapseButton, "LabelSecondary");
+            ApplySidebarButtonIconFromPalette(CollapseButton, "LabelPrimary");
 
             foreach (var button in _navButtons)
             {
