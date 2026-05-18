@@ -105,7 +105,7 @@
                                 <Grid Grid.Row="1"
                                       ColumnDefinitions="Auto,*"
                                       ColumnSpacing="8">
-                                    <ImageButton Source="icon_copy.png"
+                                    <ImageButton Source="{Binding CopyIconSource}"
                                                  WidthRequest="24"
                                                  HeightRequest="24"
                                                  MinimumWidthRequest="24"
@@ -114,7 +114,7 @@
                                                  CornerRadius="4"
                                                  Command="{Binding CopyCommand}"
                                                  ToolTipProperties.Text="Copy address"
-                                                 BackgroundColor="{DynamicResource BackgroundTertiary}"
+                                                 BackgroundColor="{Binding CopyButtonBackground}"
                                                  VerticalOptions="Center" />
 
                                     <Label Grid.Column="1"
