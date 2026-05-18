@@ -41,6 +41,10 @@ namespace ASLM.Models
         [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
 
+        // Optional category tags for future grouping or discovery (manifest-only metadata).
+        [JsonPropertyName("category")]
+        public List<string> Category { get; set; } = [];
+
         // Remote source definition for the module package.
         [JsonPropertyName("source")]
         public ModuleSource Source { get; set; } = new();
@@ -109,6 +113,12 @@ namespace ASLM.Models
             Version ??= string.Empty;
             Author ??= string.Empty;
             Type ??= string.Empty;
+            Category ??= [];
+            Category = Category
+                .Where(static tag => !string.IsNullOrWhiteSpace(tag))
+                .Select(static tag => tag.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
             Icon = string.IsNullOrWhiteSpace(Icon) ? null : Icon;
             SidebarIcon = string.IsNullOrWhiteSpace(SidebarIcon) ? null : SidebarIcon;
             SourcePath ??= string.Empty;

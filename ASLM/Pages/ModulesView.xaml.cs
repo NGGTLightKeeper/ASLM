@@ -1758,6 +1758,7 @@ namespace ASLM.Pages
             _config.Version = freshConfig.Version;
             _config.Author = freshConfig.Author;
             _config.Type = freshConfig.Type;
+            _config.Category = freshConfig.Category;
             _config.Source = freshConfig.Source;
             _config.Dependencies = freshConfig.Dependencies;
             _config.Commands = freshConfig.Commands;
