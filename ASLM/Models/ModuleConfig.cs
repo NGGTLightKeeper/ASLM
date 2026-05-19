@@ -608,8 +608,8 @@ namespace ASLM.Models
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
 
-        // Setting type that controls validation and rendering behavior (string, port, bool, theme, …).
-        // The "theme" type is host-managed: ASLM resolves JSON and applies it through setExec without UI or env injection.
+        // Setting type that controls validation and rendering behavior (string, port, bool, theme, locale, …).
+        // The "theme" and "locale" types are host-managed: ASLM resolves JSON and applies through setExec without UI or env injection.
         [JsonPropertyName("type")]
         public string Type { get; set; } = "string";
 

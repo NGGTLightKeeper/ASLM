@@ -54,6 +54,8 @@ namespace ASLM
             builder.Services.AddSingleton<ProcessSnapshotReader>();
             builder.Services.AddSingleton<ProcessTracker>();
             builder.Services.AddSingleton<ModuleThemePayloadBuilder>();
+            builder.Services.AddSingleton<ModuleLocalePayloadBuilder>();
+            builder.Services.AddSingleton<AppLocalizationService>();
             builder.Services.AddSingleton<ModuleInteropHostState>();
             builder.Services.AddSingleton<ModuleStartThrottle>();
             builder.Services.AddSingleton<PortRegistry>();

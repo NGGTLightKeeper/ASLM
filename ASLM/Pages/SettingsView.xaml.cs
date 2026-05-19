@@ -107,6 +107,7 @@ namespace ASLM.Pages
         private AppPersonalizationConfig _personalizationBaseline = new();
         private CustomTheme? _editingThemeDraft;
         private Picker? _appearancePicker;
+        private Picker? _languagePicker;
         private VerticalStackLayout? _customThemeSection;
         private Picker? _customThemePicker;
         private VerticalStackLayout? _themeEditorSection;
@@ -533,11 +534,13 @@ namespace ASLM.Pages
             _personalizationDraft = new AppPersonalizationConfig
             {
                 Appearance = AppPersonalizationConfig.NormalizeAppearance(stored.Appearance),
+                Language = AppPersonalizationConfig.NormalizeLanguage(stored.Language),
                 CustomThemeId = stored.CustomThemeId
             };
             _personalizationBaseline = new AppPersonalizationConfig
             {
                 Appearance = _personalizationDraft.Appearance,
+                Language = _personalizationDraft.Language,
                 CustomThemeId = _personalizationDraft.CustomThemeId
             };
         }
@@ -1913,6 +1916,7 @@ namespace ASLM.Pages
         /// </summary>
         private bool HasUnsavedPersonalizationChanges() =>
             !string.Equals(_personalizationDraft.Appearance, _personalizationBaseline.Appearance, StringComparison.Ordinal) ||
+            !string.Equals(_personalizationDraft.Language, _personalizationBaseline.Language, StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(_personalizationDraft.CustomThemeId, _personalizationBaseline.CustomThemeId, StringComparison.Ordinal) ||
             HasUnsavedThemeColorChanges();
 
@@ -2412,7 +2416,7 @@ namespace ASLM.Pages
 
                 if (restartAfterSave && hadPersonalizationChanges)
                 {
-                    await RestartModulesForPersistedHostThemeAsync(touchedModules);
+                    await RestartModulesForHostPersonalizationAsync(touchedModules);
                 }
             }
             finally
@@ -2443,9 +2447,9 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Restarts enabled modules that were not already restarted so they can reload the persisted host theme.
+        /// Restarts enabled modules that declare host-managed theme or locale settings and were not already restarted.
         /// </summary>
-        private async Task RestartModulesForPersistedHostThemeAsync(IEnumerable<ModuleConfig> alreadyRestarted)
+        private async Task RestartModulesForHostPersonalizationAsync(IEnumerable<ModuleConfig> alreadyRestarted)
         {
             var skip = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var module in alreadyRestarted)
@@ -2457,6 +2461,7 @@ namespace ASLM.Pages
             }
 
             foreach (var module in _loadedModules.Where(m =>
+                         ModuleDeclaresHostPersonalizationSync(m) &&
                          CanRestartModule(m) &&
                          !string.IsNullOrWhiteSpace(m.SourcePath) &&
                          !skip.Contains(m.SourcePath)))
@@ -2464,6 +2469,11 @@ namespace ASLM.Pages
                 await _settingsService.RestartModuleAsync(module);
             }
         }
+
+        private static bool ModuleDeclaresHostPersonalizationSync(ModuleConfig module) =>
+            module.Settings?.Any(setting =>
+                string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(setting.NormalizedType, "locale", StringComparison.OrdinalIgnoreCase)) == true;
 
         /// <summary>
         /// Restarts the application startup chain so app-level changes take effect.
@@ -3171,6 +3181,26 @@ namespace ASLM.Pages
             var section = CreateModuleSectionBorder();
             var content = new VerticalStackLayout { Spacing = 8 };
 
+            _languagePicker = CreatePicker(string.Empty, 13);
+            foreach (var language in AppLocalizationService.SupportedLanguages)
+            {
+                _languagePicker.Items.Add(language.DisplayName);
+            }
+
+            var selectedLanguage = AppLocalizationService.SupportedLanguages
+                .FirstOrDefault(language =>
+                    string.Equals(language.Id, _personalizationDraft.Language, StringComparison.OrdinalIgnoreCase))
+                ?? AppLocalizationService.SupportedLanguages[0];
+            _personalizationDraft.Language = selectedLanguage.Id;
+            _languagePicker.SelectedItem = selectedLanguage.DisplayName;
+            _languagePicker.SelectedIndexChanged += OnLanguagePickerChanged;
+            ApplyCompactPickerStyle(_languagePicker);
+
+            content.Children.Add(CreateUpdateCard(
+                "Language",
+                "Sets the interface language for ASLM and supported modules.",
+                CreatePickerContainer(_languagePicker, PersonalizationPickerMaxWidth)));
+
             _appearancePicker = CreatePicker(string.Empty, 13);
             _appearancePicker.Items.Add("Dark");
             _appearancePicker.Items.Add("Light");
@@ -3216,6 +3246,7 @@ namespace ASLM.Pages
         private void ResetPersonalizationControlReferences()
         {
             _appearancePicker = null;
+            _languagePicker = null;
             _customThemeSection = null;
             _customThemePicker = null;
             _themeEditorSection = null;
@@ -3725,6 +3756,22 @@ namespace ASLM.Pages
             RefreshCategorySelectorChromeFromResources();
         }
 
+        private void OnLanguagePickerChanged(object? sender, EventArgs e)
+        {
+            if (_languagePicker == null)
+            {
+                return;
+            }
+
+            var selectedDisplayName = _languagePicker.SelectedItem as string;
+            var language = AppLocalizationService.SupportedLanguages
+                .FirstOrDefault(option =>
+                    string.Equals(option.DisplayName, selectedDisplayName, StringComparison.Ordinal))
+                ?? AppLocalizationService.SupportedLanguages[0];
+            _personalizationDraft.Language = language.Id;
+            QueueActionButtonUpdate();
+        }
+
         private async void OnCreateThemeClicked(object? sender, EventArgs e)
         {
             var name = await PromptAsync("New Theme", "Enter a name for the new theme:", "My Theme");
@@ -3927,6 +3974,7 @@ namespace ASLM.Pages
 
             // Update app data personalization section.
             _appData.Data.Personalization.Appearance = _personalizationDraft.Appearance;
+            _appData.Data.Personalization.Language = _personalizationDraft.Language;
             _appData.Data.Personalization.CustomThemeId = _personalizationDraft.CustomThemeId;
             _appData.Data.Personalization.Normalize();
 
@@ -3934,6 +3982,7 @@ namespace ASLM.Pages
             _personalizationBaseline = new AppPersonalizationConfig
             {
                 Appearance = _personalizationDraft.Appearance,
+                Language = _personalizationDraft.Language,
                 CustomThemeId = _personalizationDraft.CustomThemeId
             };
 

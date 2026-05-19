@@ -167,7 +167,7 @@ namespace ASLM.Services
                 new(
                     "aslm-personalization",
                     "Personalization",
-                    "Theme mode and custom theme settings.",
+                    "Theme mode, language, and custom theme settings.",
                     SettingsCategoryKind.Personalization,
                     null,
                     false)
@@ -565,7 +565,8 @@ namespace ASLM.Services
         /// </summary>
         public static bool ShouldDisplaySetting(ModuleSetting setting) =>
             !string.Equals(setting.NormalizedType, "port", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase);
+            !string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(setting.NormalizedType, "locale", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Evaluates whether a setting should currently be visible based on its controlling toggle.
