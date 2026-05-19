@@ -74,6 +74,25 @@
                        Margin="0,4,0,0" />
             </VerticalStackLayout>
 
+            <!-- Docker install hint (only when CLI missing on Windows) -->
+            <VerticalStackLayout x:Name="DockerGatePanel" IsVisible="False" Spacing="15"
+                                 VerticalOptions="Center" HorizontalOptions="Center"
+                                 WidthRequest="400">
+                <Label Text="Install Docker Desktop"
+                       FontSize="18"
+                       TextColor="{DynamicResource LabelPrimary}" />
+                <Label Text="ASLM needs the Docker CLI. Install Docker Desktop, then tap Next."
+                       FontSize="16"
+                       LineBreakMode="WordWrap"
+                       TextColor="{DynamicResource LabelSecondary}" />
+                <Button Text="Install Docker"
+                        BackgroundColor="{DynamicResource ActionBlue}"
+                        TextColor="{DynamicResource LabelPrimary}"
+                        FontSize="16"
+                        HeightRequest="44"
+                        Clicked="OnDockerOpenGuideClicked" />
+            </VerticalStackLayout>
+
             <!-- Step 1: User Profile -->
             <VerticalStackLayout x:Name="Step1Panel" IsVisible="False" Spacing="15"
                                  VerticalOptions="Center" HorizontalOptions="Center"

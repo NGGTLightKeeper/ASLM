@@ -17,6 +17,7 @@ namespace ASLM.Pages
         private const int TotalSteps = 3;
 
         private readonly AppDataStore _appData;
+        private readonly DockerService _dockerService;
         private readonly EngineInstaller _engineInstaller;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
@@ -27,6 +28,9 @@ namespace ASLM.Pages
         private readonly StringBuilder _logBuffer = new();
 
         private int _currentStep;
+        private bool _skipDockerStep = true;
+        private bool _showDockerGate;
+        private bool _pendingFastSetup;
         private CancellationTokenSource? _cts;
         private bool _logVisible;
         private bool _moduleListLoaded;
@@ -45,6 +49,7 @@ namespace ASLM.Pages
         /// </summary>
         public SetupWizardPage(
             AppDataStore appData,
+            DockerService dockerService,
             EngineInstaller engineInstaller,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
@@ -52,6 +57,7 @@ namespace ASLM.Pages
             IServiceProvider services)
         {
             _appData = appData;
+            _dockerService = dockerService;
             _engineInstaller = engineInstaller;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
@@ -88,6 +94,7 @@ namespace ASLM.Pages
 
             _moduleListLoaded = true;
             await PopulateModuleListAsync();
+            _skipDockerStep = await _dockerService.IsCliInstalledAsync();
         }
 
 
@@ -98,7 +105,9 @@ namespace ASLM.Pages
         /// </summary>
         private void OnSetupClicked(object? sender, EventArgs e)
         {
+            _pendingFastSetup = false;
             _currentStep = 1;
+            _showDockerGate = !_skipDockerStep;
             UpdateStepUI();
         }
 
@@ -109,15 +118,37 @@ namespace ASLM.Pages
         /// </summary>
         private async void OnFastSetupClicked(object? sender, EventArgs e)
         {
-            // Fast setup uses the Windows username and the default port ranges.
             _appData.Data.User.Name = Environment.UserName;
             var defaultPorts = new AppPortConfig();
             _appData.Data.Ports.OfficialStart = defaultPorts.OfficialStart;
             _appData.Data.Ports.ThirdPartyStart = defaultPorts.ThirdPartyStart;
             await _appData.SaveAsync();
 
-            _currentStep = 3;
+            _pendingFastSetup = true;
+            if (_skipDockerStep)
+            {
+                _currentStep = 3;
+                _showDockerGate = false;
+            }
+            else
+            {
+                _currentStep = 1;
+                _showDockerGate = true;
+            }
+
             UpdateStepUI();
+        }
+
+        private async void OnDockerOpenGuideClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                await _dockerService.OpenInstallGuideAsync();
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlertAsync("Error", $"Could not open the browser: {ex.Message}", "OK");
+            }
         }
 
 
@@ -199,6 +230,15 @@ namespace ASLM.Pages
         /// </summary>
         private void OnBackClicked(object? sender, EventArgs e)
         {
+            if (_currentStep == 1 && _showDockerGate)
+            {
+                _currentStep = 0;
+                _showDockerGate = false;
+                _pendingFastSetup = false;
+                UpdateStepUI();
+                return;
+            }
+
             if (_currentStep <= 1)
             {
                 return;
@@ -217,6 +257,29 @@ namespace ASLM.Pages
         {
             if (_currentStep < TotalSteps)
             {
+                if (_currentStep == 1 && _showDockerGate)
+                {
+                    _skipDockerStep = await _dockerService.IsCliInstalledAsync();
+                    if (!_skipDockerStep)
+                    {
+                        await DisplayAlertAsync(
+                            "Docker",
+                            "Install Docker Desktop, then tap Next again.",
+                            "OK");
+                        return;
+                    }
+
+                    _showDockerGate = false;
+                    if (_pendingFastSetup)
+                    {
+                        _currentStep = 3;
+                        _pendingFastSetup = false;
+                    }
+
+                    UpdateStepUI();
+                    return;
+                }
+
                 if (_currentStep == 1)
                 {
                     if (!SettingsService.TryValidateDisplayName(UsernameEntry.Text, out var validatedUserName, out var displayNameErrorMessage))
@@ -249,18 +312,20 @@ namespace ASLM.Pages
         private void UpdateStepUI()
         {
             Step0Panel.IsVisible = _currentStep == 0;
-            Step1Panel.IsVisible = _currentStep == 1;
+            DockerGatePanel.IsVisible = _currentStep == 1 && _showDockerGate;
+            Step1Panel.IsVisible = _currentStep == 1 && !_showDockerGate;
             Step2Panel.IsVisible = _currentStep == 2;
             Step3Panel.IsVisible = _currentStep == 3;
 
             HeaderRow.IsVisible = _currentStep > 0;
             ButtonPanel.IsVisible = _currentStep > 0;
-            BackButton.IsVisible = _currentStep > 1;
+            BackButton.IsVisible = _currentStep > 1 || (_currentStep == 1 && _showDockerGate);
             NextButton.Text = _currentStep == TotalSteps ? "Install" : "Next";
             ResetNavigationButtons();
 
             StepLabel.Text = _currentStep switch
             {
+                1 when _showDockerGate => "Docker Desktop",
                 1 => "Step 1 of 3 - User Profile",
                 2 => "Step 2 of 3 - Port Configuration",
                 3 => "Step 3 of 3 - Module Selection",
