@@ -26,6 +26,7 @@ namespace ASLM.Services
         private readonly AppDataStore _appData;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
+        private readonly ModuleTrustService _moduleTrustService;
         private readonly GitHubUpdateClient _github;
         private readonly NotificationCenter _notifications;
         private readonly ILogger<UpdateManager> _logger;
@@ -47,6 +48,7 @@ namespace ASLM.Services
             AppDataStore appData,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
+            ModuleTrustService moduleTrustService,
             GitHubUpdateClient github,
             NotificationCenter notifications,
             ILogger<UpdateManager> logger)
@@ -54,6 +56,7 @@ namespace ASLM.Services
             _appData = appData;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
+            _moduleTrustService = moduleTrustService;
             _github = github;
             _notifications = notifications;
             _logger = logger;
@@ -635,6 +638,9 @@ namespace ASLM.Services
                 if (success)
                 {
                     _notifications.CompleteDownload(operationKey, $"{module.Name} updated successfully.");
+
+                    // Refresh the signed community-reviewed list when the remote trust API is enabled.
+                    await _moduleTrustService.RefreshReviewedListAsync(ct);
                 }
                 else
                 {

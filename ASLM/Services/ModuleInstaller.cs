@@ -17,6 +17,7 @@ namespace ASLM.Services
     {
         private readonly HttpClient _httpClient = new();
         private readonly ModuleRunner _moduleRunner;
+        private readonly ModuleTrustService _moduleTrustService;
 
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
@@ -34,9 +35,10 @@ namespace ASLM.Services
         /// <summary>
         /// Creates the module installer.
         /// </summary>
-        public ModuleInstaller(ModuleRunner moduleRunner)
+        public ModuleInstaller(ModuleRunner moduleRunner, ModuleTrustService moduleTrustService)
         {
             _moduleRunner = moduleRunner;
+            _moduleTrustService = moduleTrustService;
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("ASLM-ModuleInstaller");
         }
 
@@ -294,6 +296,9 @@ namespace ASLM.Services
                     {
                         log.Report($"Module '{config.Name}' installed, but setup failed.");
                     }
+
+                    // Refresh the signed community-reviewed list when the remote trust API is enabled.
+                    await _moduleTrustService.RefreshReviewedListAsync(ct);
 
                     return config;
                 }

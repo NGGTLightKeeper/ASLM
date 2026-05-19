@@ -71,14 +71,65 @@
                                 <Grid Grid.Row="0"
                                       ColumnDefinitions="*,Auto,Auto,Auto"
                                       ColumnSpacing="4">
-                                    <Label Text="{Binding Name}"
-                                           FontSize="16"
-                                           HeightRequest="24"
-                                           FontAttributes="Bold"
-                                           TextColor="{DynamicResource LabelPrimary}"
-                                           VerticalOptions="Center"
-                                           MaxLines="1"
-                                           LineBreakMode="TailTruncation" />
+                                    <Grid Grid.Column="0"
+                                          ColumnDefinitions="*,Auto,Auto"
+                                          ColumnSpacing="0"
+                                          VerticalOptions="Center"
+                                          HorizontalOptions="Start">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding Name}"
+                                               FontSize="16"
+                                               HeightRequest="24"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource LabelPrimary}"
+                                               VerticalOptions="Center"
+                                               MaxLines="1"
+                                               LineBreakMode="TailTruncation"
+                                               HorizontalOptions="Fill"
+                                               HorizontalTextAlignment="Start"
+                                               Margin="0,0,4,0"/>
+
+                                        <Border Grid.Column="1"
+                                                IsVisible="{Binding ShowVerifiedBadge}"
+                                                BackgroundColor="Transparent"
+                                                StrokeThickness="0"
+                                                WidthRequest="24"
+                                                HeightRequest="24"
+                                                Padding="0"
+                                                VerticalOptions="Center">
+                                            <Image Source="icon_verified.png"
+                                                   WidthRequest="24"
+                                                   HeightRequest="24"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"
+                                                   Aspect="AspectFit" />
+                                        </Border>
+
+                                        <Border Grid.Column="2"
+                                                IsVisible="{Binding ShowUnverifiedWarning}"
+                                                Background="#FF453A"
+                                                StrokeThickness="0"
+                                                StrokeShape="RoundRectangle 2"
+                                                HeightRequest="24"
+                                                Padding="0"
+                                                VerticalOptions="Center">
+                                            <HorizontalStackLayout Spacing="4"
+                                                                   Padding="4,0"
+                                                                   VerticalOptions="Center">
+                                                <Image Source="icon_warning.png"
+                                                       WidthRequest="20"
+                                                       HeightRequest="20"
+                                                       VerticalOptions="Center"
+                                                       Aspect="AspectFit" />
+                                                <Label Text="Not verified"
+                                                       FontSize="14"
+                                                       TextColor="#FFFFFF"
+                                                       VerticalOptions="Center"
+                                                       Padding="0"
+                                                       LineBreakMode="NoWrap" />
+                                            </HorizontalStackLayout>
+                                        </Border>
+                                    </Grid>
 
                                     <ActivityIndicator Grid.Column="1"
                                                        IsRunning="{Binding ShowHeaderBusyIndicator}"

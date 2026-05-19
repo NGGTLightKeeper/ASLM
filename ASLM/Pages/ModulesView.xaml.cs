@@ -18,9 +18,10 @@ namespace ASLM.Pages
     /// </summary>
     public partial class ModulesView : ContentView, INotifyPropertyChanged
     {
-        private const double MinCardWidth = 400;
+        private const double MinCardWidth = 440;
 
         private readonly UpdateManager _updateManager;
+        private readonly ModuleTrustService _moduleTrustService;
         private readonly ModuleLaunchCoordinator _launchCoordinator;
         private AppShellPage? _shell;
         private int _gridSpan = 1;
@@ -60,9 +61,13 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the module management view and hooks the resize handler.
         /// </summary>
-        public ModulesView(UpdateManager updateManager, ModuleLaunchCoordinator launchCoordinator)
+        public ModulesView(
+            UpdateManager updateManager,
+            ModuleTrustService moduleTrustService,
+            ModuleLaunchCoordinator launchCoordinator)
         {
             _updateManager = updateManager;
+            _moduleTrustService = moduleTrustService;
             _launchCoordinator = launchCoordinator;
             InitializeComponent();
             BindingContext = this;
@@ -156,6 +161,7 @@ namespace ASLM.Pages
                     runner,
                     _launchCoordinator,
                     _updateManager,
+                    _moduleTrustService,
                     OnModuleStateChanged,
                     OnMenuToggleRequested,
                     OpenConfigureUpdates,
@@ -172,6 +178,7 @@ namespace ASLM.Pages
             ModuleRunner runner,
             ModuleLaunchCoordinator launchCoordinator,
             UpdateManager updateManager,
+            ModuleTrustService moduleTrustService,
             Action onStateChanged) =>
             new ModuleViewModel(
                 config,
@@ -179,6 +186,7 @@ namespace ASLM.Pages
                 runner,
                 launchCoordinator,
                 updateManager,
+                moduleTrustService,
                 onStateChanged,
                 static _ => { },
                 static _ => { },
@@ -390,6 +398,9 @@ namespace ASLM.Pages
         public event PropertyChangedEventHandler? PropertyChanged;
 
 
+        private readonly ModuleTrustLevel _trustLevel;
+
+
         // Initialization
 
         /// <summary>
@@ -401,6 +412,7 @@ namespace ASLM.Pages
             ModuleRunner runner,
             ModuleLaunchCoordinator launchCoordinator,
             UpdateManager updateManager,
+            ModuleTrustService moduleTrustService,
             Action onStateChanged,
             Action<ModuleViewModel> onMenuToggleRequested,
             Action<ModuleViewModel> onConfigureUpdatesRequested,
@@ -411,6 +423,7 @@ namespace ASLM.Pages
             _runner = runner;
             _launchCoordinator = launchCoordinator;
             _updateManager = updateManager;
+            _trustLevel = moduleTrustService.Resolve(config);
             _onStateChanged = onStateChanged;
             _onMenuToggleRequested = onMenuToggleRequested;
             _onConfigureUpdatesRequested = onConfigureUpdatesRequested;
@@ -448,6 +461,21 @@ namespace ASLM.Pages
         /// Gets the module name shown on the card.
         /// </summary>
         public string Name => _config.Name;
+
+        /// <summary>
+        /// Gets the resolved trust level for the module card.
+        /// </summary>
+        public ModuleTrustLevel TrustLevel => _trustLevel;
+
+        /// <summary>
+        /// Gets whether the official verified badge should be shown.
+        /// </summary>
+        public bool ShowVerifiedBadge => _trustLevel == ModuleTrustLevel.Official;
+
+        /// <summary>
+        /// Gets whether the unverified warning badge should be shown.
+        /// </summary>
+        public bool ShowUnverifiedWarning => _trustLevel == ModuleTrustLevel.Unreviewed;
 
         /// <summary>
         /// Gets the short module description shown on the card.

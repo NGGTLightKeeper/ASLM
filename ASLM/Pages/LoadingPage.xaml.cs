@@ -19,6 +19,7 @@ namespace ASLM.Pages
         private readonly AslmModuleInteropServer _moduleInteropServer;
         private readonly ThemeService _themeService;
         private readonly CustomThemesStore _customThemesStore;
+        private readonly ModuleTrustService _moduleTrustService;
         private readonly IServiceProvider _services;
         private bool _initialized;
 
@@ -35,6 +36,7 @@ namespace ASLM.Pages
             AslmModuleInteropServer moduleInteropServer,
             ThemeService themeService,
             CustomThemesStore customThemesStore,
+            ModuleTrustService moduleTrustService,
             IServiceProvider services)
         {
             InitializeComponent();
@@ -45,6 +47,7 @@ namespace ASLM.Pages
             _moduleInteropServer = moduleInteropServer;
             _themeService = themeService;
             _customThemesStore = customThemesStore;
+            _moduleTrustService = moduleTrustService;
             _services = services;
         }
 
@@ -64,6 +67,7 @@ namespace ASLM.Pages
 
             _initialized = true;
             await Task.Run(() => _appData.InitializeAsync());
+            await Task.Run(() => _moduleTrustService.InitializeAsync());
             await Task.Run(() => _customThemesStore.LoadAsync());
             await Task.Run(() => _notifications.InitializeAsync());
             await Task.Run(() => _apiServer.StartIfEnabledAsync());

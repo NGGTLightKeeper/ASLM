@@ -44,6 +44,7 @@ namespace ASLM.Pages
         private readonly PortRegistry _ports;
         private readonly NotificationCenter _notifications;
         private readonly UpdateManager _updateManager;
+        private readonly ModuleTrustService _moduleTrustService;
         private readonly AslmApiServer _apiServer;
         private readonly ModuleStartThrottle _moduleStartThrottle;
         private readonly ModuleLaunchCoordinator _moduleLaunchCoordinator;
@@ -83,6 +84,7 @@ namespace ASLM.Pages
             PortRegistry ports,
             NotificationCenter notifications,
             UpdateManager updateManager,
+            ModuleTrustService moduleTrustService,
             AslmApiServer apiServer,
             ModuleStartThrottle moduleStartThrottle,
             ModuleLaunchCoordinator moduleLaunchCoordinator,
@@ -95,6 +97,7 @@ namespace ASLM.Pages
             _ports = ports;
             _notifications = notifications;
             _updateManager = updateManager;
+            _moduleTrustService = moduleTrustService;
             _apiServer = apiServer;
             _moduleStartThrottle = moduleStartThrottle;
             _moduleLaunchCoordinator = moduleLaunchCoordinator;
@@ -895,6 +898,7 @@ namespace ASLM.Pages
                 _moduleRunner,
                 _moduleLaunchCoordinator,
                 _updateManager,
+                _moduleTrustService,
                 OnModuleStateChanged);
 
             OpenModuleUpdateOverlay(viewModel, ModuleUpdateMode.Configure);
