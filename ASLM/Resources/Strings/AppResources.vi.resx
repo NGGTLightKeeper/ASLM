@@ -1,0 +1,935 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AppShell_Nav_Api" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="AppShell_Nav_Consoles" xml:space="preserve">
+    <value>Bảng điều khiển</value>
+  </data>
+  <data name="AppShell_Nav_Download" xml:space="preserve">
+    <value>Tải xuống</value>
+  </data>
+  <data name="AppShell_Nav_Home" xml:space="preserve">
+    <value>Trang chủ</value>
+  </data>
+  <data name="AppShell_Nav_Modules" xml:space="preserve">
+    <value>Mô-đun</value>
+  </data>
+  <data name="AppShell_Nav_Notifications" xml:space="preserve">
+    <value>Thông báo</value>
+  </data>
+  <data name="AppShell_Nav_Settings" xml:space="preserve">
+    <value>Cài đặt</value>
+  </data>
+  <data name="AppShell_Title" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
+    <value>Sao chép địa chỉ</value>
+  </data>
+  <data name="AslmApi_Hosts" xml:space="preserve">
+    <value>Máy chủ</value>
+  </data>
+  <data name="AslmApi_NoHosts" xml:space="preserve">
+    <value>Không có máy chủ</value>
+  </data>
+  <data name="AslmApi_Open" xml:space="preserve">
+    <value>Mở</value>
+  </data>
+  <data name="AslmApi_Title" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="Common_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Common_Back" xml:space="preserve">
+    <value>Quay lại</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Hủy</value>
+  </data>
+  <data name="Common_Discard" xml:space="preserve">
+    <value>Bỏ</value>
+  </data>
+  <data name="Common_Done" xml:space="preserve">
+    <value>Xong</value>
+  </data>
+  <data name="Common_Install" xml:space="preserve">
+    <value>Cài đặt</value>
+  </data>
+  <data name="Common_Install_Action" xml:space="preserve">
+    <value>Cài đặt</value>
+  </data>
+  <data name="Common_Next" xml:space="preserve">
+    <value>Tiếp</value>
+  </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Open" xml:space="preserve">
+    <value>Mở</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>Làm mới</value>
+  </data>
+  <data name="Common_Remove" xml:space="preserve">
+    <value>Gỡ</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Lưu</value>
+  </data>
+  <data name="Common_Saved" xml:space="preserve">
+    <value>Đã lưu</value>
+  </data>
+  <data name="Common_Stay" xml:space="preserve">
+    <value>Ở lại</value>
+  </data>
+  <data name="Common_Variant" xml:space="preserve">
+    <value>Biến thể</value>
+  </data>
+  <data name="Consoles_ModulesHeader" xml:space="preserve">
+    <value>Mô-đun</value>
+  </data>
+  <data name="Consoles_NoActiveModules" xml:space="preserve">
+    <value>Không có mô-đun đang hoạt động</value>
+  </data>
+  <data name="Consoles_NoConsoles" xml:space="preserve">
+    <value>Không có bảng điều khiển</value>
+  </data>
+  <data name="Consoles_Title" xml:space="preserve">
+    <value>Bảng điều khiển</value>
+  </data>
+  <data name="Downloads_CategoryCount_Many" xml:space="preserve">
+    <value>{0} danh mục</value>
+  </data>
+  <data name="Downloads_CategoryCount_None" xml:space="preserve">
+    <value>Không có danh mục</value>
+  </data>
+  <data name="Downloads_CategoryCount_One" xml:space="preserve">
+    <value>1 danh mục</value>
+  </data>
+  <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
+    <value>Chọn một họ tài nguyên để xem biến thể và chi tiết</value>
+  </data>
+  <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
+    <value>Không có mô-đun đã cài đặt nào hiện cung cấp cầu nối tải xuống</value>
+  </data>
+  <data name="Downloads_EmptyCategory" xml:space="preserve">
+    <value>Không có tải xuống nhóm nào cho danh mục này</value>
+  </data>
+  <data name="Downloads_EmptyFiltered" xml:space="preserve">
+    <value>Không có tải xuống nhóm nào khớp bộ lọc nhà cung cấp hiện tại</value>
+  </data>
+  <data name="Downloads_EmptySearch" xml:space="preserve">
+    <value>Không có kết quả khớp "{0}" ở phía nhà cung cấp</value>
+  </data>
+  <data name="Downloads_NoItems" xml:space="preserve">
+    <value>Không có mục</value>
+  </data>
+  <data name="Downloads_SearchPlaceholder" xml:space="preserve">
+    <value>Tìm trong danh mục nhà cung cấp</value>
+  </data>
+  <data name="Downloads_SelectItem" xml:space="preserve">
+    <value>Chọn một mục</value>
+  </data>
+  <data name="Downloads_Title" xml:space="preserve">
+    <value>Tải xuống</value>
+  </data>
+  <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
+    <value>Hoạt động mô-đun gần nhất {0}</value>
+  </data>
+  <data name="Home_Card_Modules_NoActivity" xml:space="preserve">
+    <value>Chưa ghi nhận hoạt động mô-đun</value>
+  </data>
+  <data name="Home_Card_Modules_StatusTotal" xml:space="preserve">
+    <value>{0} tổng</value>
+  </data>
+  <data name="Home_Card_Modules_Subtitle" xml:space="preserve">
+    <value>Vòng đời và hoạt động bảng điều khiển</value>
+  </data>
+  <data name="Home_Card_Modules_Title" xml:space="preserve">
+    <value>Mô-đun được quản lý</value>
+  </data>
+  <data name="Home_Card_Runtime_ChildCount" xml:space="preserve">
+    <value>{0} tiến trình con đang chạy trong cây ASLM</value>
+  </data>
+  <data name="Home_Card_Runtime_NoChildren" xml:space="preserve">
+    <value>Hiện không có tiến trình con được quản lý</value>
+  </data>
+  <data name="Home_Card_Runtime_StatusPid" xml:space="preserve">
+    <value>PID {0}</value>
+  </data>
+  <data name="Home_Card_Runtime_Subtitle" xml:space="preserve">
+    <value>Tiến trình ứng dụng và cây tiến trình con được quản lý</value>
+  </data>
+  <data name="Home_Card_Runtime_Title" xml:space="preserve">
+    <value>Thời gian chạy ASLM</value>
+  </data>
+  <data name="Home_Card_System_SampledAt" xml:space="preserve">
+    <value>Lấy mẫu lúc {0}</value>
+  </data>
+  <data name="Home_Card_System_Status" xml:space="preserve">
+    <value>Trực tiếp</value>
+  </data>
+  <data name="Home_Card_System_Subtitle" xml:space="preserve">
+    <value>Tải máy chủ</value>
+  </data>
+  <data name="Home_Card_System_Title" xml:space="preserve">
+    <value>Hệ thống</value>
+  </data>
+  <data name="Home_Column_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Home_Column_Details" xml:space="preserve">
+    <value>Chi tiết</value>
+  </data>
+  <data name="Home_Column_Disk" xml:space="preserve">
+    <value>Đĩa</value>
+  </data>
+  <data name="Home_Column_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="Home_Column_Name" xml:space="preserve">
+    <value>Tên</value>
+  </data>
+  <data name="Home_Column_Net" xml:space="preserve">
+    <value>Mạng</value>
+  </data>
+  <data name="Home_Column_Ram" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="Home_Loading_WaitingSample" xml:space="preserve">
+    <value>Đang chờ mẫu</value>
+  </data>
+  <data name="Home_ManagedProcesses" xml:space="preserve">
+    <value>Tiến trình được quản lý</value>
+  </data>
+  <data name="Home_Metric_Active" xml:space="preserve">
+    <value>Đang hoạt động</value>
+  </data>
+  <data name="Home_Metric_Active_Detail" xml:space="preserve">
+    <value>Mô-đun có tiến trình con đang chạy</value>
+  </data>
+  <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
+    <value>{0} lõi logic</value>
+  </data>
+  <data name="Home_Metric_Cpu_RuntimeDetail" xml:space="preserve">
+    <value>Máy chủ ứng dụng và tiến trình con được quản lý</value>
+  </data>
+  <data name="Home_Metric_Disk_CombinedIo" xml:space="preserve">
+    <value>Tổng I/O tiến trình được quản lý</value>
+  </data>
+  <data name="Home_Metric_Disk_Rw" xml:space="preserve">
+    <value>Đ {0} - G {1}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Index" xml:space="preserve">
+    <value>GPU {0}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Unavailable" xml:space="preserve">
+    <value>Bộ đếm GPU không khả dụng</value>
+  </data>
+  <data name="Home_Metric_Installed" xml:space="preserve">
+    <value>Đã cài</value>
+  </data>
+  <data name="Home_Metric_Installed_Detail" xml:space="preserve">
+    <value>Mô-đun phát hiện trên đĩa</value>
+  </data>
+  <data name="Home_Metric_Network" xml:space="preserve">
+    <value>Mạng</value>
+  </data>
+  <data name="Home_Metric_Network_Endpoints" xml:space="preserve">
+    <value>Điểm cuối TCP và UDP mở trong cây ASLM</value>
+  </data>
+  <data name="Home_Metric_Network_RxTx" xml:space="preserve">
+    <value>Nhận {0} - Gửi {1}</value>
+  </data>
+  <data name="Home_Metric_NotAvailable" xml:space="preserve">
+    <value>không có</value>
+  </data>
+  <data name="Home_Metric_Processes" xml:space="preserve">
+    <value>Tiến trình</value>
+  </data>
+  <data name="Home_Metric_Processes_Detail" xml:space="preserve">
+    <value>Tiến trình con đang chạy do ASLM quản lý</value>
+  </data>
+  <data name="Home_Metric_Ram_Resident" xml:space="preserve">
+    <value>{0} cư trú</value>
+  </data>
+  <data name="Home_Metric_Ram_Usage" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="Home_Metric_Running" xml:space="preserve">
+    <value>Đang chạy</value>
+  </data>
+  <data name="Home_Metric_Running_Detail" xml:space="preserve">
+    <value>Mô-đun được đánh dấu bật</value>
+  </data>
+  <data name="Home_Metric_Sessions" xml:space="preserve">
+    <value>Phiên</value>
+  </data>
+  <data name="Home_Metric_Sessions_Detail" xml:space="preserve">
+    <value>{0} phiên bảng điều khiển đang hoạt động</value>
+  </data>
+  <data name="Home_Module_ByAuthor" xml:space="preserve">
+    <value>bởi {0}</value>
+  </data>
+  <data name="Home_Module_InstalledDefault" xml:space="preserve">
+    <value>Mô-đun đã cài</value>
+  </data>
+  <data name="Home_Module_Launching" xml:space="preserve">
+    <value>Đang khởi chạy</value>
+  </data>
+  <data name="Home_Module_Stopped" xml:space="preserve">
+    <value>Đã dừng</value>
+  </data>
+  <data name="Home_Module_Stopping" xml:space="preserve">
+    <value>Đang dừng</value>
+  </data>
+  <data name="Home_ModulesHeader" xml:space="preserve">
+    <value>Mô-đun</value>
+  </data>
+  <data name="Home_Status_Loading" xml:space="preserve">
+    <value>Đang tải</value>
+  </data>
+  <data name="Home_Title" xml:space="preserve">
+    <value>Trang chủ</value>
+  </data>
+  <data name="Loading_Text" xml:space="preserve">
+    <value>Đang tải...</value>
+  </data>
+  <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
+    <value>Kiểm tra cập nhật</value>
+  </data>
+  <data name="ModuleUpdate_CloseTooltip" xml:space="preserve">
+    <value>Đóng cập nhật mô-đun</value>
+  </data>
+  <data name="ModuleUpdate_CurrentVersion" xml:space="preserve">
+    <value>Phiên bản hiện tại</value>
+  </data>
+  <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
+    <value>Cài cập nhật</value>
+  </data>
+  <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
+    <value>Chưa chọn mô-đun</value>
+  </data>
+  <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
+    <value>Tiến độ tổng</value>
+  </data>
+  <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
+    <value>Tùy chọn được lưu tự động</value>
+  </data>
+  <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
+    <value>Phiên bản phát hành</value>
+  </data>
+  <data name="ModuleUpdate_RepositoryBranch" xml:space="preserve">
+    <value>Nhánh kho lưu trữ</value>
+  </data>
+  <data name="ModuleUpdate_SearchMode" xml:space="preserve">
+    <value>Chế độ tìm kiếm</value>
+  </data>
+  <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
+    <value>Mục tiêu đã chọn</value>
+  </data>
+  <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="ModuleUpdate_Title_Configure" xml:space="preserve">
+    <value>Cấu hình cập nhật mô-đun</value>
+  </data>
+  <data name="ModuleUpdate_Title_Update" xml:space="preserve">
+    <value>Cập nhật mô-đun</value>
+  </data>
+  <data name="ModuleUpdate_UpdateSource" xml:space="preserve">
+    <value>Nguồn cập nhật</value>
+  </data>
+  <data name="Modules_CheckUpdates" xml:space="preserve">
+    <value>Kiểm tra cập nhật</value>
+  </data>
+  <data name="Modules_ConfigureUpdates" xml:space="preserve">
+    <value>Cấu hình cập nhật</value>
+  </data>
+  <data name="Modules_Empty" xml:space="preserve">
+    <value>Không tìm thấy mô-đun. Cài mô-đun qua Trình hướng dẫn thiết lập</value>
+  </data>
+  <data name="Modules_Launch" xml:space="preserve">
+    <value>Khởi chạy</value>
+  </data>
+  <data name="Modules_NotVerified" xml:space="preserve">
+    <value>Chưa xác minh</value>
+  </data>
+  <data name="Modules_Restart" xml:space="preserve">
+    <value>Khởi động lại</value>
+  </data>
+  <data name="Modules_Restarting" xml:space="preserve">
+    <value>Đang khởi động lại</value>
+  </data>
+  <data name="Modules_Starting" xml:space="preserve">
+    <value>Đang khởi động</value>
+  </data>
+  <data name="Modules_Stop" xml:space="preserve">
+    <value>Dừng</value>
+  </data>
+  <data name="Modules_Title" xml:space="preserve">
+    <value>Mô-đun</value>
+  </data>
+  <data name="Modules_Update" xml:space="preserve">
+    <value>Cập nhật</value>
+  </data>
+  <data name="Modules_Updating" xml:space="preserve">
+    <value>Đang cập nhật</value>
+  </data>
+  <data name="Notifications_ClearAll" xml:space="preserve">
+    <value>Xóa tất cả</value>
+  </data>
+  <data name="Notifications_EmptyMessage" xml:space="preserve">
+    <value>Sự kiện ASLM mới sẽ hiển thị tại đây</value>
+  </data>
+  <data name="Notifications_EmptyTitle" xml:space="preserve">
+    <value>Không có thông báo</value>
+  </data>
+  <data name="Notifications_SectionRecent" xml:space="preserve">
+    <value>Gần đây</value>
+  </data>
+  <data name="Notifications_SummaryFormat" xml:space="preserve">
+    <value>{0} tổng</value>
+  </data>
+  <data name="Notifications_Title" xml:space="preserve">
+    <value>Thông báo</value>
+  </data>
+  <data name="Notifications_UpdateLater" xml:space="preserve">
+    <value>Cập nhật sau</value>
+  </data>
+  <data name="Notifications_UpdateNow" xml:space="preserve">
+    <value>Cập nhật ngay</value>
+  </data>
+  <data name="Settings_ApiServer_Description" xml:space="preserve">
+    <value>Khởi động máy chủ mirror cục bộ cùng ASLM</value>
+  </data>
+  <data name="Settings_ApiServer_Title" xml:space="preserve">
+    <value>Máy chủ API</value>
+  </data>
+  <data name="Settings_AppChannel_Description" xml:space="preserve">
+    <value>Bản phát hành chỉ dùng bản GitHub ổn định. Bản tiền phát hành cũng chấp nhận bản xem trước</value>
+  </data>
+  <data name="Settings_AppChannel_Title" xml:space="preserve">
+    <value>Kênh cập nhật ứng dụng</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Description" xml:space="preserve">
+    <value>Số giờ giữa các lần kiểm tra cập nhật nền</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Title" xml:space="preserve">
+    <value>Chu kỳ tự kiểm tra</value>
+  </data>
+  <data name="Settings_AutoInstall_Description" xml:space="preserve">
+    <value>Tự áp dụng cập nhật mô-đun và chuẩn bị bản dựng ASLM cho lần khởi động lại tiếp theo</value>
+  </data>
+  <data name="Settings_AutoInstall_Title" xml:space="preserve">
+    <value>Tự cài cập nhật</value>
+  </data>
+  <data name="Settings_Category_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Settings_Category_ASLM_Description" xml:space="preserve">
+    <value>Hành vi ASLM cốt lõi, cổng, API và bảng điều khiển</value>
+  </data>
+  <data name="Settings_Category_Account" xml:space="preserve">
+    <value>Tài khoản</value>
+  </data>
+  <data name="Settings_Category_Account_Description" xml:space="preserve">
+    <value>Tên hiển thị dùng bởi ASLM và chia sẻ với mô-đun</value>
+  </data>
+  <data name="Settings_Category_Module_Description" xml:space="preserve">
+    <value>Cấu hình riêng cho mô-đun</value>
+  </data>
+  <data name="Settings_Category_Ollama" xml:space="preserve">
+    <value>Ollama</value>
+  </data>
+  <data name="Settings_Category_Ollama_Description" xml:space="preserve">
+    <value>Đăng nhập và đăng xuất tài khoản Ollama</value>
+  </data>
+  <data name="Settings_Category_Personalization" xml:space="preserve">
+    <value>Cá nhân hóa</value>
+  </data>
+  <data name="Settings_Category_Personalization_Description" xml:space="preserve">
+    <value>Chế độ giao diện, ngôn ngữ và chủ đề tùy chỉnh</value>
+  </data>
+  <data name="Settings_Category_Updates" xml:space="preserve">
+    <value>Cập nhật</value>
+  </data>
+  <data name="Settings_Category_Updates_Description" xml:space="preserve">
+    <value>Tùy chọn cập nhật ứng dụng và mô-đun</value>
+  </data>
+  <data name="Settings_CheckNow" xml:space="preserve">
+    <value>Kiểm tra ngay</value>
+  </data>
+  <data name="Settings_CheckUpdates_Description" xml:space="preserve">
+    <value>Cho phép ASLM truy vấn kho GitHub đã cấu hình</value>
+  </data>
+  <data name="Settings_CheckUpdates_Title" xml:space="preserve">
+    <value>Kiểm tra cập nhật</value>
+  </data>
+  <data name="Settings_CloseTooltip" xml:space="preserve">
+    <value>Đóng Cài đặt</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Description" xml:space="preserve">
+    <value>Giữ bảng điều khiển tiến trình đã kết thúc khi bật bảng điều khiển riêng lẻ</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Title" xml:space="preserve">
+    <value>Bảng điều khiển tiến trình đã hoàn tất</value>
+  </data>
+  <data name="Settings_ConsolesPage_Description" xml:space="preserve">
+    <value>Hiển thị trang bảng điều khiển tích hợp trên thanh bên</value>
+  </data>
+  <data name="Settings_ConsolesPage_Title" xml:space="preserve">
+    <value>Trang bảng điều khiển</value>
+  </data>
+  <data name="Settings_DiscardChanges" xml:space="preserve">
+    <value>Bỏ thay đổi</value>
+  </data>
+  <data name="Settings_DiscardDialog_Message" xml:space="preserve">
+    <value>Bạn có thay đổi chưa lưu trong mục này. Bỏ chúng và chuyển mục?</value>
+  </data>
+  <data name="Settings_DiscardDialog_Title" xml:space="preserve">
+    <value>Thay đổi chưa lưu</value>
+  </data>
+  <data name="Settings_DisplayName" xml:space="preserve">
+    <value>Tên hiển thị</value>
+  </data>
+  <data name="Settings_DisplayNameDescription" xml:space="preserve">
+    <value>Tên hiển thị trong ASLM và chia sẻ với mô-đun</value>
+  </data>
+  <data name="Settings_EmptyCategory" xml:space="preserve">
+    <value>Danh mục này không có cài đặt</value>
+  </data>
+  <data name="Settings_Engine_Installed" xml:space="preserve">
+    <value>Đã cài</value>
+  </data>
+  <data name="Settings_Engine_NotInstalled" xml:space="preserve">
+    <value>Chưa cài</value>
+  </data>
+  <data name="Settings_Header_Modules" xml:space="preserve">
+    <value>MÔ-ĐUN</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Description" xml:space="preserve">
+    <value>Hiển thị bảng điều khiển theo tiến trình cùng đầu ra mô-đun thống nhất</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Title" xml:space="preserve">
+    <value>Bảng điều khiển riêng lẻ</value>
+  </data>
+  <data name="Settings_LoadDefault" xml:space="preserve">
+    <value>Tải mặc định</value>
+  </data>
+  <data name="Settings_ManualCheck_Title" xml:space="preserve">
+    <value>Kiểm tra thủ công</value>
+  </data>
+  <data name="Settings_ModuleChannel_Description" xml:space="preserve">
+    <value>Dùng bởi mô-đun theo bản phát hành GitHub</value>
+  </data>
+  <data name="Settings_ModuleChannel_Title" xml:space="preserve">
+    <value>Kênh phát hành mô-đun mặc định</value>
+  </data>
+  <data name="Settings_ModuleNoSettings" xml:space="preserve">
+    <value>Mô-đun này không có cài đặt ở trạng thái hiện tại</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Description" xml:space="preserve">
+    <value>Tùy chọn mô-đun mới bắt đầu từ chế độ này; từng mô-đun có thể ghi đè</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Title" xml:space="preserve">
+    <value>Chế độ cập nhật mô-đun mặc định</value>
+  </data>
+  <data name="Settings_NoSettingsAvailable" xml:space="preserve">
+    <value>Không có cài đặt</value>
+  </data>
+  <data name="Settings_OfficialPortDescription" xml:space="preserve">
+    <value>Điểm bắt đầu cho mô-đun chính thức. 100 cổng được dành từ giá trị này</value>
+  </data>
+  <data name="Settings_OfficialPortTitle" xml:space="preserve">
+    <value>Cổng bắt đầu mô-đun chính thức</value>
+  </data>
+  <data name="Settings_OllamaAccount_Title" xml:space="preserve">
+    <value>Tài khoản Ollama</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Confirm" xml:space="preserve">
+    <value>Đăng xuất</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Message" xml:space="preserve">
+    <value>Thao tác này xóa phiên ollama.com hiện tại cho hồ sơ Windows này. Tiếp tục?</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Title" xml:space="preserve">
+    <value>Đăng xuất khỏi Ollama</value>
+  </data>
+  <data name="Settings_Ollama_CheckingAccount" xml:space="preserve">
+    <value>Đang kiểm tra tài khoản</value>
+  </data>
+  <data name="Settings_Ollama_NotInstalled" xml:space="preserve">
+    <value>Ollama nội bộ chưa được cài</value>
+  </data>
+  <data name="Settings_Ollama_NotSignedIn" xml:space="preserve">
+    <value>Chưa đăng nhập</value>
+  </data>
+  <data name="Settings_Ollama_SignIn" xml:space="preserve">
+    <value>Đăng nhập</value>
+  </data>
+  <data name="Settings_Ollama_SignOut" xml:space="preserve">
+    <value>Đăng xuất</value>
+  </data>
+  <data name="Settings_Ollama_SignedIn" xml:space="preserve">
+    <value>Đã đăng nhập</value>
+  </data>
+  <data name="Settings_Ollama_SignedInAs" xml:space="preserve">
+    <value>Đã đăng nhập với tư cách {0}</value>
+  </data>
+  <data name="Settings_Ollama_SigningIn" xml:space="preserve">
+    <value>Đang đăng nhập...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOut" xml:space="preserve">
+    <value>Đang đăng xuất...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOutStatus" xml:space="preserve">
+    <value>Đang đăng xuất</value>
+  </data>
+  <data name="Settings_Ollama_WaitingSignIn" xml:space="preserve">
+    <value>Đang chờ đăng nhập trên trình duyệt</value>
+  </data>
+  <data name="Settings_Personalization_ActiveTheme" xml:space="preserve">
+    <value>Chủ đề đang dùng</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Custom" xml:space="preserve">
+    <value>Tùy chỉnh</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Dark" xml:space="preserve">
+    <value>Tối</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Light" xml:space="preserve">
+    <value>Sáng</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_System" xml:space="preserve">
+    <value>Hệ thống</value>
+  </data>
+  <data name="Settings_Personalization_Delete" xml:space="preserve">
+    <value>Xóa</value>
+  </data>
+  <data name="Settings_Personalization_Export" xml:space="preserve">
+    <value>Xuất</value>
+  </data>
+  <data name="Settings_Personalization_Import" xml:space="preserve">
+    <value>Nhập</value>
+  </data>
+  <data name="Settings_Personalization_ImportPickerTitle" xml:space="preserve">
+    <value>Nhập chủ đề</value>
+  </data>
+  <data name="Settings_Personalization_InheritDark" xml:space="preserve">
+    <value>Tối (tích hợp)</value>
+  </data>
+  <data name="Settings_Personalization_InheritLight" xml:space="preserve">
+    <value>Sáng (tích hợp)</value>
+  </data>
+  <data name="Settings_Personalization_InheritTitle" xml:space="preserve">
+    <value>Kế thừa màu từ</value>
+  </data>
+  <data name="Settings_Personalization_Language" xml:space="preserve">
+    <value>Ngôn ngữ</value>
+  </data>
+  <data name="Settings_Personalization_LanguageDescription" xml:space="preserve">
+    <value>Đặt ngôn ngữ giao diện cho ASLM và mô-đun được hỗ trợ</value>
+  </data>
+  <data name="Settings_Personalization_Mode" xml:space="preserve">
+    <value>Chế độ</value>
+  </data>
+  <data name="Settings_Personalization_ModeDescription" xml:space="preserve">
+    <value>Đặt cách ứng dụng chọn giao diện tổng thể</value>
+  </data>
+  <data name="Settings_Personalization_New" xml:space="preserve">
+    <value>Mới</value>
+  </data>
+  <data name="Settings_Personalization_NoThemes" xml:space="preserve">
+    <value>Chưa có chủ đề tùy chỉnh. Tạo một chủ đề để dùng giao diện Tùy chỉnh</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeActive" xml:space="preserve">
+    <value>Bảng màu đã lưu mà các hàng token bên dưới thuộc về</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeDescription" xml:space="preserve">
+    <value>Chọn chủ đề tùy chỉnh đang hoạt động</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeEmpty" xml:space="preserve">
+    <value>Tạo bảng màu trước; nó sẽ hiển thị tại đây để chọn</value>
+  </data>
+  <data name="Settings_Personalization_Themes" xml:space="preserve">
+    <value>Chủ đề</value>
+  </data>
+  <data name="Settings_Personalization_ThemesDescription" xml:space="preserve">
+    <value>Thêm, nhập hoặc chia sẻ định nghĩa bảng màu lưu dưới dạng tệp</value>
+  </data>
+  <data name="Settings_Ports" xml:space="preserve">
+    <value>Cổng</value>
+  </data>
+  <data name="Settings_PrepareAslmUpdate" xml:space="preserve">
+    <value>Chuẩn bị cập nhật ASLM</value>
+  </data>
+  <data name="Settings_RestartNow" xml:space="preserve">
+    <value>Khởi động lại ngay</value>
+  </data>
+  <data name="Settings_Save" xml:space="preserve">
+    <value>Lưu</value>
+  </data>
+  <data name="Settings_SaveAndRestart" xml:space="preserve">
+    <value>Lưu và khởi động lại</value>
+  </data>
+  <data name="Settings_SaveMessage_Deferred" xml:space="preserve">
+    <value>Đã lưu cài đặt. Một số cài đặt mô-đun không thể áp dụng ngay và sẽ thử lại khi mô-đun khởi động lần sau
+
+{0}</value>
+  </data>
+  <data name="Settings_SaveMessage_None" xml:space="preserve">
+    <value>Không có thay đổi để lưu</value>
+  </data>
+  <data name="Settings_SaveMessage_Saved" xml:space="preserve">
+    <value>Đã lưu và áp dụng cài đặt.</value>
+  </data>
+  <data name="Settings_SavedTitle" xml:space="preserve">
+    <value>Đã lưu cài đặt</value>
+  </data>
+  <data name="Settings_Saving" xml:space="preserve">
+    <value>Đang lưu...</value>
+  </data>
+  <data name="Settings_SubGroup_API" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="Settings_SubGroup_Consoles" xml:space="preserve">
+    <value>Bảng điều khiển</value>
+  </data>
+  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+    <value>Xóa</value>
+  </data>
+  <data name="Settings_ThemeDelete_Message" xml:space="preserve">
+    <value>Bạn có chắc muốn xóa chủ đề này? Không thể hoàn tác</value>
+  </data>
+  <data name="Settings_ThemeDelete_Title" xml:space="preserve">
+    <value>Xóa chủ đề</value>
+  </data>
+  <data name="Settings_ThemeEditor_Base" xml:space="preserve">
+    <value>Cơ sở</value>
+  </data>
+  <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
+    <value>Mặc định ngữ nghĩa tích hợp cho token bạn chưa ghi đè</value>
+  </data>
+  <data name="Settings_ThemeEditor_Clear" xml:space="preserve">
+    <value>Xóa</value>
+  </data>
+  <data name="Settings_ThemeEditor_ColorsFormat" xml:space="preserve">
+    <value>Trình chỉnh màu cho chủ đề: {0}</value>
+  </data>
+  <data name="Settings_ThemeEditor_Pick" xml:space="preserve">
+    <value>Chọn</value>
+  </data>
+  <data name="Settings_ThemeExport_Failed" xml:space="preserve">
+    <value>Không thể xuất chủ đề: {0}</value>
+  </data>
+  <data name="Settings_ThemeExport_Select" xml:space="preserve">
+    <value>Chọn chủ đề để xuất</value>
+  </data>
+  <data name="Settings_ThemeImport_Failed" xml:space="preserve">
+    <value>Không thể nhập chủ đề: {0}</value>
+  </data>
+  <data name="Settings_ThemeImport_Invalid" xml:space="preserve">
+    <value>Tệp không phải chủ đề ASLM hợp lệ</value>
+  </data>
+  <data name="Settings_ThemeImport_TooLarge" xml:space="preserve">
+    <value>Tệp chủ đề quá lớn</value>
+  </data>
+  <data name="Settings_ThemeNew_DefaultName" xml:space="preserve">
+    <value>Chủ đề của tôi</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptMessage" xml:space="preserve">
+    <value>Nhập tên cho chủ đề mới:</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
+    <value>Chủ đề mới</value>
+  </data>
+  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
+    <value>Điểm bắt đầu cho mô-đun bên ngoài. 1000 cổng được dành từ giá trị này</value>
+  </data>
+  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
+    <value>Cổng bắt đầu mô-đun bên thứ ba</value>
+  </data>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>Cài đặt</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailable" xml:space="preserve">
+    <value>Có bản cập nhật ASLM {0}. Dùng "Chuẩn bị cập nhật ASLM" để tải</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailableStaged" xml:space="preserve">
+    <value>Có bản cập nhật ASLM {0}; {1} đã sẵn sàng cho khởi động lại</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmTagPrepared" xml:space="preserve">
+    <value>ASLM {0} đã chuẩn bị và sẽ áp dụng khi khởi động lại</value>
+  </data>
+  <data name="Settings_UpdateStatus_CheckFailed" xml:space="preserve">
+    <value>Kiểm tra cập nhật thất bại: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Checking" xml:space="preserve">
+    <value>Đang kiểm tra kho GitHub...</value>
+  </data>
+  <data name="Settings_UpdateStatus_CouldNotPrepare" xml:space="preserve">
+    <value>Không thể chuẩn bị cập nhật ASLM</value>
+  </data>
+  <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
+    <value>Đang tải bản dựng ASLM...</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
+    <value>Có {0} bản cập nhật. Có thể áp dụng từ trang Mô-đun</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedAslm" xml:space="preserve">
+    <value>{0} ASLM {1} sẵn sàng cho khởi động lại</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedGeneric" xml:space="preserve">
+    <value>{0} Bản tự cập nhật ASLM sẵn sàng cho khởi động lại</value>
+  </data>
+  <data name="Settings_UpdateStatus_None" xml:space="preserve">
+    <value>Chưa chạy kiểm tra cập nhật trong phiên này</value>
+  </data>
+  <data name="Settings_UpdateStatus_Prepared" xml:space="preserve">
+    <value>Cập nhật ASLM đã chuẩn bị và sẽ áp dụng khi khởi động lại</value>
+  </data>
+  <data name="Settings_UpdateStatus_PreparedWithVersion" xml:space="preserve">
+    <value>Cập nhật ASLM {0} đã chuẩn bị và sẽ áp dụng khi khởi động lại</value>
+  </data>
+  <data name="Settings_UpdateStatus_RestartFailed" xml:space="preserve">
+    <value>Khởi động lại thất bại: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Restarting" xml:space="preserve">
+    <value>Đang khởi động lại ASLM...</value>
+  </data>
+  <data name="Settings_UpdateStatus_UpToDate" xml:space="preserve">
+    <value>Mọi thứ đã được cập nhật.</value>
+  </data>
+  <data name="Settings_UseCustomValue" xml:space="preserve">
+    <value>Dùng giá trị tùy chỉnh</value>
+  </data>
+  <data name="Settings_ValidationError" xml:space="preserve">
+    <value>Lỗi xác thực</value>
+  </data>
+  <data name="SetupWizard_Canceled" xml:space="preserve">
+    <value>Đã hủy cài đặt.</value>
+  </data>
+  <data name="SetupWizard_DisplayNamePlaceholder" xml:space="preserve">
+    <value>Tên của bạn</value>
+  </data>
+  <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
+    <value>Chọn tên hiển thị</value>
+  </data>
+  <data name="SetupWizard_DockerDescription" xml:space="preserve">
+    <value>ASLM cần Docker CLI. Cài Docker Desktop, rồi nhấn Tiếp</value>
+  </data>
+  <data name="SetupWizard_DockerTitle" xml:space="preserve">
+    <value>Cài Docker Desktop</value>
+  </data>
+  <data name="SetupWizard_Failed" xml:space="preserve">
+    <value>Cài đặt thất bại</value>
+  </data>
+  <data name="SetupWizard_FastSetup" xml:space="preserve">
+    <value>Thiết lập nhanh</value>
+  </data>
+  <data name="SetupWizard_FastSetupHint" xml:space="preserve">
+    <value>Thiết lập nhanh dùng tên người dùng Windows và cổng mặc định</value>
+  </data>
+  <data name="SetupWizard_Finish" xml:space="preserve">
+    <value>Hoàn tất</value>
+  </data>
+  <data name="SetupWizard_HideLog" xml:space="preserve">
+    <value>Ẩn nhật ký</value>
+  </data>
+  <data name="SetupWizard_InstallDocker" xml:space="preserve">
+    <value>Cài Docker</value>
+  </data>
+  <data name="SetupWizard_Installing" xml:space="preserve">
+    <value>Đang cài...</value>
+  </data>
+  <data name="SetupWizard_Next_Install" xml:space="preserve">
+    <value>Cài đặt</value>
+  </data>
+  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
+    <value>Mô-đun chính thức (100 cổng)</value>
+  </data>
+  <data name="SetupWizard_OverallProgress" xml:space="preserve">
+    <value>Tiến độ tổng</value>
+  </data>
+  <data name="SetupWizard_PortAllocationTitle" xml:space="preserve">
+    <value>Phân bổ cổng</value>
+  </data>
+  <data name="SetupWizard_Preparing" xml:space="preserve">
+    <value>Đang chuẩn bị...</value>
+  </data>
+  <data name="SetupWizard_Retry" xml:space="preserve">
+    <value>Thử lại</value>
+  </data>
+  <data name="SetupWizard_Setup" xml:space="preserve">
+    <value>Thiết lập</value>
+  </data>
+  <data name="SetupWizard_SetupComplete" xml:space="preserve">
+    <value>Thiết lập hoàn tất!</value>
+  </data>
+  <data name="SetupWizard_ShowLog" xml:space="preserve">
+    <value>Hiện nhật ký</value>
+  </data>
+  <data name="SetupWizard_StepFormat" xml:space="preserve">
+    <value>Bước {0} / {1} - {2}</value>
+  </data>
+  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
+    <value>Docker Desktop</value>
+  </data>
+  <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
+    <value>Chọn mô-đun</value>
+  </data>
+  <data name="SetupWizard_Step_Modules" xml:space="preserve">
+    <value>Mô-đun</value>
+  </data>
+  <data name="SetupWizard_Step_PortAllocation" xml:space="preserve">
+    <value>Phân bổ cổng</value>
+  </data>
+  <data name="SetupWizard_Step_PortConfiguration" xml:space="preserve">
+    <value>Cấu hình cổng</value>
+  </data>
+  <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
+    <value>Hồ sơ người dùng</value>
+  </data>
+  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
+    <value>Mô-đun bên thứ ba (1000 cổng)</value>
+  </data>
+  <data name="SetupWizard_Title" xml:space="preserve">
+    <value>Thiết lập ASLM</value>
+  </data>
+  <data name="SetupWizard_WelcomeSubtitle" xml:space="preserve">
+    <value>Advanced System Language Models</value>
+  </data>
+  <data name="SetupWizard_WelcomeTitle" xml:space="preserve">
+    <value>Chào mừng đến ASLM!</value>
+  </data>
+  <data name="ThemeColorPicker_Brightness" xml:space="preserve">
+    <value>Độ sáng</value>
+  </data>
+  <data name="ThemeColorPicker_Cancel" xml:space="preserve">
+    <value>Hủy</value>
+  </data>
+  <data name="ThemeColorPicker_CustomColor" xml:space="preserve">
+    <value>Màu tùy chỉnh</value>
+  </data>
+  <data name="ThemeColorPicker_HexPlaceholder" xml:space="preserve">
+    <value>#AARRGGBB</value>
+  </data>
+  <data name="ThemeColorPicker_Opacity" xml:space="preserve">
+    <value>Độ mờ</value>
+  </data>
+</root>
