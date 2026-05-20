@@ -1,0 +1,935 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AppShell_Nav_Api" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="AppShell_Nav_Consoles" xml:space="preserve">
+    <value>Konsollar</value>
+  </data>
+  <data name="AppShell_Nav_Download" xml:space="preserve">
+    <value>İndirme</value>
+  </data>
+  <data name="AppShell_Nav_Home" xml:space="preserve">
+    <value>Ana sayfa</value>
+  </data>
+  <data name="AppShell_Nav_Modules" xml:space="preserve">
+    <value>Modüller</value>
+  </data>
+  <data name="AppShell_Nav_Notifications" xml:space="preserve">
+    <value>Bildirimler</value>
+  </data>
+  <data name="AppShell_Nav_Settings" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="AppShell_Title" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
+    <value>Adresi kopyala</value>
+  </data>
+  <data name="AslmApi_Hosts" xml:space="preserve">
+    <value>Sunucular</value>
+  </data>
+  <data name="AslmApi_NoHosts" xml:space="preserve">
+    <value>Sunucu yok</value>
+  </data>
+  <data name="AslmApi_Open" xml:space="preserve">
+    <value>Aç</value>
+  </data>
+  <data name="AslmApi_Title" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="Common_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Common_Back" xml:space="preserve">
+    <value>Geri</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="Common_Discard" xml:space="preserve">
+    <value>Vazgeç</value>
+  </data>
+  <data name="Common_Done" xml:space="preserve">
+    <value>Bitti</value>
+  </data>
+  <data name="Common_Install" xml:space="preserve">
+    <value>Yükle</value>
+  </data>
+  <data name="Common_Install_Action" xml:space="preserve">
+    <value>Yükle</value>
+  </data>
+  <data name="Common_Next" xml:space="preserve">
+    <value>İleri</value>
+  </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>Tamam</value>
+  </data>
+  <data name="Common_Open" xml:space="preserve">
+    <value>Aç</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>Yenile</value>
+  </data>
+  <data name="Common_Remove" xml:space="preserve">
+    <value>Kaldır</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Kaydet</value>
+  </data>
+  <data name="Common_Saved" xml:space="preserve">
+    <value>Kaydedildi</value>
+  </data>
+  <data name="Common_Stay" xml:space="preserve">
+    <value>Kal</value>
+  </data>
+  <data name="Common_Variant" xml:space="preserve">
+    <value>Varyant</value>
+  </data>
+  <data name="Consoles_ModulesHeader" xml:space="preserve">
+    <value>Modüller</value>
+  </data>
+  <data name="Consoles_NoActiveModules" xml:space="preserve">
+    <value>Etkin modül yok</value>
+  </data>
+  <data name="Consoles_NoConsoles" xml:space="preserve">
+    <value>Konsol yok</value>
+  </data>
+  <data name="Consoles_Title" xml:space="preserve">
+    <value>Konsollar</value>
+  </data>
+  <data name="Downloads_CategoryCount_Many" xml:space="preserve">
+    <value>{0} kategori</value>
+  </data>
+  <data name="Downloads_CategoryCount_None" xml:space="preserve">
+    <value>Kategori yok</value>
+  </data>
+  <data name="Downloads_CategoryCount_One" xml:space="preserve">
+    <value>1 kategori</value>
+  </data>
+  <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
+    <value>Varyantları ve ayrıntıları incelemek için bir kaynak ailesi seçin</value>
+  </data>
+  <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
+    <value>Yüklü modüllerden hiçbiri şu anda indirme köprüsü sunmuyor</value>
+  </data>
+  <data name="Downloads_EmptyCategory" xml:space="preserve">
+    <value>Bu kategori için gruplanmış indirme yok</value>
+  </data>
+  <data name="Downloads_EmptyFiltered" xml:space="preserve">
+    <value>Geçerli sağlayıcı filtreleriyle eşleşen gruplanmış indirme yok</value>
+  </data>
+  <data name="Downloads_EmptySearch" xml:space="preserve">
+    <value>Sağlayıcı tarafında "{0}" ile eşleşen sonuç yok</value>
+  </data>
+  <data name="Downloads_NoItems" xml:space="preserve">
+    <value>Öğe yok</value>
+  </data>
+  <data name="Downloads_SearchPlaceholder" xml:space="preserve">
+    <value>Sağlayıcı kataloğunda ara</value>
+  </data>
+  <data name="Downloads_SelectItem" xml:space="preserve">
+    <value>Bir öğe seçin</value>
+  </data>
+  <data name="Downloads_Title" xml:space="preserve">
+    <value>İndirme</value>
+  </data>
+  <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
+    <value>Son modül etkinliği {0}</value>
+  </data>
+  <data name="Home_Card_Modules_NoActivity" xml:space="preserve">
+    <value>Henüz kaydedilmiş modül etkinliği yok</value>
+  </data>
+  <data name="Home_Card_Modules_StatusTotal" xml:space="preserve">
+    <value>{0} toplam</value>
+  </data>
+  <data name="Home_Card_Modules_Subtitle" xml:space="preserve">
+    <value>Yaşam döngüsü ve konsol etkinliği</value>
+  </data>
+  <data name="Home_Card_Modules_Title" xml:space="preserve">
+    <value>Yönetilen modüller</value>
+  </data>
+  <data name="Home_Card_Runtime_ChildCount" xml:space="preserve">
+    <value>ASLM ağacında {0} canlı alt süreç</value>
+  </data>
+  <data name="Home_Card_Runtime_NoChildren" xml:space="preserve">
+    <value>Şu anda etkin yönetilen alt süreç yok</value>
+  </data>
+  <data name="Home_Card_Runtime_StatusPid" xml:space="preserve">
+    <value>PID {0}</value>
+  </data>
+  <data name="Home_Card_Runtime_Subtitle" xml:space="preserve">
+    <value>Uygulama süreci ve yönetilen alt süreç ağacı</value>
+  </data>
+  <data name="Home_Card_Runtime_Title" xml:space="preserve">
+    <value>ASLM çalışma zamanı</value>
+  </data>
+  <data name="Home_Card_System_SampledAt" xml:space="preserve">
+    <value>Örnek alındı: {0}</value>
+  </data>
+  <data name="Home_Card_System_Status" xml:space="preserve">
+    <value>Canlı</value>
+  </data>
+  <data name="Home_Card_System_Subtitle" xml:space="preserve">
+    <value>Ana bilgisayar yükü</value>
+  </data>
+  <data name="Home_Card_System_Title" xml:space="preserve">
+    <value>Sistem</value>
+  </data>
+  <data name="Home_Column_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Home_Column_Details" xml:space="preserve">
+    <value>Ayrıntılar</value>
+  </data>
+  <data name="Home_Column_Disk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="Home_Column_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="Home_Column_Name" xml:space="preserve">
+    <value>Ad</value>
+  </data>
+  <data name="Home_Column_Net" xml:space="preserve">
+    <value>Ağ</value>
+  </data>
+  <data name="Home_Column_Ram" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="Home_Loading_WaitingSample" xml:space="preserve">
+    <value>Örnek bekleniyor</value>
+  </data>
+  <data name="Home_ManagedProcesses" xml:space="preserve">
+    <value>Yönetilen süreçler</value>
+  </data>
+  <data name="Home_Metric_Active" xml:space="preserve">
+    <value>Etkin</value>
+  </data>
+  <data name="Home_Metric_Active_Detail" xml:space="preserve">
+    <value>Canlı yönetilen süreçleri olan modüller</value>
+  </data>
+  <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
+    <value>{0} mantıksal çekirdek</value>
+  </data>
+  <data name="Home_Metric_Cpu_RuntimeDetail" xml:space="preserve">
+    <value>Uygulama ana bilgisayarı ve yönetilen alt süreçler</value>
+  </data>
+  <data name="Home_Metric_Disk_CombinedIo" xml:space="preserve">
+    <value>Birleşik yönetilen süreç G/Ç</value>
+  </data>
+  <data name="Home_Metric_Disk_Rw" xml:space="preserve">
+    <value>O {0} - Y {1}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Index" xml:space="preserve">
+    <value>GPU {0}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Unavailable" xml:space="preserve">
+    <value>GPU sayaçları kullanılamıyor</value>
+  </data>
+  <data name="Home_Metric_Installed" xml:space="preserve">
+    <value>Yüklü</value>
+  </data>
+  <data name="Home_Metric_Installed_Detail" xml:space="preserve">
+    <value>Diskte bulunan modüller</value>
+  </data>
+  <data name="Home_Metric_Network" xml:space="preserve">
+    <value>Ağ</value>
+  </data>
+  <data name="Home_Metric_Network_Endpoints" xml:space="preserve">
+    <value>ASLM ağacındaki açık TCP ve UDP uç noktaları</value>
+  </data>
+  <data name="Home_Metric_Network_RxTx" xml:space="preserve">
+    <value>Al {0} - Gö {1}</value>
+  </data>
+  <data name="Home_Metric_NotAvailable" xml:space="preserve">
+    <value>yok</value>
+  </data>
+  <data name="Home_Metric_Processes" xml:space="preserve">
+    <value>Süreçler</value>
+  </data>
+  <data name="Home_Metric_Processes_Detail" xml:space="preserve">
+    <value>ASLM tarafından yönetilen canlı alt süreçler</value>
+  </data>
+  <data name="Home_Metric_Ram_Resident" xml:space="preserve">
+    <value>{0} bellekte</value>
+  </data>
+  <data name="Home_Metric_Ram_Usage" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="Home_Metric_Running" xml:space="preserve">
+    <value>Çalışıyor</value>
+  </data>
+  <data name="Home_Metric_Running_Detail" xml:space="preserve">
+    <value>Etkin olarak işaretlenmiş modüller</value>
+  </data>
+  <data name="Home_Metric_Sessions" xml:space="preserve">
+    <value>Oturumlar</value>
+  </data>
+  <data name="Home_Metric_Sessions_Detail" xml:space="preserve">
+    <value>{0} etkin konsol oturumu</value>
+  </data>
+  <data name="Home_Module_ByAuthor" xml:space="preserve">
+    <value>{0} tarafından</value>
+  </data>
+  <data name="Home_Module_InstalledDefault" xml:space="preserve">
+    <value>Yüklü modül</value>
+  </data>
+  <data name="Home_Module_Launching" xml:space="preserve">
+    <value>Başlatılıyor</value>
+  </data>
+  <data name="Home_Module_Stopped" xml:space="preserve">
+    <value>Durduruldu</value>
+  </data>
+  <data name="Home_Module_Stopping" xml:space="preserve">
+    <value>Durduruluyor</value>
+  </data>
+  <data name="Home_ModulesHeader" xml:space="preserve">
+    <value>Modüller</value>
+  </data>
+  <data name="Home_Status_Loading" xml:space="preserve">
+    <value>Yükleniyor</value>
+  </data>
+  <data name="Home_Title" xml:space="preserve">
+    <value>Ana sayfa</value>
+  </data>
+  <data name="Loading_Text" xml:space="preserve">
+    <value>Yükleniyor...</value>
+  </data>
+  <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
+    <value>Güncellemeleri denetle</value>
+  </data>
+  <data name="ModuleUpdate_CloseTooltip" xml:space="preserve">
+    <value>Modül güncellemelerini kapat</value>
+  </data>
+  <data name="ModuleUpdate_CurrentVersion" xml:space="preserve">
+    <value>Geçerli sürüm</value>
+  </data>
+  <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
+    <value>Güncellemeyi yükle</value>
+  </data>
+  <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
+    <value>Modül seçilmedi</value>
+  </data>
+  <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
+    <value>Genel ilerleme</value>
+  </data>
+  <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
+    <value>Tercihler otomatik olarak kaydedilir</value>
+  </data>
+  <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
+    <value>Yayın sürümü</value>
+  </data>
+  <data name="ModuleUpdate_RepositoryBranch" xml:space="preserve">
+    <value>Depo dalı</value>
+  </data>
+  <data name="ModuleUpdate_SearchMode" xml:space="preserve">
+    <value>Arama modu</value>
+  </data>
+  <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
+    <value>Seçili hedef</value>
+  </data>
+  <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="ModuleUpdate_Title_Configure" xml:space="preserve">
+    <value>Modül güncellemelerini yapılandır</value>
+  </data>
+  <data name="ModuleUpdate_Title_Update" xml:space="preserve">
+    <value>Modül güncellemesi</value>
+  </data>
+  <data name="ModuleUpdate_UpdateSource" xml:space="preserve">
+    <value>Güncelleme kaynağı</value>
+  </data>
+  <data name="Modules_CheckUpdates" xml:space="preserve">
+    <value>Güncellemeleri denetle</value>
+  </data>
+  <data name="Modules_ConfigureUpdates" xml:space="preserve">
+    <value>Güncellemeleri yapılandır</value>
+  </data>
+  <data name="Modules_Empty" xml:space="preserve">
+    <value>Modül bulunamadı. Kurulum Sihirbazı ile modül yükleyin</value>
+  </data>
+  <data name="Modules_Launch" xml:space="preserve">
+    <value>Başlat</value>
+  </data>
+  <data name="Modules_NotVerified" xml:space="preserve">
+    <value>Doğrulanmadı</value>
+  </data>
+  <data name="Modules_Restart" xml:space="preserve">
+    <value>Yeniden başlat</value>
+  </data>
+  <data name="Modules_Restarting" xml:space="preserve">
+    <value>Yeniden başlatılıyor</value>
+  </data>
+  <data name="Modules_Starting" xml:space="preserve">
+    <value>Başlatılıyor</value>
+  </data>
+  <data name="Modules_Stop" xml:space="preserve">
+    <value>Durdur</value>
+  </data>
+  <data name="Modules_Title" xml:space="preserve">
+    <value>Modüller</value>
+  </data>
+  <data name="Modules_Update" xml:space="preserve">
+    <value>Güncelle</value>
+  </data>
+  <data name="Modules_Updating" xml:space="preserve">
+    <value>Güncelleniyor</value>
+  </data>
+  <data name="Notifications_ClearAll" xml:space="preserve">
+    <value>Tümünü temizle</value>
+  </data>
+  <data name="Notifications_EmptyMessage" xml:space="preserve">
+    <value>Yeni ASLM olayları burada görünecek</value>
+  </data>
+  <data name="Notifications_EmptyTitle" xml:space="preserve">
+    <value>Bildirim yok</value>
+  </data>
+  <data name="Notifications_SectionRecent" xml:space="preserve">
+    <value>Son</value>
+  </data>
+  <data name="Notifications_SummaryFormat" xml:space="preserve">
+    <value>{0} toplam</value>
+  </data>
+  <data name="Notifications_Title" xml:space="preserve">
+    <value>Bildirimler</value>
+  </data>
+  <data name="Notifications_UpdateLater" xml:space="preserve">
+    <value>Daha sonra güncelle</value>
+  </data>
+  <data name="Notifications_UpdateNow" xml:space="preserve">
+    <value>Şimdi güncelle</value>
+  </data>
+  <data name="Settings_ApiServer_Description" xml:space="preserve">
+    <value>Yerel yansı sunucusunu ASLM ile birlikte başlat</value>
+  </data>
+  <data name="Settings_ApiServer_Title" xml:space="preserve">
+    <value>API sunucusu</value>
+  </data>
+  <data name="Settings_AppChannel_Description" xml:space="preserve">
+    <value>Yayın yalnızca kararlı GitHub sürümlerini kullanır. Ön sürüm ayrıca önizleme sürümlerini de kabul eder</value>
+  </data>
+  <data name="Settings_AppChannel_Title" xml:space="preserve">
+    <value>Uygulama güncelleme kanalı</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Description" xml:space="preserve">
+    <value>Arka plandaki güncelleme denetimleri arasındaki saat</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Title" xml:space="preserve">
+    <value>Otomatik denetim aralığı</value>
+  </data>
+  <data name="Settings_AutoInstall_Description" xml:space="preserve">
+    <value>Modül güncellemelerini otomatik uygula ve bir sonraki yeniden başlatma için ASLM derlemelerini hazırla</value>
+  </data>
+  <data name="Settings_AutoInstall_Title" xml:space="preserve">
+    <value>Güncellemeleri otomatik yükle</value>
+  </data>
+  <data name="Settings_Category_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Settings_Category_ASLM_Description" xml:space="preserve">
+    <value>Temel ASLM davranışı, bağlantı noktaları, API ve konsollar</value>
+  </data>
+  <data name="Settings_Category_Account" xml:space="preserve">
+    <value>Hesap</value>
+  </data>
+  <data name="Settings_Category_Account_Description" xml:space="preserve">
+    <value>ASLM tarafından kullanılan ve modüllerle paylaşılan görünen ad</value>
+  </data>
+  <data name="Settings_Category_Module_Description" xml:space="preserve">
+    <value>Modüle özel yapılandırma</value>
+  </data>
+  <data name="Settings_Category_Ollama" xml:space="preserve">
+    <value>Ollama</value>
+  </data>
+  <data name="Settings_Category_Ollama_Description" xml:space="preserve">
+    <value>Ollama hesabı oturum açma ve oturum kapatma denetimleri</value>
+  </data>
+  <data name="Settings_Category_Personalization" xml:space="preserve">
+    <value>Kişiselleştirme</value>
+  </data>
+  <data name="Settings_Category_Personalization_Description" xml:space="preserve">
+    <value>Tema modu, dil ve özel tema ayarları</value>
+  </data>
+  <data name="Settings_Category_Updates" xml:space="preserve">
+    <value>Güncellemeler</value>
+  </data>
+  <data name="Settings_Category_Updates_Description" xml:space="preserve">
+    <value>Uygulama ve modül güncelleme tercihleri</value>
+  </data>
+  <data name="Settings_CheckNow" xml:space="preserve">
+    <value>Şimdi denetle</value>
+  </data>
+  <data name="Settings_CheckUpdates_Description" xml:space="preserve">
+    <value>ASLM'nin yapılandırılmış GitHub depolarını sorgulamasına izin ver</value>
+  </data>
+  <data name="Settings_CheckUpdates_Title" xml:space="preserve">
+    <value>Güncellemeleri denetle</value>
+  </data>
+  <data name="Settings_CloseTooltip" xml:space="preserve">
+    <value>Ayarları kapat</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Description" xml:space="preserve">
+    <value>Bireysel konsollar etkinleştirildiğinde tamamlanan süreç konsollarını görünür tut</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Title" xml:space="preserve">
+    <value>Tamamlanan süreç konsolları</value>
+  </data>
+  <data name="Settings_ConsolesPage_Description" xml:space="preserve">
+    <value>Yan çubukta yerleşik konsollar sayfasını göster</value>
+  </data>
+  <data name="Settings_ConsolesPage_Title" xml:space="preserve">
+    <value>Konsollar sayfası</value>
+  </data>
+  <data name="Settings_DiscardChanges" xml:space="preserve">
+    <value>Değişiklikleri vazgeç</value>
+  </data>
+  <data name="Settings_DiscardDialog_Message" xml:space="preserve">
+    <value>Bu bölümde kaydedilmemiş değişiklikler var. Vazgeçip geçilsin mi?</value>
+  </data>
+  <data name="Settings_DiscardDialog_Title" xml:space="preserve">
+    <value>Kaydedilmemiş değişiklikler</value>
+  </data>
+  <data name="Settings_DisplayName" xml:space="preserve">
+    <value>Görünen ad</value>
+  </data>
+  <data name="Settings_DisplayNameDescription" xml:space="preserve">
+    <value>ASLM'de gösterilen ve modüllerle paylaşılan ad</value>
+  </data>
+  <data name="Settings_EmptyCategory" xml:space="preserve">
+    <value>Bu kategoride ayar yok</value>
+  </data>
+  <data name="Settings_Engine_Installed" xml:space="preserve">
+    <value>Yüklü</value>
+  </data>
+  <data name="Settings_Engine_NotInstalled" xml:space="preserve">
+    <value>Yüklü değil</value>
+  </data>
+  <data name="Settings_Header_Modules" xml:space="preserve">
+    <value>MODÜLLER</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Description" xml:space="preserve">
+    <value>Birleşik modül çıktısının yanında süreç başına konsolları göster</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Title" xml:space="preserve">
+    <value>Bireysel konsollar</value>
+  </data>
+  <data name="Settings_LoadDefault" xml:space="preserve">
+    <value>Varsayılanı yükle</value>
+  </data>
+  <data name="Settings_ManualCheck_Title" xml:space="preserve">
+    <value>Elle denetleme</value>
+  </data>
+  <data name="Settings_ModuleChannel_Description" xml:space="preserve">
+    <value>GitHub sürümlerini izleyen modüller tarafından kullanılır</value>
+  </data>
+  <data name="Settings_ModuleChannel_Title" xml:space="preserve">
+    <value>Varsayılan modül yayın kanalı</value>
+  </data>
+  <data name="Settings_ModuleNoSettings" xml:space="preserve">
+    <value>Bu modülün geçerli durumda ayarı yok</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Description" xml:space="preserve">
+    <value>Yeni modül tercihleri bu moddan başlar; modüller bunu geçersiz kılabilir</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Title" xml:space="preserve">
+    <value>Varsayılan modül güncelleme modu</value>
+  </data>
+  <data name="Settings_NoSettingsAvailable" xml:space="preserve">
+    <value>Kullanılabilir ayar yok</value>
+  </data>
+  <data name="Settings_OfficialPortDescription" xml:space="preserve">
+    <value>Resmi modüller için başlangıç noktası. Bu değerden itibaren 100 bağlantı noktası ayrılmıştır</value>
+  </data>
+  <data name="Settings_OfficialPortTitle" xml:space="preserve">
+    <value>Resmi modüller başlangıç bağlantı noktası</value>
+  </data>
+  <data name="Settings_OllamaAccount_Title" xml:space="preserve">
+    <value>Ollama hesabı</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Confirm" xml:space="preserve">
+    <value>Oturumu kapat</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Message" xml:space="preserve">
+    <value>Bu işlem bu Windows profili için geçerli ollama.com oturumunu kaldırır. Devam edilsin mi?</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Title" xml:space="preserve">
+    <value>Ollama oturumunu kapat</value>
+  </data>
+  <data name="Settings_Ollama_CheckingAccount" xml:space="preserve">
+    <value>Hesap denetleniyor</value>
+  </data>
+  <data name="Settings_Ollama_NotInstalled" xml:space="preserve">
+    <value>Dahili Ollama yüklü değil</value>
+  </data>
+  <data name="Settings_Ollama_NotSignedIn" xml:space="preserve">
+    <value>Oturum açılmadı</value>
+  </data>
+  <data name="Settings_Ollama_SignIn" xml:space="preserve">
+    <value>Oturum aç</value>
+  </data>
+  <data name="Settings_Ollama_SignOut" xml:space="preserve">
+    <value>Oturumu kapat</value>
+  </data>
+  <data name="Settings_Ollama_SignedIn" xml:space="preserve">
+    <value>Oturum açıldı</value>
+  </data>
+  <data name="Settings_Ollama_SignedInAs" xml:space="preserve">
+    <value>{0} olarak oturum açıldı</value>
+  </data>
+  <data name="Settings_Ollama_SigningIn" xml:space="preserve">
+    <value>Oturum açılıyor...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOut" xml:space="preserve">
+    <value>Oturum kapatılıyor...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOutStatus" xml:space="preserve">
+    <value>Oturum kapatılıyor</value>
+  </data>
+  <data name="Settings_Ollama_WaitingSignIn" xml:space="preserve">
+    <value>Tarayıcıda oturum açılması bekleniyor</value>
+  </data>
+  <data name="Settings_Personalization_ActiveTheme" xml:space="preserve">
+    <value>Etkin tema</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Custom" xml:space="preserve">
+    <value>Özel</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Dark" xml:space="preserve">
+    <value>Koyu</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Light" xml:space="preserve">
+    <value>Açık</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_System" xml:space="preserve">
+    <value>Sistem</value>
+  </data>
+  <data name="Settings_Personalization_Delete" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="Settings_Personalization_Export" xml:space="preserve">
+    <value>Dışa aktar</value>
+  </data>
+  <data name="Settings_Personalization_Import" xml:space="preserve">
+    <value>İçe aktar</value>
+  </data>
+  <data name="Settings_Personalization_ImportPickerTitle" xml:space="preserve">
+    <value>Tema içe aktar</value>
+  </data>
+  <data name="Settings_Personalization_InheritDark" xml:space="preserve">
+    <value>Koyu (yerleşik)</value>
+  </data>
+  <data name="Settings_Personalization_InheritLight" xml:space="preserve">
+    <value>Açık (yerleşik)</value>
+  </data>
+  <data name="Settings_Personalization_InheritTitle" xml:space="preserve">
+    <value>Renkleri şuradan devral</value>
+  </data>
+  <data name="Settings_Personalization_Language" xml:space="preserve">
+    <value>Dil</value>
+  </data>
+  <data name="Settings_Personalization_LanguageDescription" xml:space="preserve">
+    <value>ASLM ve desteklenen modüller için arayüz dilini ayarlar</value>
+  </data>
+  <data name="Settings_Personalization_Mode" xml:space="preserve">
+    <value>Mod</value>
+  </data>
+  <data name="Settings_Personalization_ModeDescription" xml:space="preserve">
+    <value>Uygulamanın genel arayüz görünümünü nasıl seçeceğini belirler</value>
+  </data>
+  <data name="Settings_Personalization_New" xml:space="preserve">
+    <value>Yeni</value>
+  </data>
+  <data name="Settings_Personalization_NoThemes" xml:space="preserve">
+    <value>Henüz özel tema yok. Özel görünüm için bir tane oluşturun</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeActive" xml:space="preserve">
+    <value>Aşağıdaki belirteç satırlarının ait olduğu kayıtlı palet</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeDescription" xml:space="preserve">
+    <value>Hangi özel temanın etkin olduğunu seçin</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeEmpty" xml:space="preserve">
+    <value>Önce bir palet oluşturun; seçim için burada görünecek</value>
+  </data>
+  <data name="Settings_Personalization_Themes" xml:space="preserve">
+    <value>Temalar</value>
+  </data>
+  <data name="Settings_Personalization_ThemesDescription" xml:space="preserve">
+    <value>Dosya olarak saklanan palet tanımlarını ekleyin, içe aktarın veya paylaşın</value>
+  </data>
+  <data name="Settings_Ports" xml:space="preserve">
+    <value>Bağlantı noktaları</value>
+  </data>
+  <data name="Settings_PrepareAslmUpdate" xml:space="preserve">
+    <value>ASLM güncellemesini hazırla</value>
+  </data>
+  <data name="Settings_RestartNow" xml:space="preserve">
+    <value>Şimdi yeniden başlat</value>
+  </data>
+  <data name="Settings_Save" xml:space="preserve">
+    <value>Kaydet</value>
+  </data>
+  <data name="Settings_SaveAndRestart" xml:space="preserve">
+    <value>Kaydet ve yeniden başlat</value>
+  </data>
+  <data name="Settings_SaveMessage_Deferred" xml:space="preserve">
+    <value>Ayarlar kaydedildi. Bazı modül ayarları hemen uygulanamadı ve bir sonraki modül başlatılışında yeniden denenecek
+
+{0}</value>
+  </data>
+  <data name="Settings_SaveMessage_None" xml:space="preserve">
+    <value>Kaydedilecek değişiklik yok</value>
+  </data>
+  <data name="Settings_SaveMessage_Saved" xml:space="preserve">
+    <value>Ayarlar kaydedildi ve uygulandı.</value>
+  </data>
+  <data name="Settings_SavedTitle" xml:space="preserve">
+    <value>Ayarlar kaydedildi</value>
+  </data>
+  <data name="Settings_Saving" xml:space="preserve">
+    <value>Kaydediliyor...</value>
+  </data>
+  <data name="Settings_SubGroup_API" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="Settings_SubGroup_Consoles" xml:space="preserve">
+    <value>Konsollar</value>
+  </data>
+  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="Settings_ThemeDelete_Message" xml:space="preserve">
+    <value>Bu temayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz</value>
+  </data>
+  <data name="Settings_ThemeDelete_Title" xml:space="preserve">
+    <value>Temayı sil</value>
+  </data>
+  <data name="Settings_ThemeEditor_Base" xml:space="preserve">
+    <value>Temel</value>
+  </data>
+  <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
+    <value>Henüz geçersiz kılmadığınız belirteçler için yerleşik anlamsal varsayılanlar</value>
+  </data>
+  <data name="Settings_ThemeEditor_Clear" xml:space="preserve">
+    <value>Temizle</value>
+  </data>
+  <data name="Settings_ThemeEditor_ColorsFormat" xml:space="preserve">
+    <value>Tema için renk düzenleyici: {0}</value>
+  </data>
+  <data name="Settings_ThemeEditor_Pick" xml:space="preserve">
+    <value>Seç</value>
+  </data>
+  <data name="Settings_ThemeExport_Failed" xml:space="preserve">
+    <value>Tema dışa aktarılamadı: {0}</value>
+  </data>
+  <data name="Settings_ThemeExport_Select" xml:space="preserve">
+    <value>Dışa aktarılacak bir tema seçin</value>
+  </data>
+  <data name="Settings_ThemeImport_Failed" xml:space="preserve">
+    <value>Tema içe aktarılamadı: {0}</value>
+  </data>
+  <data name="Settings_ThemeImport_Invalid" xml:space="preserve">
+    <value>Dosya geçerli bir ASLM teması değil</value>
+  </data>
+  <data name="Settings_ThemeImport_TooLarge" xml:space="preserve">
+    <value>Tema dosyası çok büyük</value>
+  </data>
+  <data name="Settings_ThemeNew_DefaultName" xml:space="preserve">
+    <value>Temam</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptMessage" xml:space="preserve">
+    <value>Yeni tema için bir ad girin:</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
+    <value>Yeni tema</value>
+  </data>
+  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
+    <value>Harici modüller için başlangıç noktası. Bu değerden itibaren 1000 bağlantı noktası ayrılmıştır</value>
+  </data>
+  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
+    <value>Üçüncü taraf modüller başlangıç bağlantı noktası</value>
+  </data>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailable" xml:space="preserve">
+    <value>ASLM {0} güncellemesi kullanılabilir. İndirmek için "ASLM güncellemesini hazırla" seçeneğini kullanın</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailableStaged" xml:space="preserve">
+    <value>ASLM {0} güncellemesi kullanılabilir; {1} yeniden başlatma için zaten hazırlandı</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmTagPrepared" xml:space="preserve">
+    <value>ASLM {0} hazırlandı ve yeniden başlatmada uygulanacak</value>
+  </data>
+  <data name="Settings_UpdateStatus_CheckFailed" xml:space="preserve">
+    <value>Güncelleme denetimi başarısız: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Checking" xml:space="preserve">
+    <value>GitHub depoları denetleniyor...</value>
+  </data>
+  <data name="Settings_UpdateStatus_CouldNotPrepare" xml:space="preserve">
+    <value>ASLM güncellemesi hazırlanamadı</value>
+  </data>
+  <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
+    <value>ASLM derlemesi indiriliyor...</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
+    <value>{0} güncelleme kullanılabilir. Modül güncellemeleri Modüller sayfasından uygulanabilir</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedAslm" xml:space="preserve">
+    <value>{0} ASLM {1} yeniden başlatma için hazırlandı</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedGeneric" xml:space="preserve">
+    <value>{0} Bir ASLM kendi kendine güncellemesi yeniden başlatma için hazırlandı</value>
+  </data>
+  <data name="Settings_UpdateStatus_None" xml:space="preserve">
+    <value>Bu oturumda güncelleme denetimi çalıştırılmadı</value>
+  </data>
+  <data name="Settings_UpdateStatus_Prepared" xml:space="preserve">
+    <value>ASLM güncellemesi hazırlandı ve yeniden başlatmada uygulanacak</value>
+  </data>
+  <data name="Settings_UpdateStatus_PreparedWithVersion" xml:space="preserve">
+    <value>ASLM {0} güncellemesi hazırlandı ve yeniden başlatmada uygulanacak</value>
+  </data>
+  <data name="Settings_UpdateStatus_RestartFailed" xml:space="preserve">
+    <value>Yeniden başlatma başarısız: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Restarting" xml:space="preserve">
+    <value>ASLM yeniden başlatılıyor...</value>
+  </data>
+  <data name="Settings_UpdateStatus_UpToDate" xml:space="preserve">
+    <value>Her şey güncel.</value>
+  </data>
+  <data name="Settings_UseCustomValue" xml:space="preserve">
+    <value>Özel değer kullan</value>
+  </data>
+  <data name="Settings_ValidationError" xml:space="preserve">
+    <value>Doğrulama hatası</value>
+  </data>
+  <data name="SetupWizard_Canceled" xml:space="preserve">
+    <value>Kurulum iptal edildi.</value>
+  </data>
+  <data name="SetupWizard_DisplayNamePlaceholder" xml:space="preserve">
+    <value>Adınız</value>
+  </data>
+  <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
+    <value>Görünen ad seçin</value>
+  </data>
+  <data name="SetupWizard_DockerDescription" xml:space="preserve">
+    <value>ASLM Docker CLI gerektirir. Docker Desktop'ı yükleyin, ardından İleri'ye dokunun</value>
+  </data>
+  <data name="SetupWizard_DockerTitle" xml:space="preserve">
+    <value>Docker Desktop'ı yükle</value>
+  </data>
+  <data name="SetupWizard_Failed" xml:space="preserve">
+    <value>Kurulum başarısız</value>
+  </data>
+  <data name="SetupWizard_FastSetup" xml:space="preserve">
+    <value>Hızlı kurulum</value>
+  </data>
+  <data name="SetupWizard_FastSetupHint" xml:space="preserve">
+    <value>Hızlı kurulum Windows kullanıcı adınızı ve varsayılan bağlantı noktalarını kullanır</value>
+  </data>
+  <data name="SetupWizard_Finish" xml:space="preserve">
+    <value>Bitir</value>
+  </data>
+  <data name="SetupWizard_HideLog" xml:space="preserve">
+    <value>Günlüğü gizle</value>
+  </data>
+  <data name="SetupWizard_InstallDocker" xml:space="preserve">
+    <value>Docker yükle</value>
+  </data>
+  <data name="SetupWizard_Installing" xml:space="preserve">
+    <value>Yükleniyor...</value>
+  </data>
+  <data name="SetupWizard_Next_Install" xml:space="preserve">
+    <value>Yükle</value>
+  </data>
+  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
+    <value>Resmi modüller (100 bağlantı noktası)</value>
+  </data>
+  <data name="SetupWizard_OverallProgress" xml:space="preserve">
+    <value>Genel ilerleme</value>
+  </data>
+  <data name="SetupWizard_PortAllocationTitle" xml:space="preserve">
+    <value>Bağlantı noktası ayırma</value>
+  </data>
+  <data name="SetupWizard_Preparing" xml:space="preserve">
+    <value>Hazırlanıyor...</value>
+  </data>
+  <data name="SetupWizard_Retry" xml:space="preserve">
+    <value>Yeniden dene</value>
+  </data>
+  <data name="SetupWizard_Setup" xml:space="preserve">
+    <value>Kurulum</value>
+  </data>
+  <data name="SetupWizard_SetupComplete" xml:space="preserve">
+    <value>Kurulum tamamlandı!</value>
+  </data>
+  <data name="SetupWizard_ShowLog" xml:space="preserve">
+    <value>Günlüğü göster</value>
+  </data>
+  <data name="SetupWizard_StepFormat" xml:space="preserve">
+    <value>Adım {0} / {1} - {2}</value>
+  </data>
+  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
+    <value>Docker Desktop</value>
+  </data>
+  <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
+    <value>Modül seçimi</value>
+  </data>
+  <data name="SetupWizard_Step_Modules" xml:space="preserve">
+    <value>Modüller</value>
+  </data>
+  <data name="SetupWizard_Step_PortAllocation" xml:space="preserve">
+    <value>Bağlantı noktası ayırma</value>
+  </data>
+  <data name="SetupWizard_Step_PortConfiguration" xml:space="preserve">
+    <value>Bağlantı noktası yapılandırması</value>
+  </data>
+  <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
+    <value>Kullanıcı profili</value>
+  </data>
+  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
+    <value>Üçüncü taraf modüller (1000 bağlantı noktası)</value>
+  </data>
+  <data name="SetupWizard_Title" xml:space="preserve">
+    <value>ASLM kurulumu</value>
+  </data>
+  <data name="SetupWizard_WelcomeSubtitle" xml:space="preserve">
+    <value>Advanced System Language Models</value>
+  </data>
+  <data name="SetupWizard_WelcomeTitle" xml:space="preserve">
+    <value>ASLM'ye hoş geldiniz!</value>
+  </data>
+  <data name="ThemeColorPicker_Brightness" xml:space="preserve">
+    <value>Parlaklık</value>
+  </data>
+  <data name="ThemeColorPicker_Cancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="ThemeColorPicker_CustomColor" xml:space="preserve">
+    <value>Özel renk</value>
+  </data>
+  <data name="ThemeColorPicker_HexPlaceholder" xml:space="preserve">
+    <value>#AARRGGBB</value>
+  </data>
+  <data name="ThemeColorPicker_Opacity" xml:space="preserve">
+    <value>Opaklık</value>
+  </data>
+</root>
