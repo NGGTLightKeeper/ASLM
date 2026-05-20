@@ -1,0 +1,935 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AppShell_Nav_Api" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="AppShell_Nav_Consoles" xml:space="preserve">
+    <value>Консолі</value>
+  </data>
+  <data name="AppShell_Nav_Download" xml:space="preserve">
+    <value>Завантаження</value>
+  </data>
+  <data name="AppShell_Nav_Home" xml:space="preserve">
+    <value>Головна</value>
+  </data>
+  <data name="AppShell_Nav_Modules" xml:space="preserve">
+    <value>Модулі</value>
+  </data>
+  <data name="AppShell_Nav_Notifications" xml:space="preserve">
+    <value>Сповіщення</value>
+  </data>
+  <data name="AppShell_Nav_Settings" xml:space="preserve">
+    <value>Налаштування</value>
+  </data>
+  <data name="AppShell_Title" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
+    <value>Копіювати адресу</value>
+  </data>
+  <data name="AslmApi_Hosts" xml:space="preserve">
+    <value>Хости</value>
+  </data>
+  <data name="AslmApi_NoHosts" xml:space="preserve">
+    <value>Немає хостів</value>
+  </data>
+  <data name="AslmApi_Open" xml:space="preserve">
+    <value>Відкрити</value>
+  </data>
+  <data name="AslmApi_Title" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="Common_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Common_Back" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Скасувати</value>
+  </data>
+  <data name="Common_Discard" xml:space="preserve">
+    <value>Відхилити</value>
+  </data>
+  <data name="Common_Done" xml:space="preserve">
+    <value>Готово</value>
+  </data>
+  <data name="Common_Install" xml:space="preserve">
+    <value>Встановити</value>
+  </data>
+  <data name="Common_Install_Action" xml:space="preserve">
+    <value>Встановити</value>
+  </data>
+  <data name="Common_Next" xml:space="preserve">
+    <value>Далі</value>
+  </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Open" xml:space="preserve">
+    <value>Відкрити</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>Оновити</value>
+  </data>
+  <data name="Common_Remove" xml:space="preserve">
+    <value>Видалити</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Зберегти</value>
+  </data>
+  <data name="Common_Saved" xml:space="preserve">
+    <value>Збережено</value>
+  </data>
+  <data name="Common_Stay" xml:space="preserve">
+    <value>Залишитися</value>
+  </data>
+  <data name="Common_Variant" xml:space="preserve">
+    <value>Варіант</value>
+  </data>
+  <data name="Consoles_ModulesHeader" xml:space="preserve">
+    <value>Модулі</value>
+  </data>
+  <data name="Consoles_NoActiveModules" xml:space="preserve">
+    <value>Немає активних модулів</value>
+  </data>
+  <data name="Consoles_NoConsoles" xml:space="preserve">
+    <value>Немає консолей</value>
+  </data>
+  <data name="Consoles_Title" xml:space="preserve">
+    <value>Консолі</value>
+  </data>
+  <data name="Downloads_CategoryCount_Many" xml:space="preserve">
+    <value>{0} категорій</value>
+  </data>
+  <data name="Downloads_CategoryCount_None" xml:space="preserve">
+    <value>Немає категорій</value>
+  </data>
+  <data name="Downloads_CategoryCount_One" xml:space="preserve">
+    <value>1 категорія</value>
+  </data>
+  <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
+    <value>Оберіть сімейство ресурсів, щоб переглянути варіанти та деталі</value>
+  </data>
+  <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
+    <value>Жоден встановлений модуль наразі не надає міст завантажень</value>
+  </data>
+  <data name="Downloads_EmptyCategory" xml:space="preserve">
+    <value>Для цієї категорії немає доступних згрупованих завантажень</value>
+  </data>
+  <data name="Downloads_EmptyFiltered" xml:space="preserve">
+    <value>Жодне згруповане завантаження не відповідає поточним фільтрам постачальника</value>
+  </data>
+  <data name="Downloads_EmptySearch" xml:space="preserve">
+    <value>На стороні постачальника немає результатів для «{0}»</value>
+  </data>
+  <data name="Downloads_NoItems" xml:space="preserve">
+    <value>Немає елементів</value>
+  </data>
+  <data name="Downloads_SearchPlaceholder" xml:space="preserve">
+    <value>Пошук у каталозі постачальника</value>
+  </data>
+  <data name="Downloads_SelectItem" xml:space="preserve">
+    <value>Оберіть елемент</value>
+  </data>
+  <data name="Downloads_Title" xml:space="preserve">
+    <value>Завантаження</value>
+  </data>
+  <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
+    <value>Остання активність модуля {0}</value>
+  </data>
+  <data name="Home_Card_Modules_NoActivity" xml:space="preserve">
+    <value>Активність модулів ще не зафіксовано</value>
+  </data>
+  <data name="Home_Card_Modules_StatusTotal" xml:space="preserve">
+    <value>{0} загалом</value>
+  </data>
+  <data name="Home_Card_Modules_Subtitle" xml:space="preserve">
+    <value>Життєвий цикл і активність консолей</value>
+  </data>
+  <data name="Home_Card_Modules_Title" xml:space="preserve">
+    <value>Керовані модулі</value>
+  </data>
+  <data name="Home_Card_Runtime_ChildCount" xml:space="preserve">
+    <value>{0} активних дочірніх процесів у дереві ASLM</value>
+  </data>
+  <data name="Home_Card_Runtime_NoChildren" xml:space="preserve">
+    <value>Наразі немає активних керованих дочірніх процесів</value>
+  </data>
+  <data name="Home_Card_Runtime_StatusPid" xml:space="preserve">
+    <value>PID {0}</value>
+  </data>
+  <data name="Home_Card_Runtime_Subtitle" xml:space="preserve">
+    <value>Процес додатка та кероване дерево дочірніх</value>
+  </data>
+  <data name="Home_Card_Runtime_Title" xml:space="preserve">
+    <value>Середовище виконання ASLM</value>
+  </data>
+  <data name="Home_Card_System_SampledAt" xml:space="preserve">
+    <value>Зразок о {0}</value>
+  </data>
+  <data name="Home_Card_System_Status" xml:space="preserve">
+    <value>Наживо</value>
+  </data>
+  <data name="Home_Card_System_Subtitle" xml:space="preserve">
+    <value>Навантаження хост-машини</value>
+  </data>
+  <data name="Home_Card_System_Title" xml:space="preserve">
+    <value>Система</value>
+  </data>
+  <data name="Home_Column_Cpu" xml:space="preserve">
+    <value>ЦП</value>
+  </data>
+  <data name="Home_Column_Details" xml:space="preserve">
+    <value>Деталі</value>
+  </data>
+  <data name="Home_Column_Disk" xml:space="preserve">
+    <value>Диск</value>
+  </data>
+  <data name="Home_Column_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="Home_Column_Name" xml:space="preserve">
+    <value>Назва</value>
+  </data>
+  <data name="Home_Column_Net" xml:space="preserve">
+    <value>Мережа</value>
+  </data>
+  <data name="Home_Column_Ram" xml:space="preserve">
+    <value>ОЗП</value>
+  </data>
+  <data name="Home_Loading_WaitingSample" xml:space="preserve">
+    <value>Очікування зразка</value>
+  </data>
+  <data name="Home_ManagedProcesses" xml:space="preserve">
+    <value>Керовані процеси</value>
+  </data>
+  <data name="Home_Metric_Active" xml:space="preserve">
+    <value>Активні</value>
+  </data>
+  <data name="Home_Metric_Active_Detail" xml:space="preserve">
+    <value>Модулі з активними керованими процесами</value>
+  </data>
+  <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
+    <value>{0} логічних ядер</value>
+  </data>
+  <data name="Home_Metric_Cpu_RuntimeDetail" xml:space="preserve">
+    <value>Хост додатка та керовані підпроцеси</value>
+  </data>
+  <data name="Home_Metric_Disk_CombinedIo" xml:space="preserve">
+    <value>Комбінований ввід-вивід керованих процесів</value>
+  </data>
+  <data name="Home_Metric_Disk_Rw" xml:space="preserve">
+    <value>Ч {0} — З {1}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Index" xml:space="preserve">
+    <value>GPU {0}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Unavailable" xml:space="preserve">
+    <value>Лічильники GPU недоступні</value>
+  </data>
+  <data name="Home_Metric_Installed" xml:space="preserve">
+    <value>Встановлено</value>
+  </data>
+  <data name="Home_Metric_Installed_Detail" xml:space="preserve">
+    <value>Модулі, знайдені на диску</value>
+  </data>
+  <data name="Home_Metric_Network" xml:space="preserve">
+    <value>Мережа</value>
+  </data>
+  <data name="Home_Metric_Network_Endpoints" xml:space="preserve">
+    <value>Відкриті кінцеві точки TCP і UDP у дереві ASLM</value>
+  </data>
+  <data name="Home_Metric_Network_RxTx" xml:space="preserve">
+    <value>Прийом {0} — Передача {1}</value>
+  </data>
+  <data name="Home_Metric_NotAvailable" xml:space="preserve">
+    <value>н/д</value>
+  </data>
+  <data name="Home_Metric_Processes" xml:space="preserve">
+    <value>Процеси</value>
+  </data>
+  <data name="Home_Metric_Processes_Detail" xml:space="preserve">
+    <value>Активні підпроцеси, якими керує ASLM</value>
+  </data>
+  <data name="Home_Metric_Ram_Resident" xml:space="preserve">
+    <value>{0} резидентно</value>
+  </data>
+  <data name="Home_Metric_Ram_Usage" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="Home_Metric_Running" xml:space="preserve">
+    <value>Працює</value>
+  </data>
+  <data name="Home_Metric_Running_Detail" xml:space="preserve">
+    <value>Увімкнені модулі</value>
+  </data>
+  <data name="Home_Metric_Sessions" xml:space="preserve">
+    <value>Сеанси</value>
+  </data>
+  <data name="Home_Metric_Sessions_Detail" xml:space="preserve">
+    <value>{0} активних сеансів консолі</value>
+  </data>
+  <data name="Home_Module_ByAuthor" xml:space="preserve">
+    <value>від {0}</value>
+  </data>
+  <data name="Home_Module_InstalledDefault" xml:space="preserve">
+    <value>Встановлений модуль</value>
+  </data>
+  <data name="Home_Module_Launching" xml:space="preserve">
+    <value>Запуск</value>
+  </data>
+  <data name="Home_Module_Stopped" xml:space="preserve">
+    <value>Зупинено</value>
+  </data>
+  <data name="Home_Module_Stopping" xml:space="preserve">
+    <value>Зупинка</value>
+  </data>
+  <data name="Home_ModulesHeader" xml:space="preserve">
+    <value>Модулі</value>
+  </data>
+  <data name="Home_Status_Loading" xml:space="preserve">
+    <value>Завантаження</value>
+  </data>
+  <data name="Home_Title" xml:space="preserve">
+    <value>Головна</value>
+  </data>
+  <data name="Loading_Text" xml:space="preserve">
+    <value>Завантаження...</value>
+  </data>
+  <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
+    <value>Перевірити оновлення</value>
+  </data>
+  <data name="ModuleUpdate_CloseTooltip" xml:space="preserve">
+    <value>Закрити оновлення модулів</value>
+  </data>
+  <data name="ModuleUpdate_CurrentVersion" xml:space="preserve">
+    <value>Поточна версія</value>
+  </data>
+  <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
+    <value>Встановити оновлення</value>
+  </data>
+  <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
+    <value>Модуль не обрано</value>
+  </data>
+  <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
+    <value>Загальний прогрес</value>
+  </data>
+  <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
+    <value>Налаштування зберігаються автоматично</value>
+  </data>
+  <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
+    <value>Версія випуску</value>
+  </data>
+  <data name="ModuleUpdate_RepositoryBranch" xml:space="preserve">
+    <value>Гілка репозиторію</value>
+  </data>
+  <data name="ModuleUpdate_SearchMode" xml:space="preserve">
+    <value>Режим пошуку</value>
+  </data>
+  <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
+    <value>Обрана ціль</value>
+  </data>
+  <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
+    <value>{0} — {1}</value>
+  </data>
+  <data name="ModuleUpdate_Title_Configure" xml:space="preserve">
+    <value>Налаштування оновлень модулів</value>
+  </data>
+  <data name="ModuleUpdate_Title_Update" xml:space="preserve">
+    <value>Оновлення модуля</value>
+  </data>
+  <data name="ModuleUpdate_UpdateSource" xml:space="preserve">
+    <value>Джерело оновлення</value>
+  </data>
+  <data name="Modules_CheckUpdates" xml:space="preserve">
+    <value>Перевірити оновлення</value>
+  </data>
+  <data name="Modules_ConfigureUpdates" xml:space="preserve">
+    <value>Налаштувати оновлення</value>
+  </data>
+  <data name="Modules_Empty" xml:space="preserve">
+    <value>Модулів не знайдено. Встановіть модулі через майстер налаштування</value>
+  </data>
+  <data name="Modules_Launch" xml:space="preserve">
+    <value>Запустити</value>
+  </data>
+  <data name="Modules_NotVerified" xml:space="preserve">
+    <value>Не перевірено</value>
+  </data>
+  <data name="Modules_Restart" xml:space="preserve">
+    <value>Перезапустити</value>
+  </data>
+  <data name="Modules_Restarting" xml:space="preserve">
+    <value>Перезапуск</value>
+  </data>
+  <data name="Modules_Starting" xml:space="preserve">
+    <value>Запуск</value>
+  </data>
+  <data name="Modules_Stop" xml:space="preserve">
+    <value>Зупинити</value>
+  </data>
+  <data name="Modules_Title" xml:space="preserve">
+    <value>Модулі</value>
+  </data>
+  <data name="Modules_Update" xml:space="preserve">
+    <value>Оновити</value>
+  </data>
+  <data name="Modules_Updating" xml:space="preserve">
+    <value>Оновлення</value>
+  </data>
+  <data name="Notifications_ClearAll" xml:space="preserve">
+    <value>Очистити все</value>
+  </data>
+  <data name="Notifications_EmptyMessage" xml:space="preserve">
+    <value>Нові події ASLM з’являться тут</value>
+  </data>
+  <data name="Notifications_EmptyTitle" xml:space="preserve">
+    <value>Немає сповіщень</value>
+  </data>
+  <data name="Notifications_SectionRecent" xml:space="preserve">
+    <value>Нещодавні</value>
+  </data>
+  <data name="Notifications_SummaryFormat" xml:space="preserve">
+    <value>{0} загалом</value>
+  </data>
+  <data name="Notifications_Title" xml:space="preserve">
+    <value>Сповіщення</value>
+  </data>
+  <data name="Notifications_UpdateLater" xml:space="preserve">
+    <value>Оновити пізніше</value>
+  </data>
+  <data name="Notifications_UpdateNow" xml:space="preserve">
+    <value>Оновити зараз</value>
+  </data>
+  <data name="Settings_ApiServer_Description" xml:space="preserve">
+    <value>Запускати локальний дзеркальний сервер разом із ASLM</value>
+  </data>
+  <data name="Settings_ApiServer_Title" xml:space="preserve">
+    <value>Сервер API</value>
+  </data>
+  <data name="Settings_AppChannel_Description" xml:space="preserve">
+    <value>Release використовує лише стабільні випуски GitHub. Pre-release також приймає попередні перегляди</value>
+  </data>
+  <data name="Settings_AppChannel_Title" xml:space="preserve">
+    <value>Канал оновлень додатка</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Description" xml:space="preserve">
+    <value>Годин між фоновими перевірками оновлень</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Title" xml:space="preserve">
+    <value>Період автоперевірки</value>
+  </data>
+  <data name="Settings_AutoInstall_Description" xml:space="preserve">
+    <value>Автоматично застосовувати оновлення модулів і готувати збірки ASLM до наступного перезапуску</value>
+  </data>
+  <data name="Settings_AutoInstall_Title" xml:space="preserve">
+    <value>Встановлювати оновлення автоматично</value>
+  </data>
+  <data name="Settings_Category_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Settings_Category_ASLM_Description" xml:space="preserve">
+    <value>Основна поведінка ASLM, порти, API та консолі</value>
+  </data>
+  <data name="Settings_Category_Account" xml:space="preserve">
+    <value>Обліковий запис</value>
+  </data>
+  <data name="Settings_Category_Account_Description" xml:space="preserve">
+    <value>Відображуване ім’я для ASLM і спільне з модулями</value>
+  </data>
+  <data name="Settings_Category_Module_Description" xml:space="preserve">
+    <value>Конфігурація конкретного модуля</value>
+  </data>
+  <data name="Settings_Category_Ollama" xml:space="preserve">
+    <value>Ollama</value>
+  </data>
+  <data name="Settings_Category_Ollama_Description" xml:space="preserve">
+    <value>Вхід і вихід з облікового запису Ollama</value>
+  </data>
+  <data name="Settings_Category_Personalization" xml:space="preserve">
+    <value>Персоналізація</value>
+  </data>
+  <data name="Settings_Category_Personalization_Description" xml:space="preserve">
+    <value>Режим теми, мова та власні налаштування теми</value>
+  </data>
+  <data name="Settings_Category_Updates" xml:space="preserve">
+    <value>Оновлення</value>
+  </data>
+  <data name="Settings_Category_Updates_Description" xml:space="preserve">
+    <value>Налаштування оновлень додатка та модулів</value>
+  </data>
+  <data name="Settings_CheckNow" xml:space="preserve">
+    <value>Перевірити зараз</value>
+  </data>
+  <data name="Settings_CheckUpdates_Description" xml:space="preserve">
+    <value>Дозволити ASLM запитувати налаштовані репозиторії GitHub</value>
+  </data>
+  <data name="Settings_CheckUpdates_Title" xml:space="preserve">
+    <value>Перевіряти оновлення</value>
+  </data>
+  <data name="Settings_CloseTooltip" xml:space="preserve">
+    <value>Закрити налаштування</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Description" xml:space="preserve">
+    <value>Залишати консолі завершених процесів видимими, коли увімкнено окремі консолі</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Title" xml:space="preserve">
+    <value>Консолі завершених процесів</value>
+  </data>
+  <data name="Settings_ConsolesPage_Description" xml:space="preserve">
+    <value>Показувати вбудовану сторінку консолей на бічній панелі</value>
+  </data>
+  <data name="Settings_ConsolesPage_Title" xml:space="preserve">
+    <value>Сторінка консолей</value>
+  </data>
+  <data name="Settings_DiscardChanges" xml:space="preserve">
+    <value>Відхилити зміни</value>
+  </data>
+  <data name="Settings_DiscardDialog_Message" xml:space="preserve">
+    <value>У цьому розділі є незбережені зміни. Відхилити їх і перейти?</value>
+  </data>
+  <data name="Settings_DiscardDialog_Title" xml:space="preserve">
+    <value>Незбережені зміни</value>
+  </data>
+  <data name="Settings_DisplayName" xml:space="preserve">
+    <value>Відображуване ім’я</value>
+  </data>
+  <data name="Settings_DisplayNameDescription" xml:space="preserve">
+    <value>Ім’я в ASLM і спільне з модулями</value>
+  </data>
+  <data name="Settings_EmptyCategory" xml:space="preserve">
+    <value>У цій категорії немає налаштувань</value>
+  </data>
+  <data name="Settings_Engine_Installed" xml:space="preserve">
+    <value>Встановлено</value>
+  </data>
+  <data name="Settings_Engine_NotInstalled" xml:space="preserve">
+    <value>Не встановлено</value>
+  </data>
+  <data name="Settings_Header_Modules" xml:space="preserve">
+    <value>МОДУЛІ</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Description" xml:space="preserve">
+    <value>Показувати консолі окремих процесів поряд із об’єднаним виводом модуля</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Title" xml:space="preserve">
+    <value>Окремі консолі</value>
+  </data>
+  <data name="Settings_LoadDefault" xml:space="preserve">
+    <value>Завантажити типове</value>
+  </data>
+  <data name="Settings_ManualCheck_Title" xml:space="preserve">
+    <value>Ручна перевірка</value>
+  </data>
+  <data name="Settings_ModuleChannel_Description" xml:space="preserve">
+    <value>Використовується модулями, що слідують випускам GitHub</value>
+  </data>
+  <data name="Settings_ModuleChannel_Title" xml:space="preserve">
+    <value>Типовий канал випусків модулів</value>
+  </data>
+  <data name="Settings_ModuleNoSettings" xml:space="preserve">
+    <value>У цьому модулі немає налаштувань у поточному стані</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Description" xml:space="preserve">
+    <value>Нові налаштування модулів починають із цього режиму; окремі модулі можуть його змінити</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Title" xml:space="preserve">
+    <value>Типовий режим оновлення модулів</value>
+  </data>
+  <data name="Settings_NoSettingsAvailable" xml:space="preserve">
+    <value>Налаштування недоступні</value>
+  </data>
+  <data name="Settings_OfficialPortDescription" xml:space="preserve">
+    <value>Початкова точка для офіційних модулів. Від цього значення зарезервовано 100 портів</value>
+  </data>
+  <data name="Settings_OfficialPortTitle" xml:space="preserve">
+    <value>Початковий порт офіційних модулів</value>
+  </data>
+  <data name="Settings_OllamaAccount_Title" xml:space="preserve">
+    <value>Обліковий запис Ollama</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Confirm" xml:space="preserve">
+    <value>Вийти</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Message" xml:space="preserve">
+    <value>Це видалить поточний сеанс ollama.com для цього профілю Windows. Продовжити?</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Title" xml:space="preserve">
+    <value>Вийти з Ollama</value>
+  </data>
+  <data name="Settings_Ollama_CheckingAccount" xml:space="preserve">
+    <value>Перевірка облікового запису</value>
+  </data>
+  <data name="Settings_Ollama_NotInstalled" xml:space="preserve">
+    <value>Внутрішній Ollama не встановлено</value>
+  </data>
+  <data name="Settings_Ollama_NotSignedIn" xml:space="preserve">
+    <value>Вхід не виконано</value>
+  </data>
+  <data name="Settings_Ollama_SignIn" xml:space="preserve">
+    <value>Увійти</value>
+  </data>
+  <data name="Settings_Ollama_SignOut" xml:space="preserve">
+    <value>Вийти</value>
+  </data>
+  <data name="Settings_Ollama_SignedIn" xml:space="preserve">
+    <value>Вхід виконано</value>
+  </data>
+  <data name="Settings_Ollama_SignedInAs" xml:space="preserve">
+    <value>Увійшли як {0}</value>
+  </data>
+  <data name="Settings_Ollama_SigningIn" xml:space="preserve">
+    <value>Вхід...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOut" xml:space="preserve">
+    <value>Вихід...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOutStatus" xml:space="preserve">
+    <value>Вихід</value>
+  </data>
+  <data name="Settings_Ollama_WaitingSignIn" xml:space="preserve">
+    <value>Очікування входу в браузері</value>
+  </data>
+  <data name="Settings_Personalization_ActiveTheme" xml:space="preserve">
+    <value>Активна тема</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Custom" xml:space="preserve">
+    <value>Власна</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Dark" xml:space="preserve">
+    <value>Темна</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Light" xml:space="preserve">
+    <value>Світла</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_System" xml:space="preserve">
+    <value>Системна</value>
+  </data>
+  <data name="Settings_Personalization_Delete" xml:space="preserve">
+    <value>Видалити</value>
+  </data>
+  <data name="Settings_Personalization_Export" xml:space="preserve">
+    <value>Експорт</value>
+  </data>
+  <data name="Settings_Personalization_Import" xml:space="preserve">
+    <value>Імпорт</value>
+  </data>
+  <data name="Settings_Personalization_ImportPickerTitle" xml:space="preserve">
+    <value>Імпорт теми</value>
+  </data>
+  <data name="Settings_Personalization_InheritDark" xml:space="preserve">
+    <value>Темна (вбудована)</value>
+  </data>
+  <data name="Settings_Personalization_InheritLight" xml:space="preserve">
+    <value>Світла (вбудована)</value>
+  </data>
+  <data name="Settings_Personalization_InheritTitle" xml:space="preserve">
+    <value>Успадкувати кольори від</value>
+  </data>
+  <data name="Settings_Personalization_Language" xml:space="preserve">
+    <value>Мова</value>
+  </data>
+  <data name="Settings_Personalization_LanguageDescription" xml:space="preserve">
+    <value>Встановлює мову інтерфейсу ASLM і підтримуваних модулів</value>
+  </data>
+  <data name="Settings_Personalization_Mode" xml:space="preserve">
+    <value>Режим</value>
+  </data>
+  <data name="Settings_Personalization_ModeDescription" xml:space="preserve">
+    <value>Визначає загальний вигляд інтерфейсу додатка</value>
+  </data>
+  <data name="Settings_Personalization_New" xml:space="preserve">
+    <value>Нова</value>
+  </data>
+  <data name="Settings_Personalization_NoThemes" xml:space="preserve">
+    <value>Ще немає власних тем. Створіть одну для режиму «Власна»</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeActive" xml:space="preserve">
+    <value>До якої збереженої палітри належать рядки токенів нижче</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeDescription" xml:space="preserve">
+    <value>Оберіть активну власну тему</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeEmpty" xml:space="preserve">
+    <value>Спочатку створіть палітру — вона з’явиться тут для вибору</value>
+  </data>
+  <data name="Settings_Personalization_Themes" xml:space="preserve">
+    <value>Теми</value>
+  </data>
+  <data name="Settings_Personalization_ThemesDescription" xml:space="preserve">
+    <value>Додавайте, імпортуйте або діліться визначеннями палітр, збереженими у файлах</value>
+  </data>
+  <data name="Settings_Ports" xml:space="preserve">
+    <value>Порти</value>
+  </data>
+  <data name="Settings_PrepareAslmUpdate" xml:space="preserve">
+    <value>Підготувати оновлення ASLM</value>
+  </data>
+  <data name="Settings_RestartNow" xml:space="preserve">
+    <value>Перезапустити зараз</value>
+  </data>
+  <data name="Settings_Save" xml:space="preserve">
+    <value>Зберегти</value>
+  </data>
+  <data name="Settings_SaveAndRestart" xml:space="preserve">
+    <value>Зберегти й перезапустити</value>
+  </data>
+  <data name="Settings_SaveMessage_Deferred" xml:space="preserve">
+    <value>Налаштування збережено. Деякі налаштування модулів не вдалося застосувати одразу — повторна спроба при наступному запуску модуля
+
+{0}</value>
+  </data>
+  <data name="Settings_SaveMessage_None" xml:space="preserve">
+    <value>Немає змін для збереження</value>
+  </data>
+  <data name="Settings_SaveMessage_Saved" xml:space="preserve">
+    <value>Налаштування збережено та застосовано.</value>
+  </data>
+  <data name="Settings_SavedTitle" xml:space="preserve">
+    <value>Налаштування збережено</value>
+  </data>
+  <data name="Settings_Saving" xml:space="preserve">
+    <value>Збереження...</value>
+  </data>
+  <data name="Settings_SubGroup_API" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="Settings_SubGroup_Consoles" xml:space="preserve">
+    <value>Консолі</value>
+  </data>
+  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+    <value>Видалити</value>
+  </data>
+  <data name="Settings_ThemeDelete_Message" xml:space="preserve">
+    <value>Видалити цю тему? Цю дію не можна скасувати</value>
+  </data>
+  <data name="Settings_ThemeDelete_Title" xml:space="preserve">
+    <value>Видалення теми</value>
+  </data>
+  <data name="Settings_ThemeEditor_Base" xml:space="preserve">
+    <value>База</value>
+  </data>
+  <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
+    <value>Вбудовані семантичні типові значення для токенів, які ви ще не перевизначили</value>
+  </data>
+  <data name="Settings_ThemeEditor_Clear" xml:space="preserve">
+    <value>Очистити</value>
+  </data>
+  <data name="Settings_ThemeEditor_ColorsFormat" xml:space="preserve">
+    <value>Редактор кольорів теми: {0}</value>
+  </data>
+  <data name="Settings_ThemeEditor_Pick" xml:space="preserve">
+    <value>Обрати</value>
+  </data>
+  <data name="Settings_ThemeExport_Failed" xml:space="preserve">
+    <value>Не вдалося експортувати тему: {0}</value>
+  </data>
+  <data name="Settings_ThemeExport_Select" xml:space="preserve">
+    <value>Оберіть тему для експорту</value>
+  </data>
+  <data name="Settings_ThemeImport_Failed" xml:space="preserve">
+    <value>Не вдалося імпортувати тему: {0}</value>
+  </data>
+  <data name="Settings_ThemeImport_Invalid" xml:space="preserve">
+    <value>Файл не є дійсною темою ASLM</value>
+  </data>
+  <data name="Settings_ThemeImport_TooLarge" xml:space="preserve">
+    <value>Файл теми занадто великий</value>
+  </data>
+  <data name="Settings_ThemeNew_DefaultName" xml:space="preserve">
+    <value>Моя тема</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptMessage" xml:space="preserve">
+    <value>Введіть назву нової теми:</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
+    <value>Нова тема</value>
+  </data>
+  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
+    <value>Початкова точка для зовнішніх модулів. Від цього значення зарезервовано 1000 портів</value>
+  </data>
+  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
+    <value>Початковий порт сторонніх модулів</value>
+  </data>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>Налаштування</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailable" xml:space="preserve">
+    <value>Доступне оновлення ASLM {0}. Скористайтеся «Підготувати оновлення ASLM», щоб завантажити його</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailableStaged" xml:space="preserve">
+    <value>Доступне оновлення ASLM {0}; {1} уже підготовлено до перезапуску</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmTagPrepared" xml:space="preserve">
+    <value>ASLM {0} підготовлено і буде застосовано після перезапуску</value>
+  </data>
+  <data name="Settings_UpdateStatus_CheckFailed" xml:space="preserve">
+    <value>Перевірка оновлень не вдалася: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Checking" xml:space="preserve">
+    <value>Перевірка репозиторіїв GitHub...</value>
+  </data>
+  <data name="Settings_UpdateStatus_CouldNotPrepare" xml:space="preserve">
+    <value>Не вдалося підготувати оновлення ASLM</value>
+  </data>
+  <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
+    <value>Завантаження збірки ASLM...</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
+    <value>Доступно оновлень: {0}. Оновлення модулів можна застосувати на сторінці «Модулі»</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedAslm" xml:space="preserve">
+    <value>{0} ASLM {1} підготовлено до перезапуску</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedGeneric" xml:space="preserve">
+    <value>{0} Самооновлення ASLM підготовлено до перезапуску</value>
+  </data>
+  <data name="Settings_UpdateStatus_None" xml:space="preserve">
+    <value>У цьому сеансі перевірку оновлень ще не виконували</value>
+  </data>
+  <data name="Settings_UpdateStatus_Prepared" xml:space="preserve">
+    <value>Оновлення ASLM підготовлено і буде застосовано після перезапуску</value>
+  </data>
+  <data name="Settings_UpdateStatus_PreparedWithVersion" xml:space="preserve">
+    <value>Оновлення ASLM {0} підготовлено і буде застосовано після перезапуску</value>
+  </data>
+  <data name="Settings_UpdateStatus_RestartFailed" xml:space="preserve">
+    <value>Перезапуск не вдався: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Restarting" xml:space="preserve">
+    <value>Перезапуск ASLM...</value>
+  </data>
+  <data name="Settings_UpdateStatus_UpToDate" xml:space="preserve">
+    <value>Усе актуальне.</value>
+  </data>
+  <data name="Settings_UseCustomValue" xml:space="preserve">
+    <value>Використовувати власне значення</value>
+  </data>
+  <data name="Settings_ValidationError" xml:space="preserve">
+    <value>Помилка перевірки</value>
+  </data>
+  <data name="SetupWizard_Canceled" xml:space="preserve">
+    <value>Встановлення скасовано.</value>
+  </data>
+  <data name="SetupWizard_DisplayNamePlaceholder" xml:space="preserve">
+    <value>Ваше ім’я</value>
+  </data>
+  <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
+    <value>Оберіть відображуване ім’я</value>
+  </data>
+  <data name="SetupWizard_DockerDescription" xml:space="preserve">
+    <value>ASLM потребує Docker CLI. Встановіть Docker Desktop, потім натисніть «Далі»</value>
+  </data>
+  <data name="SetupWizard_DockerTitle" xml:space="preserve">
+    <value>Встановлення Docker Desktop</value>
+  </data>
+  <data name="SetupWizard_Failed" xml:space="preserve">
+    <value>Встановлення не вдалося</value>
+  </data>
+  <data name="SetupWizard_FastSetup" xml:space="preserve">
+    <value>Швидке налаштування</value>
+  </data>
+  <data name="SetupWizard_FastSetupHint" xml:space="preserve">
+    <value>Швидке налаштування використовує ім’я користувача Windows і типові порти</value>
+  </data>
+  <data name="SetupWizard_Finish" xml:space="preserve">
+    <value>Завершити</value>
+  </data>
+  <data name="SetupWizard_HideLog" xml:space="preserve">
+    <value>Приховати журнал</value>
+  </data>
+  <data name="SetupWizard_InstallDocker" xml:space="preserve">
+    <value>Встановити Docker</value>
+  </data>
+  <data name="SetupWizard_Installing" xml:space="preserve">
+    <value>Встановлення...</value>
+  </data>
+  <data name="SetupWizard_Next_Install" xml:space="preserve">
+    <value>Встановити</value>
+  </data>
+  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
+    <value>Офіційні модулі (100 портів)</value>
+  </data>
+  <data name="SetupWizard_OverallProgress" xml:space="preserve">
+    <value>Загальний прогрес</value>
+  </data>
+  <data name="SetupWizard_PortAllocationTitle" xml:space="preserve">
+    <value>Розподіл портів</value>
+  </data>
+  <data name="SetupWizard_Preparing" xml:space="preserve">
+    <value>Підготовка...</value>
+  </data>
+  <data name="SetupWizard_Retry" xml:space="preserve">
+    <value>Повторити</value>
+  </data>
+  <data name="SetupWizard_Setup" xml:space="preserve">
+    <value>Налаштування</value>
+  </data>
+  <data name="SetupWizard_SetupComplete" xml:space="preserve">
+    <value>Налаштування завершено!</value>
+  </data>
+  <data name="SetupWizard_ShowLog" xml:space="preserve">
+    <value>Показати журнал</value>
+  </data>
+  <data name="SetupWizard_StepFormat" xml:space="preserve">
+    <value>Крок {0} з {1} — {2}</value>
+  </data>
+  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
+    <value>Docker Desktop</value>
+  </data>
+  <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
+    <value>Вибір модулів</value>
+  </data>
+  <data name="SetupWizard_Step_Modules" xml:space="preserve">
+    <value>Модулі</value>
+  </data>
+  <data name="SetupWizard_Step_PortAllocation" xml:space="preserve">
+    <value>Розподіл портів</value>
+  </data>
+  <data name="SetupWizard_Step_PortConfiguration" xml:space="preserve">
+    <value>Налаштування портів</value>
+  </data>
+  <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
+    <value>Профіль користувача</value>
+  </data>
+  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
+    <value>Сторонні модулі (1000 портів)</value>
+  </data>
+  <data name="SetupWizard_Title" xml:space="preserve">
+    <value>Налаштування ASLM</value>
+  </data>
+  <data name="SetupWizard_WelcomeSubtitle" xml:space="preserve">
+    <value>Advanced System Language Models</value>
+  </data>
+  <data name="SetupWizard_WelcomeTitle" xml:space="preserve">
+    <value>Ласкаво просимо до ASLM!</value>
+  </data>
+  <data name="ThemeColorPicker_Brightness" xml:space="preserve">
+    <value>Яскравість</value>
+  </data>
+  <data name="ThemeColorPicker_Cancel" xml:space="preserve">
+    <value>Скасувати</value>
+  </data>
+  <data name="ThemeColorPicker_CustomColor" xml:space="preserve">
+    <value>Власний колір</value>
+  </data>
+  <data name="ThemeColorPicker_HexPlaceholder" xml:space="preserve">
+    <value>#AARRGGBB</value>
+  </data>
+  <data name="ThemeColorPicker_Opacity" xml:space="preserve">
+    <value>Непрозорість</value>
+  </data>
+</root>
