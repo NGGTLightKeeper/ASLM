@@ -33,14 +33,16 @@
                 <Grid Grid.Row="0"
                       ColumnDefinitions="*,Auto,Auto"
                       ColumnSpacing="4">
-                    <Label Grid.Column="0"
+                    <Label x:Name="TitleLabel"
+                           Grid.Column="0"
                            Text="Notifications"
                            FontSize="16"
                            FontAttributes="Bold"
                            TextColor="{DynamicResource LabelPrimary}"
                            VerticalOptions="Center" />
 
-                    <Button Grid.Column="1"
+                    <Button x:Name="ClearAllButton"
+                            Grid.Column="1"
                             Text="Clear all"
                             FontSize="12"
                             HeightRequest="28"
@@ -222,12 +224,14 @@
                                          HorizontalOptions="Center"
                                          Spacing="5"
                                          Margin="24">
-                        <Label Text="No notifications"
+                        <Label x:Name="EmptyTitleLabel"
+                               Text="No notifications"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource LabelPrimary}"
                                HorizontalOptions="Center" />
-                        <Label Text="New ASLM events will appear here."
+                        <Label x:Name="EmptyMessageLabel"
+                               Text="New ASLM events will appear here."
                                FontSize="12"
                                TextColor="{DynamicResource LabelSecondary}"
                                HorizontalTextAlignment="Center" />

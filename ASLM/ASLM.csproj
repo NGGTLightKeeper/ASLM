@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>net10.0-windows10.0.19041.0</TargetFrameworks>
@@ -58,6 +58,21 @@
 		<PackageReference Include="System.Management" Version="9.0.0" />
 		<PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.9" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="Resources\Strings\AppResources.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.resx">
+	    <Generator>PublicResXFileCodeGenerator</Generator>
+	    <LastGenOutput>AppResources.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
+	</ItemGroup>
 	
 	<!-- Flatten icon_*.scale-100.png into tint_png/ for PackagedIconTintCache (unpackaged WinUI). -->
 	<Target Name="_CopyResizedIconsForTint" AfterTargets="ResizetizeImages">
@@ -65,9 +80,7 @@
 			<_TintPngs Include="$(IntermediateOutputPath)resizetizer\r\icon_*.scale-100.png" />
 		</ItemGroup>
 		<MakeDir Directories="$(OutputPath)tint_png" />
-		<Copy SourceFiles="@(_TintPngs)"
-			  DestinationFiles="@(_TintPngs->'$(OutputPath)tint_png\$([System.String]::Copy('%(Filename)').Replace('.scale-100','')).png')"
-			  SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(_TintPngs)" DestinationFiles="@(_TintPngs-&gt;'$(OutputPath)tint_png\$([System.String]::Copy('%(Filename)').Replace('.scale-100','')).png')" SkipUnchangedFiles="true" />
 	</Target>
 
 </Project>

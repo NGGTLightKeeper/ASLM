@@ -3,6 +3,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
 
@@ -13,13 +14,14 @@ namespace ASLM.Pages
     /// <summary>
     /// Displays module consoles, per-process sessions, and merged console output.
     /// </summary>
-    public partial class ConsolesView : ContentView, IConsolesView
+    public partial class ConsolesView : ContentView, IConsolesView, ILocalizable
     {
         private const double CompactBreakpoint = 1180;
         private static readonly TimeSpan AutoRefreshInterval = TimeSpan.FromSeconds(3);
 
         private readonly ConsolesPageViewModel _viewModel = new();
         private readonly ConsolesPresenter _presenter;
+        private readonly AppLocalizationService _localization;
         private bool _suppressSelection;
         private int _layoutRefreshQueued;
         private CancellationTokenSource? _autoRefreshCts;
@@ -27,19 +29,43 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the consoles view and initializes its responsive shell layout.
         /// </summary>
-        public ConsolesView(ModuleInstaller moduleInstaller, ModuleConsoleStore consoleStore, AppDataStore appData)
+        public ConsolesView(
+            ModuleInstaller moduleInstaller,
+            ModuleConsoleStore consoleStore,
+            AppDataStore appData,
+            AppLocalizationService localization)
         {
             InitializeComponent();
 
             BindingContext = _viewModel;
+            _localization = localization;
 
             _presenter = new ConsolesPresenter(this, moduleInstaller, consoleStore, appData);
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
             SizeChanged += OnSizeChanged;
+            LocalizableAttach.Hook(this, _localization, this);
 
             UpdateResponsiveLayout();
+        }
+
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            PageTitleLabel.Text = L.Get(LocalizationKeys.Consoles_Title);
+            ModulesHeaderLabel.Text = L.Get(LocalizationKeys.Consoles_ModulesHeader);
+            SessionsHeaderLabel.Text = L.Get(LocalizationKeys.Consoles_Title);
+
+            if (ModulesCollection.EmptyView is Label modulesEmpty)
+            {
+                modulesEmpty.Text = L.Get(LocalizationKeys.Consoles_NoActiveModules);
+            }
+
+            if (SessionsCollection.EmptyView is Label sessionsEmpty)
+            {
+                sessionsEmpty.Text = L.Get(LocalizationKeys.Consoles_NoConsoles);
+            }
         }
 
         /// <summary>

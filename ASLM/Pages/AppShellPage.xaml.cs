@@ -2,6 +2,7 @@
 
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
 using Microsoft.Maui.Controls.Shapes;
@@ -13,7 +14,7 @@ namespace ASLM.Pages
     /// <summary>
     /// Hosts the shared sidebar, system views, and module pages.
     /// </summary>
-    public partial class AppShellPage : ContentPage, INotifyPropertyChanged
+    public partial class AppShellPage : ContentPage, INotifyPropertyChanged, ILocalizable
     {
         private const double PanelExpandedWidth = 240;
         private const double PanelCollapsedWidth = 48;
@@ -28,14 +29,6 @@ namespace ASLM.Pages
         private const string IconSettings = "icon_settings.png";
         private const string IconPage = "icon_page.png";
 
-        private const string LabelHome = "Home";
-        private const string LabelConsoles = "Consoles";
-        private const string LabelModules = "Modules";
-        private const string LabelApi = "ASLM API";
-        private const string LabelNotifications = "Notifications";
-        private const string LabelDownload = "Download";
-        private const string LabelSettings = "Settings";
-
         private static Color TransparentBackground => Colors.Transparent;
 
         private readonly ModuleInstaller _moduleInstaller;
@@ -49,6 +42,7 @@ namespace ASLM.Pages
         private readonly ModuleStartThrottle _moduleStartThrottle;
         private readonly ModuleLaunchCoordinator _moduleLaunchCoordinator;
         private readonly SettingsService _settingsService;
+        private readonly AppLocalizationService _localization;
         private readonly IServiceProvider _services;
 
         private List<ModuleConfig> _allModules = [];
@@ -89,6 +83,7 @@ namespace ASLM.Pages
             ModuleStartThrottle moduleStartThrottle,
             ModuleLaunchCoordinator moduleLaunchCoordinator,
             SettingsService settingsService,
+            AppLocalizationService localization,
             IServiceProvider services)
         {
             _moduleInstaller = moduleInstaller;
@@ -102,9 +97,11 @@ namespace ASLM.Pages
             _moduleStartThrottle = moduleStartThrottle;
             _moduleLaunchCoordinator = moduleLaunchCoordinator;
             _settingsService = settingsService;
+            _localization = localization;
             _services = services;
 
             InitializeComponent();
+            LocalizableAttach.Hook(this, _localization, this);
             BindingContext = this;
             Loaded += OnPageLoaded;
             Unloaded += OnPageUnloaded;
@@ -1147,41 +1144,60 @@ namespace ASLM.Pages
         /// <summary>
         /// Returns the display label for one static shell button.
         /// </summary>
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            Title = L.Get(LocalizationKeys.AppShell_Title);
+
+            foreach (var button in _navButtons)
+            {
+                button.Text = _panelExpanded ? GetButtonLabel(button) : string.Empty;
+            }
+
+            foreach (var child in ModulePagePanel.Children)
+            {
+                if (child is Button moduleButton && moduleButton.BindingContext is ModuleConfig module)
+                {
+                    moduleButton.Text = _panelExpanded ? module.Name : string.Empty;
+                }
+            }
+        }
+
         private string GetButtonLabel(Button button)
         {
             if (button == HomeButton)
             {
-                return LabelHome;
+                return L.Get(LocalizationKeys.AppShell_Nav_Home);
             }
 
             if (button == ConsolesButton)
             {
-                return LabelConsoles;
+                return L.Get(LocalizationKeys.AppShell_Nav_Consoles);
             }
 
             if (button == ModulesButton)
             {
-                return LabelModules;
+                return L.Get(LocalizationKeys.AppShell_Nav_Modules);
             }
 
             if (button == AslmApiButton)
             {
-                return LabelApi;
+                return L.Get(LocalizationKeys.AppShell_Nav_Api);
             }
 
             if (button == NotificationsButton)
             {
-                return LabelNotifications;
+                return L.Get(LocalizationKeys.AppShell_Nav_Notifications);
             }
 
             if (button == DownloadsButton)
             {
-                return LabelDownload;
+                return L.Get(LocalizationKeys.AppShell_Nav_Download);
             }
 
             if (button == SettingsButton)
             {
-                return LabelSettings;
+                return L.Get(LocalizationKeys.AppShell_Nav_Settings);
             }
 
             return string.Empty;

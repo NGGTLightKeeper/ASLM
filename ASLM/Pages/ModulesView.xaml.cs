@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows.Input;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
 
@@ -16,13 +17,14 @@ namespace ASLM.Pages
     /// <summary>
     /// Displays module cards and keeps the grid responsive inside the shell.
     /// </summary>
-    public partial class ModulesView : ContentView, INotifyPropertyChanged
+    public partial class ModulesView : ContentView, INotifyPropertyChanged, ILocalizable
     {
         private const double MinCardWidth = 440;
 
         private readonly UpdateManager _updateManager;
         private readonly ModuleTrustService _moduleTrustService;
         private readonly ModuleLaunchCoordinator _launchCoordinator;
+        private readonly AppLocalizationService _localization;
         private AppShellPage? _shell;
         private int _gridSpan = 1;
 
@@ -64,16 +66,27 @@ namespace ASLM.Pages
         public ModulesView(
             UpdateManager updateManager,
             ModuleTrustService moduleTrustService,
-            ModuleLaunchCoordinator launchCoordinator)
+            ModuleLaunchCoordinator launchCoordinator,
+            AppLocalizationService localization)
         {
             _updateManager = updateManager;
             _moduleTrustService = moduleTrustService;
             _launchCoordinator = launchCoordinator;
+            _localization = localization;
             InitializeComponent();
             BindingContext = this;
             DashboardView.HandlerChanged += OnDashboardViewHandlerChanged;
             Loaded += OnLoaded;
             SizeChanged += OnSizeChanged;
+            LocalizableAttach.Hook(this, _localization, this);
+        }
+
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            PageTitleLabel.Text = L.Get(LocalizationKeys.Modules_Title);
+            EmptyModulesLabel.Text = L.Get(LocalizationKeys.Modules_Empty);
+            OnPropertyChanged(nameof(Modules));
         }
 
 

@@ -91,7 +91,11 @@ namespace ASLM
             builder.Services.AddTransient<SettingsView>();
             builder.Services.AddTransient<ModuleUpdateView>();
 
-            return builder.Build();
+            var app = builder.Build();
+            var localization = app.Services.GetRequiredService<AppLocalizationService>();
+            Localization.L.Initialize(localization);
+            localization.ApplyCulture();
+            return app;
         }
     }
 }

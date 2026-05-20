@@ -1,0 +1,938 @@
+<?xml version="1.0" ?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AppShell_Nav_Api" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="AppShell_Nav_Consoles" xml:space="preserve">
+    <value>Consoles</value>
+  </data>
+  <data name="AppShell_Nav_Download" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="AppShell_Nav_Home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="AppShell_Nav_Modules" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="AppShell_Nav_Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="AppShell_Nav_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="AppShell_Title" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
+    <value>Copy address</value>
+  </data>
+  <data name="AslmApi_Hosts" xml:space="preserve">
+    <value>Hosts</value>
+  </data>
+  <data name="AslmApi_NoHosts" xml:space="preserve">
+    <value>No hosts</value>
+  </data>
+  <data name="AslmApi_Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="AslmApi_Title" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="Common_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Common_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common_Discard" xml:space="preserve">
+    <value>Discard</value>
+  </data>
+  <data name="Common_Done" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="Common_Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Common_Install_Action" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Common_Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Common_Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Common_Saved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="Common_Stay" xml:space="preserve">
+    <value>Stay</value>
+  </data>
+  <data name="Common_Variant" xml:space="preserve">
+    <value>Variant</value>
+  </data>
+  <data name="Consoles_ModulesHeader" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="Consoles_NoActiveModules" xml:space="preserve">
+    <value>No active modules</value>
+  </data>
+  <data name="Consoles_NoConsoles" xml:space="preserve">
+    <value>No consoles</value>
+  </data>
+  <data name="Consoles_Title" xml:space="preserve">
+    <value>Consoles</value>
+  </data>
+  <data name="Downloads_CategoryCount_Many" xml:space="preserve">
+    <value>{0} categories</value>
+  </data>
+  <data name="Downloads_CategoryCount_None" xml:space="preserve">
+    <value>No categories</value>
+  </data>
+  <data name="Downloads_CategoryCount_One" xml:space="preserve">
+    <value>1 category</value>
+  </data>
+  <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
+    <value>Choose a resource family to inspect its variants and details</value>
+  </data>
+  <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
+    <value>No installed module currently exposes a downloads bridge</value>
+  </data>
+  <data name="Downloads_EmptyCategory" xml:space="preserve">
+    <value>No grouped downloads are available for this category</value>
+  </data>
+  <data name="Downloads_EmptyFiltered" xml:space="preserve">
+    <value>No grouped downloads matched the current provider filters</value>
+  </data>
+  <data name="Downloads_EmptySearch" xml:space="preserve">
+    <value>No results matched "{0}" on the provider side</value>
+  </data>
+  <data name="Downloads_NoItems" xml:space="preserve">
+    <value>No items</value>
+  </data>
+  <data name="Downloads_SearchPlaceholder" xml:space="preserve">
+    <value>Search the provider catalog</value>
+  </data>
+  <data name="Downloads_SelectItem" xml:space="preserve">
+    <value>Select an item</value>
+  </data>
+  <data name="Downloads_Title" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
+    <value>Last module activity {0}</value>
+  </data>
+  <data name="Home_Card_Modules_NoActivity" xml:space="preserve">
+    <value>No module activity recorded yet</value>
+  </data>
+  <data name="Home_Card_Modules_StatusTotal" xml:space="preserve">
+    <value>{0} total</value>
+  </data>
+  <data name="Home_Card_Modules_Subtitle" xml:space="preserve">
+    <value>Lifecycle and console activity</value>
+  </data>
+  <data name="Home_Card_Modules_Title" xml:space="preserve">
+    <value>Managed Modules</value>
+  </data>
+  <data name="Home_Card_Runtime_ChildCount" xml:space="preserve">
+    <value>{0} live child processes inside the ASLM tree</value>
+  </data>
+  <data name="Home_Card_Runtime_NoChildren" xml:space="preserve">
+    <value>No managed child processes are currently active</value>
+  </data>
+  <data name="Home_Card_Runtime_StatusPid" xml:space="preserve">
+    <value>PID {0}</value>
+  </data>
+  <data name="Home_Card_Runtime_Subtitle" xml:space="preserve">
+    <value>App process and managed child tree</value>
+  </data>
+  <data name="Home_Card_Runtime_Title" xml:space="preserve">
+    <value>ASLM Runtime</value>
+  </data>
+  <data name="Home_Card_System_SampledAt" xml:space="preserve">
+    <value>Sampled at {0}</value>
+  </data>
+  <data name="Home_Card_System_Status" xml:space="preserve">
+    <value>Live</value>
+  </data>
+  <data name="Home_Card_System_Subtitle" xml:space="preserve">
+    <value>Host machine load</value>
+  </data>
+  <data name="Home_Card_System_Title" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Home_Column_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Home_Column_Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Home_Column_Disk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="Home_Column_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="Home_Column_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Home_Column_Net" xml:space="preserve">
+    <value>Net</value>
+  </data>
+  <data name="Home_Column_Ram" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="Home_Loading_WaitingSample" xml:space="preserve">
+    <value>Waiting for sample</value>
+  </data>
+  <data name="Home_ManagedProcesses" xml:space="preserve">
+    <value>Managed Processes</value>
+  </data>
+  <data name="Home_Metric_Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Home_Metric_Active_Detail" xml:space="preserve">
+    <value>Modules with live managed processes</value>
+  </data>
+  <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
+    <value>{0} logical cores</value>
+  </data>
+  <data name="Home_Metric_Cpu_RuntimeDetail" xml:space="preserve">
+    <value>Application host and managed subprocesses</value>
+  </data>
+  <data name="Home_Metric_Disk_CombinedIo" xml:space="preserve">
+    <value>Combined managed process I/O</value>
+  </data>
+  <data name="Home_Metric_Disk_Rw" xml:space="preserve">
+    <value>R {0} - W {1}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Index" xml:space="preserve">
+    <value>GPU {0}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Unavailable" xml:space="preserve">
+    <value>GPU counters unavailable</value>
+  </data>
+  <data name="Home_Metric_Installed" xml:space="preserve">
+    <value>Installed</value>
+  </data>
+  <data name="Home_Metric_Installed_Detail" xml:space="preserve">
+    <value>Modules discovered on disk</value>
+  </data>
+  <data name="Home_Metric_Network" xml:space="preserve">
+    <value>Network</value>
+  </data>
+  <data name="Home_Metric_Network_Endpoints" xml:space="preserve">
+    <value>Open TCP and UDP endpoints in the ASLM tree</value>
+  </data>
+  <data name="Home_Metric_Network_RxTx" xml:space="preserve">
+    <value>Rx {0} - Tx {1}</value>
+  </data>
+  <data name="Home_Metric_NotAvailable" xml:space="preserve">
+    <value>n/a</value>
+  </data>
+  <data name="Home_Metric_Processes" xml:space="preserve">
+    <value>Processes</value>
+  </data>
+  <data name="Home_Metric_Processes_Detail" xml:space="preserve">
+    <value>Live subprocesses managed by ASLM</value>
+  </data>
+  <data name="Home_Metric_Ram_Resident" xml:space="preserve">
+    <value>{0} resident</value>
+  </data>
+  <data name="Home_Metric_Ram_Usage" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="Home_Metric_Running" xml:space="preserve">
+    <value>Running</value>
+  </data>
+  <data name="Home_Metric_Running_Detail" xml:space="preserve">
+    <value>Modules marked enabled</value>
+  </data>
+  <data name="Home_Metric_Sessions" xml:space="preserve">
+    <value>Sessions</value>
+  </data>
+  <data name="Home_Metric_Sessions_Detail" xml:space="preserve">
+    <value>{0} active console sessions</value>
+  </data>
+  <data name="Home_Module_ByAuthor" xml:space="preserve">
+    <value>by {0}</value>
+  </data>
+  <data name="Home_Module_InstalledDefault" xml:space="preserve">
+    <value>Installed module</value>
+  </data>
+  <data name="Home_Module_Launching" xml:space="preserve">
+    <value>Launching</value>
+  </data>
+  <data name="Home_Module_Stopped" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="Home_Module_Stopping" xml:space="preserve">
+    <value>Stopping</value>
+  </data>
+  <data name="Home_ModulesHeader" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="Home_Status_Loading" xml:space="preserve">
+    <value>Loading</value>
+  </data>
+  <data name="Home_Title" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="Loading_Text" xml:space="preserve">
+    <value>Loading...</value>
+  </data>
+  <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
+    <value>Check updates</value>
+  </data>
+  <data name="ModuleUpdate_CloseTooltip" xml:space="preserve">
+    <value>Close module updates</value>
+  </data>
+  <data name="ModuleUpdate_CurrentVersion" xml:space="preserve">
+    <value>Current version</value>
+  </data>
+  <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
+    <value>Install update</value>
+  </data>
+  <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
+    <value>No module selected</value>
+  </data>
+  <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
+    <value>Overall progress</value>
+  </data>
+  <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
+    <value>Preferences are saved automatically</value>
+  </data>
+  <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
+    <value>Release version</value>
+  </data>
+  <data name="ModuleUpdate_RepositoryBranch" xml:space="preserve">
+    <value>Repository branch</value>
+  </data>
+  <data name="ModuleUpdate_SearchMode" xml:space="preserve">
+    <value>Search mode</value>
+  </data>
+  <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
+    <value>Selected target</value>
+  </data>
+  <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="ModuleUpdate_Title_Configure" xml:space="preserve">
+    <value>Configure Module Updates</value>
+  </data>
+  <data name="ModuleUpdate_Title_Update" xml:space="preserve">
+    <value>Module Update</value>
+  </data>
+  <data name="ModuleUpdate_UpdateSource" xml:space="preserve">
+    <value>Update source</value>
+  </data>
+  <data name="Modules_CheckUpdates" xml:space="preserve">
+    <value>Check updates</value>
+  </data>
+  <data name="Modules_ConfigureUpdates" xml:space="preserve">
+    <value>Configure updates</value>
+  </data>
+  <data name="Modules_Empty" xml:space="preserve">
+    <value>No modules found. Install modules via the Setup Wizard</value>
+  </data>
+  <data name="Modules_Launch" xml:space="preserve">
+    <value>Launch</value>
+  </data>
+  <data name="Modules_NotVerified" xml:space="preserve">
+    <value>Not verified</value>
+  </data>
+  <data name="Modules_Restart" xml:space="preserve">
+    <value>Restart</value>
+  </data>
+  <data name="Modules_Restarting" xml:space="preserve">
+    <value>Restarting</value>
+  </data>
+  <data name="Modules_Starting" xml:space="preserve">
+    <value>Starting</value>
+  </data>
+  <data name="Modules_Stop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Modules_Title" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="Modules_Update" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="Modules_Updating" xml:space="preserve">
+    <value>Updating</value>
+  </data>
+  <data name="Notifications_ClearAll" xml:space="preserve">
+    <value>Clear all</value>
+  </data>
+  <data name="Notifications_EmptyMessage" xml:space="preserve">
+    <value>New ASLM events will appear here</value>
+  </data>
+  <data name="Notifications_EmptyTitle" xml:space="preserve">
+    <value>No notifications</value>
+  </data>
+  <data name="Notifications_SectionRecent" xml:space="preserve">
+    <value>Recent</value>
+  </data>
+  <data name="Notifications_SummaryFormat" xml:space="preserve">
+    <value>{0} total</value>
+  </data>
+  <data name="Notifications_Title" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="Notifications_UpdateLater" xml:space="preserve">
+    <value>Update later</value>
+  </data>
+  <data name="Notifications_UpdateNow" xml:space="preserve">
+    <value>Update now</value>
+  </data>
+  <data name="Settings_ApiServer_Description" xml:space="preserve">
+    <value>Start the local mirror server with ASLM</value>
+  </data>
+  <data name="Settings_ApiServer_Title" xml:space="preserve">
+    <value>API server</value>
+  </data>
+  <data name="Settings_AppChannel_Description" xml:space="preserve">
+    <value>Release uses stable GitHub releases only. Pre-release also accepts preview releases</value>
+  </data>
+  <data name="Settings_AppChannel_Title" xml:space="preserve">
+    <value>Application update channel</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Description" xml:space="preserve">
+    <value>Hours between background update checks</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Title" xml:space="preserve">
+    <value>Auto-check period</value>
+  </data>
+  <data name="Settings_AutoInstall_Description" xml:space="preserve">
+    <value>Automatically apply module updates and prepare ASLM builds for the next restart</value>
+  </data>
+  <data name="Settings_AutoInstall_Title" xml:space="preserve">
+    <value>Install updates automatically</value>
+  </data>
+  <data name="Settings_Category_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Settings_Category_ASLM_Description" xml:space="preserve">
+    <value>Core ASLM behavior, ports, API, and consoles</value>
+  </data>
+  <data name="Settings_Category_Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="Settings_Category_Account_Description" xml:space="preserve">
+    <value>Display name used by ASLM and shared with modules</value>
+  </data>
+  <data name="Settings_Category_Module_Description" xml:space="preserve">
+    <value>Module-specific configuration</value>
+  </data>
+  <data name="Settings_Category_Ollama" xml:space="preserve">
+    <value>Ollama</value>
+  </data>
+  <data name="Settings_Category_Ollama_Description" xml:space="preserve">
+    <value>Ollama account sign-in and sign-out controls</value>
+  </data>
+  <data name="Settings_Category_Personalization" xml:space="preserve">
+    <value>Personalization</value>
+  </data>
+  <data name="Settings_Category_Personalization_Description" xml:space="preserve">
+    <value>Theme mode, language, and custom theme settings</value>
+  </data>
+  <data name="Settings_Category_Updates" xml:space="preserve">
+    <value>Updates</value>
+  </data>
+  <data name="Settings_Category_Updates_Description" xml:space="preserve">
+    <value>Application and module update preferences</value>
+  </data>
+  <data name="Settings_CheckNow" xml:space="preserve">
+    <value>Check now</value>
+  </data>
+  <data name="Settings_CheckUpdates_Description" xml:space="preserve">
+    <value>Allow ASLM to query configured GitHub repositories</value>
+  </data>
+  <data name="Settings_CheckUpdates_Title" xml:space="preserve">
+    <value>Check for updates</value>
+  </data>
+  <data name="Settings_CloseTooltip" xml:space="preserve">
+    <value>Close Settings</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Description" xml:space="preserve">
+    <value>Keep finished process consoles visible when individual consoles are enabled</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Title" xml:space="preserve">
+    <value>Completed process consoles</value>
+  </data>
+  <data name="Settings_ConsolesPage_Description" xml:space="preserve">
+    <value>Show the built-in consoles page in the sidebar</value>
+  </data>
+  <data name="Settings_ConsolesPage_Title" xml:space="preserve">
+    <value>Consoles page</value>
+  </data>
+  <data name="Settings_DiscardChanges" xml:space="preserve">
+    <value>Discard Changes</value>
+  </data>
+  <data name="Settings_DiscardDialog_Message" xml:space="preserve">
+    <value>You have unsaved changes in this section. Discard them and switch?</value>
+  </data>
+  <data name="Settings_DiscardDialog_Title" xml:space="preserve">
+    <value>Unsaved changes</value>
+  </data>
+  <data name="Settings_DisplayName" xml:space="preserve">
+    <value>Display Name</value>
+  </data>
+  <data name="Settings_DisplayNameDescription" xml:space="preserve">
+    <value>Name shown in ASLM and shared with modules</value>
+  </data>
+  <data name="Settings_EmptyCategory" xml:space="preserve">
+    <value>This category has no settings</value>
+  </data>
+  <data name="Settings_Engine_Installed" xml:space="preserve">
+    <value>Installed</value>
+  </data>
+  <data name="Settings_Engine_NotInstalled" xml:space="preserve">
+    <value>Not installed</value>
+  </data>
+  <data name="Settings_Header_Modules" xml:space="preserve">
+    <value>MODULES</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Description" xml:space="preserve">
+    <value>Show per-process consoles alongside unified module output</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Title" xml:space="preserve">
+    <value>Individual consoles</value>
+  </data>
+  <data name="Settings_Language_English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Settings_LoadDefault" xml:space="preserve">
+    <value>Load default</value>
+  </data>
+  <data name="Settings_ManualCheck_Title" xml:space="preserve">
+    <value>Manual check</value>
+  </data>
+  <data name="Settings_ModuleChannel_Description" xml:space="preserve">
+    <value>Used by modules that follow GitHub releases</value>
+  </data>
+  <data name="Settings_ModuleChannel_Title" xml:space="preserve">
+    <value>Default module release channel</value>
+  </data>
+  <data name="Settings_ModuleNoSettings" xml:space="preserve">
+    <value>This module has no settings in the current state</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Description" xml:space="preserve">
+    <value>New module preferences start from this mode; individual modules can override it</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Title" xml:space="preserve">
+    <value>Default module update mode</value>
+  </data>
+  <data name="Settings_NoSettingsAvailable" xml:space="preserve">
+    <value>No settings are available</value>
+  </data>
+  <data name="Settings_OfficialPortDescription" xml:space="preserve">
+    <value>Starting point for official modules. 100 ports are reserved from this value</value>
+  </data>
+  <data name="Settings_OfficialPortTitle" xml:space="preserve">
+    <value>Official modules start port</value>
+  </data>
+  <data name="Settings_OllamaAccount_Title" xml:space="preserve">
+    <value>Ollama Account</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Confirm" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Message" xml:space="preserve">
+    <value>This removes the current ollama.com session for this Windows profile. Continue?</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Title" xml:space="preserve">
+    <value>Sign out from Ollama</value>
+  </data>
+  <data name="Settings_Ollama_CheckingAccount" xml:space="preserve">
+    <value>Checking account</value>
+  </data>
+  <data name="Settings_Ollama_NotInstalled" xml:space="preserve">
+    <value>Internal Ollama is not installed</value>
+  </data>
+  <data name="Settings_Ollama_NotSignedIn" xml:space="preserve">
+    <value>Not signed in</value>
+  </data>
+  <data name="Settings_Ollama_SignIn" xml:space="preserve">
+    <value>Sign In</value>
+  </data>
+  <data name="Settings_Ollama_SignOut" xml:space="preserve">
+    <value>Sign Out</value>
+  </data>
+  <data name="Settings_Ollama_SignedIn" xml:space="preserve">
+    <value>Signed in</value>
+  </data>
+  <data name="Settings_Ollama_SignedInAs" xml:space="preserve">
+    <value>Signed in as {0}</value>
+  </data>
+  <data name="Settings_Ollama_SigningIn" xml:space="preserve">
+    <value>Signing In...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOut" xml:space="preserve">
+    <value>Signing Out...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOutStatus" xml:space="preserve">
+    <value>Signing out</value>
+  </data>
+  <data name="Settings_Ollama_WaitingSignIn" xml:space="preserve">
+    <value>Waiting for browser sign-in</value>
+  </data>
+  <data name="Settings_Personalization_ActiveTheme" xml:space="preserve">
+    <value>Active theme</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Custom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Settings_Personalization_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Settings_Personalization_Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Settings_Personalization_Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Settings_Personalization_ImportPickerTitle" xml:space="preserve">
+    <value>Import theme</value>
+  </data>
+  <data name="Settings_Personalization_InheritDark" xml:space="preserve">
+    <value>Dark (built-in)</value>
+  </data>
+  <data name="Settings_Personalization_InheritLight" xml:space="preserve">
+    <value>Light (built-in)</value>
+  </data>
+  <data name="Settings_Personalization_InheritTitle" xml:space="preserve">
+    <value>Inherit colors from</value>
+  </data>
+  <data name="Settings_Personalization_Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Settings_Personalization_LanguageDescription" xml:space="preserve">
+    <value>Sets the interface language for ASLM and supported modules</value>
+  </data>
+  <data name="Settings_Personalization_Mode" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="Settings_Personalization_ModeDescription" xml:space="preserve">
+    <value>Sets how the app chooses its overall interface appearance</value>
+  </data>
+  <data name="Settings_Personalization_New" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="Settings_Personalization_NoThemes" xml:space="preserve">
+    <value>No custom themes yet. Create one to use Custom appearance</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeActive" xml:space="preserve">
+    <value>Which saved palette the token rows below belong to</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeDescription" xml:space="preserve">
+    <value>Choose which custom theme is active</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeEmpty" xml:space="preserve">
+    <value>Create a palette first; it will show up here for selection</value>
+  </data>
+  <data name="Settings_Personalization_Themes" xml:space="preserve">
+    <value>Themes</value>
+  </data>
+  <data name="Settings_Personalization_ThemesDescription" xml:space="preserve">
+    <value>Add, bring in, or share palette definitions stored as files</value>
+  </data>
+  <data name="Settings_Ports" xml:space="preserve">
+    <value>Ports</value>
+  </data>
+  <data name="Settings_PrepareAslmUpdate" xml:space="preserve">
+    <value>Prepare ASLM update</value>
+  </data>
+  <data name="Settings_RestartNow" xml:space="preserve">
+    <value>Restart now</value>
+  </data>
+  <data name="Settings_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Settings_SaveAndRestart" xml:space="preserve">
+    <value>Save and restart</value>
+  </data>
+  <data name="Settings_SaveMessage_Deferred" xml:space="preserve">
+    <value>Settings saved. Some module settings could not be applied immediately and will be retried on next module start
+
+{0}</value>
+  </data>
+  <data name="Settings_SaveMessage_None" xml:space="preserve">
+    <value>No changes to save</value>
+  </data>
+  <data name="Settings_SaveMessage_Saved" xml:space="preserve">
+    <value>Settings saved and applied.</value>
+  </data>
+  <data name="Settings_SavedTitle" xml:space="preserve">
+    <value>Settings saved</value>
+  </data>
+  <data name="Settings_Saving" xml:space="preserve">
+    <value>Saving...</value>
+  </data>
+  <data name="Settings_SubGroup_API" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="Settings_SubGroup_Consoles" xml:space="preserve">
+    <value>Consoles</value>
+  </data>
+  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Settings_ThemeDelete_Message" xml:space="preserve">
+    <value>Are you sure you want to delete this theme? This cannot be undone</value>
+  </data>
+  <data name="Settings_ThemeDelete_Title" xml:space="preserve">
+    <value>Delete theme</value>
+  </data>
+  <data name="Settings_ThemeEditor_Base" xml:space="preserve">
+    <value>Base</value>
+  </data>
+  <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
+    <value>Built-in semantic defaults for tokens you have not overridden yet</value>
+  </data>
+  <data name="Settings_ThemeEditor_Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Settings_ThemeEditor_ColorsFormat" xml:space="preserve">
+    <value>Color editor for the theme: {0}</value>
+  </data>
+  <data name="Settings_ThemeEditor_Pick" xml:space="preserve">
+    <value>Pick</value>
+  </data>
+  <data name="Settings_ThemeExport_Failed" xml:space="preserve">
+    <value>Could not export theme: {0}</value>
+  </data>
+  <data name="Settings_ThemeExport_Select" xml:space="preserve">
+    <value>Select a theme to export</value>
+  </data>
+  <data name="Settings_ThemeImport_Failed" xml:space="preserve">
+    <value>Could not import theme: {0}</value>
+  </data>
+  <data name="Settings_ThemeImport_Invalid" xml:space="preserve">
+    <value>The file is not a valid ASLM theme</value>
+  </data>
+  <data name="Settings_ThemeImport_TooLarge" xml:space="preserve">
+    <value>The theme file is too large</value>
+  </data>
+  <data name="Settings_ThemeNew_DefaultName" xml:space="preserve">
+    <value>My Theme</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptMessage" xml:space="preserve">
+    <value>Enter a name for the new theme:</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
+    <value>New Theme</value>
+  </data>
+  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
+    <value>Starting point for external modules. 1000 ports are reserved from this value</value>
+  </data>
+  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
+    <value>Third-party modules start port</value>
+  </data>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailable" xml:space="preserve">
+    <value>ASLM update {0} is available. Use "Prepare ASLM update" to download it</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailableStaged" xml:space="preserve">
+    <value>ASLM update {0} is available; {1} is already staged for restart</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmTagPrepared" xml:space="preserve">
+    <value>ASLM {0} is prepared and will be applied on restart</value>
+  </data>
+  <data name="Settings_UpdateStatus_CheckFailed" xml:space="preserve">
+    <value>Update check failed: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Checking" xml:space="preserve">
+    <value>Checking GitHub repositories...</value>
+  </data>
+  <data name="Settings_UpdateStatus_CouldNotPrepare" xml:space="preserve">
+    <value>ASLM update could not be prepared</value>
+  </data>
+  <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
+    <value>Downloading ASLM build...</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
+    <value>{0} update(s) available. Module updates can be applied from the Modules page</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedAslm" xml:space="preserve">
+    <value>{0} ASLM {1} is staged for restart</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedGeneric" xml:space="preserve">
+    <value>{0} An ASLM self-update is staged for restart</value>
+  </data>
+  <data name="Settings_UpdateStatus_None" xml:space="preserve">
+    <value>No update check has been run in this session</value>
+  </data>
+  <data name="Settings_UpdateStatus_Prepared" xml:space="preserve">
+    <value>ASLM update is prepared and will be applied on restart</value>
+  </data>
+  <data name="Settings_UpdateStatus_PreparedWithVersion" xml:space="preserve">
+    <value>ASLM update {0} is prepared and will be applied on restart</value>
+  </data>
+  <data name="Settings_UpdateStatus_RestartFailed" xml:space="preserve">
+    <value>Restart failed: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Restarting" xml:space="preserve">
+    <value>Restarting ASLM...</value>
+  </data>
+  <data name="Settings_UpdateStatus_UpToDate" xml:space="preserve">
+    <value>Everything is up to date.</value>
+  </data>
+  <data name="Settings_UseCustomValue" xml:space="preserve">
+    <value>Use custom value</value>
+  </data>
+  <data name="Settings_ValidationError" xml:space="preserve">
+    <value>Validation Error</value>
+  </data>
+  <data name="SetupWizard_Canceled" xml:space="preserve">
+    <value>Installation canceled.</value>
+  </data>
+  <data name="SetupWizard_DisplayNamePlaceholder" xml:space="preserve">
+    <value>Your name</value>
+  </data>
+  <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
+    <value>Choose a display name</value>
+  </data>
+  <data name="SetupWizard_DockerDescription" xml:space="preserve">
+    <value>ASLM needs the Docker CLI. Install Docker Desktop, then tap Next</value>
+  </data>
+  <data name="SetupWizard_DockerTitle" xml:space="preserve">
+    <value>Install Docker Desktop</value>
+  </data>
+  <data name="SetupWizard_Failed" xml:space="preserve">
+    <value>Installation failed</value>
+  </data>
+  <data name="SetupWizard_FastSetup" xml:space="preserve">
+    <value>Fast Setup</value>
+  </data>
+  <data name="SetupWizard_FastSetupHint" xml:space="preserve">
+    <value>Fast Setup uses your Windows username and default ports</value>
+  </data>
+  <data name="SetupWizard_Finish" xml:space="preserve">
+    <value>Finish</value>
+  </data>
+  <data name="SetupWizard_HideLog" xml:space="preserve">
+    <value>Hide Log</value>
+  </data>
+  <data name="SetupWizard_InstallDocker" xml:space="preserve">
+    <value>Install Docker</value>
+  </data>
+  <data name="SetupWizard_Installing" xml:space="preserve">
+    <value>Installing...</value>
+  </data>
+  <data name="SetupWizard_Next_Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
+    <value>Official modules (100 ports)</value>
+  </data>
+  <data name="SetupWizard_OverallProgress" xml:space="preserve">
+    <value>Overall Progress</value>
+  </data>
+  <data name="SetupWizard_PortAllocationTitle" xml:space="preserve">
+    <value>Port Allocation</value>
+  </data>
+  <data name="SetupWizard_Preparing" xml:space="preserve">
+    <value>Preparing...</value>
+  </data>
+  <data name="SetupWizard_Retry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="SetupWizard_Setup" xml:space="preserve">
+    <value>Setup</value>
+  </data>
+  <data name="SetupWizard_SetupComplete" xml:space="preserve">
+    <value>Setup complete!</value>
+  </data>
+  <data name="SetupWizard_ShowLog" xml:space="preserve">
+    <value>Show Log</value>
+  </data>
+  <data name="SetupWizard_StepFormat" xml:space="preserve">
+    <value>Step {0} of {1} - {2}</value>
+  </data>
+  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
+    <value>Docker Desktop</value>
+  </data>
+  <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
+    <value>Module Selection</value>
+  </data>
+  <data name="SetupWizard_Step_Modules" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="SetupWizard_Step_PortAllocation" xml:space="preserve">
+    <value>Port Allocation</value>
+  </data>
+  <data name="SetupWizard_Step_PortConfiguration" xml:space="preserve">
+    <value>Port Configuration</value>
+  </data>
+  <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
+    <value>User Profile</value>
+  </data>
+  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
+    <value>Third-party modules (1000 ports)</value>
+  </data>
+  <data name="SetupWizard_Title" xml:space="preserve">
+    <value>ASLM Setup</value>
+  </data>
+  <data name="SetupWizard_WelcomeSubtitle" xml:space="preserve">
+    <value>Advanced System Language Models</value>
+  </data>
+  <data name="SetupWizard_WelcomeTitle" xml:space="preserve">
+    <value>Welcome to ASLM!</value>
+  </data>
+  <data name="ThemeColorPicker_Brightness" xml:space="preserve">
+    <value>Brightness</value>
+  </data>
+  <data name="ThemeColorPicker_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ThemeColorPicker_CustomColor" xml:space="preserve">
+    <value>Custom color</value>
+  </data>
+  <data name="ThemeColorPicker_HexPlaceholder" xml:space="preserve">
+    <value>#AARRGGBB</value>
+  </data>
+  <data name="ThemeColorPicker_Opacity" xml:space="preserve">
+    <value>Opacity</value>
+  </data>
+</root>

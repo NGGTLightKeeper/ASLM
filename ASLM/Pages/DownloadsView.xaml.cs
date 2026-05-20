@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
 
@@ -15,7 +16,7 @@ namespace ASLM.Pages
 {
     // Download overlay view
     // Drive the shared download catalog dialog
-    public partial class DownloadsView : ContentView, INotifyPropertyChanged
+    public partial class DownloadsView : ContentView, INotifyPropertyChanged, ILocalizable
     {
         private const double DialogWidthFactor = 0.88;
         private const double DialogHeightFactor = 0.84;
@@ -36,6 +37,7 @@ namespace ASLM.Pages
         private static Color ActiveSubtitleColor => GetColorResource("LinkColor", Color.FromArgb("#E7F1FF"));
         private readonly DownloadCatalog _catalog;
         private readonly DownloadInstaller _installer;
+        private readonly AppLocalizationService _localization;
         private CancellationTokenSource? _catalogRefreshCts;
         private CancellationTokenSource? _detailRefreshCts;
         private CancellationTokenSource? _searchDebounceCts;
@@ -44,8 +46,8 @@ namespace ASLM.Pages
         private bool _isBusy;
         private bool _isInstalling;
         private string _statusText = "Ready.";
-        private string _itemListEmptyMessage = "No grouped downloads are available for this category.";
-        private string _detailEmptyMessage = "Choose a resource family to inspect its variants and details.";
+        private string _itemListEmptyMessage = string.Empty;
+        private string _detailEmptyMessage = string.Empty;
         private string _searchText = string.Empty;
         private readonly HashSet<string> _selectedFilterKeys = new(StringComparer.OrdinalIgnoreCase);
         private string _lastCatalogSignature = string.Empty;
@@ -66,10 +68,11 @@ namespace ASLM.Pages
 
         // Initialization
         // Build the download overlay and wire its core events
-        public DownloadsView(DownloadCatalog catalog, DownloadInstaller installer)
+        public DownloadsView(DownloadCatalog catalog, DownloadInstaller installer, AppLocalizationService localization)
         {
             _catalog = catalog;
             _installer = installer;
+            _localization = localization;
 
             InitializeComponent();
             BindingContext = this;
@@ -78,9 +81,27 @@ namespace ASLM.Pages
             InstallCommand = new Command(async () => await InstallSelectedVariantAsync());
             OpenVariantCommand = new Command(async () => await OpenSelectedVariantAsync());
 
+            LocalizableAttach.Hook(this, _localization, this);
+
             DetailScrollView.HandlerChanged += OnDetailScrollViewHandlerChanged;
             Loaded += OnLoaded;
             SizeChanged += (_, _) => UpdateDialogSize();
+        }
+
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            DownloadsTitleLabel.Text = L.Get(LocalizationKeys.Downloads_Title);
+            SearchEntry.Placeholder = L.Get(LocalizationKeys.Downloads_SearchPlaceholder);
+            ItemListEmptyTitleLabel.Text = L.Get(LocalizationKeys.Downloads_NoItems);
+            DetailEmptyTitleLabel.Text = L.Get(LocalizationKeys.Downloads_SelectItem);
+            RefreshButton.Text = L.Get(LocalizationKeys.Common_Refresh);
+            InstallButton.Text = L.Get(LocalizationKeys.Common_Install);
+            OpenButton.Text = L.Get(LocalizationKeys.Common_Open);
+            RemoveButton.Text = L.Get(LocalizationKeys.Common_Remove);
+            VariantSectionLabel.Text = L.Get(LocalizationKeys.Common_Variant);
+
+            RefreshLocalizedBindableText();
         }
 
         public event EventHandler? CloseRequested;
@@ -132,7 +153,12 @@ namespace ASLM.Pages
             }
         }
 
-        public string CategoryCountLabel => Categories.Count == 0 ? "No categories" : $"{Categories.Count} categor{(Categories.Count == 1 ? "y" : "ies")}";
+        public string CategoryCountLabel => Categories.Count switch
+        {
+            0 => L.Get(LocalizationKeys.Downloads_CategoryCount_None),
+            1 => L.Get(LocalizationKeys.Downloads_CategoryCount_One),
+            _ => L.Get(LocalizationKeys.Downloads_CategoryCount_Many, Categories.Count)
+        };
         public string ActiveCategoryTitle => _activeCategory?.Title ?? "Catalog";
         public string ActiveCategoryDescription => _activeCategory?.Description ?? string.Empty;
         public bool HasActiveCategoryDescription => !string.IsNullOrWhiteSpace(ActiveCategoryDescription);
@@ -336,8 +362,8 @@ namespace ASLM.Pages
                     ? string.Join(" ", snapshot.Warnings)
                     : BuildEmptyItemListMessage();
                 DetailEmptyMessage = snapshot.Categories.Count == 0
-                    ? "No installed module currently exposes a downloads bridge."
-                    : "Choose a resource family to inspect its variants and details.";
+                    ? L.Get(LocalizationKeys.Downloads_DetailEmpty_NoBridge)
+                    : L.Get(LocalizationKeys.Downloads_DetailEmpty_Hint);
 
                 if (_selectedItem != null)
                 {
@@ -525,15 +551,37 @@ namespace ASLM.Pages
         {
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
-                return $"No results matched \"{SearchText.Trim()}\" on the provider side.";
+                return L.Get(LocalizationKeys.Downloads_EmptySearch, SearchText.Trim());
             }
 
             if (HasExplicitProviderFilterSelection())
             {
-                return "No grouped downloads matched the current provider filters.";
+                return L.Get(LocalizationKeys.Downloads_EmptyFiltered);
             }
 
-            return "No grouped downloads are available for this category.";
+            return L.Get(LocalizationKeys.Downloads_EmptyCategory);
+        }
+
+        /// <summary>
+        /// Reapplies localized values for bindable empty-state text.
+        /// </summary>
+        private void RefreshLocalizedBindableText()
+        {
+            OnPropertyChanged(nameof(CategoryCountLabel));
+
+            if (Categories.Count == 0)
+            {
+                DetailEmptyMessage = L.Get(LocalizationKeys.Downloads_DetailEmpty_NoBridge);
+            }
+            else if (!HasSelectedItem)
+            {
+                DetailEmptyMessage = L.Get(LocalizationKeys.Downloads_DetailEmpty_Hint);
+            }
+
+            if (IsItemListEmptyVisible)
+            {
+                ItemListEmptyMessage = BuildEmptyItemListMessage();
+            }
         }
 
         // Detect explicit filters

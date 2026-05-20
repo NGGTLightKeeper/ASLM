@@ -2,6 +2,7 @@
 
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:strings="clr-namespace:ASLM.Resources.Strings"
              x:Class="ASLM.Pages.ModulesView">
 
     <ContentView.GestureRecognizers>
@@ -23,7 +24,8 @@
             <VerticalStackLayout Spacing="0"
                                  Margin="0,0,0,8"
                                  Padding="4">
-                <Label Text="Modules"
+                <Label x:Name="PageTitleLabel"
+                       Text="Modules"
                        FontSize="24"
                        FontAttributes="Bold"
                        TextColor="{DynamicResource LabelPrimary}" />
@@ -31,7 +33,8 @@
         </CollectionView.Header>
 
         <CollectionView.EmptyView>
-            <Label Text="No modules found. Install modules via the Setup Wizard."
+            <Label x:Name="EmptyModulesLabel"
+                   Text="No modules found. Install modules via the Setup Wizard."
                    FontSize="14"
                    TextColor="{DynamicResource LabelSecondary}"
                    HorizontalOptions="Center"
@@ -121,7 +124,7 @@
                                                        HeightRequest="20"
                                                        VerticalOptions="Center"
                                                        Aspect="AspectFit" />
-                                                <Label Text="Not verified"
+                                                <Label Text="{x:Static strings:AppResources.Modules_NotVerified}"
                                                        FontSize="14"
                                                        TextColor="#FFFFFF"
                                                        VerticalOptions="Center"
@@ -161,7 +164,7 @@
                                                    HorizontalOptions="Center"
                                                    VerticalOptions="Center" />
                                             <Label Grid.Column="1"
-                                                   Text="Update"
+                                                   Text="{x:Static strings:AppResources.Modules_Update}"
                                                    FontSize="14"
                                                    TextColor="{DynamicResource White}"
                                                    VerticalOptions="Center"
@@ -204,7 +207,7 @@
                                       ColumnSpacing="8"
                                       IsVisible="{Binding ShowRunningActions}">
                                     <Button Grid.Column="0"
-                                            Text="Stop"
+                                            Text="{x:Static strings:AppResources.Modules_Stop}"
                                             ImageSource="icon_stop.png"
                                             ContentLayout="Left,4"
                                             Command="{Binding StopCommand}"
@@ -215,7 +218,7 @@
                                             CornerRadius="4"
                                             HorizontalOptions="Fill" />
                                     <Button Grid.Column="1"
-                                            Text="Restart"
+                                            Text="{x:Static strings:AppResources.Modules_Restart}"
                                             ImageSource="icon_restart.png"
                                             ContentLayout="Left,4"
                                             Command="{Binding RestartCommand}"
@@ -247,7 +250,7 @@
                                                            WidthRequest="16"
                                                            HeightRequest="16"
                                                            VerticalOptions="Center" />
-                                        <Label Text="Restarting"
+                                        <Label Text="{x:Static strings:AppResources.Modules_Restarting}"
                                                TextColor="{DynamicResource LabelPrimary}"
                                                FontSize="13"
                                                VerticalOptions="Center" />
@@ -274,7 +277,7 @@
                                                            WidthRequest="16"
                                                            HeightRequest="16"
                                                            VerticalOptions="Center" />
-                                        <Label Text="Starting"
+                                        <Label Text="{x:Static strings:AppResources.Modules_Starting}"
                                                TextColor="{DynamicResource LabelPrimary}"
                                                FontSize="13"
                                                VerticalOptions="Center" />
@@ -301,7 +304,7 @@
                                                            WidthRequest="16"
                                                            HeightRequest="16"
                                                            VerticalOptions="Center" />
-                                        <Label Text="Updating"
+                                        <Label Text="{x:Static strings:AppResources.Modules_Updating}"
                                                TextColor="{DynamicResource LabelPrimary}"
                                                FontSize="13"
                                                VerticalOptions="Center" />
@@ -309,7 +312,7 @@
                                 </Border>
 
                                 <Button Grid.Row="2"
-                                        Text="Launch"
+                                        Text="{x:Static strings:AppResources.Modules_Launch}"
                                         ImageSource="icon_play.png"
                                         ContentLayout="Left,4"
                                         Command="{Binding LaunchCommand}"
@@ -347,7 +350,7 @@
                                         <Grid.GestureRecognizers>
                                             <TapGestureRecognizer Command="{Binding CheckUpdateCommand}" />
                                         </Grid.GestureRecognizers>
-                                        <Label Text="Check updates"
+                                        <Label Text="{x:Static strings:AppResources.Modules_CheckUpdates}"
                                                FontSize="13"
                                                TextColor="{DynamicResource LabelPrimary}"
                                                HorizontalOptions="Start"
@@ -358,7 +361,7 @@
                                         <Grid.GestureRecognizers>
                                             <TapGestureRecognizer Command="{Binding OpenConfigureUpdatesCommand}" />
                                         </Grid.GestureRecognizers>
-                                        <Label Text="Configure updates"
+                                        <Label Text="{x:Static strings:AppResources.Modules_ConfigureUpdates}"
                                                FontSize="13"
                                                TextColor="{DynamicResource LabelPrimary}"
                                                HorizontalOptions="Start"

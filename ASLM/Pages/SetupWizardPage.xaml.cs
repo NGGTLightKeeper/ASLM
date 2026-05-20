@@ -2,6 +2,7 @@
 
 using System.Diagnostics;
 using System.Text;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
 
@@ -12,7 +13,7 @@ namespace ASLM.Pages
     /// <summary>
     /// Guides the first-run flow from profile setup through module installation.
     /// </summary>
-    public partial class SetupWizardPage : ContentPage
+    public partial class SetupWizardPage : ContentPage, ILocalizable
     {
         private const int TotalSteps = 3;
 
@@ -22,6 +23,7 @@ namespace ASLM.Pages
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly UpdateManager _updateManager;
+        private readonly AppLocalizationService _localization;
         private readonly IServiceProvider _services;
 
         private readonly List<(ModuleConfig Module, CheckBox Check)> _moduleChecks = [];
@@ -54,6 +56,7 @@ namespace ASLM.Pages
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
             UpdateManager updateManager,
+            AppLocalizationService localization,
             IServiceProvider services)
         {
             _appData = appData;
@@ -62,9 +65,11 @@ namespace ASLM.Pages
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             _updateManager = updateManager;
+            _localization = localization;
             _services = services;
 
             InitializeComponent();
+            LocalizableAttach.Hook(this, _localization, this);
 
             // Reuse the saved profile name when available, otherwise fall back to the Windows user name.
             var existingName = _appData.Data.User.Name;
@@ -309,6 +314,30 @@ namespace ASLM.Pages
         /// <summary>
         /// Switches visible panels and button states for the current wizard step.
         /// </summary>
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            Title = L.Get(LocalizationKeys.SetupWizard_Title);
+            HeaderTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_Title);
+            WelcomeTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_WelcomeTitle);
+            WelcomeSubtitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_WelcomeSubtitle);
+            SetupButton.Text = L.Get(LocalizationKeys.SetupWizard_Setup);
+            FastSetupButton.Text = L.Get(LocalizationKeys.SetupWizard_FastSetup);
+            FastSetupHintLabel.Text = L.Get(LocalizationKeys.SetupWizard_FastSetupHint);
+            DockerTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_DockerTitle);
+            DockerDescriptionLabel.Text = L.Get(LocalizationKeys.SetupWizard_DockerDescription);
+            InstallDockerButton.Text = L.Get(LocalizationKeys.SetupWizard_InstallDocker);
+            DisplayNameTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_DisplayNameTitle);
+            UsernameEntry.Placeholder = L.Get(LocalizationKeys.SetupWizard_DisplayNamePlaceholder);
+            PortAllocationTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_PortAllocationTitle);
+            OfficialPortsLabel.Text = L.Get(LocalizationKeys.SetupWizard_OfficialPortsLabel);
+            ThirdPartyPortsLabel.Text = L.Get(LocalizationKeys.SetupWizard_ThirdPartyPortsLabel);
+            InstallStatusLabel.Text = L.Get(LocalizationKeys.SetupWizard_Preparing);
+            OverallProgressLabel.Text = L.Get(LocalizationKeys.SetupWizard_OverallProgress);
+            BackButton.Text = L.Get(LocalizationKeys.Common_Back);
+            UpdateStepUI();
+        }
+
         private void UpdateStepUI()
         {
             Step0Panel.IsVisible = _currentStep == 0;
@@ -320,15 +349,17 @@ namespace ASLM.Pages
             HeaderRow.IsVisible = _currentStep > 0;
             ButtonPanel.IsVisible = _currentStep > 0;
             BackButton.IsVisible = _currentStep > 1 || (_currentStep == 1 && _showDockerGate);
-            NextButton.Text = _currentStep == TotalSteps ? "Install" : "Next";
+            NextButton.Text = _currentStep == TotalSteps
+                ? L.Get(LocalizationKeys.SetupWizard_Next_Install)
+                : L.Get(LocalizationKeys.Common_Next);
             ResetNavigationButtons();
 
             StepLabel.Text = _currentStep switch
             {
-                1 when _showDockerGate => "Docker Desktop",
-                1 => "Step 1 of 3 - User Profile",
-                2 => "Step 2 of 3 - Port Configuration",
-                3 => "Step 3 of 3 - Module Selection",
+                1 when _showDockerGate => L.Get(LocalizationKeys.SetupWizard_Step_DockerDesktop),
+                1 => L.Get(LocalizationKeys.SetupWizard_StepFormat, 1, 3, L.Get(LocalizationKeys.SetupWizard_Step_UserProfile)),
+                2 => L.Get(LocalizationKeys.SetupWizard_StepFormat, 2, 3, L.Get(LocalizationKeys.SetupWizard_Step_PortConfiguration)),
+                3 => L.Get(LocalizationKeys.SetupWizard_StepFormat, 3, 3, L.Get(LocalizationKeys.SetupWizard_Step_ModuleSelection)),
                 _ => string.Empty
             };
         }
@@ -375,7 +406,9 @@ namespace ASLM.Pages
         {
             _logVisible = !_logVisible;
             LogScroll.IsVisible = _logVisible;
-            ToggleLogButton.Text = _logVisible ? "Hide Log" : "Show Log";
+            ToggleLogButton.Text = _logVisible
+                ? L.Get(LocalizationKeys.SetupWizard_HideLog)
+                : L.Get(LocalizationKeys.SetupWizard_ShowLog);
         }
 
 
@@ -419,7 +452,7 @@ namespace ASLM.Pages
             ModuleListScroll.IsVisible = false;
             InstallPanel.IsVisible = true;
             ToggleLogButton.IsVisible = true;
-            StepLabel.Text = "Installing...";
+            StepLabel.Text = L.Get(LocalizationKeys.SetupWizard_Installing);
 
             _cts = new CancellationTokenSource();
             var logProgress = new InlineProgress<string>(AddLog);
@@ -573,19 +606,19 @@ namespace ASLM.Pages
                 }
 
                 UpdateInstallStatus("Setup complete!");
-                StepLabel.Text = "Setup complete!";
+                StepLabel.Text = L.Get(LocalizationKeys.SetupWizard_SetupComplete);
             }
             catch (OperationCanceledException)
             {
                 hasFailures = true;
                 UpdateInstallStatus("Installation canceled.");
-                StepLabel.Text = "Installation canceled.";
+                StepLabel.Text = L.Get(LocalizationKeys.SetupWizard_Canceled);
             }
             catch (Exception ex)
             {
                 hasFailures = true;
                 UpdateInstallStatus($"Error: {ex.Message}");
-                StepLabel.Text = "Installation failed.";
+                StepLabel.Text = L.Get(LocalizationKeys.SetupWizard_Failed);
                 AddLog($"Error: {ex.Message}");
             }
 
@@ -632,7 +665,7 @@ namespace ASLM.Pages
         {
             ResetNavigationButtons();
             BackButton.IsVisible = false;
-            NextButton.Text = "Finish";
+            NextButton.Text = L.Get(LocalizationKeys.SetupWizard_Finish);
             NextButton.Clicked -= OnNextClicked;
             NextButton.Clicked += OnFinishClicked;
         }
@@ -646,7 +679,7 @@ namespace ASLM.Pages
         {
             ResetNavigationButtons();
 
-            NextButton.Text = "Retry";
+            NextButton.Text = L.Get(LocalizationKeys.SetupWizard_Retry);
             NextButton.Clicked -= OnNextClicked;
             NextButton.Clicked += OnRetryInstallClicked;
 

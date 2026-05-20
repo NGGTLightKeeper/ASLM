@@ -1,6 +1,8 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
+using ASLM.Localization;
 using ASLM.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Maui.Graphics;
 
 namespace ASLM.Pages
@@ -12,7 +14,7 @@ namespace ASLM.Pages
     /// invalidated on every move for smooth tracking. Value/alpha sliders are not written on every HS move; hex/RGB
     /// entries and preview update live while dragging.
     /// </summary>
-    public partial class ThemeColorPickerView : ContentView
+    public partial class ThemeColorPickerView : ContentView, ILocalizable
     {
         private readonly TaskCompletionSource<Color?> _completion = new();
         private Page? _modalHostPage;
@@ -22,10 +24,13 @@ namespace ASLM.Pages
         private double _alpha = 1;
         private bool _hsPointerDown;
         private bool _suppressSync;
+        private readonly AppLocalizationService _localization;
 
-        public ThemeColorPickerView(Color initial)
+        public ThemeColorPickerView(Color initial, AppLocalizationService localization)
         {
+            _localization = localization;
             InitializeComponent();
+            LocalizableAttach.Hook(this, _localization, this);
 
             RgbToHsv(initial, out _hue, out _saturation, out _value);
             _alpha = initial.Alpha;
@@ -86,6 +91,17 @@ namespace ASLM.Pages
             HsCursor.Invalidate();
         }
 
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            TitleLabel.Text = L.Get(LocalizationKeys.ThemeColorPicker_CustomColor);
+            BrightnessLabel.Text = L.Get(LocalizationKeys.ThemeColorPicker_Brightness);
+            OpacityLabel.Text = L.Get(LocalizationKeys.ThemeColorPicker_Opacity);
+            HexEntry.Placeholder = L.Get(LocalizationKeys.ThemeColorPicker_HexPlaceholder);
+            DoneButton.Text = L.Get(LocalizationKeys.Common_Done);
+            CancelButton.Text = L.Get(LocalizationKeys.ThemeColorPicker_Cancel);
+        }
+
         public Task<Color?> WaitForResultAsync() => _completion.Task;
 
         /// <summary>
@@ -99,7 +115,8 @@ namespace ASLM.Pages
                 return null;
             }
 
-            var picker = new ThemeColorPickerView(initial);
+            var localization = Application.Current?.Handler?.MauiContext?.Services.GetRequiredService<AppLocalizationService>();
+            var picker = new ThemeColorPickerView(initial, localization!);
             var modal = new ContentPage
             {
                 BackgroundColor = Colors.Transparent,

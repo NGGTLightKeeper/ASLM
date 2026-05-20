@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
 using Microsoft.Maui.ApplicationModel;
@@ -17,11 +18,12 @@ namespace ASLM.Pages
     /// <summary>
     /// Displays and controls the local ASLM API mirror server.
     /// </summary>
-    public partial class AslmApiView : ContentView, INotifyPropertyChanged
+    public partial class AslmApiView : ContentView, INotifyPropertyChanged, ILocalizable
     {
         private readonly AslmApiServer _apiServer;
         private readonly NotificationCenter _notifications;
         private readonly ModuleInstaller _moduleInstaller;
+        private readonly AppLocalizationService _localization;
         private readonly Dictionary<string, AslmApiHostViewModel> _hostRows = new(StringComparer.OrdinalIgnoreCase);
         private Dictionary<string, AslmApiModuleDisplayState> _moduleDisplayStates = new(StringComparer.OrdinalIgnoreCase);
         private Task? _moduleDisplayStatesLoadTask;
@@ -48,19 +50,37 @@ namespace ASLM.Pages
         public AslmApiView(
             AslmApiServer apiServer,
             NotificationCenter notifications,
-            ModuleInstaller moduleInstaller)
+            ModuleInstaller moduleInstaller,
+            AppLocalizationService localization)
         {
             _apiServer = apiServer;
             _notifications = notifications;
             _moduleInstaller = moduleInstaller;
+            _localization = localization;
 
             InitializeComponent();
             BindingContext = this;
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
+            LocalizableAttach.Hook(this, _localization, this);
             _apiServer.StateChanged += OnServerStateChanged;
             _moduleInstaller.ModulesChanged += OnModulesChanged;
+        }
+
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            PageTitleLabel.Text = L.Get(LocalizationKeys.AslmApi_Title);
+            OpenServerButton.Text = L.Get(LocalizationKeys.AslmApi_Open);
+            HostsHeaderLabel.Text = L.Get(LocalizationKeys.AslmApi_Hosts);
+
+            if (HostsCollection.EmptyView is Label empty)
+            {
+                empty.Text = L.Get(LocalizationKeys.AslmApi_NoHosts);
+            }
+
+            OnPropertyChanged(nameof(Hosts));
         }
 
 

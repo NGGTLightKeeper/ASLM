@@ -3,8 +3,10 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
+using Microsoft.Maui.Controls;
 
 namespace ASLM.Pages
 {
@@ -22,7 +24,7 @@ namespace ASLM.Pages
     /// <summary>
     /// Displays module update configuration and installation progress inside the shell overlay.
     /// </summary>
-    public partial class ModuleUpdateView : ContentView, INotifyPropertyChanged
+    public partial class ModuleUpdateView : ContentView, INotifyPropertyChanged, ILocalizable
     {
         private const double DialogWidthFactor = 0.78;
         private const double DialogHeightFactor = 0.82;
@@ -52,9 +54,13 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the module update overlay and hooks layout updates.
         /// </summary>
-        public ModuleUpdateView()
+        private readonly AppLocalizationService _localization;
+
+        public ModuleUpdateView(AppLocalizationService localization)
         {
+            _localization = localization;
             InitializeComponent();
+            LocalizableAttach.Hook(this, _localization, this);
             ApplyBorderlessPickerStyle(SourceModePicker);
             ApplyBorderlessPickerStyle(ReleasePicker);
             ApplyBorderlessPickerStyle(BranchPicker);
@@ -69,15 +75,35 @@ namespace ASLM.Pages
         /// Gets the title shown in the dialog header.
         /// </summary>
         public string DialogTitle => _mode == ModuleUpdateMode.Update
-            ? "Module Update"
-            : "Configure Module Updates";
+            ? L.Get(LocalizationKeys.ModuleUpdate_Title_Update)
+            : L.Get(LocalizationKeys.ModuleUpdate_Title_Configure);
 
         /// <summary>
         /// Gets the subtitle shown in the dialog header.
         /// </summary>
         public string DialogSubtitle => _module == null
-            ? "No module selected."
-            : $"{_module.Name} - {_module.Description}";
+            ? L.Get(LocalizationKeys.ModuleUpdate_NoModuleSelected)
+            : L.Get(LocalizationKeys.ModuleUpdate_SubtitleFormat, _module.Name, _module.Description);
+
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            ToolTipProperties.SetText(CloseButton, L.Get(LocalizationKeys.ModuleUpdate_CloseTooltip));
+            CurrentVersionHeaderLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_CurrentVersion);
+            SelectedTargetHeaderLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_SelectedTarget);
+            UpdateSourceHeaderLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_UpdateSource);
+            PrefsAutoSavedLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_PrefsAutoSaved);
+            SearchModeLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_SearchMode);
+            ReleaseVersionLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_ReleaseVersion);
+            RepositoryBranchLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_RepositoryBranch);
+            OverallProgressLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_OverallProgress);
+            CheckUpdatesButton.Text = L.Get(LocalizationKeys.ModuleUpdate_CheckUpdates);
+            InstallUpdateButton.Text = L.Get(LocalizationKeys.ModuleUpdate_InstallUpdate);
+            OnPropertyChanged(nameof(DialogTitle));
+            OnPropertyChanged(nameof(DialogSubtitle));
+            OnPropertyChanged(nameof(ActivityTitle));
+            OnPropertyChanged(nameof(ActivityStatus));
+        }
 
         /// <summary>
         /// Gets the currently installed module version.

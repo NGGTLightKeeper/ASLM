@@ -3,6 +3,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
 
@@ -17,7 +18,7 @@ namespace ASLM.Pages
     /// <summary>
     /// Displays internal ASLM notifications in a compact downloads-style popover.
     /// </summary>
-    public partial class NotificationsView : ContentView, INotifyPropertyChanged
+    public partial class NotificationsView : ContentView, INotifyPropertyChanged, ILocalizable
     {
         // Keep in sync with NotificationsPopup WidthRequest / HeightRequest in NotificationsView.xaml.
         private const double PopupWidth = 360;
@@ -26,6 +27,7 @@ namespace ASLM.Pages
         private const double ScreenPadding = 14;
 
         private readonly NotificationCenter _notifications;
+        private readonly AppLocalizationService _localization;
 
         private Rect _lastAnchorBounds;
         private bool _popupPositioningActive;
@@ -41,14 +43,27 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the notifications popover and hooks service updates.
         /// </summary>
-        public NotificationsView(NotificationCenter notifications)
+        public NotificationsView(NotificationCenter notifications, AppLocalizationService localization)
         {
             _notifications = notifications;
+            _localization = localization;
 
             InitializeComponent();
             BindingContext = this;
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
+            LocalizableAttach.Hook(this, _localization, this);
+        }
+
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            TitleLabel.Text = L.Get(LocalizationKeys.Notifications_Title);
+            ClearAllButton.Text = L.Get(LocalizationKeys.Notifications_ClearAll);
+            EmptyTitleLabel.Text = L.Get(LocalizationKeys.Notifications_EmptyTitle);
+            EmptyMessageLabel.Text = L.Get(LocalizationKeys.Notifications_EmptyMessage);
+            OnPropertyChanged(nameof(SummaryText));
+            OnPropertyChanged(nameof(SectionTitle));
         }
 
         /// <summary>
@@ -62,13 +77,13 @@ namespace ASLM.Pages
         /// Gets the compact total count label shown in the footer.
         /// </summary>
         public string SummaryText => _notifications.Notifications.Count == 0
-            ? "No notifications"
-            : $"{_notifications.Notifications.Count} total";
+            ? L.Get(LocalizationKeys.Notifications_EmptyTitle)
+            : L.Get(LocalizationKeys.Notifications_SummaryFormat, _notifications.Notifications.Count);
 
         /// <summary>
         /// Gets the small section label above the list.
         /// </summary>
-        public string SectionTitle => "Recent";
+        public string SectionTitle => L.Get(LocalizationKeys.Notifications_SectionRecent);
 
         /// <summary>
         /// Gets whether the current filter has visible notifications.

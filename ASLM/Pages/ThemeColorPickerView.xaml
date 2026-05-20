@@ -33,7 +33,8 @@
               RowSpacing="0"
               ColumnSpacing="4">
 
-            <Label Grid.Row="0"
+            <Label x:Name="TitleLabel"
+                   Grid.Row="0"
                    Grid.ColumnSpan="5"
                    Text="Custom color"
                    FontSize="16"
@@ -58,7 +59,8 @@
                               BackgroundColor="Transparent" />
             </Grid>
 
-            <Label Grid.Row="2"
+            <Label x:Name="BrightnessLabel"
+                   Grid.Row="2"
                    Grid.ColumnSpan="5"
                    Text="Brightness"
                    FontSize="12"
@@ -72,7 +74,8 @@
                     Maximum="1"
                     HorizontalOptions="Fill" />
 
-            <Label Grid.Row="4"
+            <Label x:Name="OpacityLabel"
+                   Grid.Row="4"
                    Grid.ColumnSpan="5"
                    Text="Opacity"
                    FontSize="12"

@@ -24,7 +24,8 @@
                              Spacing="0"
                              Margin="0"
                              Padding="4">
-            <Label Text="Home"
+            <Label x:Name="HomeTitleLabel"
+                   Text="Home"
                    Style="{StaticResource HomeHeaderTitleLabel}" />
         </VerticalStackLayout>
 
@@ -124,7 +125,8 @@
                     <VerticalStackLayout Grid.Row="0"
                                          Spacing="0"
                                          Padding="8">
-                        <Label Text="Managed Processes"
+                        <Label x:Name="ManagedProcessesHeaderLabel"
+                               Text="Managed Processes"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource LabelPrimary}" />
@@ -151,14 +153,16 @@
                             <ColumnDefinition Width="1.25*" />
                         </Grid.ColumnDefinitions>
 
-                        <Label Text="Name"
+                        <Label x:Name="ColumnNameLabel"
+                               Text="Name"
                                FontSize="12"
                                TextColor="{DynamicResource LabelSecondary}"
                                Padding="8,0"
                                VerticalOptions="Center" />
                         <BoxView Grid.Column="1"
                                  BackgroundColor="{DynamicResource Separator}" />
-                        <Label Grid.Column="2"
+                        <Label x:Name="ColumnCpuLabel"
+                               Grid.Column="2"
                                Text="CPU"
                                FontSize="12"
                                TextColor="{DynamicResource LabelSecondary}"
@@ -167,7 +171,8 @@
                                VerticalOptions="Center" />
                         <BoxView Grid.Column="3"
                                  BackgroundColor="{DynamicResource Separator}" />
-                        <Label Grid.Column="4"
+                        <Label x:Name="ColumnGpuLabel"
+                               Grid.Column="4"
                                Text="GPU"
                                FontSize="12"
                                TextColor="{DynamicResource LabelSecondary}"
@@ -176,7 +181,8 @@
                                VerticalOptions="Center" />
                         <BoxView Grid.Column="5"
                                  BackgroundColor="{DynamicResource Separator}" />
-                        <Label Grid.Column="6"
+                        <Label x:Name="ColumnRamLabel"
+                               Grid.Column="6"
                                Text="RAM"
                                FontSize="12"
                                TextColor="{DynamicResource LabelSecondary}"
@@ -185,7 +191,8 @@
                                VerticalOptions="Center" />
                         <BoxView Grid.Column="7"
                                  BackgroundColor="{DynamicResource Separator}" />
-                        <Label Grid.Column="8"
+                        <Label x:Name="ColumnDiskLabel"
+                               Grid.Column="8"
                                Text="Disk"
                                FontSize="12"
                                TextColor="{DynamicResource LabelSecondary}"
@@ -194,7 +201,8 @@
                                VerticalOptions="Center" />
                         <BoxView Grid.Column="9"
                                  BackgroundColor="{DynamicResource Separator}" />
-                        <Label Grid.Column="10"
+                        <Label x:Name="ColumnNetLabel"
+                               Grid.Column="10"
                                Text="Net"
                                FontSize="12"
                                TextColor="{DynamicResource LabelSecondary}"
@@ -203,7 +211,8 @@
                                VerticalOptions="Center" />
                         <BoxView Grid.Column="11"
                                  BackgroundColor="{DynamicResource Separator}" />
-                        <Label Grid.Column="12"
+                        <Label x:Name="ColumnDetailsLabel"
+                               Grid.Column="12"
                                Text="Details"
                                FontSize="12"
                                TextColor="{DynamicResource LabelSecondary}"
@@ -353,7 +362,8 @@
                     <VerticalStackLayout Grid.Row="0"
                                          Spacing="0"
                                          Padding="8">
-                        <Label Text="Modules"
+                        <Label x:Name="ModulesHeaderLabel"
+                               Text="Modules"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource LabelPrimary}" />
