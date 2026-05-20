@@ -53,10 +53,16 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
+# IDEs
 .vs/*
 .vscode
 .vsconfig
 .claude
+.cursor
+.cursorignore
+.cursorindexingignore
+
+# ASLM
 ASLM.slnLaunch.user
 
 Build/*
