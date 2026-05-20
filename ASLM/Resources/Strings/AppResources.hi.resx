@@ -1,0 +1,935 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AppShell_Nav_Api" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="AppShell_Nav_Consoles" xml:space="preserve">
+    <value>कंसोल</value>
+  </data>
+  <data name="AppShell_Nav_Download" xml:space="preserve">
+    <value>डाउनलोड</value>
+  </data>
+  <data name="AppShell_Nav_Home" xml:space="preserve">
+    <value>होम</value>
+  </data>
+  <data name="AppShell_Nav_Modules" xml:space="preserve">
+    <value>मॉड्यूल</value>
+  </data>
+  <data name="AppShell_Nav_Notifications" xml:space="preserve">
+    <value>सूचनाएँ</value>
+  </data>
+  <data name="AppShell_Nav_Settings" xml:space="preserve">
+    <value>सेटिंग्स</value>
+  </data>
+  <data name="AppShell_Title" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
+    <value>पता कॉपी करें</value>
+  </data>
+  <data name="AslmApi_Hosts" xml:space="preserve">
+    <value>होस्ट</value>
+  </data>
+  <data name="AslmApi_NoHosts" xml:space="preserve">
+    <value>कोई होस्ट नहीं</value>
+  </data>
+  <data name="AslmApi_Open" xml:space="preserve">
+    <value>खोलें</value>
+  </data>
+  <data name="AslmApi_Title" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="Common_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Common_Back" xml:space="preserve">
+    <value>पीछे</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>रद्द करें</value>
+  </data>
+  <data name="Common_Discard" xml:space="preserve">
+    <value>छोड़ें</value>
+  </data>
+  <data name="Common_Done" xml:space="preserve">
+    <value>पूर्ण</value>
+  </data>
+  <data name="Common_Install" xml:space="preserve">
+    <value>इंस्टॉल करें</value>
+  </data>
+  <data name="Common_Install_Action" xml:space="preserve">
+    <value>इंस्टॉल करें</value>
+  </data>
+  <data name="Common_Next" xml:space="preserve">
+    <value>आगे</value>
+  </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>ठीक है</value>
+  </data>
+  <data name="Common_Open" xml:space="preserve">
+    <value>खोलें</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>रीफ़्रेश करें</value>
+  </data>
+  <data name="Common_Remove" xml:space="preserve">
+    <value>हटाएँ</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>सहेजें</value>
+  </data>
+  <data name="Common_Saved" xml:space="preserve">
+    <value>सहेजा गया</value>
+  </data>
+  <data name="Common_Stay" xml:space="preserve">
+    <value>रुकें</value>
+  </data>
+  <data name="Common_Variant" xml:space="preserve">
+    <value>वैरिएंट</value>
+  </data>
+  <data name="Consoles_ModulesHeader" xml:space="preserve">
+    <value>मॉड्यूल</value>
+  </data>
+  <data name="Consoles_NoActiveModules" xml:space="preserve">
+    <value>कोई सक्रिय मॉड्यूल नहीं</value>
+  </data>
+  <data name="Consoles_NoConsoles" xml:space="preserve">
+    <value>कोई कंसोल नहीं</value>
+  </data>
+  <data name="Consoles_Title" xml:space="preserve">
+    <value>कंसोल</value>
+  </data>
+  <data name="Downloads_CategoryCount_Many" xml:space="preserve">
+    <value>{0} श्रेणियाँ</value>
+  </data>
+  <data name="Downloads_CategoryCount_None" xml:space="preserve">
+    <value>कोई श्रेणी नहीं</value>
+  </data>
+  <data name="Downloads_CategoryCount_One" xml:space="preserve">
+    <value>1 श्रेणी</value>
+  </data>
+  <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
+    <value>वैरिएंट और विवरण देखने के लिए एक संसाधन परिवार चुनें</value>
+  </data>
+  <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
+    <value>कोई इंस्टॉल किया गया मॉड्यूल अभी डाउनलोड ब्रिज प्रदान नहीं करता</value>
+  </data>
+  <data name="Downloads_EmptyCategory" xml:space="preserve">
+    <value>इस श्रेणी के लिए कोई समूहित डाउनलोड उपलब्ध नहीं</value>
+  </data>
+  <data name="Downloads_EmptyFiltered" xml:space="preserve">
+    <value>वर्तमान प्रदाता फ़िल्टर से कोई समूहित डाउनलोड मेल नहीं खाता</value>
+  </data>
+  <data name="Downloads_EmptySearch" xml:space="preserve">
+    <value>प्रदाता पक्ष पर "{0}" से कोई परिणाम मेल नहीं खाता</value>
+  </data>
+  <data name="Downloads_NoItems" xml:space="preserve">
+    <value>कोई आइटम नहीं</value>
+  </data>
+  <data name="Downloads_SearchPlaceholder" xml:space="preserve">
+    <value>प्रदाता कैटलॉग खोजें</value>
+  </data>
+  <data name="Downloads_SelectItem" xml:space="preserve">
+    <value>एक आइटम चुनें</value>
+  </data>
+  <data name="Downloads_Title" xml:space="preserve">
+    <value>डाउनलोड</value>
+  </data>
+  <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
+    <value>अंतिम मॉड्यूल गतिविधि {0}</value>
+  </data>
+  <data name="Home_Card_Modules_NoActivity" xml:space="preserve">
+    <value>अभी तक कोई मॉड्यूल गतिविधि दर्ज नहीं</value>
+  </data>
+  <data name="Home_Card_Modules_StatusTotal" xml:space="preserve">
+    <value>कुल {0}</value>
+  </data>
+  <data name="Home_Card_Modules_Subtitle" xml:space="preserve">
+    <value>जीवनचक्र और कंसोल गतिविधि</value>
+  </data>
+  <data name="Home_Card_Modules_Title" xml:space="preserve">
+    <value>प्रबंधित मॉड्यूल</value>
+  </data>
+  <data name="Home_Card_Runtime_ChildCount" xml:space="preserve">
+    <value>ASLM ट्री के अंदर {0} सक्रिय चाइल्ड प्रक्रियाएँ</value>
+  </data>
+  <data name="Home_Card_Runtime_NoChildren" xml:space="preserve">
+    <value>अभी कोई प्रबंधित चाइल्ड प्रक्रिया सक्रिय नहीं</value>
+  </data>
+  <data name="Home_Card_Runtime_StatusPid" xml:space="preserve">
+    <value>PID {0}</value>
+  </data>
+  <data name="Home_Card_Runtime_Subtitle" xml:space="preserve">
+    <value>ऐप प्रक्रिया और प्रबंधित चाइल्ड ट्री</value>
+  </data>
+  <data name="Home_Card_Runtime_Title" xml:space="preserve">
+    <value>ASLM रनटाइम</value>
+  </data>
+  <data name="Home_Card_System_SampledAt" xml:space="preserve">
+    <value>{0} पर सैंपल किया गया</value>
+  </data>
+  <data name="Home_Card_System_Status" xml:space="preserve">
+    <value>लाइव</value>
+  </data>
+  <data name="Home_Card_System_Subtitle" xml:space="preserve">
+    <value>होस्ट मशीन लोड</value>
+  </data>
+  <data name="Home_Card_System_Title" xml:space="preserve">
+    <value>सिस्टम</value>
+  </data>
+  <data name="Home_Column_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Home_Column_Details" xml:space="preserve">
+    <value>विवरण</value>
+  </data>
+  <data name="Home_Column_Disk" xml:space="preserve">
+    <value>डिस्क</value>
+  </data>
+  <data name="Home_Column_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="Home_Column_Name" xml:space="preserve">
+    <value>नाम</value>
+  </data>
+  <data name="Home_Column_Net" xml:space="preserve">
+    <value>नेट</value>
+  </data>
+  <data name="Home_Column_Ram" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="Home_Loading_WaitingSample" xml:space="preserve">
+    <value>सैंपल की प्रतीक्षा</value>
+  </data>
+  <data name="Home_ManagedProcesses" xml:space="preserve">
+    <value>प्रबंधित प्रक्रियाएँ</value>
+  </data>
+  <data name="Home_Metric_Active" xml:space="preserve">
+    <value>सक्रिय</value>
+  </data>
+  <data name="Home_Metric_Active_Detail" xml:space="preserve">
+    <value>लाइव प्रबंधित प्रक्रियाओं वाले मॉड्यूल</value>
+  </data>
+  <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
+    <value>{0} लॉजिकल कोर</value>
+  </data>
+  <data name="Home_Metric_Cpu_RuntimeDetail" xml:space="preserve">
+    <value>एप्लिकेशन होस्ट और प्रबंधित उपप्रक्रियाएँ</value>
+  </data>
+  <data name="Home_Metric_Disk_CombinedIo" xml:space="preserve">
+    <value>संयुक्त प्रबंधित प्रक्रिया I/O</value>
+  </data>
+  <data name="Home_Metric_Disk_Rw" xml:space="preserve">
+    <value>R {0} - W {1}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Index" xml:space="preserve">
+    <value>GPU {0}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Unavailable" xml:space="preserve">
+    <value>GPU काउंटर उपलब्ध नहीं</value>
+  </data>
+  <data name="Home_Metric_Installed" xml:space="preserve">
+    <value>इंस्टॉल किए गए</value>
+  </data>
+  <data name="Home_Metric_Installed_Detail" xml:space="preserve">
+    <value>डिस्क पर मिले मॉड्यूल</value>
+  </data>
+  <data name="Home_Metric_Network" xml:space="preserve">
+    <value>नेटवर्क</value>
+  </data>
+  <data name="Home_Metric_Network_Endpoints" xml:space="preserve">
+    <value>ASLM ट्री में खुले TCP और UDP एंडपॉइंट</value>
+  </data>
+  <data name="Home_Metric_Network_RxTx" xml:space="preserve">
+    <value>Rx {0} - Tx {1}</value>
+  </data>
+  <data name="Home_Metric_NotAvailable" xml:space="preserve">
+    <value>उपलब्ध नहीं</value>
+  </data>
+  <data name="Home_Metric_Processes" xml:space="preserve">
+    <value>प्रक्रियाएँ</value>
+  </data>
+  <data name="Home_Metric_Processes_Detail" xml:space="preserve">
+    <value>ASLM द्वारा प्रबंधित लाइव उपप्रक्रियाएँ</value>
+  </data>
+  <data name="Home_Metric_Ram_Resident" xml:space="preserve">
+    <value>{0} रेज़िडेंट</value>
+  </data>
+  <data name="Home_Metric_Ram_Usage" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="Home_Metric_Running" xml:space="preserve">
+    <value>चल रहे</value>
+  </data>
+  <data name="Home_Metric_Running_Detail" xml:space="preserve">
+    <value>सक्षम चिह्नित मॉड्यूल</value>
+  </data>
+  <data name="Home_Metric_Sessions" xml:space="preserve">
+    <value>सत्र</value>
+  </data>
+  <data name="Home_Metric_Sessions_Detail" xml:space="preserve">
+    <value>{0} सक्रिय कंसोल सत्र</value>
+  </data>
+  <data name="Home_Module_ByAuthor" xml:space="preserve">
+    <value>{0} द्वारा</value>
+  </data>
+  <data name="Home_Module_InstalledDefault" xml:space="preserve">
+    <value>इंस्टॉल किया गया मॉड्यूल</value>
+  </data>
+  <data name="Home_Module_Launching" xml:space="preserve">
+    <value>लॉन्च हो रहा है</value>
+  </data>
+  <data name="Home_Module_Stopped" xml:space="preserve">
+    <value>रुका हुआ</value>
+  </data>
+  <data name="Home_Module_Stopping" xml:space="preserve">
+    <value>रोक रहा है</value>
+  </data>
+  <data name="Home_ModulesHeader" xml:space="preserve">
+    <value>मॉड्यूल</value>
+  </data>
+  <data name="Home_Status_Loading" xml:space="preserve">
+    <value>लोड हो रहा है</value>
+  </data>
+  <data name="Home_Title" xml:space="preserve">
+    <value>होम</value>
+  </data>
+  <data name="Loading_Text" xml:space="preserve">
+    <value>लोड हो रहा है...</value>
+  </data>
+  <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
+    <value>अपडेट जाँचें</value>
+  </data>
+  <data name="ModuleUpdate_CloseTooltip" xml:space="preserve">
+    <value>मॉड्यूल अपडेट बंद करें</value>
+  </data>
+  <data name="ModuleUpdate_CurrentVersion" xml:space="preserve">
+    <value>वर्तमान संस्करण</value>
+  </data>
+  <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
+    <value>अपडेट इंस्टॉल करें</value>
+  </data>
+  <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
+    <value>कोई मॉड्यूल चयनित नहीं</value>
+  </data>
+  <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
+    <value>समग्र प्रगति</value>
+  </data>
+  <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
+    <value>प्राथमिकताएँ स्वचालित रूप से सहेजी जाती हैं</value>
+  </data>
+  <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
+    <value>रिलीज़ संस्करण</value>
+  </data>
+  <data name="ModuleUpdate_RepositoryBranch" xml:space="preserve">
+    <value>रिपॉज़िटरी शाखा</value>
+  </data>
+  <data name="ModuleUpdate_SearchMode" xml:space="preserve">
+    <value>खोज मोड</value>
+  </data>
+  <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
+    <value>चयनित लक्ष्य</value>
+  </data>
+  <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="ModuleUpdate_Title_Configure" xml:space="preserve">
+    <value>मॉड्यूल अपडेट कॉन्फ़िगर करें</value>
+  </data>
+  <data name="ModuleUpdate_Title_Update" xml:space="preserve">
+    <value>मॉड्यूल अपडेट</value>
+  </data>
+  <data name="ModuleUpdate_UpdateSource" xml:space="preserve">
+    <value>अपडेट स्रोत</value>
+  </data>
+  <data name="Modules_CheckUpdates" xml:space="preserve">
+    <value>अपडेट जाँचें</value>
+  </data>
+  <data name="Modules_ConfigureUpdates" xml:space="preserve">
+    <value>अपडेट कॉन्फ़िगर करें</value>
+  </data>
+  <data name="Modules_Empty" xml:space="preserve">
+    <value>कोई मॉड्यूल नहीं मिला। सेटअप विज़ार्ड से मॉड्यूल इंस्टॉल करें</value>
+  </data>
+  <data name="Modules_Launch" xml:space="preserve">
+    <value>लॉन्च करें</value>
+  </data>
+  <data name="Modules_NotVerified" xml:space="preserve">
+    <value>सत्यापित नहीं</value>
+  </data>
+  <data name="Modules_Restart" xml:space="preserve">
+    <value>पुनः आरंभ करें</value>
+  </data>
+  <data name="Modules_Restarting" xml:space="preserve">
+    <value>पुनः आरंभ हो रहा है</value>
+  </data>
+  <data name="Modules_Starting" xml:space="preserve">
+    <value>शुरू हो रहा है</value>
+  </data>
+  <data name="Modules_Stop" xml:space="preserve">
+    <value>रोकें</value>
+  </data>
+  <data name="Modules_Title" xml:space="preserve">
+    <value>मॉड्यूल</value>
+  </data>
+  <data name="Modules_Update" xml:space="preserve">
+    <value>अपडेट करें</value>
+  </data>
+  <data name="Modules_Updating" xml:space="preserve">
+    <value>अपडेट हो रहा है</value>
+  </data>
+  <data name="Notifications_ClearAll" xml:space="preserve">
+    <value>सभी साफ़ करें</value>
+  </data>
+  <data name="Notifications_EmptyMessage" xml:space="preserve">
+    <value>नए ASLM इवेंट यहाँ दिखाई देंगे</value>
+  </data>
+  <data name="Notifications_EmptyTitle" xml:space="preserve">
+    <value>कोई सूचना नहीं</value>
+  </data>
+  <data name="Notifications_SectionRecent" xml:space="preserve">
+    <value>हालिया</value>
+  </data>
+  <data name="Notifications_SummaryFormat" xml:space="preserve">
+    <value>कुल {0}</value>
+  </data>
+  <data name="Notifications_Title" xml:space="preserve">
+    <value>सूचनाएँ</value>
+  </data>
+  <data name="Notifications_UpdateLater" xml:space="preserve">
+    <value>बाद में अपडेट करें</value>
+  </data>
+  <data name="Notifications_UpdateNow" xml:space="preserve">
+    <value>अभी अपडेट करें</value>
+  </data>
+  <data name="Settings_ApiServer_Description" xml:space="preserve">
+    <value>ASLM के साथ स्थानीय मिरर सर्वर शुरू करें</value>
+  </data>
+  <data name="Settings_ApiServer_Title" xml:space="preserve">
+    <value>API सर्वर</value>
+  </data>
+  <data name="Settings_AppChannel_Description" xml:space="preserve">
+    <value>रिलीज़ केवल स्थिर GitHub रिलीज़ का उपयोग करती है। प्री-रिलीज़ पूर्वावलोकन रिलीज़ भी स्वीकार करती है</value>
+  </data>
+  <data name="Settings_AppChannel_Title" xml:space="preserve">
+    <value>एप्लिकेशन अपडेट चैनल</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Description" xml:space="preserve">
+    <value>पृष्ठभूमि अपडेट जाँचों के बीच घंटे</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Title" xml:space="preserve">
+    <value>स्वतः-जाँच अंतराल</value>
+  </data>
+  <data name="Settings_AutoInstall_Description" xml:space="preserve">
+    <value>मॉड्यूल अपडेट स्वतः लागू करें और अगले पुनः आरंभ के लिए ASLM बिल्ड तैयार करें</value>
+  </data>
+  <data name="Settings_AutoInstall_Title" xml:space="preserve">
+    <value>अपडेट स्वतः इंस्टॉल करें</value>
+  </data>
+  <data name="Settings_Category_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Settings_Category_ASLM_Description" xml:space="preserve">
+    <value>मुख्य ASLM व्यवहार, पोर्ट, API और कंसोल</value>
+  </data>
+  <data name="Settings_Category_Account" xml:space="preserve">
+    <value>खाता</value>
+  </data>
+  <data name="Settings_Category_Account_Description" xml:space="preserve">
+    <value>ASLM और मॉड्यूलों के साथ साझा किया गया प्रदर्शन नाम</value>
+  </data>
+  <data name="Settings_Category_Module_Description" xml:space="preserve">
+    <value>मॉड्यूल-विशिष्ट कॉन्फ़िगरेशन</value>
+  </data>
+  <data name="Settings_Category_Ollama" xml:space="preserve">
+    <value>Ollama</value>
+  </data>
+  <data name="Settings_Category_Ollama_Description" xml:space="preserve">
+    <value>Ollama खाता साइन-इन और साइन-आउट नियंत्रण</value>
+  </data>
+  <data name="Settings_Category_Personalization" xml:space="preserve">
+    <value>वैयक्तिकरण</value>
+  </data>
+  <data name="Settings_Category_Personalization_Description" xml:space="preserve">
+    <value>थीम मोड, भाषा और कस्टम थीम सेटिंग्स</value>
+  </data>
+  <data name="Settings_Category_Updates" xml:space="preserve">
+    <value>अपडेट</value>
+  </data>
+  <data name="Settings_Category_Updates_Description" xml:space="preserve">
+    <value>एप्लिकेशन और मॉड्यूल अपडेट प्राथमिकताएँ</value>
+  </data>
+  <data name="Settings_CheckNow" xml:space="preserve">
+    <value>अभी जाँचें</value>
+  </data>
+  <data name="Settings_CheckUpdates_Description" xml:space="preserve">
+    <value>ASLM को कॉन्फ़िगर की गई GitHub रिपॉज़िटरी क्वेरी करने दें</value>
+  </data>
+  <data name="Settings_CheckUpdates_Title" xml:space="preserve">
+    <value>अपडेट जाँचें</value>
+  </data>
+  <data name="Settings_CloseTooltip" xml:space="preserve">
+    <value>सेटिंग्स बंद करें</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Description" xml:space="preserve">
+    <value>व्यक्तिगत कंसोल सक्षम होने पर पूर्ण प्रक्रिया कंसोल दृश्यमान रखें</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Title" xml:space="preserve">
+    <value>पूर्ण प्रक्रिया कंसोल</value>
+  </data>
+  <data name="Settings_ConsolesPage_Description" xml:space="preserve">
+    <value>साइडबार में अंतर्निहित कंसोल पृष्ठ दिखाएँ</value>
+  </data>
+  <data name="Settings_ConsolesPage_Title" xml:space="preserve">
+    <value>कंसोल पृष्ठ</value>
+  </data>
+  <data name="Settings_DiscardChanges" xml:space="preserve">
+    <value>बदलाव छोड़ें</value>
+  </data>
+  <data name="Settings_DiscardDialog_Message" xml:space="preserve">
+    <value>इस अनुभाग में असहेजे बदलाव हैं। क्या उन्हें छोड़कर स्विच करें?</value>
+  </data>
+  <data name="Settings_DiscardDialog_Title" xml:space="preserve">
+    <value>असहेजे बदलाव</value>
+  </data>
+  <data name="Settings_DisplayName" xml:space="preserve">
+    <value>प्रदर्शन नाम</value>
+  </data>
+  <data name="Settings_DisplayNameDescription" xml:space="preserve">
+    <value>ASLM और मॉड्यूलों के साथ साझा किया गया नाम</value>
+  </data>
+  <data name="Settings_EmptyCategory" xml:space="preserve">
+    <value>इस श्रेणी में कोई सेटिंग नहीं</value>
+  </data>
+  <data name="Settings_Engine_Installed" xml:space="preserve">
+    <value>इंस्टॉल किया गया</value>
+  </data>
+  <data name="Settings_Engine_NotInstalled" xml:space="preserve">
+    <value>इंस्टॉल नहीं</value>
+  </data>
+  <data name="Settings_Header_Modules" xml:space="preserve">
+    <value>मॉड्यूल</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Description" xml:space="preserve">
+    <value>एकीकृत मॉड्यूल आउटपुट के साथ प्रति-प्रक्रिया कंसोल दिखाएँ</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Title" xml:space="preserve">
+    <value>व्यक्तिगत कंसोल</value>
+  </data>
+  <data name="Settings_LoadDefault" xml:space="preserve">
+    <value>डिफ़ॉल्ट लोड करें</value>
+  </data>
+  <data name="Settings_ManualCheck_Title" xml:space="preserve">
+    <value>मैन्युअल जाँच</value>
+  </data>
+  <data name="Settings_ModuleChannel_Description" xml:space="preserve">
+    <value>GitHub रिलीज़ का पालन करने वाले मॉड्यूल द्वारा उपयोग</value>
+  </data>
+  <data name="Settings_ModuleChannel_Title" xml:space="preserve">
+    <value>डिफ़ॉल्ट मॉड्यूल रिलीज़ चैनल</value>
+  </data>
+  <data name="Settings_ModuleNoSettings" xml:space="preserve">
+    <value>वर्तमान स्थिति में इस मॉड्यूल की कोई सेटिंग नहीं</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Description" xml:space="preserve">
+    <value>नई मॉड्यूल प्राथमिकताएँ इस मोड से शुरू होती हैं; व्यक्तिगत मॉड्यूल इसे ओवरराइड कर सकते हैं</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Title" xml:space="preserve">
+    <value>डिफ़ॉल्ट मॉड्यूल अपडेट मोड</value>
+  </data>
+  <data name="Settings_NoSettingsAvailable" xml:space="preserve">
+    <value>कोई सेटिंग उपलब्ध नहीं</value>
+  </data>
+  <data name="Settings_OfficialPortDescription" xml:space="preserve">
+    <value>आधिकारिक मॉड्यूल के लिए प्रारंभ बिंदु। इस मान से 100 पोर्ट आरक्षित हैं</value>
+  </data>
+  <data name="Settings_OfficialPortTitle" xml:space="preserve">
+    <value>आधिकारिक मॉड्यूल प्रारंभ पोर्ट</value>
+  </data>
+  <data name="Settings_OllamaAccount_Title" xml:space="preserve">
+    <value>Ollama खाता</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Confirm" xml:space="preserve">
+    <value>साइन आउट</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Message" xml:space="preserve">
+    <value>यह इस Windows प्रोफ़ाइल के लिए वर्तमान ollama.com सत्र हटा देगा। जारी रखें?</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Title" xml:space="preserve">
+    <value>Ollama से साइन आउट</value>
+  </data>
+  <data name="Settings_Ollama_CheckingAccount" xml:space="preserve">
+    <value>खाता जाँच रहा है</value>
+  </data>
+  <data name="Settings_Ollama_NotInstalled" xml:space="preserve">
+    <value>आंतरिक Ollama इंस्टॉल नहीं है</value>
+  </data>
+  <data name="Settings_Ollama_NotSignedIn" xml:space="preserve">
+    <value>साइन इन नहीं</value>
+  </data>
+  <data name="Settings_Ollama_SignIn" xml:space="preserve">
+    <value>साइन इन</value>
+  </data>
+  <data name="Settings_Ollama_SignOut" xml:space="preserve">
+    <value>साइन आउट</value>
+  </data>
+  <data name="Settings_Ollama_SignedIn" xml:space="preserve">
+    <value>साइन इन किया</value>
+  </data>
+  <data name="Settings_Ollama_SignedInAs" xml:space="preserve">
+    <value>{0} के रूप में साइन इन</value>
+  </data>
+  <data name="Settings_Ollama_SigningIn" xml:space="preserve">
+    <value>साइन इन हो रहा है...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOut" xml:space="preserve">
+    <value>साइन आउट हो रहा है...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOutStatus" xml:space="preserve">
+    <value>साइन आउट हो रहा है</value>
+  </data>
+  <data name="Settings_Ollama_WaitingSignIn" xml:space="preserve">
+    <value>ब्राउज़र साइन-इन की प्रतीक्षा</value>
+  </data>
+  <data name="Settings_Personalization_ActiveTheme" xml:space="preserve">
+    <value>सक्रिय थीम</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Custom" xml:space="preserve">
+    <value>कस्टम</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Dark" xml:space="preserve">
+    <value>डार्क</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Light" xml:space="preserve">
+    <value>लाइट</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_System" xml:space="preserve">
+    <value>सिस्टम</value>
+  </data>
+  <data name="Settings_Personalization_Delete" xml:space="preserve">
+    <value>हटाएँ</value>
+  </data>
+  <data name="Settings_Personalization_Export" xml:space="preserve">
+    <value>निर्यात</value>
+  </data>
+  <data name="Settings_Personalization_Import" xml:space="preserve">
+    <value>आयात</value>
+  </data>
+  <data name="Settings_Personalization_ImportPickerTitle" xml:space="preserve">
+    <value>थीम आयात करें</value>
+  </data>
+  <data name="Settings_Personalization_InheritDark" xml:space="preserve">
+    <value>डार्क (अंतर्निहित)</value>
+  </data>
+  <data name="Settings_Personalization_InheritLight" xml:space="preserve">
+    <value>लाइट (अंतर्निहित)</value>
+  </data>
+  <data name="Settings_Personalization_InheritTitle" xml:space="preserve">
+    <value>रंग इनसे विरासत में लें</value>
+  </data>
+  <data name="Settings_Personalization_Language" xml:space="preserve">
+    <value>भाषा</value>
+  </data>
+  <data name="Settings_Personalization_LanguageDescription" xml:space="preserve">
+    <value>ASLM और समर्थित मॉड्यूलों के लिए इंटरफ़ेस भाषा सेट करता है</value>
+  </data>
+  <data name="Settings_Personalization_Mode" xml:space="preserve">
+    <value>मोड</value>
+  </data>
+  <data name="Settings_Personalization_ModeDescription" xml:space="preserve">
+    <value>ऐप अपना समग्र इंटरफ़ेस रूप कैसे चुनता है, यह सेट करता है</value>
+  </data>
+  <data name="Settings_Personalization_New" xml:space="preserve">
+    <value>नया</value>
+  </data>
+  <data name="Settings_Personalization_NoThemes" xml:space="preserve">
+    <value>अभी कोई कस्टम थीम नहीं। कस्टम रूप के लिए एक बनाएँ</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeActive" xml:space="preserve">
+    <value>नीचे की टोकन पंक्तियाँ किस सहेजी गई पैलेट से संबंधित हैं</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeDescription" xml:space="preserve">
+    <value>कौन-सी कस्टम थीम सक्रिय है, चुनें</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeEmpty" xml:space="preserve">
+    <value>पहले एक पैलेट बनाएँ; चयन के लिए यहाँ दिखेगी</value>
+  </data>
+  <data name="Settings_Personalization_Themes" xml:space="preserve">
+    <value>थीम</value>
+  </data>
+  <data name="Settings_Personalization_ThemesDescription" xml:space="preserve">
+    <value>फ़ाइलों के रूप में संग्रहीत पैलेट परिभाषाएँ जोड़ें, लाएँ या साझा करें</value>
+  </data>
+  <data name="Settings_Ports" xml:space="preserve">
+    <value>पोर्ट</value>
+  </data>
+  <data name="Settings_PrepareAslmUpdate" xml:space="preserve">
+    <value>ASLM अपडेट तैयार करें</value>
+  </data>
+  <data name="Settings_RestartNow" xml:space="preserve">
+    <value>अभी पुनः आरंभ करें</value>
+  </data>
+  <data name="Settings_Save" xml:space="preserve">
+    <value>सहेजें</value>
+  </data>
+  <data name="Settings_SaveAndRestart" xml:space="preserve">
+    <value>सहेजें और पुनः आरंभ करें</value>
+  </data>
+  <data name="Settings_SaveMessage_Deferred" xml:space="preserve">
+    <value>सेटिंग्स सहेजी गईं। कुछ मॉड्यूल सेटिंग्स तुरंत लागू नहीं हो सकीं और अगले मॉड्यूल प्रारंभ पर पुनः प्रयास होंगी
+
+{0}</value>
+  </data>
+  <data name="Settings_SaveMessage_None" xml:space="preserve">
+    <value>सहेजने के लिए कोई बदलाव नहीं</value>
+  </data>
+  <data name="Settings_SaveMessage_Saved" xml:space="preserve">
+    <value>सेटिंग्स सहेजी और लागू की गईं।</value>
+  </data>
+  <data name="Settings_SavedTitle" xml:space="preserve">
+    <value>सेटिंग्स सहेजी गईं</value>
+  </data>
+  <data name="Settings_Saving" xml:space="preserve">
+    <value>सहेज रहा है...</value>
+  </data>
+  <data name="Settings_SubGroup_API" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="Settings_SubGroup_Consoles" xml:space="preserve">
+    <value>कंसोल</value>
+  </data>
+  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+    <value>हटाएँ</value>
+  </data>
+  <data name="Settings_ThemeDelete_Message" xml:space="preserve">
+    <value>क्या आप वाकई इस थीम को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता</value>
+  </data>
+  <data name="Settings_ThemeDelete_Title" xml:space="preserve">
+    <value>थीम हटाएँ</value>
+  </data>
+  <data name="Settings_ThemeEditor_Base" xml:space="preserve">
+    <value>आधार</value>
+  </data>
+  <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
+    <value>अभी तक ओवरराइड न किए टोकन के लिए अंतर्निहित सिमेंटिक डिफ़ॉल्ट</value>
+  </data>
+  <data name="Settings_ThemeEditor_Clear" xml:space="preserve">
+    <value>साफ़ करें</value>
+  </data>
+  <data name="Settings_ThemeEditor_ColorsFormat" xml:space="preserve">
+    <value>थीम के लिए रंग संपादक: {0}</value>
+  </data>
+  <data name="Settings_ThemeEditor_Pick" xml:space="preserve">
+    <value>चुनें</value>
+  </data>
+  <data name="Settings_ThemeExport_Failed" xml:space="preserve">
+    <value>थीम निर्यात नहीं हो सकी: {0}</value>
+  </data>
+  <data name="Settings_ThemeExport_Select" xml:space="preserve">
+    <value>निर्यात के लिए थीम चुनें</value>
+  </data>
+  <data name="Settings_ThemeImport_Failed" xml:space="preserve">
+    <value>थीम आयात नहीं हो सकी: {0}</value>
+  </data>
+  <data name="Settings_ThemeImport_Invalid" xml:space="preserve">
+    <value>फ़ाइल मान्य ASLM थीम नहीं है</value>
+  </data>
+  <data name="Settings_ThemeImport_TooLarge" xml:space="preserve">
+    <value>थीम फ़ाइल बहुत बड़ी है</value>
+  </data>
+  <data name="Settings_ThemeNew_DefaultName" xml:space="preserve">
+    <value>मेरी थीम</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptMessage" xml:space="preserve">
+    <value>नई थीम के लिए नाम दर्ज करें:</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
+    <value>नई थीम</value>
+  </data>
+  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
+    <value>बाहरी मॉड्यूल के लिए प्रारंभ बिंदु। इस मान से 1000 पोर्ट आरक्षित हैं</value>
+  </data>
+  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
+    <value>तृतीय-पक्ष मॉड्यूल प्रारंभ पोर्ट</value>
+  </data>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>सेटिंग्स</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailable" xml:space="preserve">
+    <value>ASLM अपडेट {0} उपलब्ध है। डाउनलोड के लिए "ASLM अपडेट तैयार करें" का उपयोग करें</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailableStaged" xml:space="preserve">
+    <value>ASLM अपडेट {0} उपलब्ध है; {1} पुनः आरंभ के लिए पहले से तैयार है</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmTagPrepared" xml:space="preserve">
+    <value>ASLM {0} तैयार है और पुनः आरंभ पर लागू होगा</value>
+  </data>
+  <data name="Settings_UpdateStatus_CheckFailed" xml:space="preserve">
+    <value>अपडेट जाँच विफल: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Checking" xml:space="preserve">
+    <value>GitHub रिपॉज़िटरी जाँच रहा है...</value>
+  </data>
+  <data name="Settings_UpdateStatus_CouldNotPrepare" xml:space="preserve">
+    <value>ASLM अपडेट तैयार नहीं हो सका</value>
+  </data>
+  <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
+    <value>ASLM बिल्ड डाउनलोड हो रहा है...</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
+    <value>{0} अपडेट उपलब्ध। मॉड्यूल अपडेट मॉड्यूल पृष्ठ से लागू किए जा सकते हैं</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedAslm" xml:space="preserve">
+    <value>{0} ASLM {1} पुनः आरंभ के लिए तैयार है</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedGeneric" xml:space="preserve">
+    <value>{0} ASLM स्व-अपडेट पुनः आरंभ के लिए तैयार है</value>
+  </data>
+  <data name="Settings_UpdateStatus_None" xml:space="preserve">
+    <value>इस सत्र में कोई अपडेट जाँच नहीं चलाई गई</value>
+  </data>
+  <data name="Settings_UpdateStatus_Prepared" xml:space="preserve">
+    <value>ASLM अपडेट तैयार है और पुनः आरंभ पर लागू होगा</value>
+  </data>
+  <data name="Settings_UpdateStatus_PreparedWithVersion" xml:space="preserve">
+    <value>ASLM अपडेट {0} तैयार है और पुनः आरंभ पर लागू होगा</value>
+  </data>
+  <data name="Settings_UpdateStatus_RestartFailed" xml:space="preserve">
+    <value>पुनः आरंभ विफल: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Restarting" xml:space="preserve">
+    <value>ASLM पुनः आरंभ हो रहा है...</value>
+  </data>
+  <data name="Settings_UpdateStatus_UpToDate" xml:space="preserve">
+    <value>सब कुछ अद्यतन है।</value>
+  </data>
+  <data name="Settings_UseCustomValue" xml:space="preserve">
+    <value>कस्टम मान उपयोग करें</value>
+  </data>
+  <data name="Settings_ValidationError" xml:space="preserve">
+    <value>सत्यापन त्रुटि</value>
+  </data>
+  <data name="SetupWizard_Canceled" xml:space="preserve">
+    <value>इंस्टॉलेशन रद्द किया गया।</value>
+  </data>
+  <data name="SetupWizard_DisplayNamePlaceholder" xml:space="preserve">
+    <value>आपका नाम</value>
+  </data>
+  <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
+    <value>प्रदर्शन नाम चुनें</value>
+  </data>
+  <data name="SetupWizard_DockerDescription" xml:space="preserve">
+    <value>ASLM को Docker CLI चाहिए। Docker Desktop इंस्टॉल करें, फिर आगे टैप करें</value>
+  </data>
+  <data name="SetupWizard_DockerTitle" xml:space="preserve">
+    <value>Docker Desktop इंस्टॉल करें</value>
+  </data>
+  <data name="SetupWizard_Failed" xml:space="preserve">
+    <value>इंस्टॉलेशन विफल</value>
+  </data>
+  <data name="SetupWizard_FastSetup" xml:space="preserve">
+    <value>त्वरित सेटअप</value>
+  </data>
+  <data name="SetupWizard_FastSetupHint" xml:space="preserve">
+    <value>त्वरित सेटअप आपके Windows उपयोगकर्ता नाम और डिफ़ॉल्ट पोर्ट का उपयोग करता है</value>
+  </data>
+  <data name="SetupWizard_Finish" xml:space="preserve">
+    <value>समाप्त</value>
+  </data>
+  <data name="SetupWizard_HideLog" xml:space="preserve">
+    <value>लॉग छिपाएँ</value>
+  </data>
+  <data name="SetupWizard_InstallDocker" xml:space="preserve">
+    <value>Docker इंस्टॉल करें</value>
+  </data>
+  <data name="SetupWizard_Installing" xml:space="preserve">
+    <value>इंस्टॉल हो रहा है...</value>
+  </data>
+  <data name="SetupWizard_Next_Install" xml:space="preserve">
+    <value>इंस्टॉल करें</value>
+  </data>
+  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
+    <value>आधिकारिक मॉड्यूल (100 पोर्ट)</value>
+  </data>
+  <data name="SetupWizard_OverallProgress" xml:space="preserve">
+    <value>समग्र प्रगति</value>
+  </data>
+  <data name="SetupWizard_PortAllocationTitle" xml:space="preserve">
+    <value>पोर्ट आवंटन</value>
+  </data>
+  <data name="SetupWizard_Preparing" xml:space="preserve">
+    <value>तैयारी हो रही है...</value>
+  </data>
+  <data name="SetupWizard_Retry" xml:space="preserve">
+    <value>पुनः प्रयास</value>
+  </data>
+  <data name="SetupWizard_Setup" xml:space="preserve">
+    <value>सेटअप</value>
+  </data>
+  <data name="SetupWizard_SetupComplete" xml:space="preserve">
+    <value>सेटअप पूर्ण!</value>
+  </data>
+  <data name="SetupWizard_ShowLog" xml:space="preserve">
+    <value>लॉग दिखाएँ</value>
+  </data>
+  <data name="SetupWizard_StepFormat" xml:space="preserve">
+    <value>चरण {0} / {1} - {2}</value>
+  </data>
+  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
+    <value>Docker Desktop</value>
+  </data>
+  <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
+    <value>मॉड्यूल चयन</value>
+  </data>
+  <data name="SetupWizard_Step_Modules" xml:space="preserve">
+    <value>मॉड्यूल</value>
+  </data>
+  <data name="SetupWizard_Step_PortAllocation" xml:space="preserve">
+    <value>पोर्ट आवंटन</value>
+  </data>
+  <data name="SetupWizard_Step_PortConfiguration" xml:space="preserve">
+    <value>पोर्ट कॉन्फ़िगरेशन</value>
+  </data>
+  <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
+    <value>उपयोगकर्ता प्रोफ़ाइल</value>
+  </data>
+  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
+    <value>तृतीय-पक्ष मॉड्यूल (1000 पोर्ट)</value>
+  </data>
+  <data name="SetupWizard_Title" xml:space="preserve">
+    <value>ASLM सेटअप</value>
+  </data>
+  <data name="SetupWizard_WelcomeSubtitle" xml:space="preserve">
+    <value>उन्नत सिस्टम भाषा मॉडल</value>
+  </data>
+  <data name="SetupWizard_WelcomeTitle" xml:space="preserve">
+    <value>ASLM में आपका स्वागत है!</value>
+  </data>
+  <data name="ThemeColorPicker_Brightness" xml:space="preserve">
+    <value>चमक</value>
+  </data>
+  <data name="ThemeColorPicker_Cancel" xml:space="preserve">
+    <value>रद्द करें</value>
+  </data>
+  <data name="ThemeColorPicker_CustomColor" xml:space="preserve">
+    <value>कस्टम रंग</value>
+  </data>
+  <data name="ThemeColorPicker_HexPlaceholder" xml:space="preserve">
+    <value>#AARRGGBB</value>
+  </data>
+  <data name="ThemeColorPicker_Opacity" xml:space="preserve">
+    <value>अपारदर्शिता</value>
+  </data>
+</root>
