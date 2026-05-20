@@ -86,7 +86,10 @@ namespace ASLM.Pages
         {
             PageTitleLabel.Text = L.Get(LocalizationKeys.Modules_Title);
             EmptyModulesLabel.Text = L.Get(LocalizationKeys.Modules_Empty);
-            OnPropertyChanged(nameof(Modules));
+            foreach (var module in Modules)
+            {
+                module.RefreshLocalizedLabels();
+            }
         }
 
 
@@ -465,6 +468,88 @@ namespace ASLM.Pages
             UpdateCommand = _updateCommand;
             CloseMenuCommand = _closeMenuCommand;
             TryHydratePendingUpdateFromConfig();
+            RefreshLocalizedLabels();
+        }
+
+
+        // Localized card labels
+
+        /// <summary>
+        /// Gets the localized not-verified badge text.
+        /// </summary>
+        public string NotVerifiedLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized update action label.
+        /// </summary>
+        public string UpdateLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized stop action label.
+        /// </summary>
+        public string StopLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized restart action label.
+        /// </summary>
+        public string RestartLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized restarting status label.
+        /// </summary>
+        public string RestartingLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized starting status label.
+        /// </summary>
+        public string StartingLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized updating status label.
+        /// </summary>
+        public string UpdatingLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized launch action label.
+        /// </summary>
+        public string LaunchLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized check-updates menu label.
+        /// </summary>
+        public string CheckUpdatesLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized configure-updates menu label.
+        /// </summary>
+        public string ConfigureUpdatesLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Refreshes localized strings shown on the module card template.
+        /// </summary>
+        internal void RefreshLocalizedLabels()
+        {
+            NotVerifiedLabel = L.Get(LocalizationKeys.Modules_NotVerified);
+            UpdateLabel = L.Get(LocalizationKeys.Modules_Update);
+            StopLabel = L.Get(LocalizationKeys.Modules_Stop);
+            RestartLabel = L.Get(LocalizationKeys.Modules_Restart);
+            RestartingLabel = L.Get(LocalizationKeys.Modules_Restarting);
+            StartingLabel = L.Get(LocalizationKeys.Modules_Starting);
+            UpdatingLabel = L.Get(LocalizationKeys.Modules_Updating);
+            LaunchLabel = L.Get(LocalizationKeys.Modules_Launch);
+            CheckUpdatesLabel = L.Get(LocalizationKeys.Modules_CheckUpdates);
+            ConfigureUpdatesLabel = L.Get(LocalizationKeys.Modules_ConfigureUpdates);
+
+            OnPropertyChanged(nameof(NotVerifiedLabel));
+            OnPropertyChanged(nameof(UpdateLabel));
+            OnPropertyChanged(nameof(StopLabel));
+            OnPropertyChanged(nameof(RestartLabel));
+            OnPropertyChanged(nameof(RestartingLabel));
+            OnPropertyChanged(nameof(StartingLabel));
+            OnPropertyChanged(nameof(UpdatingLabel));
+            OnPropertyChanged(nameof(LaunchLabel));
+            OnPropertyChanged(nameof(CheckUpdatesLabel));
+            OnPropertyChanged(nameof(ConfigureUpdatesLabel));
         }
 
 

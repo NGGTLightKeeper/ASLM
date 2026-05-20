@@ -1609,15 +1609,6 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на English.
-        /// </summary>
-        public static string Settings_Language_English {
-            get {
-                return ResourceManager.GetString("Settings_Language_English", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Ищет локализованную строку, похожую на Load default.
         /// </summary>
         public static string Settings_LoadDefault {

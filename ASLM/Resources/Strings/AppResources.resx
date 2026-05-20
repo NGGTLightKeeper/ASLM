@@ -1,4 +1,4 @@
-<?xml version="1.0" ?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -527,9 +527,6 @@
   </data>
   <data name="Settings_IndividualConsoles_Title" xml:space="preserve">
     <value>Individual consoles</value>
-  </data>
-  <data name="Settings_Language_English" xml:space="preserve">
-    <value>English</value>
   </data>
   <data name="Settings_LoadDefault" xml:space="preserve">
     <value>Load default</value>

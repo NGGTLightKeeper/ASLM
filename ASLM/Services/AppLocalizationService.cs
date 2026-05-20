@@ -15,18 +15,48 @@ namespace ASLM.Services
     /// </summary>
     public sealed class AppLocalizationService
     {
+        private static readonly HashSet<string> RtlLanguageCodes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "ar",
+        };
+
         private readonly AppDataStore _appData;
         private readonly List<WeakReference<ILocalizable>> _localizableViews = [];
         private readonly object _localizableLock = new();
         private string _appliedLanguage = "en";
 
+        private static readonly string[] SupportedLanguageCodes =
+        [
+            "en",
+            "zh-Hans",
+            "es",
+            "ar",
+            "hi",
+            "pt-BR",
+            "ru",
+            "ja",
+            "de",
+            "fr",
+            "ko",
+            "it",
+            "zh-Hant",
+            "pt",
+            "tr",
+            "pl",
+            "uk",
+            "id",
+            "vi",
+            "nl",
+        ];
+
         /// <summary>
-        /// Languages available in personalization settings.
+        /// Languages available in personalization settings, sorted by English name.
         /// </summary>
         public static IReadOnlyList<LanguageOption> SupportedLanguages { get; } =
-        [
-            new LanguageOption("en", "English")
-        ];
+            SupportedLanguageCodes
+                .Select(id => new LanguageOption(id, GetCultureEnglishName(id)))
+                .OrderBy(option => option.EnglishName, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
 
         /// <summary>
         /// Raised after <see cref="ApplyCulture"/> updates thread culture and resources.
@@ -55,9 +85,10 @@ namespace ASLM.Services
         {
             var language = GetCurrentLanguage();
             if (string.Equals(_appliedLanguage, language, StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, language, StringComparison.OrdinalIgnoreCase))
+                string.Equals(CultureInfo.CurrentUICulture.Name, language, StringComparison.OrdinalIgnoreCase))
             {
                 AppResources.Culture = CultureInfo.CurrentUICulture;
+                ApplyFlowDirection(CultureInfo.CurrentUICulture);
                 return false;
             }
 
@@ -67,6 +98,7 @@ namespace ASLM.Services
             AppResources.Culture = culture;
             _appliedLanguage = language;
 
+            ApplyFlowDirection(culture);
             NotifyLocalizableViews();
             CultureChanged?.Invoke(this, EventArgs.Empty);
             return true;
@@ -132,38 +164,88 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Returns the display name for a language code, or the code itself when unknown.
+        /// Returns the native display name for a language code, or the code itself when unknown.
         /// </summary>
-        public static string GetDisplayName(string languageCode)
+        public static string GetDisplayName(string languageCode) =>
+            GetCultureNativeName(AppPersonalizationConfig.NormalizeLanguage(languageCode));
+
+        private const string MachineTranslationPickerTag = "[AI]";
+
+        /// <summary>
+        /// Returns the bilingual label for the language picker: English name — native name,
+        /// with a fixed English machine-translation tag for non-English locales.
+        /// </summary>
+        public static string GetPickerDisplayName(string languageCode)
         {
             var normalized = AppPersonalizationConfig.NormalizeLanguage(languageCode);
-            foreach (var option in SupportedLanguages)
+            var english = GetCultureEnglishName(normalized);
+            var native = GetCultureNativeName(normalized);
+
+            var label = string.Equals(english, native, StringComparison.OrdinalIgnoreCase)
+                ? english
+                : $"{english} - {native}";
+
+            if (!string.Equals(normalized, "en", StringComparison.OrdinalIgnoreCase))
             {
-                if (string.Equals(option.Id, normalized, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetLanguageDisplayNameKey(normalized) is { } key
-                        ? AppResources.ResourceManager.GetString(key, AppResources.Culture) ?? option.DisplayName
-                        : option.DisplayName;
-                }
+                label = $"{label} {MachineTranslationPickerTag}";
             }
 
-            return normalized;
+            return label;
         }
 
-        private static string? GetLanguageDisplayNameKey(string languageCode) =>
-            string.Equals(languageCode, "en", StringComparison.OrdinalIgnoreCase)
-                ? LocalizationKeys.Settings_Language_English
-                : null;
+        private static string GetCultureEnglishName(string languageCode)
+        {
+            try
+            {
+                return CreateCulture(languageCode).EnglishName;
+            }
+            catch (CultureNotFoundException)
+            {
+                return languageCode;
+            }
+        }
+
+        private static string GetCultureNativeName(string languageCode)
+        {
+            try
+            {
+                return CreateCulture(languageCode).NativeName;
+            }
+            catch (CultureNotFoundException)
+            {
+                return languageCode;
+            }
+        }
 
         private static CultureInfo CreateCulture(string language)
         {
             try
             {
-                return CultureInfo.GetCultureInfo(language);
+                return language switch
+                {
+                    "zh-Hans" => CultureInfo.GetCultureInfo("zh-Hans"),
+                    "zh-Hant" => CultureInfo.GetCultureInfo("zh-Hant"),
+                    "pt-BR" => CultureInfo.GetCultureInfo("pt-BR"),
+                    _ => CultureInfo.GetCultureInfo(language),
+                };
             }
             catch (CultureNotFoundException)
             {
                 return CultureInfo.GetCultureInfo("en");
+            }
+        }
+
+        private static void ApplyFlowDirection(CultureInfo culture)
+        {
+            var isRtl = RtlLanguageCodes.Contains(culture.Name) ||
+                        RtlLanguageCodes.Contains(culture.TwoLetterISOLanguageName) ||
+                        culture.TextInfo.IsRightToLeft;
+
+            var flow = isRtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+            var page = Application.Current?.Windows.FirstOrDefault()?.Page;
+            if (page != null)
+            {
+                page.FlowDirection = flow;
             }
         }
 
@@ -206,5 +288,5 @@ namespace ASLM.Services
     /// <summary>
     /// One selectable UI language in personalization settings.
     /// </summary>
-    public sealed record LanguageOption(string Id, string DisplayName);
+    public sealed record LanguageOption(string Id, string EnglishName);
 }

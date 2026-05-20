@@ -256,11 +256,26 @@ namespace ASLM.Models
             }
         }
 
+        private static readonly HashSet<string> SupportedLanguageCodes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "en",
+            "zh-Hans", "es", "ar", "hi", "pt-BR", "ru", "ja", "de", "fr", "ko", "it",
+            "zh-Hant", "pt", "tr", "pl", "uk", "id", "vi", "nl",
+        };
+
         /// <summary>
         /// Returns the canonical language code, falling back to English for unknown values.
         /// </summary>
-        public static string NormalizeLanguage(string? value) =>
-            string.Equals(value, "en", StringComparison.OrdinalIgnoreCase) ? "en" : "en";
+        public static string NormalizeLanguage(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "en";
+            }
+
+            var trimmed = value.Trim();
+            return SupportedLanguageCodes.Contains(trimmed) ? trimmed : "en";
+        }
 
         /// <summary>
         /// Returns the canonical appearance string, falling back to Dark for unknown values.

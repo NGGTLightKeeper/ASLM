@@ -175,7 +175,6 @@ public static class LocalizationKeys
     public const string Settings_Header_Modules = "Settings_Header_Modules";
     public const string Settings_IndividualConsoles_Description = "Settings_IndividualConsoles_Description";
     public const string Settings_IndividualConsoles_Title = "Settings_IndividualConsoles_Title";
-    public const string Settings_Language_English = "Settings_Language_English";
     public const string Settings_LoadDefault = "Settings_LoadDefault";
     public const string Settings_ManualCheck_Title = "Settings_ManualCheck_Title";
     public const string Settings_ModuleChannel_Description = "Settings_ModuleChannel_Description";

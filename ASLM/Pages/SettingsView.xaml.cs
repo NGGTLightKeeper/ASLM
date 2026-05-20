@@ -563,7 +563,7 @@ namespace ASLM.Pages
         private static readonly string[] AppearanceOptions = ["Dark", "Light", "System", "Custom"];
 
         private static string GetLanguageDisplayName(string languageId) =>
-            AppLocalizationService.GetDisplayName(languageId);
+            AppLocalizationService.GetPickerDisplayName(languageId);
 
         private static string GetAppearanceDisplayName(string appearance) =>
             AppPersonalizationConfig.NormalizeAppearance(appearance) switch
