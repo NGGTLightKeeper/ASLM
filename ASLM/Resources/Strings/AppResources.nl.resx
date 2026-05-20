@@ -1,0 +1,935 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AppShell_Nav_Api" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="AppShell_Nav_Consoles" xml:space="preserve">
+    <value>Consoles</value>
+  </data>
+  <data name="AppShell_Nav_Download" xml:space="preserve">
+    <value>Downloaden</value>
+  </data>
+  <data name="AppShell_Nav_Home" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="AppShell_Nav_Modules" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="AppShell_Nav_Notifications" xml:space="preserve">
+    <value>Meldingen</value>
+  </data>
+  <data name="AppShell_Nav_Settings" xml:space="preserve">
+    <value>Instellingen</value>
+  </data>
+  <data name="AppShell_Title" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
+    <value>Adres kopiëren</value>
+  </data>
+  <data name="AslmApi_Hosts" xml:space="preserve">
+    <value>Hosts</value>
+  </data>
+  <data name="AslmApi_NoHosts" xml:space="preserve">
+    <value>Geen hosts</value>
+  </data>
+  <data name="AslmApi_Open" xml:space="preserve">
+    <value>Openen</value>
+  </data>
+  <data name="AslmApi_Title" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="Common_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Common_Back" xml:space="preserve">
+    <value>Terug</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Annuleren</value>
+  </data>
+  <data name="Common_Discard" xml:space="preserve">
+    <value>Verwerpen</value>
+  </data>
+  <data name="Common_Done" xml:space="preserve">
+    <value>Gereed</value>
+  </data>
+  <data name="Common_Install" xml:space="preserve">
+    <value>Installeren</value>
+  </data>
+  <data name="Common_Install_Action" xml:space="preserve">
+    <value>Installeren</value>
+  </data>
+  <data name="Common_Next" xml:space="preserve">
+    <value>Volgende</value>
+  </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Open" xml:space="preserve">
+    <value>Openen</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>Vernieuwen</value>
+  </data>
+  <data name="Common_Remove" xml:space="preserve">
+    <value>Verwijderen</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Opslaan</value>
+  </data>
+  <data name="Common_Saved" xml:space="preserve">
+    <value>Opgeslagen</value>
+  </data>
+  <data name="Common_Stay" xml:space="preserve">
+    <value>Blijven</value>
+  </data>
+  <data name="Common_Variant" xml:space="preserve">
+    <value>Variant</value>
+  </data>
+  <data name="Consoles_ModulesHeader" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="Consoles_NoActiveModules" xml:space="preserve">
+    <value>Geen actieve modules</value>
+  </data>
+  <data name="Consoles_NoConsoles" xml:space="preserve">
+    <value>Geen consoles</value>
+  </data>
+  <data name="Consoles_Title" xml:space="preserve">
+    <value>Consoles</value>
+  </data>
+  <data name="Downloads_CategoryCount_Many" xml:space="preserve">
+    <value>{0} categorieën</value>
+  </data>
+  <data name="Downloads_CategoryCount_None" xml:space="preserve">
+    <value>Geen categorieën</value>
+  </data>
+  <data name="Downloads_CategoryCount_One" xml:space="preserve">
+    <value>1 categorie</value>
+  </data>
+  <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
+    <value>Kies een resourcefamilie om varianten en details te bekijken</value>
+  </data>
+  <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
+    <value>Geen geïnstalleerde module biedt momenteel een downloadbrug</value>
+  </data>
+  <data name="Downloads_EmptyCategory" xml:space="preserve">
+    <value>Er zijn geen gegroepeerde downloads beschikbaar voor deze categorie</value>
+  </data>
+  <data name="Downloads_EmptyFiltered" xml:space="preserve">
+    <value>Geen gegroepeerde downloads voldeden aan de huidige providerfilters</value>
+  </data>
+  <data name="Downloads_EmptySearch" xml:space="preserve">
+    <value>Geen resultaten voor "{0}" aan de kant van de provider</value>
+  </data>
+  <data name="Downloads_NoItems" xml:space="preserve">
+    <value>Geen items</value>
+  </data>
+  <data name="Downloads_SearchPlaceholder" xml:space="preserve">
+    <value>Doorzoek de providercatalogus</value>
+  </data>
+  <data name="Downloads_SelectItem" xml:space="preserve">
+    <value>Selecteer een item</value>
+  </data>
+  <data name="Downloads_Title" xml:space="preserve">
+    <value>Downloaden</value>
+  </data>
+  <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
+    <value>Laatste moduleactiviteit {0}</value>
+  </data>
+  <data name="Home_Card_Modules_NoActivity" xml:space="preserve">
+    <value>Nog geen moduleactiviteit geregistreerd</value>
+  </data>
+  <data name="Home_Card_Modules_StatusTotal" xml:space="preserve">
+    <value>{0} totaal</value>
+  </data>
+  <data name="Home_Card_Modules_Subtitle" xml:space="preserve">
+    <value>Levenscyclus en consoleactiviteit</value>
+  </data>
+  <data name="Home_Card_Modules_Title" xml:space="preserve">
+    <value>Beheerde modules</value>
+  </data>
+  <data name="Home_Card_Runtime_ChildCount" xml:space="preserve">
+    <value>{0} actieve subprocessen in de ASLM-boom</value>
+  </data>
+  <data name="Home_Card_Runtime_NoChildren" xml:space="preserve">
+    <value>Er zijn momenteel geen beheerde subprocessen actief</value>
+  </data>
+  <data name="Home_Card_Runtime_StatusPid" xml:space="preserve">
+    <value>PID {0}</value>
+  </data>
+  <data name="Home_Card_Runtime_Subtitle" xml:space="preserve">
+    <value>App-proces en beheerde subprocessboom</value>
+  </data>
+  <data name="Home_Card_Runtime_Title" xml:space="preserve">
+    <value>ASLM-runtime</value>
+  </data>
+  <data name="Home_Card_System_SampledAt" xml:space="preserve">
+    <value>Laatst gemeten om {0}</value>
+  </data>
+  <data name="Home_Card_System_Status" xml:space="preserve">
+    <value>Live</value>
+  </data>
+  <data name="Home_Card_System_Subtitle" xml:space="preserve">
+    <value>Belasting van de hostmachine</value>
+  </data>
+  <data name="Home_Card_System_Title" xml:space="preserve">
+    <value>Systeem</value>
+  </data>
+  <data name="Home_Column_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Home_Column_Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Home_Column_Disk" xml:space="preserve">
+    <value>Schijf</value>
+  </data>
+  <data name="Home_Column_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="Home_Column_Name" xml:space="preserve">
+    <value>Naam</value>
+  </data>
+  <data name="Home_Column_Net" xml:space="preserve">
+    <value>Net</value>
+  </data>
+  <data name="Home_Column_Ram" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="Home_Loading_WaitingSample" xml:space="preserve">
+    <value>Wachten op meting</value>
+  </data>
+  <data name="Home_ManagedProcesses" xml:space="preserve">
+    <value>Beheerde processen</value>
+  </data>
+  <data name="Home_Metric_Active" xml:space="preserve">
+    <value>Actief</value>
+  </data>
+  <data name="Home_Metric_Active_Detail" xml:space="preserve">
+    <value>Modules met actieve beheerde processen</value>
+  </data>
+  <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
+    <value>{0} logische kernen</value>
+  </data>
+  <data name="Home_Metric_Cpu_RuntimeDetail" xml:space="preserve">
+    <value>Applicatiehost en beheerde subprocessen</value>
+  </data>
+  <data name="Home_Metric_Disk_CombinedIo" xml:space="preserve">
+    <value>Gecombineerde I/O van beheerde processen</value>
+  </data>
+  <data name="Home_Metric_Disk_Rw" xml:space="preserve">
+    <value>L {0} - S {1}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Index" xml:space="preserve">
+    <value>GPU {0}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Unavailable" xml:space="preserve">
+    <value>GPU-tellers niet beschikbaar</value>
+  </data>
+  <data name="Home_Metric_Installed" xml:space="preserve">
+    <value>Geïnstalleerd</value>
+  </data>
+  <data name="Home_Metric_Installed_Detail" xml:space="preserve">
+    <value>Modules gevonden op schijf</value>
+  </data>
+  <data name="Home_Metric_Network" xml:space="preserve">
+    <value>Netwerk</value>
+  </data>
+  <data name="Home_Metric_Network_Endpoints" xml:space="preserve">
+    <value>Open TCP- en UDP-eindpunten in de ASLM-boom</value>
+  </data>
+  <data name="Home_Metric_Network_RxTx" xml:space="preserve">
+    <value>Ontv. {0} - Verz. {1}</value>
+  </data>
+  <data name="Home_Metric_NotAvailable" xml:space="preserve">
+    <value>n.v.t.</value>
+  </data>
+  <data name="Home_Metric_Processes" xml:space="preserve">
+    <value>Processen</value>
+  </data>
+  <data name="Home_Metric_Processes_Detail" xml:space="preserve">
+    <value>Actieve subprocessen beheerd door ASLM</value>
+  </data>
+  <data name="Home_Metric_Ram_Resident" xml:space="preserve">
+    <value>{0} in geheugen</value>
+  </data>
+  <data name="Home_Metric_Ram_Usage" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="Home_Metric_Running" xml:space="preserve">
+    <value>Ingeschakeld</value>
+  </data>
+  <data name="Home_Metric_Running_Detail" xml:space="preserve">
+    <value>Modules gemarkeerd als ingeschakeld</value>
+  </data>
+  <data name="Home_Metric_Sessions" xml:space="preserve">
+    <value>Sessies</value>
+  </data>
+  <data name="Home_Metric_Sessions_Detail" xml:space="preserve">
+    <value>{0} actieve consolesessies</value>
+  </data>
+  <data name="Home_Module_ByAuthor" xml:space="preserve">
+    <value>door {0}</value>
+  </data>
+  <data name="Home_Module_InstalledDefault" xml:space="preserve">
+    <value>Geïnstalleerde module</value>
+  </data>
+  <data name="Home_Module_Launching" xml:space="preserve">
+    <value>Starten</value>
+  </data>
+  <data name="Home_Module_Stopped" xml:space="preserve">
+    <value>Gestopt</value>
+  </data>
+  <data name="Home_Module_Stopping" xml:space="preserve">
+    <value>Stoppen</value>
+  </data>
+  <data name="Home_ModulesHeader" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="Home_Status_Loading" xml:space="preserve">
+    <value>Laden</value>
+  </data>
+  <data name="Home_Title" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Loading_Text" xml:space="preserve">
+    <value>Laden...</value>
+  </data>
+  <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
+    <value>Updates controleren</value>
+  </data>
+  <data name="ModuleUpdate_CloseTooltip" xml:space="preserve">
+    <value>Module-updates sluiten</value>
+  </data>
+  <data name="ModuleUpdate_CurrentVersion" xml:space="preserve">
+    <value>Huidige versie</value>
+  </data>
+  <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
+    <value>Update installeren</value>
+  </data>
+  <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
+    <value>Geen module geselecteerd</value>
+  </data>
+  <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
+    <value>Totale voortgang</value>
+  </data>
+  <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
+    <value>Voorkeuren worden automatisch opgeslagen</value>
+  </data>
+  <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
+    <value>Releaseversie</value>
+  </data>
+  <data name="ModuleUpdate_RepositoryBranch" xml:space="preserve">
+    <value>Repositorybranch</value>
+  </data>
+  <data name="ModuleUpdate_SearchMode" xml:space="preserve">
+    <value>Zoekmodus</value>
+  </data>
+  <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
+    <value>Geselecteerd doel</value>
+  </data>
+  <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="ModuleUpdate_Title_Configure" xml:space="preserve">
+    <value>Module-updates configureren</value>
+  </data>
+  <data name="ModuleUpdate_Title_Update" xml:space="preserve">
+    <value>Module-update</value>
+  </data>
+  <data name="ModuleUpdate_UpdateSource" xml:space="preserve">
+    <value>Updatebron</value>
+  </data>
+  <data name="Modules_CheckUpdates" xml:space="preserve">
+    <value>Updates controleren</value>
+  </data>
+  <data name="Modules_ConfigureUpdates" xml:space="preserve">
+    <value>Updates configureren</value>
+  </data>
+  <data name="Modules_Empty" xml:space="preserve">
+    <value>Geen modules gevonden. Installeer modules via de installatiewizard</value>
+  </data>
+  <data name="Modules_Launch" xml:space="preserve">
+    <value>Starten</value>
+  </data>
+  <data name="Modules_NotVerified" xml:space="preserve">
+    <value>Niet geverifieerd</value>
+  </data>
+  <data name="Modules_Restart" xml:space="preserve">
+    <value>Opnieuw starten</value>
+  </data>
+  <data name="Modules_Restarting" xml:space="preserve">
+    <value>Opnieuw starten</value>
+  </data>
+  <data name="Modules_Starting" xml:space="preserve">
+    <value>Starten</value>
+  </data>
+  <data name="Modules_Stop" xml:space="preserve">
+    <value>Stoppen</value>
+  </data>
+  <data name="Modules_Title" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="Modules_Update" xml:space="preserve">
+    <value>Bijwerken</value>
+  </data>
+  <data name="Modules_Updating" xml:space="preserve">
+    <value>Bijwerken</value>
+  </data>
+  <data name="Notifications_ClearAll" xml:space="preserve">
+    <value>Alles wissen</value>
+  </data>
+  <data name="Notifications_EmptyMessage" xml:space="preserve">
+    <value>Nieuwe ASLM-gebeurtenissen verschijnen hier</value>
+  </data>
+  <data name="Notifications_EmptyTitle" xml:space="preserve">
+    <value>Geen meldingen</value>
+  </data>
+  <data name="Notifications_SectionRecent" xml:space="preserve">
+    <value>Recent</value>
+  </data>
+  <data name="Notifications_SummaryFormat" xml:space="preserve">
+    <value>{0} totaal</value>
+  </data>
+  <data name="Notifications_Title" xml:space="preserve">
+    <value>Meldingen</value>
+  </data>
+  <data name="Notifications_UpdateLater" xml:space="preserve">
+    <value>Later bijwerken</value>
+  </data>
+  <data name="Notifications_UpdateNow" xml:space="preserve">
+    <value>Nu bijwerken</value>
+  </data>
+  <data name="Settings_ApiServer_Description" xml:space="preserve">
+    <value>Start de lokale mirrorserver samen met ASLM</value>
+  </data>
+  <data name="Settings_ApiServer_Title" xml:space="preserve">
+    <value>API-server</value>
+  </data>
+  <data name="Settings_AppChannel_Description" xml:space="preserve">
+    <value>Release gebruikt alleen stabiele GitHub-releases. Pre-release accepteert ook preview-releases</value>
+  </data>
+  <data name="Settings_AppChannel_Title" xml:space="preserve">
+    <value>Updatekanaal van de applicatie</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Description" xml:space="preserve">
+    <value>Uren tussen achtergrondcontroles op updates</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Title" xml:space="preserve">
+    <value>Automatische controleperiode</value>
+  </data>
+  <data name="Settings_AutoInstall_Description" xml:space="preserve">
+    <value>Pas module-updates automatisch toe en bereid ASLM-builds voor op de volgende herstart</value>
+  </data>
+  <data name="Settings_AutoInstall_Title" xml:space="preserve">
+    <value>Updates automatisch installeren</value>
+  </data>
+  <data name="Settings_Category_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Settings_Category_ASLM_Description" xml:space="preserve">
+    <value>Kern-ASLM-gedrag, poorten, API en consoles</value>
+  </data>
+  <data name="Settings_Category_Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="Settings_Category_Account_Description" xml:space="preserve">
+    <value>Weergavenaam gebruikt door ASLM en gedeeld met modules</value>
+  </data>
+  <data name="Settings_Category_Module_Description" xml:space="preserve">
+    <value>Modulespecifieke configuratie</value>
+  </data>
+  <data name="Settings_Category_Ollama" xml:space="preserve">
+    <value>Ollama</value>
+  </data>
+  <data name="Settings_Category_Ollama_Description" xml:space="preserve">
+    <value>Ollama-account: aan- en afmeldingsopties</value>
+  </data>
+  <data name="Settings_Category_Personalization" xml:space="preserve">
+    <value>Personalisatie</value>
+  </data>
+  <data name="Settings_Category_Personalization_Description" xml:space="preserve">
+    <value>Themamodus, taal en aangepaste thema-instellingen</value>
+  </data>
+  <data name="Settings_Category_Updates" xml:space="preserve">
+    <value>Updates</value>
+  </data>
+  <data name="Settings_Category_Updates_Description" xml:space="preserve">
+    <value>Voorkeuren voor applicatie- en module-updates</value>
+  </data>
+  <data name="Settings_CheckNow" xml:space="preserve">
+    <value>Nu controleren</value>
+  </data>
+  <data name="Settings_CheckUpdates_Description" xml:space="preserve">
+    <value>Sta ASLM toe geconfigureerde GitHub-repositories te bevragen</value>
+  </data>
+  <data name="Settings_CheckUpdates_Title" xml:space="preserve">
+    <value>Controleren op updates</value>
+  </data>
+  <data name="Settings_CloseTooltip" xml:space="preserve">
+    <value>Instellingen sluiten</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Description" xml:space="preserve">
+    <value>Houd voltooide procesconsoles zichtbaar wanneer individuele consoles zijn ingeschakeld</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Title" xml:space="preserve">
+    <value>Voltooide procesconsoles</value>
+  </data>
+  <data name="Settings_ConsolesPage_Description" xml:space="preserve">
+    <value>Toon de ingebouwde consolepagina in de zijbalk</value>
+  </data>
+  <data name="Settings_ConsolesPage_Title" xml:space="preserve">
+    <value>Consolepagina</value>
+  </data>
+  <data name="Settings_DiscardChanges" xml:space="preserve">
+    <value>Wijzigingen verwerpen</value>
+  </data>
+  <data name="Settings_DiscardDialog_Message" xml:space="preserve">
+    <value>Er zijn niet-opgeslagen wijzigingen in dit gedeelte. Verwerpen en overschakelen?</value>
+  </data>
+  <data name="Settings_DiscardDialog_Title" xml:space="preserve">
+    <value>Niet-opgeslagen wijzigingen</value>
+  </data>
+  <data name="Settings_DisplayName" xml:space="preserve">
+    <value>Weergavenaam</value>
+  </data>
+  <data name="Settings_DisplayNameDescription" xml:space="preserve">
+    <value>Naam getoond in ASLM en gedeeld met modules</value>
+  </data>
+  <data name="Settings_EmptyCategory" xml:space="preserve">
+    <value>Deze categorie heeft geen instellingen</value>
+  </data>
+  <data name="Settings_Engine_Installed" xml:space="preserve">
+    <value>Geïnstalleerd</value>
+  </data>
+  <data name="Settings_Engine_NotInstalled" xml:space="preserve">
+    <value>Niet geïnstalleerd</value>
+  </data>
+  <data name="Settings_Header_Modules" xml:space="preserve">
+    <value>MODULES</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Description" xml:space="preserve">
+    <value>Toon consoles per proces naast geünificeerde module-uitvoer</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Title" xml:space="preserve">
+    <value>Individuele consoles</value>
+  </data>
+  <data name="Settings_LoadDefault" xml:space="preserve">
+    <value>Standaard laden</value>
+  </data>
+  <data name="Settings_ManualCheck_Title" xml:space="preserve">
+    <value>Handmatige controle</value>
+  </data>
+  <data name="Settings_ModuleChannel_Description" xml:space="preserve">
+    <value>Gebruikt door modules die GitHub-releases volgen</value>
+  </data>
+  <data name="Settings_ModuleChannel_Title" xml:space="preserve">
+    <value>Standaard module-releasekanaal</value>
+  </data>
+  <data name="Settings_ModuleNoSettings" xml:space="preserve">
+    <value>Deze module heeft geen instellingen in de huidige staat</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Description" xml:space="preserve">
+    <value>Nieuwe modulevoorkeuren beginnen vanuit deze modus; individuele modules kunnen dit overschrijven</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Title" xml:space="preserve">
+    <value>Standaard module-updatemodus</value>
+  </data>
+  <data name="Settings_NoSettingsAvailable" xml:space="preserve">
+    <value>Geen instellingen beschikbaar</value>
+  </data>
+  <data name="Settings_OfficialPortDescription" xml:space="preserve">
+    <value>Startpunt voor officiële modules. 100 poorten zijn gereserveerd vanaf deze waarde</value>
+  </data>
+  <data name="Settings_OfficialPortTitle" xml:space="preserve">
+    <value>Startpoort officiële modules</value>
+  </data>
+  <data name="Settings_OllamaAccount_Title" xml:space="preserve">
+    <value>Ollama-account</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Confirm" xml:space="preserve">
+    <value>Afmelden</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Message" xml:space="preserve">
+    <value>Dit verwijdert de huidige ollama.com-sessie voor dit Windows-profiel. Doorgaan?</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Title" xml:space="preserve">
+    <value>Afmelden bij Ollama</value>
+  </data>
+  <data name="Settings_Ollama_CheckingAccount" xml:space="preserve">
+    <value>Account controleren</value>
+  </data>
+  <data name="Settings_Ollama_NotInstalled" xml:space="preserve">
+    <value>Interne Ollama is niet geïnstalleerd</value>
+  </data>
+  <data name="Settings_Ollama_NotSignedIn" xml:space="preserve">
+    <value>Niet aangemeld</value>
+  </data>
+  <data name="Settings_Ollama_SignIn" xml:space="preserve">
+    <value>Aanmelden</value>
+  </data>
+  <data name="Settings_Ollama_SignOut" xml:space="preserve">
+    <value>Afmelden</value>
+  </data>
+  <data name="Settings_Ollama_SignedIn" xml:space="preserve">
+    <value>Aangemeld</value>
+  </data>
+  <data name="Settings_Ollama_SignedInAs" xml:space="preserve">
+    <value>Aangemeld als {0}</value>
+  </data>
+  <data name="Settings_Ollama_SigningIn" xml:space="preserve">
+    <value>Aanmelden...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOut" xml:space="preserve">
+    <value>Afmelden...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOutStatus" xml:space="preserve">
+    <value>Afmelden</value>
+  </data>
+  <data name="Settings_Ollama_WaitingSignIn" xml:space="preserve">
+    <value>Wachten op aanmelding in browser</value>
+  </data>
+  <data name="Settings_Personalization_ActiveTheme" xml:space="preserve">
+    <value>Actief thema</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Custom" xml:space="preserve">
+    <value>Aangepast</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Dark" xml:space="preserve">
+    <value>Donker</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Light" xml:space="preserve">
+    <value>Licht</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_System" xml:space="preserve">
+    <value>Systeem</value>
+  </data>
+  <data name="Settings_Personalization_Delete" xml:space="preserve">
+    <value>Verwijderen</value>
+  </data>
+  <data name="Settings_Personalization_Export" xml:space="preserve">
+    <value>Exporteren</value>
+  </data>
+  <data name="Settings_Personalization_Import" xml:space="preserve">
+    <value>Importeren</value>
+  </data>
+  <data name="Settings_Personalization_ImportPickerTitle" xml:space="preserve">
+    <value>Thema importeren</value>
+  </data>
+  <data name="Settings_Personalization_InheritDark" xml:space="preserve">
+    <value>Donker (ingebouwd)</value>
+  </data>
+  <data name="Settings_Personalization_InheritLight" xml:space="preserve">
+    <value>Licht (ingebouwd)</value>
+  </data>
+  <data name="Settings_Personalization_InheritTitle" xml:space="preserve">
+    <value>Kleuren overnemen van</value>
+  </data>
+  <data name="Settings_Personalization_Language" xml:space="preserve">
+    <value>Taal</value>
+  </data>
+  <data name="Settings_Personalization_LanguageDescription" xml:space="preserve">
+    <value>Stelt de interfacetaal in voor ASLM en ondersteunde modules</value>
+  </data>
+  <data name="Settings_Personalization_Mode" xml:space="preserve">
+    <value>Modus</value>
+  </data>
+  <data name="Settings_Personalization_ModeDescription" xml:space="preserve">
+    <value>Bepaalt hoe de app het algehele uiterlijk van de interface kiest</value>
+  </data>
+  <data name="Settings_Personalization_New" xml:space="preserve">
+    <value>Nieuw</value>
+  </data>
+  <data name="Settings_Personalization_NoThemes" xml:space="preserve">
+    <value>Nog geen aangepaste thema's. Maak er een om het uiterlijk Aangepast te gebruiken</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeActive" xml:space="preserve">
+    <value>Van welk opgeslagen palet de tokenrijen hieronder zijn</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeDescription" xml:space="preserve">
+    <value>Kies welk aangepast thema actief is</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeEmpty" xml:space="preserve">
+    <value>Maak eerst een palet; het verschijnt hier om te selecteren</value>
+  </data>
+  <data name="Settings_Personalization_Themes" xml:space="preserve">
+    <value>Thema's</value>
+  </data>
+  <data name="Settings_Personalization_ThemesDescription" xml:space="preserve">
+    <value>Paletdefinities toevoegen, importeren of delen die als bestanden zijn opgeslagen</value>
+  </data>
+  <data name="Settings_Ports" xml:space="preserve">
+    <value>Poorten</value>
+  </data>
+  <data name="Settings_PrepareAslmUpdate" xml:space="preserve">
+    <value>ASLM-update voorbereiden</value>
+  </data>
+  <data name="Settings_RestartNow" xml:space="preserve">
+    <value>Nu opnieuw starten</value>
+  </data>
+  <data name="Settings_Save" xml:space="preserve">
+    <value>Opslaan</value>
+  </data>
+  <data name="Settings_SaveAndRestart" xml:space="preserve">
+    <value>Opslaan en opnieuw starten</value>
+  </data>
+  <data name="Settings_SaveMessage_Deferred" xml:space="preserve">
+    <value>Instellingen opgeslagen. Sommige module-instellingen konden niet direct worden toegepast en worden bij de volgende modulestart opnieuw geprobeerd
+
+{0}</value>
+  </data>
+  <data name="Settings_SaveMessage_None" xml:space="preserve">
+    <value>Geen wijzigingen om op te slaan</value>
+  </data>
+  <data name="Settings_SaveMessage_Saved" xml:space="preserve">
+    <value>Instellingen opgeslagen en toegepast.</value>
+  </data>
+  <data name="Settings_SavedTitle" xml:space="preserve">
+    <value>Instellingen opgeslagen</value>
+  </data>
+  <data name="Settings_Saving" xml:space="preserve">
+    <value>Opslaan...</value>
+  </data>
+  <data name="Settings_SubGroup_API" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="Settings_SubGroup_Consoles" xml:space="preserve">
+    <value>Consoles</value>
+  </data>
+  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+    <value>Verwijderen</value>
+  </data>
+  <data name="Settings_ThemeDelete_Message" xml:space="preserve">
+    <value>Weet u zeker dat u dit thema wilt verwijderen? Dit kan niet ongedaan worden gemaakt</value>
+  </data>
+  <data name="Settings_ThemeDelete_Title" xml:space="preserve">
+    <value>Thema verwijderen</value>
+  </data>
+  <data name="Settings_ThemeEditor_Base" xml:space="preserve">
+    <value>Basis</value>
+  </data>
+  <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
+    <value>Ingebouwde semantische standaardwaarden voor tokens die u nog niet hebt overschreven</value>
+  </data>
+  <data name="Settings_ThemeEditor_Clear" xml:space="preserve">
+    <value>Wissen</value>
+  </data>
+  <data name="Settings_ThemeEditor_ColorsFormat" xml:space="preserve">
+    <value>Kleureditor voor het thema: {0}</value>
+  </data>
+  <data name="Settings_ThemeEditor_Pick" xml:space="preserve">
+    <value>Kiezen</value>
+  </data>
+  <data name="Settings_ThemeExport_Failed" xml:space="preserve">
+    <value>Thema kon niet worden geëxporteerd: {0}</value>
+  </data>
+  <data name="Settings_ThemeExport_Select" xml:space="preserve">
+    <value>Selecteer een thema om te exporteren</value>
+  </data>
+  <data name="Settings_ThemeImport_Failed" xml:space="preserve">
+    <value>Thema kon niet worden geïmporteerd: {0}</value>
+  </data>
+  <data name="Settings_ThemeImport_Invalid" xml:space="preserve">
+    <value>Het bestand is geen geldig ASLM-thema</value>
+  </data>
+  <data name="Settings_ThemeImport_TooLarge" xml:space="preserve">
+    <value>Het themabestand is te groot</value>
+  </data>
+  <data name="Settings_ThemeNew_DefaultName" xml:space="preserve">
+    <value>Mijn thema</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptMessage" xml:space="preserve">
+    <value>Voer een naam in voor het nieuwe thema:</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
+    <value>Nieuw thema</value>
+  </data>
+  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
+    <value>Startpunt voor externe modules. 1000 poorten zijn gereserveerd vanaf deze waarde</value>
+  </data>
+  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
+    <value>Startpoort modules van derden</value>
+  </data>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>Instellingen</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailable" xml:space="preserve">
+    <value>ASLM-update {0} is beschikbaar. Gebruik "ASLM-update voorbereiden" om deze te downloaden</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailableStaged" xml:space="preserve">
+    <value>ASLM-update {0} is beschikbaar; {1} staat al klaar voor herstart</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmTagPrepared" xml:space="preserve">
+    <value>ASLM {0} is voorbereid en wordt toegepast bij herstart</value>
+  </data>
+  <data name="Settings_UpdateStatus_CheckFailed" xml:space="preserve">
+    <value>Updatecontrole mislukt: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Checking" xml:space="preserve">
+    <value>GitHub-repositories controleren...</value>
+  </data>
+  <data name="Settings_UpdateStatus_CouldNotPrepare" xml:space="preserve">
+    <value>ASLM-update kon niet worden voorbereid</value>
+  </data>
+  <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
+    <value>ASLM-build downloaden...</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
+    <value>{0} update(s) beschikbaar. Module-updates kunnen worden toegepast vanaf de pagina Modules</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedAslm" xml:space="preserve">
+    <value>{0} ASLM {1} staat klaar voor herstart</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedGeneric" xml:space="preserve">
+    <value>{0} Een ASLM-zelfupdate staat klaar voor herstart</value>
+  </data>
+  <data name="Settings_UpdateStatus_None" xml:space="preserve">
+    <value>Er is in deze sessie nog geen updatecontrole uitgevoerd</value>
+  </data>
+  <data name="Settings_UpdateStatus_Prepared" xml:space="preserve">
+    <value>ASLM-update is voorbereid en wordt toegepast bij herstart</value>
+  </data>
+  <data name="Settings_UpdateStatus_PreparedWithVersion" xml:space="preserve">
+    <value>ASLM-update {0} is voorbereid en wordt toegepast bij herstart</value>
+  </data>
+  <data name="Settings_UpdateStatus_RestartFailed" xml:space="preserve">
+    <value>Herstart mislukt: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Restarting" xml:space="preserve">
+    <value>ASLM opnieuw starten...</value>
+  </data>
+  <data name="Settings_UpdateStatus_UpToDate" xml:space="preserve">
+    <value>Alles is up-to-date.</value>
+  </data>
+  <data name="Settings_UseCustomValue" xml:space="preserve">
+    <value>Aangepaste waarde gebruiken</value>
+  </data>
+  <data name="Settings_ValidationError" xml:space="preserve">
+    <value>Validatiefout</value>
+  </data>
+  <data name="SetupWizard_Canceled" xml:space="preserve">
+    <value>Installatie geannuleerd.</value>
+  </data>
+  <data name="SetupWizard_DisplayNamePlaceholder" xml:space="preserve">
+    <value>Uw naam</value>
+  </data>
+  <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
+    <value>Kies een weergavenaam</value>
+  </data>
+  <data name="SetupWizard_DockerDescription" xml:space="preserve">
+    <value>ASLM heeft de Docker CLI nodig. Installeer Docker Desktop en tik op Volgende</value>
+  </data>
+  <data name="SetupWizard_DockerTitle" xml:space="preserve">
+    <value>Docker Desktop installeren</value>
+  </data>
+  <data name="SetupWizard_Failed" xml:space="preserve">
+    <value>Installatie mislukt</value>
+  </data>
+  <data name="SetupWizard_FastSetup" xml:space="preserve">
+    <value>Snelle installatie</value>
+  </data>
+  <data name="SetupWizard_FastSetupHint" xml:space="preserve">
+    <value>Snelle installatie gebruikt uw Windows-gebruikersnaam en standaardpoorten</value>
+  </data>
+  <data name="SetupWizard_Finish" xml:space="preserve">
+    <value>Voltooien</value>
+  </data>
+  <data name="SetupWizard_HideLog" xml:space="preserve">
+    <value>Log verbergen</value>
+  </data>
+  <data name="SetupWizard_InstallDocker" xml:space="preserve">
+    <value>Docker installeren</value>
+  </data>
+  <data name="SetupWizard_Installing" xml:space="preserve">
+    <value>Installeren...</value>
+  </data>
+  <data name="SetupWizard_Next_Install" xml:space="preserve">
+    <value>Installeren</value>
+  </data>
+  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
+    <value>Officiële modules (100 poorten)</value>
+  </data>
+  <data name="SetupWizard_OverallProgress" xml:space="preserve">
+    <value>Totale voortgang</value>
+  </data>
+  <data name="SetupWizard_PortAllocationTitle" xml:space="preserve">
+    <value>Poorttoewijzing</value>
+  </data>
+  <data name="SetupWizard_Preparing" xml:space="preserve">
+    <value>Voorbereiden...</value>
+  </data>
+  <data name="SetupWizard_Retry" xml:space="preserve">
+    <value>Opnieuw proberen</value>
+  </data>
+  <data name="SetupWizard_Setup" xml:space="preserve">
+    <value>Installatie</value>
+  </data>
+  <data name="SetupWizard_SetupComplete" xml:space="preserve">
+    <value>Installatie voltooid!</value>
+  </data>
+  <data name="SetupWizard_ShowLog" xml:space="preserve">
+    <value>Log tonen</value>
+  </data>
+  <data name="SetupWizard_StepFormat" xml:space="preserve">
+    <value>Stap {0} van {1} - {2}</value>
+  </data>
+  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
+    <value>Docker Desktop</value>
+  </data>
+  <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
+    <value>Moduleselectie</value>
+  </data>
+  <data name="SetupWizard_Step_Modules" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="SetupWizard_Step_PortAllocation" xml:space="preserve">
+    <value>Poorttoewijzing</value>
+  </data>
+  <data name="SetupWizard_Step_PortConfiguration" xml:space="preserve">
+    <value>Poortconfiguratie</value>
+  </data>
+  <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
+    <value>Gebruikersprofiel</value>
+  </data>
+  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
+    <value>Modules van derden (1000 poorten)</value>
+  </data>
+  <data name="SetupWizard_Title" xml:space="preserve">
+    <value>ASLM-installatie</value>
+  </data>
+  <data name="SetupWizard_WelcomeSubtitle" xml:space="preserve">
+    <value>Advanced System Language Models</value>
+  </data>
+  <data name="SetupWizard_WelcomeTitle" xml:space="preserve">
+    <value>Welkom bij ASLM!</value>
+  </data>
+  <data name="ThemeColorPicker_Brightness" xml:space="preserve">
+    <value>Helderheid</value>
+  </data>
+  <data name="ThemeColorPicker_Cancel" xml:space="preserve">
+    <value>Annuleren</value>
+  </data>
+  <data name="ThemeColorPicker_CustomColor" xml:space="preserve">
+    <value>Aangepaste kleur</value>
+  </data>
+  <data name="ThemeColorPicker_HexPlaceholder" xml:space="preserve">
+    <value>#AARRGGBB</value>
+  </data>
+  <data name="ThemeColorPicker_Opacity" xml:space="preserve">
+    <value>Dekking</value>
+  </data>
+</root>
