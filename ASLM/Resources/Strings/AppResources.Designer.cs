@@ -133,11 +133,38 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Copied.
+        /// </summary>
+        public static string AslmApi_AddressCopiedStatus {
+            get {
+                return ResourceManager.GetString("AslmApi_AddressCopiedStatus", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Address copied.
+        /// </summary>
+        public static string AslmApi_AddressCopiedTitle {
+            get {
+                return ResourceManager.GetString("AslmApi_AddressCopiedTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Copy address.
         /// </summary>
         public static string AslmApi_CopyAddressTooltip {
             get {
                 return ResourceManager.GetString("AslmApi_CopyAddressTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Disabled.
+        /// </summary>
+        public static string AslmApi_Disabled {
+            get {
+                return ResourceManager.GetString("AslmApi_Disabled", resourceCulture);
             }
         }
         
@@ -322,11 +349,146 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} active modules.
+        /// </summary>
+        public static string Consoles_ActiveModulesFormat {
+            get {
+                return ResourceManager.GetString("Consoles_ActiveModulesFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на All active modules.
+        /// </summary>
+        public static string Consoles_AllActiveModules {
+            get {
+                return ResourceManager.GetString("Consoles_AllActiveModules", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на All Modules.
+        /// </summary>
+        public static string Consoles_AllModules {
+            get {
+                return ResourceManager.GetString("Consoles_AllModules", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на All Modules / Unified Console.
+        /// </summary>
+        public static string Consoles_AllModulesUnifiedTitle {
+            get {
+                return ResourceManager.GetString("Consoles_AllModulesUnifiedTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Console output from module startup, setup, settings sync, services, and run subprocesses will appear here..
+        /// </summary>
+        public static string Consoles_EmptySelectionDescription {
+            get {
+                return ResourceManager.GetString("Consoles_EmptySelectionDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Waiting for module activity..
+        /// </summary>
+        public static string Consoles_EmptySelectionFooter {
+            get {
+                return ResourceManager.GetString("Consoles_EmptySelectionFooter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Start or select a module to see console activity..
+        /// </summary>
+        public static string Consoles_EmptySelectionStatus {
+            get {
+                return ResourceManager.GetString("Consoles_EmptySelectionStatus", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на No console selected.
+        /// </summary>
+        public static string Consoles_EmptySelectionTitle {
+            get {
+                return ResourceManager.GetString("Consoles_EmptySelectionTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} buffered lines - {1}{2}{3}.
+        /// </summary>
+        public static string Consoles_Footer_BufferedFormat {
+            get {
+                return ResourceManager.GetString("Consoles_Footer_BufferedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на  - Ended {0}.
+        /// </summary>
+        public static string Consoles_Footer_EndedFormat {
+            get {
+                return ResourceManager.GetString("Consoles_Footer_EndedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на  - direct stdout/stderr capture may be unavailable.
+        /// </summary>
+        public static string Consoles_Footer_ObservedCaptureNote {
+            get {
+                return ResourceManager.GetString("Consoles_Footer_ObservedCaptureNote", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Started {0}.
+        /// </summary>
+        public static string Consoles_Footer_StartedFormat {
+            get {
+                return ResourceManager.GetString("Consoles_Footer_StartedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Last activity {0}.
+        /// </summary>
+        public static string Consoles_LastActivityFormat {
+            get {
+                return ResourceManager.GetString("Consoles_LastActivityFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Merged output.
+        /// </summary>
+        public static string Consoles_MergedOutput {
+            get {
+                return ResourceManager.GetString("Consoles_MergedOutput", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Modules.
         /// </summary>
         public static string Consoles_ModulesHeader {
             get {
                 return ResourceManager.GetString("Consoles_ModulesHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} / Unified Console.
+        /// </summary>
+        public static string Consoles_ModuleUnifiedTitleFormat {
+            get {
+                return ResourceManager.GetString("Consoles_ModuleUnifiedTitleFormat", resourceCulture);
             }
         }
         
@@ -340,6 +502,15 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на No activity yet.
+        /// </summary>
+        public static string Consoles_NoActivityYet {
+            get {
+                return ResourceManager.GetString("Consoles_NoActivityYet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на No consoles.
         /// </summary>
         public static string Consoles_NoConsoles {
@@ -349,11 +520,299 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на No output yet..
+        /// </summary>
+        public static string Consoles_NoOutputYet {
+            get {
+                return ResourceManager.GetString("Consoles_NoOutputYet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на  - PID {0}.
+        /// </summary>
+        public static string Consoles_PidFormat {
+            get {
+                return ResourceManager.GetString("Consoles_PidFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Run.
+        /// </summary>
+        public static string Consoles_Run {
+            get {
+                return ResourceManager.GetString("Consoles_Run", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Observed service is running{0}.
+        /// </summary>
+        public static string Consoles_Selected_ObservedRunning {
+            get {
+                return ResourceManager.GetString("Consoles_Selected_ObservedRunning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Observed service stopped{0}.
+        /// </summary>
+        public static string Consoles_Selected_ObservedStopped {
+            get {
+                return ResourceManager.GetString("Consoles_Selected_ObservedStopped", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} session completed.
+        /// </summary>
+        public static string Consoles_Selected_SessionCompleted {
+            get {
+                return ResourceManager.GetString("Consoles_Selected_SessionCompleted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} session finished with exit code {1}{2}.
+        /// </summary>
+        public static string Consoles_Selected_SessionExitFormat {
+            get {
+                return ResourceManager.GetString("Consoles_Selected_SessionExitFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} session is running{1}.
+        /// </summary>
+        public static string Consoles_Selected_SessionRunning {
+            get {
+                return ResourceManager.GetString("Consoles_Selected_SessionRunning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Observed child process started by the module. ASLM can keep it visible as a service, but direct stdout/stderr capture may be unavailable for third-party executables..
+        /// </summary>
+        public static string Consoles_SessionObservedDescription {
+            get {
+                return ResourceManager.GetString("Consoles_SessionObservedDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Observed child process. Direct stdout/stderr capture may be unavailable..
+        /// </summary>
+        public static string Consoles_SessionObservedPreview {
+            get {
+                return ResourceManager.GetString("Consoles_SessionObservedPreview", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} session.
+        /// </summary>
+        public static string Consoles_SessionStageFormat {
+            get {
+                return ResourceManager.GetString("Consoles_SessionStageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Command.
+        /// </summary>
+        public static string Consoles_Stage_Command {
+            get {
+                return ResourceManager.GetString("Consoles_Stage_Command", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Lifecycle.
+        /// </summary>
+        public static string Consoles_Stage_Lifecycle {
+            get {
+                return ResourceManager.GetString("Consoles_Stage_Lifecycle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Service.
+        /// </summary>
+        public static string Consoles_Stage_Service {
+            get {
+                return ResourceManager.GetString("Consoles_Stage_Service", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} - Completed.
+        /// </summary>
+        public static string Consoles_Status_Completed {
+            get {
+                return ResourceManager.GetString("Consoles_Status_Completed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Disabled.
+        /// </summary>
+        public static string Consoles_Status_Disabled {
+            get {
+                return ResourceManager.GetString("Consoles_Status_Disabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Enabled.
+        /// </summary>
+        public static string Consoles_Status_Enabled {
+            get {
+                return ResourceManager.GetString("Consoles_Status_Enabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} - Exit {1}{2}.
+        /// </summary>
+        public static string Consoles_Status_ExitFormat {
+            get {
+                return ResourceManager.GetString("Consoles_Status_ExitFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} - {1} active - {2} sessions.
+        /// </summary>
+        public static string Consoles_Status_ModuleFormat {
+            get {
+                return ResourceManager.GetString("Consoles_Status_ModuleFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} - Running{1}.
+        /// </summary>
+        public static string Consoles_Status_RunningFormat {
+            get {
+                return ResourceManager.GetString("Consoles_Status_RunningFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Service - Observed{0}.
+        /// </summary>
+        public static string Consoles_Status_ServiceObservedRunningFormat {
+            get {
+                return ResourceManager.GetString("Consoles_Status_ServiceObservedRunningFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Service - Stopped{0}.
+        /// </summary>
+        public static string Consoles_Status_ServiceObservedStoppedFormat {
+            get {
+                return ResourceManager.GetString("Consoles_Status_ServiceObservedStoppedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Consoles.
         /// </summary>
         public static string Consoles_Title {
             get {
                 return ResourceManager.GetString("Consoles_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Unified Console.
+        /// </summary>
+        public static string Consoles_UnifiedConsole {
+            get {
+                return ResourceManager.GetString("Consoles_UnifiedConsole", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Unified console for all active modules.
+        /// </summary>
+        public static string Consoles_UnifiedConsoleForActive {
+            get {
+                return ResourceManager.GetString("Consoles_UnifiedConsoleForActive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Includes unified logs and completed process history from active modules..
+        /// </summary>
+        public static string Consoles_UnifiedPreview {
+            get {
+                return ResourceManager.GetString("Consoles_UnifiedPreview", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} visible lines.
+        /// </summary>
+        public static string Consoles_VisibleLinesFormat {
+            get {
+                return ResourceManager.GetString("Consoles_VisibleLinesFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на The shared catalog could not be loaded from the installed module bridges..
+        /// </summary>
+        public static string Downloads_CatalogBridgeLoadFailed {
+            get {
+                return ResourceManager.GetString("Downloads_CatalogBridgeLoadFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Catalog.
+        /// </summary>
+        public static string Downloads_CatalogColumnTitle {
+            get {
+                return ResourceManager.GetString("Downloads_CatalogColumnTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Download catalog refresh failed: {0}.
+        /// </summary>
+        public static string Downloads_CatalogRefreshFailedFormat {
+            get {
+                return ResourceManager.GetString("Downloads_CatalogRefreshFailedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Download Catalog.
+        /// </summary>
+        public static string Downloads_CatalogTitle {
+            get {
+                return ResourceManager.GetString("Downloads_CatalogTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Catalog updated. {0} categories loaded..
+        /// </summary>
+        public static string Downloads_CatalogUpdatedManyFormat {
+            get {
+                return ResourceManager.GetString("Downloads_CatalogUpdatedManyFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Catalog updated. 1 category loaded..
+        /// </summary>
+        public static string Downloads_CatalogUpdatedOneCategory {
+            get {
+                return ResourceManager.GetString("Downloads_CatalogUpdatedOneCategory", resourceCulture);
             }
         }
         
@@ -385,6 +844,15 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Choose a family, then the exact variant you want..
+        /// </summary>
+        public static string Downloads_ChooseVariantHint {
+            get {
+                return ResourceManager.GetString("Downloads_ChooseVariantHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Choose a resource family to inspect its variants and details.
         /// </summary>
         public static string Downloads_DetailEmpty_Hint {
@@ -399,6 +867,15 @@ namespace ASLM.Resources.Strings {
         public static string Downloads_DetailEmpty_NoBridge {
             get {
                 return ResourceManager.GetString("Downloads_DetailEmpty_NoBridge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Details.
+        /// </summary>
+        public static string Downloads_Details {
+            get {
+                return ResourceManager.GetString("Downloads_Details", resourceCulture);
             }
         }
         
@@ -430,11 +907,92 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} families.
+        /// </summary>
+        public static string Downloads_FamilyCountFormat {
+            get {
+                return ResourceManager.GetString("Downloads_FamilyCountFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Installed.
+        /// </summary>
+        public static string Downloads_Installed {
+            get {
+                return ResourceManager.GetString("Downloads_Installed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Installed | {0}.
+        /// </summary>
+        public static string Downloads_InstalledVersionFormat {
+            get {
+                return ResourceManager.GetString("Downloads_InstalledVersionFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Loaded {0} categories..
+        /// </summary>
+        public static string Downloads_LoadedManyFormat {
+            get {
+                return ResourceManager.GetString("Downloads_LoadedManyFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Loaded 1 category..
+        /// </summary>
+        public static string Downloads_LoadedOneCategory {
+            get {
+                return ResourceManager.GetString("Downloads_LoadedOneCategory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Loading shared download catalog....
+        /// </summary>
+        public static string Downloads_LoadingCatalog {
+            get {
+                return ResourceManager.GetString("Downloads_LoadingCatalog", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на No items.
         /// </summary>
         public static string Downloads_NoItems {
             get {
                 return ResourceManager.GetString("Downloads_NoItems", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на No shared downloads were published by the current modules..
+        /// </summary>
+        public static string Downloads_NoSharedDownloads {
+            get {
+                return ResourceManager.GetString("Downloads_NoSharedDownloads", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на 1 family.
+        /// </summary>
+        public static string Downloads_OneFamily {
+            get {
+                return ResourceManager.GetString("Downloads_OneFamily", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Refreshing shared download catalog....
+        /// </summary>
+        public static string Downloads_RefreshingCatalog {
+            get {
+                return ResourceManager.GetString("Downloads_RefreshingCatalog", resourceCulture);
             }
         }
         
@@ -457,11 +1015,191 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Details could not be loaded for {0}: {1}.
+        /// </summary>
+        public static string Downloads_Status_DetailsLoadFailedFormat {
+            get {
+                return ResourceManager.GetString("Downloads_Status_DetailsLoadFailedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Installation canceled for {0}..
+        /// </summary>
+        public static string Downloads_Status_InstallCanceledFormat {
+            get {
+                return ResourceManager.GetString("Downloads_Status_InstallCanceledFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Installation failed for {0}: {1}.
+        /// </summary>
+        public static string Downloads_Status_InstallFailedFormat {
+            get {
+                return ResourceManager.GetString("Downloads_Status_InstallFailedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Installing {0}....
+        /// </summary>
+        public static string Downloads_Status_InstallingFormat {
+            get {
+                return ResourceManager.GetString("Downloads_Status_InstallingFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Open failed: invalid URL &apos;{0}&apos;..
+        /// </summary>
+        public static string Downloads_Status_InvalidUrlFormat {
+            get {
+                return ResourceManager.GetString("Downloads_Status_InvalidUrlFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на The selected variant does not expose a page to open..
+        /// </summary>
+        public static string Downloads_Status_NoPageToOpen {
+            get {
+                return ResourceManager.GetString("Downloads_Status_NoPageToOpen", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Opened {0}{1}..
+        /// </summary>
+        public static string Downloads_Status_OpenedFormat {
+            get {
+                return ResourceManager.GetString("Downloads_Status_OpenedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Could not open the selected page: {0}.
+        /// </summary>
+        public static string Downloads_Status_OpenFailedFormat {
+            get {
+                return ResourceManager.GetString("Downloads_Status_OpenFailedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Ready..
+        /// </summary>
+        public static string Downloads_Status_Ready {
+            get {
+                return ResourceManager.GetString("Downloads_Status_Ready", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Refreshing details for {0}....
+        /// </summary>
+        public static string Downloads_Status_RefreshingDetailsFormat {
+            get {
+                return ResourceManager.GetString("Downloads_Status_RefreshingDetailsFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Removal canceled for {0}..
+        /// </summary>
+        public static string Downloads_Status_RemoveCanceledFormat {
+            get {
+                return ResourceManager.GetString("Downloads_Status_RemoveCanceledFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Removal failed for {0}: {1}.
+        /// </summary>
+        public static string Downloads_Status_RemoveFailedFormat {
+            get {
+                return ResourceManager.GetString("Downloads_Status_RemoveFailedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Removing {0}....
+        /// </summary>
+        public static string Downloads_Status_RemovingFormat {
+            get {
+                return ResourceManager.GetString("Downloads_Status_RemovingFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Download.
         /// </summary>
         public static string Downloads_Title {
             get {
                 return ResourceManager.GetString("Downloads_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Disk {0}.
+        /// </summary>
+        public static string Home_Badge_DiskFormat {
+            get {
+                return ResourceManager.GetString("Home_Badge_DiskFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на GPU {0:F1}%.
+        /// </summary>
+        public static string Home_Badge_GpuPercentFormat {
+            get {
+                return ResourceManager.GetString("Home_Badge_GpuPercentFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на GPU n/a.
+        /// </summary>
+        public static string Home_Badge_GpuUnavailable {
+            get {
+                return ResourceManager.GetString("Home_Badge_GpuUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Net {0}.
+        /// </summary>
+        public static string Home_Badge_NetFormat {
+            get {
+                return ResourceManager.GetString("Home_Badge_NetFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Processes {0}.
+        /// </summary>
+        public static string Home_Badge_ProcessesFormat {
+            get {
+                return ResourceManager.GetString("Home_Badge_ProcessesFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на RAM {0}.
+        /// </summary>
+        public static string Home_Badge_RamFormat {
+            get {
+                return ResourceManager.GetString("Home_Badge_RamFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Sess {0}.
+        /// </summary>
+        public static string Home_Badge_SessionsFormat {
+            get {
+                return ResourceManager.GetString("Home_Badge_SessionsFormat", resourceCulture);
             }
         }
         
@@ -687,6 +1425,24 @@ namespace ASLM.Resources.Strings {
         public static string Home_Metric_Active_Detail {
             get {
                 return ResourceManager.GetString("Home_Metric_Active_Detail", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} conn.
+        /// </summary>
+        public static string Home_Metric_ConnectionManyFormat {
+            get {
+                return ResourceManager.GetString("Home_Metric_ConnectionManyFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на 1 conn.
+        /// </summary>
+        public static string Home_Metric_ConnectionOne {
+            get {
+                return ResourceManager.GetString("Home_Metric_ConnectionOne", resourceCulture);
             }
         }
         
@@ -1060,6 +1816,42 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} update failed..
+        /// </summary>
+        public static string ModuleUpdate_Activity_FailedFormat {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Activity_FailedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} updated successfully..
+        /// </summary>
+        public static string ModuleUpdate_Activity_SuccessFormat {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Activity_SuccessFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Update Activity.
+        /// </summary>
+        public static string ModuleUpdate_ActivityTitle_Activity {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_ActivityTitle_Activity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Update Status.
+        /// </summary>
+        public static string ModuleUpdate_ActivityTitle_Status {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_ActivityTitle_Status", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Check updates.
         /// </summary>
         public static string ModuleUpdate_CheckUpdates {
@@ -1096,11 +1888,74 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Failed to load update options: {0}.
+        /// </summary>
+        public static string ModuleUpdate_LoadOptionsFailedFormat {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_LoadOptionsFailedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Checking updates for {0}....
+        /// </summary>
+        public static string ModuleUpdate_Log_CheckingFormat {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Log_CheckingFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Update did not complete successfully..
+        /// </summary>
+        public static string ModuleUpdate_Log_Failed {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Log_Failed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Installing update for {0}....
+        /// </summary>
+        public static string ModuleUpdate_Log_InstallingFormat {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Log_InstallingFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Starting update for {0}..
+        /// </summary>
+        public static string ModuleUpdate_Log_StartingFormat {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Log_StartingFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Update finished. Installed {0}..
+        /// </summary>
+        public static string ModuleUpdate_Log_SuccessFormat {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Log_SuccessFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на No module selected.
         /// </summary>
         public static string ModuleUpdate_NoModuleSelected {
             get {
                 return ResourceManager.GetString("ModuleUpdate_NoModuleSelected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на No version selected.
+        /// </summary>
+        public static string ModuleUpdate_NoVersionSelected {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_NoVersionSelected", resourceCulture);
             }
         }
         
@@ -1119,6 +1974,15 @@ namespace ASLM.Resources.Strings {
         public static string ModuleUpdate_PrefsAutoSaved {
             get {
                 return ResourceManager.GetString("ModuleUpdate_PrefsAutoSaved", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Ready..
+        /// </summary>
+        public static string ModuleUpdate_ReadyDefault {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_ReadyDefault", resourceCulture);
             }
         }
         
@@ -1150,11 +2014,92 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Select a repository branch before checking updates..
+        /// </summary>
+        public static string ModuleUpdate_SelectBranchRequired {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_SelectBranchRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Selected target.
         /// </summary>
         public static string ModuleUpdate_SelectedTarget {
             get {
                 return ResourceManager.GetString("ModuleUpdate_SelectedTarget", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Check failed: {0}.
+        /// </summary>
+        public static string ModuleUpdate_Status_CheckFailedFormat {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Status_CheckFailedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Checking for updates....
+        /// </summary>
+        public static string ModuleUpdate_Status_Checking {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Status_Checking", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Ready to check..
+        /// </summary>
+        public static string ModuleUpdate_Status_ReadyToCheck {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Status_ReadyToCheck", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Update available: {0}.
+        /// </summary>
+        public static string ModuleUpdate_Status_UpdateAvailableFormat {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Status_UpdateAvailableFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Updated.
+        /// </summary>
+        public static string ModuleUpdate_Status_Updated {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Status_Updated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Update failed.
+        /// </summary>
+        public static string ModuleUpdate_Status_UpdateFailed {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Status_UpdateFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Updating....
+        /// </summary>
+        public static string ModuleUpdate_Status_Updating {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Status_Updating", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Up to date.
+        /// </summary>
+        public static string ModuleUpdate_Status_UpToDate {
+            get {
+                return ResourceManager.GetString("ModuleUpdate_Status_UpToDate", resourceCulture);
             }
         }
         
@@ -1195,6 +2140,69 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Action failed.
+        /// </summary>
+        public static string Notifications_ActionFailed {
+            get {
+                return ResourceManager.GetString("Notifications_ActionFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на ASLM update available.
+        /// </summary>
+        public static string Notifications_AslmUpdateAvailable {
+            get {
+                return ResourceManager.GetString("Notifications_AslmUpdateAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на No ASLM update is available right now..
+        /// </summary>
+        public static string Notifications_AslmUpdateNotAvailable {
+            get {
+                return ResourceManager.GetString("Notifications_AslmUpdateNotAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на The ASLM update could not be downloaded..
+        /// </summary>
+        public static string Notifications_AslmUpdatePrepareFailed {
+            get {
+                return ResourceManager.GetString("Notifications_AslmUpdatePrepareFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Prepare failed.
+        /// </summary>
+        public static string Notifications_AslmUpdatePrepareFailedStatus {
+            get {
+                return ResourceManager.GetString("Notifications_AslmUpdatePrepareFailedStatus", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на ASLM update.
+        /// </summary>
+        public static string Notifications_AslmUpdateTitle {
+            get {
+                return ResourceManager.GetString("Notifications_AslmUpdateTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Channel: {0}.
+        /// </summary>
+        public static string Notifications_ChannelFormat {
+            get {
+                return ResourceManager.GetString("Notifications_ChannelFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Clear all.
         /// </summary>
         public static string Notifications_ClearAll {
@@ -1222,6 +2230,42 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на installed version.
+        /// </summary>
+        public static string Notifications_InstalledVersionFallback {
+            get {
+                return ResourceManager.GetString("Notifications_InstalledVersionFallback", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на That module is no longer installed..
+        /// </summary>
+        public static string Notifications_ModuleNotInstalledMessage {
+            get {
+                return ResourceManager.GetString("Notifications_ModuleNotInstalledMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Module update available.
+        /// </summary>
+        public static string Notifications_ModuleUpdateAvailable {
+            get {
+                return ResourceManager.GetString("Notifications_ModuleUpdateAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на New version found.
+        /// </summary>
+        public static string Notifications_NewVersionFound {
+            get {
+                return ResourceManager.GetString("Notifications_NewVersionFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Recent.
         /// </summary>
         public static string Notifications_SectionRecent {
@@ -1245,6 +2289,24 @@ namespace ASLM.Resources.Strings {
         public static string Notifications_Title {
             get {
                 return ResourceManager.GetString("Notifications_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Unavailable.
+        /// </summary>
+        public static string Notifications_Unavailable {
+            get {
+                return ResourceManager.GetString("Notifications_Unavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Update.
+        /// </summary>
+        public static string Notifications_UpdateActionTitle {
+            get {
+                return ResourceManager.GetString("Notifications_UpdateActionTitle", resourceCulture);
             }
         }
         
@@ -2178,7 +3240,7 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на Base.
+        ///   Ищет локализованную строку, похожую на Theme color editor.
         /// </summary>
         public static string Settings_ThemeEditor_Base {
             get {

@@ -74,12 +74,14 @@
                                     <DataTemplate>
                                         <Grid RowDefinitions="Auto,Auto"
                                               RowSpacing="3">
-                                            <Grid ColumnDefinitions="64,*,Auto"
+                                            <Grid ColumnDefinitions="Auto,*,Auto"
                                                   ColumnSpacing="8">
                                                 <Label Text="{Binding Name}"
                                                        FontSize="12"
                                                        TextColor="{DynamicResource LabelSecondary}"
-                                                       VerticalOptions="Center" />
+                                                       VerticalOptions="Center"
+                                                       LineBreakMode="NoWrap"
+                                                       MinimumWidthRequest="72" />
                                                 <Label Grid.Column="1"
                                                        Text="{Binding DetailText}"
                                                        FontSize="12"

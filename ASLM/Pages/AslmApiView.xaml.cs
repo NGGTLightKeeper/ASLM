@@ -80,6 +80,11 @@ namespace ASLM.Pages
                 empty.Text = L.Get(LocalizationKeys.AslmApi_NoHosts);
             }
 
+            foreach (var host in Hosts)
+            {
+                host.RefreshLocalizationLabels();
+            }
+
             OnPropertyChanged(nameof(Hosts));
         }
 
@@ -562,7 +567,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Gets the compact status badge text for disabled modules.
         /// </summary>
-        public string ModuleStatusText => IsModuleDisabled ? "Disabled" : string.Empty;
+        public string ModuleStatusText => IsModuleDisabled ? L.Get(LocalizationKeys.AslmApi_Disabled) : string.Empty;
 
         /// <summary>
         /// Gets the solid background for the copy action (white in dark theme, black in light theme).
@@ -586,6 +591,12 @@ namespace ASLM.Pages
         /// Gets the command that copies this host URL to the system clipboard.
         /// </summary>
         public Command CopyCommand => _copyCommand ??= new Command(async () => await CopyMirrorUrlAsync());
+
+        /// <summary>
+        /// Refreshes localized bindable labels after a culture change.
+        /// </summary>
+        public void RefreshLocalizationLabels() =>
+            OnPropertyChanged(nameof(ModuleStatusText));
 
         /// <summary>
         /// Recomputes copy-button fill and tinted icon after theme or palette changes.
@@ -620,9 +631,9 @@ namespace ASLM.Pages
         {
             await Clipboard.Default.SetTextAsync(MirrorUrl);
             _notifications.PublishSystemToast(
-                "Address copied",
+                L.Get(LocalizationKeys.AslmApi_AddressCopiedTitle),
                 MirrorUrl,
-                "Copied",
+                L.Get(LocalizationKeys.AslmApi_AddressCopiedStatus),
                 $"aslm-api:{Key.GetHashCode(StringComparison.OrdinalIgnoreCase)}");
         }
 

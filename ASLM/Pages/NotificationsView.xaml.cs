@@ -62,6 +62,11 @@ namespace ASLM.Pages
             ClearAllButton.Text = L.Get(LocalizationKeys.Notifications_ClearAll);
             EmptyTitleLabel.Text = L.Get(LocalizationKeys.Notifications_EmptyTitle);
             EmptyMessageLabel.Text = L.Get(LocalizationKeys.Notifications_EmptyMessage);
+            foreach (var notification in VisibleNotifications)
+            {
+                notification.RefreshLocalizedPresentation();
+            }
+
             OnPropertyChanged(nameof(SummaryText));
             OnPropertyChanged(nameof(SectionTitle));
         }

@@ -8,6 +8,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using ASLM.Localization;
 using ASLM.Models;
 using Microsoft.Extensions.Logging;
 
@@ -1528,7 +1529,9 @@ namespace ASLM.Services
                 return;
             }
 
-            body.Append("<span class=\"badge\">Disabled</span>");
+            body.Append("<span class=\"badge\">");
+            body.Append(HtmlEncode(L.Get(LocalizationKeys.AslmApi_Disabled)));
+            body.Append("</span>");
         }
 
         /// <summary>

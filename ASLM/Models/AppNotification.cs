@@ -2,6 +2,7 @@
 
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using ASLM.Localization;
 using Microsoft.Maui.Graphics;
 
 namespace ASLM.Models
@@ -370,6 +371,25 @@ namespace ASLM.Models
         /// Gets whether this row should offer Update now / Update later actions (available update cards).
         /// </summary>
         public bool OffersUpdateActions => _offersUpdateActions;
+
+        /// <summary>
+        /// Gets the localized label for the inline Update now action.
+        /// </summary>
+        public string UpdateNowText => L.Get(LocalizationKeys.Notifications_UpdateNow);
+
+        /// <summary>
+        /// Gets the localized label for the inline Update later action.
+        /// </summary>
+        public string UpdateLaterText => L.Get(LocalizationKeys.Notifications_UpdateLater);
+
+        /// <summary>
+        /// Refreshes localized action button labels after the UI culture changes.
+        /// </summary>
+        internal void RefreshLocalizedPresentation()
+        {
+            OnPropertyChanged(nameof(UpdateNowText));
+            OnPropertyChanged(nameof(UpdateLaterText));
+        }
 
         /// <summary>
         /// Gets whether an in-app toast for this notification should stay until the user dismisses it or acts.

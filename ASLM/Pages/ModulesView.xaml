@@ -226,7 +226,8 @@
                                             FontSize="13"
                                             HeightRequest="32"
                                             CornerRadius="4"
-                                            HorizontalOptions="Fill" />
+                                            HorizontalOptions="Fill"
+                                            Padding="0,10" />
                                 </Grid>
 
                                 <Border Grid.Row="2"

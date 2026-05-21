@@ -383,7 +383,9 @@ namespace ASLM.Pages
 
         private string _selectedSourceMode = "release";
         private string _selectedBranch = "main";
-        private string _updateStatus = "Ready to check.";
+        private UpdateStatusPhase _updateStatusPhase = UpdateStatusPhase.ReadyToCheck;
+        private string? _updateStatusFormatArg;
+        private string _updateStatus = string.Empty;
         private UpdateCandidate? _updateCandidate;
         private UpdateCandidate? _selectedReleaseOption;
         private bool _hasUpdate;
@@ -398,7 +400,7 @@ namespace ASLM.Pages
         private bool _isRefreshingReleaseOptions;
         private string _loadedReleaseMode = string.Empty;
         private readonly StringBuilder _updateLogBuffer = new();
-        private string _updateActivityStatus = "Ready to check.";
+        private string _updateActivityStatus = string.Empty;
         private string _updateDownloadDetail = string.Empty;
         private double _updateOverallProgress;
         private double _updateFileProgress;
@@ -468,8 +470,50 @@ namespace ASLM.Pages
             UpdateCommand = _updateCommand;
             CloseMenuCommand = _closeMenuCommand;
             TryHydratePendingUpdateFromConfig();
+            if (_updateStatusPhase == UpdateStatusPhase.ReadyToCheck && string.IsNullOrEmpty(_updateStatus))
+            {
+                SetUpdatePhase(UpdateStatusPhase.ReadyToCheck);
+            }
+
             RefreshLocalizedLabels();
         }
+
+        private enum UpdateStatusPhase
+        {
+            ReadyToCheck,
+            Checking,
+            UpToDate,
+            Available,
+            CheckFailed,
+            Updating,
+            Updated,
+            Failed
+        }
+
+        private void SetUpdatePhase(UpdateStatusPhase phase, string? formatArg = null)
+        {
+            _updateStatusPhase = phase;
+            _updateStatusFormatArg = formatArg;
+            var text = FormatUpdateStatus(phase, formatArg);
+            UpdateStatus = text;
+        }
+
+        private static string FormatUpdateStatus(UpdateStatusPhase phase, string? formatArg) =>
+            phase switch
+            {
+                UpdateStatusPhase.ReadyToCheck => L.Get(LocalizationKeys.ModuleUpdate_Status_ReadyToCheck),
+                UpdateStatusPhase.Checking => L.Get(LocalizationKeys.ModuleUpdate_Status_Checking),
+                UpdateStatusPhase.UpToDate => L.Get(LocalizationKeys.ModuleUpdate_Status_UpToDate),
+                UpdateStatusPhase.Available => L.Get(LocalizationKeys.ModuleUpdate_Status_UpdateAvailableFormat, formatArg ?? string.Empty),
+                UpdateStatusPhase.CheckFailed => L.Get(LocalizationKeys.ModuleUpdate_Status_CheckFailedFormat, formatArg ?? string.Empty),
+                UpdateStatusPhase.Updating => L.Get(LocalizationKeys.ModuleUpdate_Status_Updating),
+                UpdateStatusPhase.Updated => L.Get(LocalizationKeys.ModuleUpdate_Status_Updated),
+                UpdateStatusPhase.Failed => L.Get(LocalizationKeys.ModuleUpdate_Status_UpdateFailed),
+                _ => L.Get(LocalizationKeys.ModuleUpdate_Status_ReadyToCheck)
+            };
+
+        private void RefreshUpdateStatusLocalization() =>
+            SetUpdatePhase(_updateStatusPhase, _updateStatusFormatArg);
 
 
         // Localized card labels
@@ -539,6 +583,7 @@ namespace ASLM.Pages
             LaunchLabel = L.Get(LocalizationKeys.Modules_Launch);
             CheckUpdatesLabel = L.Get(LocalizationKeys.Modules_CheckUpdates);
             ConfigureUpdatesLabel = L.Get(LocalizationKeys.Modules_ConfigureUpdates);
+            RefreshUpdateStatusLocalization();
 
             OnPropertyChanged(nameof(NotVerifiedLabel));
             OnPropertyChanged(nameof(UpdateLabel));
@@ -697,7 +742,7 @@ namespace ASLM.Pages
                 _updateCandidate = null;
                 HasUpdate = false;
                 PersistPendingUpdateSnapshot();
-                UpdateStatus = "Ready to check.";
+                SetUpdatePhase(UpdateStatusPhase.ReadyToCheck);
                 SetUpdateActivityStatus(UpdateStatus);
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(UpdateCandidate));
@@ -1242,7 +1287,7 @@ namespace ASLM.Pages
 
             _updateCandidate = candidate;
             HasUpdate = true;
-            UpdateStatus = $"Update available: {candidate.RemoteVersion}";
+            SetUpdatePhase(UpdateStatusPhase.Available, candidate.RemoteVersion);
             SetUpdateActivityStatus(UpdateStatus);
             OnPropertyChanged(nameof(UpdateCandidate));
             OnPropertyChanged(nameof(AvailableUpdateLabel));
@@ -1338,7 +1383,7 @@ namespace ASLM.Pages
             _updateCandidate = null;
             HasUpdate = false;
             PersistPendingUpdateSnapshot();
-            UpdateStatus = "Ready to check.";
+            SetUpdatePhase(UpdateStatusPhase.ReadyToCheck);
             SetUpdateActivityStatus(UpdateStatus);
             OnPropertyChanged(nameof(SelectedBranch));
             OnPropertyChanged(nameof(UpdateCandidate));
@@ -1377,7 +1422,7 @@ namespace ASLM.Pages
             }
 
             IsCheckingUpdate = true;
-            UpdateStatus = "Checking for updates...";
+            SetUpdatePhase(UpdateStatusPhase.Checking);
             SetUpdateActivityStatus(UpdateStatus);
 
             try
@@ -1391,9 +1436,15 @@ namespace ASLM.Pages
                 OnPropertyChanged(nameof(AvailableUpdateLabel));
                 ApplyCheckResultSelection();
 
-                UpdateStatus = _updateCandidate == null
-                    ? "Up to date"
-                    : $"Update available: {_updateCandidate.RemoteVersion}";
+                if (_updateCandidate == null)
+                {
+                    SetUpdatePhase(UpdateStatusPhase.UpToDate);
+                }
+                else
+                {
+                    SetUpdatePhase(UpdateStatusPhase.Available, _updateCandidate.RemoteVersion);
+                }
+
                 SetUpdateActivityStatus(UpdateStatus);
             }
             catch (Exception ex)
@@ -1402,7 +1453,7 @@ namespace ASLM.Pages
                 HasUpdate = false;
                 OnPropertyChanged(nameof(UpdateCandidate));
                 OnPropertyChanged(nameof(AvailableUpdateLabel));
-                UpdateStatus = $"Check failed: {ex.Message}";
+                SetUpdatePhase(UpdateStatusPhase.CheckFailed, ex.Message);
                 SetUpdateActivityStatus(UpdateStatus);
             }
             finally
@@ -1663,7 +1714,7 @@ namespace ASLM.Pages
             }
 
             IsUpdating = true;
-            UpdateStatus = "Updating...";
+            SetUpdatePhase(UpdateStatusPhase.Updating);
             SetUpdateActivityStatus(UpdateStatus);
 
             // Reflect the stopped state immediately so the card does not offer launch actions mid-update.
@@ -1711,7 +1762,7 @@ namespace ASLM.Pages
                     await ReloadInstalledConfigAsync();
                 }
 
-                UpdateStatus = success ? "Updated" : "Update failed";
+                SetUpdatePhase(success ? UpdateStatusPhase.Updated : UpdateStatusPhase.Failed);
                 SetUpdateActivityStatus(UpdateStatus);
                 SetOverallProgress(success ? 1.0 : Math.Max(_updateOverallProgress, 0.15));
                 HasUpdate = false;
@@ -2075,15 +2126,14 @@ namespace ASLM.Pages
             }
 
             // Do not wipe in-flight install UI if flags were lost but status still reflects an active update.
-            if (string.Equals(UpdateStatus, "Updating...", StringComparison.OrdinalIgnoreCase))
+            if (_updateStatusPhase == UpdateStatusPhase.Updating)
             {
                 return;
             }
 
-            if (string.Equals(UpdateStatus, "Updated", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(UpdateStatus, "Update failed", StringComparison.OrdinalIgnoreCase))
+            if (_updateStatusPhase is UpdateStatusPhase.Updated or UpdateStatusPhase.Failed)
             {
-                UpdateStatus = "Ready to check.";
+                SetUpdatePhase(UpdateStatusPhase.ReadyToCheck);
             }
 
             ResetUpdateSession(clearLog: true);

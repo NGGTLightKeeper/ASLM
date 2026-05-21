@@ -739,7 +739,7 @@ namespace ASLM.Pages
 
                 var updateNowButton = new Button
                 {
-                    Text = "Update now",
+                    Text = L.Get(LocalizationKeys.Notifications_UpdateNow),
                     FontSize = 11,
                     HeightRequest = 28,
                     MinimumHeightRequest = 28,
@@ -757,7 +757,7 @@ namespace ASLM.Pages
 
                 var updateLaterButton = new Button
                 {
-                    Text = "Update later",
+                    Text = L.Get(LocalizationKeys.Notifications_UpdateLater),
                     FontSize = 11,
                     HeightRequest = 28,
                     MinimumHeightRequest = 28,
@@ -856,9 +856,9 @@ namespace ASLM.Pages
             {
                 System.Diagnostics.Debug.WriteLine($"[UpdateNotification] Action failed: {ex.Message}");
                 _notifications.PublishSystemToast(
-                    "Update",
+                    L.Get(LocalizationKeys.Notifications_UpdateActionTitle),
                     ex.Message,
-                    "Action failed",
+                    L.Get(LocalizationKeys.Notifications_ActionFailed),
                     "update-action");
             }
         }
@@ -875,9 +875,9 @@ namespace ASLM.Pages
             if (config == null)
             {
                 _notifications.PublishSystemToast(
-                    "Module update",
-                    "That module is no longer installed.",
-                    "Unavailable",
+                    L.Get(LocalizationKeys.Notifications_UpdateActionTitle),
+                    L.Get(LocalizationKeys.Notifications_ModuleNotInstalledMessage),
+                    L.Get(LocalizationKeys.Notifications_Unavailable),
                     moduleId);
                 return;
             }
@@ -912,9 +912,9 @@ namespace ASLM.Pages
             if (candidate == null && !_updateManager.HasPendingAppUpdate)
             {
                 _notifications.PublishSystemToast(
-                    "ASLM update",
-                    "No ASLM update is available right now.",
-                    "Up to date",
+                    L.Get(LocalizationKeys.Notifications_AslmUpdateTitle),
+                    L.Get(LocalizationKeys.Notifications_AslmUpdateNotAvailable),
+                    L.Get(LocalizationKeys.ModuleUpdate_Status_UpToDate),
                     "aslm");
                 return;
             }
@@ -926,9 +926,9 @@ namespace ASLM.Pages
                 if (!prepared)
                 {
                     _notifications.PublishSystemToast(
-                        "ASLM update",
-                        "The ASLM update could not be downloaded.",
-                        "Prepare failed",
+                        L.Get(LocalizationKeys.Notifications_AslmUpdateTitle),
+                        L.Get(LocalizationKeys.Notifications_AslmUpdatePrepareFailed),
+                        L.Get(LocalizationKeys.Notifications_AslmUpdatePrepareFailedStatus),
                         "aslm");
                     return;
                 }

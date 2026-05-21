@@ -225,7 +225,7 @@
                                              Spacing="6"
                                              Margin="16">
                             <Label x:Name="ItemListEmptyTitleLabel"
-                                   Text="No items"
+                                   Text=""
                                    FontSize="17"
                                    FontAttributes="Bold"
                                    TextColor="{DynamicResource LabelPrimary}"

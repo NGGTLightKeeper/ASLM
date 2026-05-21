@@ -167,7 +167,7 @@
                                             <HorizontalStackLayout Spacing="8"
                                                                      Margin="0,6,0,0"
                                                                      IsVisible="{Binding OffersUpdateActions}">
-                                                <Button Text="Update now"
+                                                <Button Text="{Binding UpdateNowText}"
                                                         FontSize="11"
                                                         HeightRequest="28"
                                                         MinimumHeightRequest="28"
@@ -177,7 +177,7 @@
                                                         TextColor="{DynamicResource White}"
                                                         CornerRadius="6"
                                                         Clicked="OnUpdateNotificationNowClicked" />
-                                                <Button Text="Update later"
+                                                <Button Text="{Binding UpdateLaterText}"
                                                         FontSize="11"
                                                         HeightRequest="28"
                                                         MinimumHeightRequest="28"

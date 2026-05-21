@@ -3,6 +3,7 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ASLM.Localization;
 using ASLM.Models;
 using Microsoft.Maui.ApplicationModel;
 
@@ -112,15 +113,15 @@ namespace ASLM.Services
 
             var isApp = string.Equals(candidate.TargetKind, "app", StringComparison.OrdinalIgnoreCase);
             var title = isApp
-                ? "ASLM update available"
-                : "Module update available";
+                ? L.Get(LocalizationKeys.Notifications_AslmUpdateAvailable)
+                : L.Get(LocalizationKeys.Notifications_ModuleUpdateAvailable);
             var currentVersion = string.IsNullOrWhiteSpace(candidate.CurrentVersion)
-                ? "installed version"
+                ? L.Get(LocalizationKeys.Notifications_InstalledVersionFallback)
                 : candidate.CurrentVersion;
             var message = $"{candidate.Name}: {currentVersion} -> {candidate.RemoteVersion}";
             var detail = string.IsNullOrWhiteSpace(candidate.Channel)
                 ? string.Empty
-                : $"Channel: {candidate.Channel}";
+                : L.Get(LocalizationKeys.Notifications_ChannelFormat, candidate.Channel);
 
             UpsertNotification(
                 id: BuildUpdateNotificationId(candidate),
@@ -128,7 +129,7 @@ namespace ASLM.Services
                 severity: AppNotificationSeverity.Info,
                 title: title,
                 message: message,
-                statusText: "New version found",
+                statusText: L.Get(LocalizationKeys.Notifications_NewVersionFound),
                 detailText: detail,
                 sourceKind: candidate.TargetKind,
                 sourceId: candidate.TargetId,

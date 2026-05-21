@@ -45,7 +45,7 @@ namespace ASLM.Pages
         private bool _hasLoaded;
         private bool _isBusy;
         private bool _isInstalling;
-        private string _statusText = "Ready.";
+        private string _statusText = string.Empty;
         private string _itemListEmptyMessage = string.Empty;
         private string _detailEmptyMessage = string.Empty;
         private string _searchText = string.Empty;
@@ -86,6 +86,7 @@ namespace ASLM.Pages
             DetailScrollView.HandlerChanged += OnDetailScrollViewHandlerChanged;
             Loaded += OnLoaded;
             SizeChanged += (_, _) => UpdateDialogSize();
+            _statusText = L.Get(LocalizationKeys.Downloads_Status_Ready);
         }
 
         /// <inheritdoc />
@@ -94,6 +95,8 @@ namespace ASLM.Pages
             DownloadsTitleLabel.Text = L.Get(LocalizationKeys.Downloads_Title);
             SearchEntry.Placeholder = L.Get(LocalizationKeys.Downloads_SearchPlaceholder);
             ItemListEmptyTitleLabel.Text = L.Get(LocalizationKeys.Downloads_NoItems);
+            OnPropertyChanged(nameof(ActiveCategoryTitle));
+            OnPropertyChanged(nameof(ActiveCategoryItemCountLabel));
             DetailEmptyTitleLabel.Text = L.Get(LocalizationKeys.Downloads_SelectItem);
             RefreshButton.Text = L.Get(LocalizationKeys.Common_Refresh);
             InstallButton.Text = L.Get(LocalizationKeys.Common_Install);
@@ -159,10 +162,14 @@ namespace ASLM.Pages
             1 => L.Get(LocalizationKeys.Downloads_CategoryCount_One),
             _ => L.Get(LocalizationKeys.Downloads_CategoryCount_Many, Categories.Count)
         };
-        public string ActiveCategoryTitle => _activeCategory?.Title ?? "Catalog";
+        public string ActiveCategoryTitle => _activeCategory?.Title ?? L.Get(LocalizationKeys.Downloads_CatalogColumnTitle);
         public string ActiveCategoryDescription => _activeCategory?.Description ?? string.Empty;
         public bool HasActiveCategoryDescription => !string.IsNullOrWhiteSpace(ActiveCategoryDescription);
-        public string ActiveCategoryItemCountLabel => _activeCategory == null ? "No items" : $"{CurrentItems.Count} famil{(CurrentItems.Count == 1 ? "y" : "ies")}";
+        public string ActiveCategoryItemCountLabel => _activeCategory == null
+            ? L.Get(LocalizationKeys.Downloads_NoItems)
+            : CurrentItems.Count == 1
+                ? L.Get(LocalizationKeys.Downloads_OneFamily)
+                : L.Get(LocalizationKeys.Downloads_FamilyCountFormat, CurrentItems.Count);
         public bool HasFilters => Filters.Count > 0;
         public bool HasCurrentItems => CurrentItems.Count > 0;
         public bool IsItemListEmptyVisible => Categories.Count > 0 && !HasCurrentItems && !IsBusy;
@@ -193,8 +200,8 @@ namespace ASLM.Pages
             }
         }
 
-        public string DetailHeaderTitle => "Download Catalog";
-        public string DetailHeaderSubtitle => "Choose a family, then the exact variant you want.";
+        public string DetailHeaderTitle => L.Get(LocalizationKeys.Downloads_CatalogTitle);
+        public string DetailHeaderSubtitle => L.Get(LocalizationKeys.Downloads_ChooseVariantHint);
         public bool HasSelectedItem => _selectedItem != null;
         public bool IsDetailEmptyVisible => !HasSelectedItem && !IsBusy;
 
@@ -228,12 +235,12 @@ namespace ASLM.Pages
         public bool ShowInstallButton => _selectedVariant != null && !_selectedVariant.Variant.Installed && !IsInstalling;
         public bool ShowDeleteButton => _selectedVariant?.Variant.Installed == true && !IsInstalling;
         public bool ShowSelectedVariantInstalledBadge => _selectedVariant?.Variant.Installed == true && !IsInstalling;
-        public string SelectedVariantInstalledLabel => _selectedVariant?.InstalledLabel ?? "Installed";
+        public string SelectedVariantInstalledLabel => _selectedVariant?.InstalledLabel ?? L.Get(LocalizationKeys.Downloads_Installed);
         public bool ShowOpenVariantButton => !string.IsNullOrWhiteSpace(GetSelectedVariantHomepageUrl());
         public bool HasInfoBlocks => InfoBlocks.Count > 0;
         public bool HasMultipleInfoBlocks => InfoBlocks.Count > 1;
         public bool HasSelectedInfoBlock => _selectedInfoBlock != null;
-        public string SelectedInfoBlockTitle => _selectedInfoBlock?.Title ?? "Details";
+        public string SelectedInfoBlockTitle => _selectedInfoBlock?.Title ?? L.Get(LocalizationKeys.Downloads_Details);
         public string SelectedInfoBlockText => _selectedInfoBlock?.RenderedContent ?? string.Empty;
         public bool HasSelectedInfoBlockText => !string.IsNullOrWhiteSpace(SelectedInfoBlockText);
         public bool HasSelectedInfoBlockWebContent => SelectedInfoBlockSource != null;
@@ -330,7 +337,9 @@ namespace ASLM.Pages
 
             if (!silentRefresh)
             {
-                StatusText = forceRefresh ? "Refreshing shared download catalog..." : "Loading shared download catalog...";
+                StatusText = forceRefresh
+                    ? L.Get(LocalizationKeys.Downloads_RefreshingCatalog)
+                    : L.Get(LocalizationKeys.Downloads_LoadingCatalog);
             }
 
             try
@@ -377,10 +386,14 @@ namespace ASLM.Pages
                 if (!silentRefresh)
                 {
                     StatusText = snapshot.Categories.Count == 0
-                        ? "No shared downloads were published by the current modules."
+                        ? L.Get(LocalizationKeys.Downloads_NoSharedDownloads)
                         : forceRefresh
-                            ? $"Catalog updated. {snapshot.Categories.Count} categor{(snapshot.Categories.Count == 1 ? "y" : "ies")} loaded."
-                            : $"Loaded {snapshot.Categories.Count} categor{(snapshot.Categories.Count == 1 ? "y" : "ies")}.";
+                            ? snapshot.Categories.Count == 1
+                                ? L.Get(LocalizationKeys.Downloads_CatalogUpdatedOneCategory)
+                                : L.Get(LocalizationKeys.Downloads_CatalogUpdatedManyFormat, snapshot.Categories.Count)
+                            : snapshot.Categories.Count == 1
+                                ? L.Get(LocalizationKeys.Downloads_LoadedOneCategory)
+                                : L.Get(LocalizationKeys.Downloads_LoadedManyFormat, snapshot.Categories.Count);
                 }
             }
             catch (OperationCanceledException)
@@ -390,8 +403,8 @@ namespace ASLM.Pages
             {
                 if (!silentRefresh)
                 {
-                    StatusText = $"Download catalog refresh failed: {ex.Message}";
-                    ItemListEmptyMessage = "The shared catalog could not be loaded from the installed module bridges.";
+                    StatusText = L.Get(LocalizationKeys.Downloads_CatalogRefreshFailedFormat, ex.Message);
+                    ItemListEmptyMessage = L.Get(LocalizationKeys.Downloads_CatalogBridgeLoadFailed);
                 }
             }
             finally
@@ -567,7 +580,13 @@ namespace ASLM.Pages
         /// </summary>
         private void RefreshLocalizedBindableText()
         {
+            OnPropertyChanged(nameof(DetailHeaderTitle));
+            OnPropertyChanged(nameof(DetailHeaderSubtitle));
+            OnPropertyChanged(nameof(SelectedVariantInstalledLabel));
+            OnPropertyChanged(nameof(SelectedInfoBlockTitle));
             OnPropertyChanged(nameof(CategoryCountLabel));
+            OnPropertyChanged(nameof(ActiveCategoryTitle));
+            OnPropertyChanged(nameof(ActiveCategoryItemCountLabel));
 
             if (Categories.Count == 0)
             {
@@ -680,7 +699,7 @@ namespace ASLM.Pages
 
             if (forceRefresh && !silentRefresh)
             {
-                StatusText = $"Refreshing details for {item.Title}...";
+                StatusText = L.Get(LocalizationKeys.Downloads_Status_RefreshingDetailsFormat, item.Title);
             }
 
             try
@@ -707,7 +726,7 @@ namespace ASLM.Pages
             {
                 if (!ct.IsCancellationRequested && !silentRefresh)
                 {
-                    StatusText = $"Details could not be loaded for {item.Title}: {ex.Message}";
+                    StatusText = L.Get(LocalizationKeys.Downloads_Status_DetailsLoadFailedFormat, item.Title, ex.Message);
                 }
             }
         }
@@ -842,7 +861,7 @@ namespace ASLM.Pages
             if (_selectedItem == null || _selectedVariant == null || IsInstalling) return;
 
             IsInstalling = true;
-            StatusText = $"Installing {_selectedVariant.Title}...";
+            StatusText = L.Get(LocalizationKeys.Downloads_Status_InstallingFormat, _selectedVariant.Title);
 
             var progress = new Progress<string>(message => MainThread.BeginInvokeOnMainThread(() => StatusText = message));
 
@@ -859,11 +878,11 @@ namespace ASLM.Pages
             }
             catch (OperationCanceledException)
             {
-                StatusText = $"Installation canceled for {_selectedVariant.Title}.";
+                StatusText = L.Get(LocalizationKeys.Downloads_Status_InstallCanceledFormat, _selectedVariant.Title);
             }
             catch (Exception ex)
             {
-                StatusText = $"Installation failed for {_selectedVariant.Title}: {ex.Message}";
+                StatusText = L.Get(LocalizationKeys.Downloads_Status_InstallFailedFormat, _selectedVariant.Title, ex.Message);
             }
             finally
             {
@@ -878,7 +897,7 @@ namespace ASLM.Pages
             if (_selectedItem == null || _selectedVariant == null || IsInstalling) return;
 
             IsInstalling = true;
-            StatusText = $"Removing {_selectedVariant.Title}...";
+            StatusText = L.Get(LocalizationKeys.Downloads_Status_RemovingFormat, _selectedVariant.Title);
 
             var progress = new Progress<string>(message => MainThread.BeginInvokeOnMainThread(() => StatusText = message));
 
@@ -895,11 +914,11 @@ namespace ASLM.Pages
             }
             catch (OperationCanceledException)
             {
-                StatusText = $"Removal canceled for {_selectedVariant.Title}.";
+                StatusText = L.Get(LocalizationKeys.Downloads_Status_RemoveCanceledFormat, _selectedVariant.Title);
             }
             catch (Exception ex)
             {
-                StatusText = $"Removal failed for {_selectedVariant.Title}: {ex.Message}";
+                StatusText = L.Get(LocalizationKeys.Downloads_Status_RemoveFailedFormat, _selectedVariant.Title, ex.Message);
             }
             finally
             {
@@ -914,24 +933,24 @@ namespace ASLM.Pages
             var homepageUrl = GetSelectedVariantHomepageUrl();
             if (string.IsNullOrWhiteSpace(homepageUrl))
             {
-                StatusText = "The selected variant does not expose a page to open.";
+                StatusText = L.Get(LocalizationKeys.Downloads_Status_NoPageToOpen);
                 return;
             }
 
             if (!Uri.TryCreate(homepageUrl, UriKind.Absolute, out var homepageUri))
             {
-                StatusText = $"Open failed: invalid URL '{homepageUrl}'.";
+                StatusText = L.Get(LocalizationKeys.Downloads_Status_InvalidUrlFormat, homepageUrl);
                 return;
             }
 
             try
             {
                 await Launcher.Default.OpenAsync(homepageUri);
-                StatusText = $"Opened {homepageUri.Host}{homepageUri.AbsolutePath}.";
+                StatusText = L.Get(LocalizationKeys.Downloads_Status_OpenedFormat, homepageUri.Host, homepageUri.AbsolutePath);
             }
             catch (Exception ex)
             {
-                StatusText = $"Could not open the selected page: {ex.Message}";
+                StatusText = L.Get(LocalizationKeys.Downloads_Status_OpenFailedFormat, ex.Message);
             }
         }
 
@@ -1619,7 +1638,9 @@ namespace ASLM.Pages
             public string TagsLine => Variant.Tags.Count == 0 ? string.Empty : string.Join(" | ", Variant.Tags);
             public bool HasTags => Variant.Tags.Count > 0;
             public bool ShowInstalledBadge => Variant.Installed;
-            public string InstalledLabel => string.IsNullOrWhiteSpace(Variant.InstalledVersion) ? "Installed" : $"Installed | {Variant.InstalledVersion}";
+            public string InstalledLabel => string.IsNullOrWhiteSpace(Variant.InstalledVersion)
+                ? L.Get(LocalizationKeys.Downloads_Installed)
+                : L.Get(LocalizationKeys.Downloads_InstalledVersionFormat, Variant.InstalledVersion);
             public string SelectorDetailLine => BuildSelectorDetailLine();
             public bool HasSelectorDetailLine => !string.IsNullOrWhiteSpace(SelectorDetailLine);
             public string SizeLabel => ResolveSizeLabel();

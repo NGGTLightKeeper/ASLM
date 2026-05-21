@@ -1165,21 +1165,21 @@ namespace ASLM.Pages
             };
 
             badges.Add(usage.GpuPercent.HasValue
-                ? CreateBadge($"GPU {usage.GpuPercent.Value:F1}%", Color.FromArgb("#225E5CE6"))
-                : CreateBadge("GPU n/a", Color.FromArgb("#2238383A")));
+                ? CreateBadge(L.Get(LocalizationKeys.Home_Badge_GpuPercentFormat, usage.GpuPercent.Value), Color.FromArgb("#225E5CE6"))
+                : CreateBadge(L.Get(LocalizationKeys.Home_Badge_GpuUnavailable), Color.FromArgb("#2238383A")));
 
-            badges.Add(CreateBadge($"RAM {FormatBytes(usage.MemoryBytes)}", Color.FromArgb("#2232D74B")));
-            badges.Add(CreateBadge($"Disk {FormatRate(usage.DiskIoBytesPerSec)}", Color.FromArgb("#22FF9F0A")));
-            badges.Add(CreateBadge($"Net {FormatConnectionCount(usage.ConnectionCount)}", Color.FromArgb("#2264D2FF")));
+            badges.Add(CreateBadge(L.Get(LocalizationKeys.Home_Badge_RamFormat, FormatBytes(usage.MemoryBytes)), Color.FromArgb("#2232D74B")));
+            badges.Add(CreateBadge(L.Get(LocalizationKeys.Home_Badge_DiskFormat, FormatRate(usage.DiskIoBytesPerSec)), Color.FromArgb("#22FF9F0A")));
+            badges.Add(CreateBadge(L.Get(LocalizationKeys.Home_Badge_NetFormat, FormatConnectionCount(usage.ConnectionCount)), Color.FromArgb("#2264D2FF")));
 
             if (processCount > 0)
             {
-                badges.Add(CreateBadge($"Processes {processCount}", Color.FromArgb("#220A84FF")));
+                badges.Add(CreateBadge(L.Get(LocalizationKeys.Home_Badge_ProcessesFormat, processCount), Color.FromArgb("#220A84FF")));
             }
 
             if (sessionCount > 0)
             {
-                badges.Add(CreateBadge($"Sess {sessionCount}", Color.FromArgb("#225E5CE6")));
+                badges.Add(CreateBadge(L.Get(LocalizationKeys.Home_Badge_SessionsFormat, sessionCount), Color.FromArgb("#225E5CE6")));
             }
 
             return badges;
@@ -1268,8 +1268,8 @@ namespace ASLM.Pages
         private static string FormatConnectionCount(int connectionCount)
         {
             return connectionCount == 1
-                ? "1 conn"
-                : $"{connectionCount} conn";
+                ? L.Get(LocalizationKeys.Home_Metric_ConnectionOne)
+                : L.Get(LocalizationKeys.Home_Metric_ConnectionManyFormat, connectionCount);
         }
 
         /// <summary>

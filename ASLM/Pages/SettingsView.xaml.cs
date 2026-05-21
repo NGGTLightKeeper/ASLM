@@ -3667,10 +3667,10 @@ namespace ASLM.Pages
                 FontSize = 12,
                 HeightRequest = 24,
                 MinimumHeightRequest = 24,
-                Padding = new Thickness(8, 0),
+                Padding = new Thickness(4, 0),
                 CornerRadius = 5,
-                WidthRequest = 48,
-                HorizontalOptions = LayoutOptions.Center
+                MinimumWidthRequest = 56,
+                HorizontalOptions = LayoutOptions.End
             };
             pickButton.SetDynamicResource(Button.BackgroundColorProperty, "BackgroundTertiary");
             pickButton.SetDynamicResource(Button.TextColorProperty, "LabelPrimary");
@@ -3681,10 +3681,10 @@ namespace ASLM.Pages
                 FontSize = 12,
                 HeightRequest = 24,
                 MinimumHeightRequest = 24,
-                Padding = new Thickness(8, 0),
+                Padding = new Thickness(4, 0),
                 CornerRadius = 5,
-                WidthRequest = 48,
-                HorizontalOptions = LayoutOptions.Center
+                MinimumWidthRequest = 56,
+                HorizontalOptions = LayoutOptions.End
             };
             clearButton.SetDynamicResource(Button.BackgroundColorProperty, "BackgroundTertiary");
             clearButton.SetDynamicResource(Button.TextColorProperty, "LabelSecondary");
@@ -3729,8 +3729,8 @@ namespace ASLM.Pages
             row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(2, GridUnitType.Star)));
             row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(28, GridUnitType.Absolute)));
             row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
-            row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(50, GridUnitType.Absolute)));
-            row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(50, GridUnitType.Absolute)));
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
 
             var keyLabel = new Label
             {

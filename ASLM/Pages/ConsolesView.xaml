@@ -50,7 +50,8 @@
                                     SelectionChanged="OnModuleSelectionChanged"
                                     Margin="0">
                         <CollectionView.EmptyView>
-                            <Label Text="No active modules"
+                            <Label x:Name="ModulesEmptyLabel"
+                                   Text="No active modules"
                                    FontSize="13"
                                    TextColor="{DynamicResource LabelSecondary}"
                                    HorizontalOptions="Center"
@@ -103,7 +104,8 @@
                                     SelectionChanged="OnSessionSelectionChanged"
                                     Margin="0">
                         <CollectionView.EmptyView>
-                            <Label Text="No consoles"
+                            <Label x:Name="SessionsEmptyLabel"
+                                   Text="No consoles"
                                    FontSize="13"
                                    TextColor="{DynamicResource LabelSecondary}"
                                    HorizontalOptions="Center"
