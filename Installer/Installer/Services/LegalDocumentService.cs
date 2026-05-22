@@ -4,8 +4,6 @@ using System.Text.Json;
 
 namespace ASLM.Installer;
 
-// Legal document loading.
-
 /// <summary>
 /// Reads legal documents generated from markdown files during build.
 /// </summary>
@@ -30,8 +28,6 @@ public sealed class LegalDocumentService
 }
 
 
-// Legal document models.
-
 /// <summary>
 /// Describes one legal document shown before installation.
 /// </summary>
@@ -42,8 +38,6 @@ public sealed record LegalDocument(
     string Markdown,
     string Sha256);
 
-
-// JSON configuration.
 
 /// <summary>
 /// Provides shared JSON options for installer metadata.

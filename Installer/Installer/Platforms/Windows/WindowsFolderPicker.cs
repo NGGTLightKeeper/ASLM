@@ -5,8 +5,6 @@ using WinRT.Interop;
 
 namespace ASLM.Installer;
 
-// Native Windows folder picker.
-
 /// <summary>
 /// Opens a native folder selection dialog without relying on WinRT pickers.
 /// </summary>
@@ -22,6 +20,8 @@ internal static class WindowsFolderPicker
     {
         var dialogType = Type.GetTypeFromCLSID(FileOpenDialogId, throwOnError: true)!;
         var dialog = (IFileOpenDialog)Activator.CreateInstance(dialogType)!;
+
+        // Configure the dialog for folder selection on an existing file system path.
         dialog.GetOptions(out var options);
         dialog.SetOptions(options
             | FileOpenOptions.PickFolders
@@ -39,6 +39,7 @@ internal static class WindowsFolderPicker
 
         Marshal.ThrowExceptionForHR(result);
 
+        // Read the selected shell item path and release native memory.
         dialog.GetResult(out var item);
         item.GetDisplayName(ShellItemDisplayName.FileSystemPath, out var pathPointer);
 
@@ -52,6 +53,12 @@ internal static class WindowsFolderPicker
         }
     }
 
+
+    // Owner window binding.
+
+    /// <summary>
+    /// Resolves the WinUI owner HWND used to parent the native folder dialog.
+    /// </summary>
     private static IntPtr GetOwnerHandle(object? ownerWindow)
     {
         if (ownerWindow is null)
@@ -68,6 +75,9 @@ internal static class WindowsFolderPicker
             return IntPtr.Zero;
         }
     }
+
+
+    // Shell dialog interop.
 
     [ComImport]
     [Guid("D57C7288-D4AD-4768-BE02-9D969532D960")]

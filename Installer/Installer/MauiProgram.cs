@@ -7,8 +7,6 @@ using Microsoft.Maui.Handlers;
 
 namespace ASLM.Installer;
 
-// MAUI host setup.
-
 /// <summary>
 /// Builds the MAUI application used by the standalone installer.
 /// </summary>
@@ -40,6 +38,8 @@ public static class MauiProgram
     }
 
 #if WINDOWS
+    // Windows control sizing.
+
     /// <summary>
     /// Removes WinUI default minimum widths so standalone inputs stay compact.
     /// </summary>

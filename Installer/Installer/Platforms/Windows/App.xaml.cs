@@ -4,8 +4,6 @@ using Microsoft.UI.Xaml;
 
 namespace ASLM.Installer.WinUI;
 
-// Windows platform entry point.
-
 /// <summary>
 /// Starts the MAUI installer on Windows.
 /// </summary>

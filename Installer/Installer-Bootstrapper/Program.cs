@@ -6,8 +6,6 @@ using System.Reflection;
 
 namespace ASLM.Installer.Bootstrapper;
 
-// Bootstrapper entry point.
-
 /// <summary>
 /// Extracts the embedded installer UI and starts it with the embedded ASLM payload.
 /// </summary>
@@ -36,6 +34,7 @@ internal static class Program
         {
             Directory.CreateDirectory(extractionPath);
 
+            // Unpack the MAUI installer UI and the ASLM payload into the temp runtime folder.
             ExtractInstallerUi(extractionPath);
             var payloadPath = ExtractEmbeddedPayload(extractionPath);
 
@@ -90,6 +89,7 @@ internal static class Program
 
         foreach (var entry in archive.Entries)
         {
+            // Skip directory-only zip entries.
             if (string.IsNullOrEmpty(entry.Name))
             {
                 continue;
