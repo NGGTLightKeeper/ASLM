@@ -14,6 +14,8 @@ public partial class MainPage : ContentPage
     private readonly StringBuilder _log = new();
     private bool _started;
 
+    // Page construction
+
     /// <summary>
     /// Creates the patcher status page.
     /// </summary>
@@ -22,6 +24,9 @@ public partial class MainPage : ContentPage
         InitializeComponent();
         Loaded += OnLoaded;
     }
+
+
+    // Patch lifecycle
 
     /// <summary>
     /// Starts the patch operation after the native window is visible.
@@ -38,6 +43,7 @@ public partial class MainPage : ContentPage
         var progress = new Progress<PatcherProgress>(OnProgress);
         var exitCode = await PatcherRunner.RunAsync(args, progress);
 
+        // Update the headline once the background patcher thread finishes.
         StatusLabel.Text = exitCode == 0
             ? "Update finished. ASLM has been started."
             : "Update failed. ASLM has been started.";
@@ -52,6 +58,9 @@ public partial class MainPage : ContentPage
         }
     }
 
+
+    // Progress reporting
+
     /// <summary>
     /// Appends one patcher progress message to the visible console.
     /// </summary>
@@ -61,6 +70,7 @@ public partial class MainPage : ContentPage
         _log.AppendLine(progress.Message);
         LogEditor.Text = _log.ToString();
 
+        // Scroll the log view after layout so the newest line stays visible.
         MainThread.BeginInvokeOnMainThread(async () =>
         {
             await Task.Yield();

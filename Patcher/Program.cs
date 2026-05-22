@@ -23,6 +23,8 @@ internal static class PatcherRunner
     private const string LauncherExeName = "ASLM.exe";
     private const string WaitProcessArgument = "--wait-process";
 
+    // Paths and runtime state
+
     private static string _logPath = string.Empty;
     private static IProgress<PatcherProgress>? _progress;
 
@@ -48,10 +50,12 @@ internal static class PatcherRunner
 
         try
         {
+            // Prepare the patcher log directory and wait for the launcher to exit.
             Directory.CreateDirectory(Path.GetDirectoryName(_logPath)!);
             Log("Patcher started.");
             WaitForRequestedProcessExit(args);
 
+            // Stop when there is nothing left to apply.
             var pendingPath = Path.Combine(root, PendingRelativePath.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(pendingPath))
             {
@@ -60,9 +64,11 @@ internal static class PatcherRunner
                 return 0;
             }
 
+            // Read and validate the pending update manifest.
             var pending = LoadPendingUpdate(pendingPath);
             ValidatePendingUpdate(pending);
 
+            // Resolve target, staging, backup, and preserve paths.
             var targetRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(pending.TargetRoot) ? root : pending.TargetRoot);
             var stagingPath = Path.GetFullPath(pending.StagingPath);
             var backupPath = Path.GetFullPath(string.IsNullOrWhiteSpace(pending.BackupPath)
@@ -75,6 +81,7 @@ internal static class PatcherRunner
 
             var preservePatterns = NormalizePreservePatterns(pending.Preserve);
 
+            // Replace application files with backup and rollback support.
             try
             {
                 Log($"Target root: {targetRoot}");
@@ -89,6 +96,7 @@ internal static class PatcherRunner
                 ClearDirectory(targetRoot, relativePath => ShouldReplacePath(relativePath, preservePatterns));
                 CopyDirectory(stagingPath, targetRoot, relativePath => ShouldReplacePath(relativePath, preservePatterns));
 
+                // Record the installed release and remove temporary update folders.
                 PersistInstalledReleaseTag(targetRoot, pending.Version);
                 File.Delete(pendingPath);
                 TryDeleteDirectory(Path.GetDirectoryName(stagingPath) ?? stagingPath);
@@ -101,6 +109,7 @@ internal static class PatcherRunner
             {
                 Log("Patch failed. Attempting rollback...");
 
+                // Restore files from the backup when replacement fails.
                 if (Directory.Exists(backupPath))
                 {
                     ClearDirectory(targetRoot, relativePath => ShouldReplacePath(relativePath, preservePatterns));
@@ -112,6 +121,7 @@ internal static class PatcherRunner
         }
         catch (Exception ex)
         {
+            // Keep the launcher usable after a fatal patcher error.
             Log("Fatal patcher error: " + ex);
             MarkPendingUpdateFailed(root);
             StartLauncher(root);
@@ -127,6 +137,7 @@ internal static class PatcherRunner
     /// </summary>
     private static void WaitForRequestedProcessExit(string[] args)
     {
+        // Scan command-line arguments for the launcher process id to wait on.
         for (var index = 0; index < args.Length - 1; index++)
         {
             if (!string.Equals(args[index], WaitProcessArgument, StringComparison.OrdinalIgnoreCase) ||
@@ -505,6 +516,7 @@ internal static class PatcherRunner
             return;
         }
 
+        // Merge the installed tag into the persisted updates section.
         var rootNode = JsonNode.Parse(File.ReadAllText(appDataPath)) as JsonObject ?? new JsonObject();
         var updatesNode = rootNode["updates"] as JsonObject ?? new JsonObject();
 
