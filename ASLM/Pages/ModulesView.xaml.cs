@@ -12,8 +12,6 @@ using ASLM.Services;
 
 namespace ASLM.Pages
 {
-    // Module management view
-
     /// <summary>
     /// Displays module cards and keeps the grid responsive inside the shell.
     /// </summary>
@@ -208,6 +206,7 @@ namespace ASLM.Pages
                 static _ => { },
                 static _ => { });
 
+
         // State callback
 
         /// <summary>
@@ -290,6 +289,17 @@ namespace ASLM.Pages
         }
 
 
+        // Background input
+
+        /// <summary>
+        /// Closes any open module menu when the user taps outside the popup actions.
+        /// </summary>
+        private void OnBackgroundTapped(object? sender, TappedEventArgs e)
+        {
+            CloseAllMenus();
+        }
+
+
         // Layout calculation
 
         /// <summary>
@@ -304,13 +314,6 @@ namespace ASLM.Pages
             }
         }
 
-        /// <summary>
-        /// Closes any open module menu when the user taps outside the popup actions.
-        /// </summary>
-        private void OnBackgroundTapped(object? sender, TappedEventArgs e)
-        {
-            CloseAllMenus();
-        }
 
         // Native list behavior
 
@@ -351,9 +354,6 @@ namespace ASLM.Pages
         }
 #endif
     }
-
-
-    // Module card view model
 
     /// <summary>
     /// Wraps one module config and exposes UI state and commands for its card.
@@ -478,6 +478,12 @@ namespace ASLM.Pages
             RefreshLocalizedLabels();
         }
 
+
+        // Update status
+
+        /// <summary>
+        /// Describes the update badge phases shown on the module card.
+        /// </summary>
         private enum UpdateStatusPhase
         {
             ReadyToCheck,
@@ -490,6 +496,9 @@ namespace ASLM.Pages
             Failed
         }
 
+        /// <summary>
+        /// Updates the cached update phase and refreshes the status text shown on the card.
+        /// </summary>
         private void SetUpdatePhase(UpdateStatusPhase phase, string? formatArg = null)
         {
             _updateStatusPhase = phase;
@@ -498,6 +507,9 @@ namespace ASLM.Pages
             UpdateStatus = text;
         }
 
+        /// <summary>
+        /// Formats the localized update status text for the requested phase.
+        /// </summary>
         private static string FormatUpdateStatus(UpdateStatusPhase phase, string? formatArg) =>
             phase switch
             {
@@ -512,6 +524,9 @@ namespace ASLM.Pages
                 _ => L.Get(LocalizationKeys.ModuleUpdate_Status_ReadyToCheck)
             };
 
+        /// <summary>
+        /// Reapplies localization to the current update status phase.
+        /// </summary>
         private void RefreshUpdateStatusLocalization() =>
             SetUpdatePhase(_updateStatusPhase, _updateStatusFormatArg);
 
@@ -598,7 +613,7 @@ namespace ASLM.Pages
         }
 
 
-        // Static card data
+        // Card properties
 
         /// <summary>
         /// Gets the module name shown on the card.
@@ -630,48 +645,30 @@ namespace ASLM.Pages
         /// </summary>
         public string SourcePath => _config.SourcePath;
 
-
-        // Version label
-
         /// <summary>
         /// Gets the formatted version label shown on the card.
         /// </summary>
         public string VersionString => $"v{_config.Version}";
-
-
-        // Icon path
 
         /// <summary>
         /// Gets the resolved module icon path.
         /// </summary>
         public string? IconFullPath => _config.IconFullPath;
 
-
-        // Icon flag
-
         /// <summary>
         /// Gets whether the module has an icon to render.
         /// </summary>
         public bool HasIcon => !string.IsNullOrEmpty(_config.IconFullPath);
-
-
-        // Running state
 
         /// <summary>
         /// Gets whether the module is currently enabled.
         /// </summary>
         public bool IsRunning => _config.Status.Enabled;
 
-
-        // Stopped state
-
         /// <summary>
         /// Gets whether the module is currently stopped.
         /// </summary>
         public bool IsStopped => !_config.Status.Enabled;
-
-
-        // Restart state
 
         /// <summary>
         /// Gets or sets whether the module is currently restarting.
@@ -693,9 +690,6 @@ namespace ASLM.Pages
                 RefreshCommandStates();
             }
         }
-
-
-        // Restart inverse
 
         /// <summary>
         /// Gets whether the restart overlay should stay hidden.
@@ -810,6 +804,7 @@ namespace ASLM.Pages
         /// Gets whether release channel controls should be visible.
         /// </summary>
         public bool IsReleaseMode => !IsBranchMode;
+
 
         // Update state
 
@@ -1072,23 +1067,17 @@ namespace ASLM.Pages
         }
 
 
-        // Launch command
+        // Commands
 
         /// <summary>
         /// Gets the command that launches the module.
         /// </summary>
         public ICommand LaunchCommand { get; }
 
-
-        // Stop command
-
         /// <summary>
         /// Gets the command that stops the module.
         /// </summary>
         public ICommand StopCommand { get; }
-
-
-        // Restart command
 
         /// <summary>
         /// Gets the command that restarts the module.

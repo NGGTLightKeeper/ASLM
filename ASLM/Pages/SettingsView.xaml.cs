@@ -9,8 +9,6 @@ using Microsoft.Maui.Controls.Shapes;
 
 namespace ASLM.Pages
 {
-    // Settings view
-
     /// <summary>
     /// Displays shared application settings and dynamic module settings inside the shell.
     /// </summary>
@@ -104,7 +102,6 @@ namespace ASLM.Pages
         private bool _settingsReconcileTimerStarted;
         private bool _settingsReconcileTimerStopRequested;
 
-        // Personalization drafts
         private AppPersonalizationConfig _personalizationDraft = new();
         private AppPersonalizationConfig _personalizationBaseline = new();
         private CustomTheme? _editingThemeDraft;
@@ -136,9 +133,11 @@ namespace ASLM.Pages
         /// </summary>
         private sealed class CompactToggle
         {
-            // Toggle colors read from the active palette so they respond to theme changes.
+            /// <summary>Gets the on-state track color from the active application palette.</summary>
             private static Color ToggleOnColor => Application.Current?.Resources.TryGetValue("ActionBlue", out var v) == true && v is Color c ? c : Color.FromArgb("#0A84FF");
+            /// <summary>Gets the off-state track color from the active application palette.</summary>
             private static Color ToggleOffColor => Application.Current?.Resources.TryGetValue("BackgroundTertiary", out var v) == true && v is Color c ? c : Color.FromArgb("#3A3A3C");
+            /// <summary>Gets the thumb fill color from the active application palette.</summary>
             private static Color ToggleThumbColor => Application.Current?.Resources.TryGetValue("LabelPrimary", out var v) == true && v is Color c ? c : Colors.White;
             private const double TrackWidth = 36;
             private const double TrackHeight = 20;
@@ -147,6 +146,9 @@ namespace ASLM.Pages
 
             private class ThumbDrawable : IDrawable
             {
+                /// <summary>
+                /// Draws the toggle thumb as a filled circle on the graphics canvas.
+                /// </summary>
                 public void Draw(ICanvas canvas, RectF dirtyRect)
                 {
                     canvas.Antialias = true;
@@ -340,6 +342,7 @@ namespace ASLM.Pages
             private double CurrentThumbOffset => AbsoluteLayout.GetLayoutBounds(_thumb).X - ThumbInset;
         }
 
+
         // Initialization
 
         /// <summary>
@@ -380,6 +383,7 @@ namespace ASLM.Pages
             Unloaded += OnUnloaded;
         }
 
+
         // Refresh
 
         /// <summary>
@@ -402,23 +406,36 @@ namespace ASLM.Pages
             }
         }
 
+
         // Overlay Events
 
+        /// <summary>
+        /// Closes the settings overlay when the user taps outside the dialog.
+        /// </summary>
         private void OnBackgroundTapped(object? sender, EventArgs e)
         {
             RequestClose();
         }
 
+        /// <summary>
+        /// Absorbs taps on the dialog surface so they do not reach the background handler.
+        /// </summary>
         private void OnBorderTapped(object? sender, EventArgs e)
         {
-            // Do nothing. Swallows the tap so it doesn't propagate to the background.
+            // Intentionally empty: prevents the tap from closing the overlay via the background handler.
         }
 
+        /// <summary>
+        /// Handles the close button and requests overlay dismissal.
+        /// </summary>
         private void OnCloseClicked(object? sender, EventArgs e)
         {
             RequestClose();
         }
 
+        /// <summary>
+        /// Stops background work, confirms discard when needed, and raises <see cref="CloseRequested"/>.
+        /// </summary>
         private async void RequestClose()
         {
             if (!await ConfirmDiscardChangesIfNeededAsync())
@@ -431,6 +448,7 @@ namespace ASLM.Pages
             _ollamaSettings.StopManagedRuntime();
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
+
 
         // Loading
 
@@ -529,6 +547,9 @@ namespace ASLM.Pages
             }
         }
 
+        /// <summary>
+        /// Resolves the localized sidebar title for a settings category.
+        /// </summary>
         private static string GetLocalizedCategoryTitle(SettingsCategory category) =>
             category.Kind switch
             {
@@ -562,9 +583,15 @@ namespace ASLM.Pages
 
         private static readonly string[] AppearanceOptions = ["Dark", "Light", "System", "Custom"];
 
+        /// <summary>
+        /// Returns the picker display label for a supported language id.
+        /// </summary>
         private static string GetLanguageDisplayName(string languageId) =>
             AppLocalizationService.GetPickerDisplayName(languageId);
 
+        /// <summary>
+        /// Returns the localized picker label for an appearance mode id.
+        /// </summary>
         private static string GetAppearanceDisplayName(string appearance) =>
             AppPersonalizationConfig.NormalizeAppearance(appearance) switch
             {
@@ -574,6 +601,9 @@ namespace ASLM.Pages
                 _ => L.Get(LocalizationKeys.Settings_Personalization_Appearance_Dark)
             };
 
+        /// <summary>
+        /// Maps a localized appearance picker label back to its canonical id.
+        /// </summary>
         private static string ResolveAppearanceFromDisplayName(string? displayName)
         {
             foreach (var appearance in AppearanceOptions)
@@ -614,6 +644,7 @@ namespace ASLM.Pages
         /// </summary>
         private static double ClampDialogSize(double value, double min, double max) =>
             Math.Max(min, Math.Min(max, value));
+
 
         // Loading helpers
 
@@ -701,6 +732,7 @@ namespace ASLM.Pages
             }
         }
 
+
         // Categories
 
         /// <summary>
@@ -728,7 +760,7 @@ namespace ASLM.Pages
             var modCategories = _categories.Where(c => SettingsService.GetGroupForCategory(c) == SettingsCategoryGroup.Modules).ToList();
             if (modCategories.Count > 0)
             {
-                CategoryPanel.Children.Add(new BoxView { HeightRequest = 12, Color = Colors.Transparent }); // spacing
+                CategoryPanel.Children.Add(new BoxView { HeightRequest = 12, Color = Colors.Transparent });
                 CategoryPanel.Children.Add(CreateSelectorHeader(L.Get(LocalizationKeys.Settings_Header_Modules)));
                 foreach (var category in modCategories)
                 {
@@ -1042,6 +1074,9 @@ namespace ASLM.Pages
             _settingsReconcileTimerStopRequested = true;
         }
 
+        /// <summary>
+        /// Periodically reconciles visible controls with drafts while the settings overlay is open.
+        /// </summary>
         private bool OnSettingsReconcileTimerTick()
         {
             if (_settingsReconcileTimerStopRequested || !IsLoaded)
@@ -1189,6 +1224,7 @@ namespace ASLM.Pages
 
             button.Style = style;
         }
+
 
         // Rendering
 
@@ -1840,6 +1876,7 @@ namespace ASLM.Pages
             }
         }
 
+
         // Draft synchronization
 
         /// <summary>
@@ -2011,6 +2048,9 @@ namespace ASLM.Pages
             !string.Equals(_personalizationDraft.CustomThemeId, _personalizationBaseline.CustomThemeId, StringComparison.Ordinal) ||
             HasUnsavedThemeColorChanges();
 
+        /// <summary>
+        /// Determines whether the in-memory theme editor differs from the saved custom theme.
+        /// </summary>
         private bool HasUnsavedThemeColorChanges()
         {
             if (_editingThemeDraft == null)
@@ -2021,7 +2061,7 @@ namespace ASLM.Pages
             var saved = _customThemesStore.FindById(_editingThemeDraft.Id);
             if (saved == null)
             {
-                // New unsaved theme
+                // Theme exists only in the editor draft, not yet persisted.
                 return true;
             }
 
@@ -2072,11 +2112,17 @@ namespace ASLM.Pages
                 _consoleBaseline,
                 _updateBaseline);
 
+        /// <summary>
+        /// Reads the official port draft from visible controls when the ports section is shown.
+        /// </summary>
         private string GetCurrentOfficialPortDraft() =>
             PortsSection.IsVisible
                 ? OfficialPortEntry.Text?.Trim() ?? string.Empty
                 : _officialPortDraft;
 
+        /// <summary>
+        /// Reads the third-party port draft from visible controls when the ports section is shown.
+        /// </summary>
         private string GetCurrentThirdPartyPortDraft() =>
             PortsSection.IsVisible
                 ? ThirdPartyPortEntry.Text?.Trim() ?? string.Empty
@@ -2241,6 +2287,7 @@ namespace ASLM.Pages
                     message,
                     L.Get(LocalizationKeys.Common_OK))
                 : Task.CompletedTask;
+
 
         // Saving
 
@@ -2564,6 +2611,9 @@ namespace ASLM.Pages
             }
         }
 
+        /// <summary>
+        /// Returns whether a module exposes theme or locale settings that require a host restart.
+        /// </summary>
         private static bool ModuleDeclaresHostPersonalizationSync(ModuleConfig module) =>
             module.Settings?.Any(setting =>
                 string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase) ||
@@ -2963,6 +3013,7 @@ namespace ASLM.Pages
             PortErrorLabel.IsVisible = true;
         }
 
+
         // Editor creation
 
         /// <summary>
@@ -3266,6 +3317,7 @@ namespace ASLM.Pages
                 baseline.UseCustomValue));
         }
 
+
         // Personalization rendering
 
         /// <summary>
@@ -3473,6 +3525,9 @@ namespace ASLM.Pages
             _suppressCustomThemePickerEvents = false;
         }
 
+        /// <summary>
+        /// Loads the selected custom theme into the editor when the theme picker changes.
+        /// </summary>
         private void OnCustomThemePickerSelectionChanged(object? sender, EventArgs e)
         {
             if (_suppressCustomThemePickerEvents || _customThemePicker == null)
@@ -3514,6 +3569,9 @@ namespace ASLM.Pages
             QueueActionButtonUpdate();
         }
 
+        /// <summary>
+        /// Deletes the theme currently selected in the custom theme picker.
+        /// </summary>
         private async void OnDeleteCurrentCustomThemeClicked(object? sender, EventArgs e)
         {
             if (_customThemePicker?.SelectedItem is not CustomTheme t)
@@ -3624,6 +3682,9 @@ namespace ASLM.Pages
             container.Children.Add(colorsCard);
         }
 
+        /// <summary>
+        /// Builds one compact palette-key row with swatch, hex label, and picker action.
+        /// </summary>
         private View CreateCompactColorEditorRow(string key)
         {
             _editingThemeDraft!.Colors.TryGetValue(key, out var existingValue);
@@ -3783,6 +3844,9 @@ namespace ASLM.Pages
             }
         }
 
+        /// <summary>
+        /// Opens the platform color picker for one theme palette key and updates the draft.
+        /// </summary>
         private async Task OpenThemeColorPickerForKeyAsync(string key, Border swatchFrame, Label hexLabel)
         {
             if (_editingThemeDraft == null)
@@ -3807,6 +3871,9 @@ namespace ASLM.Pages
             QueueActionButtonUpdate();
         }
 
+        /// <summary>
+        /// Resolves the initial color shown in the theme editor for a palette key.
+        /// </summary>
         private static Color ResolveThemeEditorColor(string key, string? existingHex)
         {
             if (!string.IsNullOrWhiteSpace(existingHex) && ThemePaletteResolver.TryParseHex(existingHex, out var parsed))
@@ -3822,6 +3889,9 @@ namespace ASLM.Pages
             return Colors.Gray;
         }
 
+        /// <summary>
+        /// Updates appearance draft state and live theme preview when the appearance picker changes.
+        /// </summary>
         private void OnAppearancePickerChanged(object? sender, EventArgs e)
         {
             if (_appearancePicker == null)
@@ -3868,6 +3938,9 @@ namespace ASLM.Pages
             RefreshCategorySelectorChromeFromResources();
         }
 
+        /// <summary>
+        /// Updates the language draft when the language picker selection changes.
+        /// </summary>
         private void OnLanguagePickerChanged(object? sender, EventArgs e)
         {
             if (_languagePicker == null)
@@ -3884,6 +3957,9 @@ namespace ASLM.Pages
             QueueActionButtonUpdate();
         }
 
+        /// <summary>
+        /// Prompts for a new custom theme name, creates it, and selects it in the editor.
+        /// </summary>
         private async void OnCreateThemeClicked(object? sender, EventArgs e)
         {
             var name = await PromptAsync(
@@ -3929,6 +4005,9 @@ namespace ASLM.Pages
             ApplyCustomThemeSelection(newTheme.Id);
         }
 
+        /// <summary>
+        /// Imports a custom theme from a user-selected JSON file.
+        /// </summary>
         private async void OnImportThemeClicked(object? sender, EventArgs e)
         {
             var host = Application.Current?.Windows.FirstOrDefault()?.Page;
@@ -3985,6 +4064,9 @@ namespace ASLM.Pages
             }
         }
 
+        /// <summary>
+        /// Exports the selected custom theme to a JSON file on disk.
+        /// </summary>
         private async void OnExportThemeClicked(object? sender, EventArgs e)
         {
             if (_customThemePicker?.SelectedItem is not CustomTheme t)
@@ -4012,6 +4094,9 @@ namespace ASLM.Pages
             }
         }
 
+        /// <summary>
+        /// Normalizes a theme name into a safe file name for export.
+        /// </summary>
         private static string SanitizeThemeFileName(string name)
         {
             var baseName = string.IsNullOrWhiteSpace(name) ? "ASLM_theme" : name.Trim();
@@ -4027,6 +4112,9 @@ namespace ASLM.Pages
             return string.IsNullOrEmpty(s) ? "ASLM_theme" : s;
         }
 
+        /// <summary>
+        /// Confirms deletion, removes a custom theme, and refreshes personalization UI state.
+        /// </summary>
         private async Task OnDeleteThemeClickedAsync(string themeId)
         {
             var confirmed = await ShowAlertAsync(
@@ -4079,7 +4167,7 @@ namespace ASLM.Pages
                 _personalizationDraft.Language,
                 StringComparison.OrdinalIgnoreCase);
 
-            // Persist custom theme color edits if any.
+            // Persist in-editor custom theme color changes before updating app data.
             if (_editingThemeDraft != null)
             {
                 var existingTheme = _customThemesStore.FindById(_editingThemeDraft.Id);
@@ -4094,13 +4182,13 @@ namespace ASLM.Pages
                 }
             }
 
-            // Update app data personalization section.
+            // Write appearance, language, and custom theme selection to app data.
             _appData.Data.Personalization.Appearance = _personalizationDraft.Appearance;
             _appData.Data.Personalization.Language = _personalizationDraft.Language;
             _appData.Data.Personalization.CustomThemeId = _personalizationDraft.CustomThemeId;
             _appData.Data.Personalization.Normalize();
 
-            // Reload baselines.
+            // Refresh personalization baselines used by unsaved-change detection.
             _personalizationBaseline = new AppPersonalizationConfig
             {
                 Appearance = _personalizationDraft.Appearance,
@@ -4108,7 +4196,7 @@ namespace ASLM.Pages
                 CustomThemeId = _personalizationDraft.CustomThemeId
             };
 
-            // Apply the saved theme immediately.
+            // Apply the saved theme and palette without waiting for restart.
             _themeService.ApplyFromSettings();
 
             if (languageChanged)
@@ -4644,6 +4732,7 @@ namespace ASLM.Pages
             entry.Opacity = isReadOnly ? 0.72 : 1.0;
         }
 
+
         // Misc helpers
 
         /// <summary>
@@ -4679,6 +4768,9 @@ namespace ASLM.Pages
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern nint GetForegroundWindow();
 
+        /// <summary>
+        /// Shows the Windows save picker for exporting a custom theme JSON file.
+        /// </summary>
         private static async Task<string?> PickExportThemeFilePathAsync(string suggestedFileName)
         {
             var native = Application.Current?.Windows.FirstOrDefault()?.Handler?.PlatformView;

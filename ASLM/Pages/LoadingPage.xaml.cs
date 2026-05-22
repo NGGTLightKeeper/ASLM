@@ -6,8 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ASLM.Pages
 {
-    // Loading page
-
     /// <summary>
     /// Initializes persisted app data and routes startup to the next page.
     /// </summary>
@@ -24,6 +22,9 @@ namespace ASLM.Pages
         private readonly AppLocalizationService _localization;
         private readonly IServiceProvider _services;
         private bool _initialized;
+
+
+        // Initialization
 
         /// <summary>
         /// Creates the startup loading page.
@@ -54,9 +55,17 @@ namespace ASLM.Pages
             LocalizableAttach.Hook(this, _localization, this);
         }
 
-        /// <inheritdoc />
+
+        // Localization
+
+        /// <summary>
+        /// Applies the loading label text for the current culture.
+        /// </summary>
         public void ApplyLocalization() =>
             LoadingLabel.Text = L.Get(LocalizationKeys.Loading_Text);
+
+
+        // Lifecycle
 
         /// <summary>
         /// Runs the startup initialization once and replaces the current page.

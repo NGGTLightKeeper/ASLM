@@ -8,8 +8,6 @@ using ASLM.Services;
 
 namespace ASLM.Pages
 {
-    // Setup wizard page
-
     /// <summary>
     /// Guides the first-run flow from profile setup through module installation.
     /// </summary>
@@ -103,7 +101,7 @@ namespace ASLM.Pages
         }
 
 
-        // Welcome actions
+        // Setup actions
 
         /// <summary>
         /// Starts the step-by-step setup flow.
@@ -115,8 +113,6 @@ namespace ASLM.Pages
             _showDockerGate = !_skipDockerStep;
             UpdateStepUI();
         }
-
-        // Fast setup
 
         /// <summary>
         /// Saves default values and jumps directly to module selection.
@@ -144,6 +140,9 @@ namespace ASLM.Pages
             UpdateStepUI();
         }
 
+        /// <summary>
+        /// Opens the Docker Desktop install guide in the system browser.
+        /// </summary>
         private async void OnDockerOpenGuideClicked(object? sender, EventArgs e)
         {
             try
@@ -253,8 +252,6 @@ namespace ASLM.Pages
             UpdateStepUI();
         }
 
-        // Next action
-
         /// <summary>
         /// Advances the wizard or starts installation on the last step.
         /// </summary>
@@ -309,12 +306,11 @@ namespace ASLM.Pages
             await StartInstallAsync();
         }
 
-        // Step UI
+        // Localization
 
         /// <summary>
-        /// Switches visible panels and button states for the current wizard step.
+        /// Applies localized strings to wizard labels and refreshes step UI.
         /// </summary>
-        /// <inheritdoc />
         public void ApplyLocalization()
         {
             Title = L.Get(LocalizationKeys.SetupWizard_Title);
@@ -338,6 +334,12 @@ namespace ASLM.Pages
             UpdateStepUI();
         }
 
+
+        // Step UI
+
+        /// <summary>
+        /// Switches visible panels and button states for the current wizard step.
+        /// </summary>
         private void UpdateStepUI()
         {
             Step0Panel.IsVisible = _currentStep == 0;
@@ -384,8 +386,6 @@ namespace ASLM.Pages
 
             return true;
         }
-
-        // Port error
 
         /// <summary>
         /// Shows the current port validation error.
@@ -635,7 +635,7 @@ namespace ASLM.Pages
         }
 
 
-        // Navigation button state
+        // Install button state
 
         /// <summary>
         /// Restores the default back and next button handlers.
@@ -656,8 +656,6 @@ namespace ASLM.Pages
             BackButton.Text = "Back";
         }
 
-        // Finish state
-
         /// <summary>
         /// Converts the main action button into the finish action.
         /// </summary>
@@ -669,8 +667,6 @@ namespace ASLM.Pages
             NextButton.Clicked -= OnNextClicked;
             NextButton.Clicked += OnFinishClicked;
         }
-
-        // Retry state
 
         /// <summary>
         /// Converts the buttons into retry and skip actions after a failed install.
@@ -689,7 +685,8 @@ namespace ASLM.Pages
             BackButton.Clicked += OnSkipClicked;
         }
 
-        // Retry action
+
+        // Install completion actions
 
         /// <summary>
         /// Restarts the installation phase after a failure.
@@ -700,8 +697,6 @@ namespace ASLM.Pages
             await StartInstallAsync();
         }
 
-        // Finish action
-
         /// <summary>
         /// Completes the wizard and opens the main application shell.
         /// </summary>
@@ -709,8 +704,6 @@ namespace ASLM.Pages
         {
             await FinishSetupAsync();
         }
-
-        // Skip action
 
         /// <summary>
         /// Completes the wizard even when installation had failures.
@@ -732,8 +725,6 @@ namespace ASLM.Pages
                 InstallStatusLabel.Text = message);
         }
 
-        // Overall progress
-
         /// <summary>
         /// Updates the overall installation progress bar.
         /// </summary>
@@ -747,8 +738,6 @@ namespace ASLM.Pages
             MainThread.BeginInvokeOnMainThread(() =>
                 InstallProgress.Progress = (double)completed / total);
         }
-
-        // File progress
 
         /// <summary>
         /// Clears the per-file progress UI before the next download.
@@ -939,9 +928,9 @@ namespace ASLM.Pages
             }
         }
 
-        /// <summary>
-        /// Reports progress synchronously on the producer thread so UI updates can be throttled explicitly.
-        /// </summary>
+
+        // Helpers
+
         /// <summary>
         /// Finds a named color resource with a defensive fallback when the key is absent.
         /// </summary>
@@ -950,6 +939,9 @@ namespace ASLM.Pages
                 ? c
                 : fallback;
 
+        /// <summary>
+        /// Reports progress synchronously on the producer thread so UI updates can be throttled explicitly.
+        /// </summary>
         private sealed class InlineProgress<T>(Action<T> handler) : IProgress<T>
         {
             public void Report(T value)

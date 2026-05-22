@@ -9,8 +9,6 @@ using ASLM.Services;
 
 namespace ASLM.Pages
 {
-    // Consoles view
-
     /// <summary>
     /// Displays module consoles, per-process sessions, and merged console output.
     /// </summary>
@@ -79,6 +77,7 @@ namespace ASLM.Pages
             return _presenter.SelectModuleAsync(sourcePath);
         }
 
+
         // Lifetime events
 
         /// <summary>
@@ -100,6 +99,7 @@ namespace ASLM.Pages
             _presenter.Deactivate();
         }
 
+
         // Layout events
 
         /// <summary>
@@ -110,6 +110,7 @@ namespace ASLM.Pages
             UpdateResponsiveLayout();
             QueueConsoleLayoutRefresh();
         }
+
 
         // Selection events
 
@@ -144,6 +145,9 @@ namespace ASLM.Pages
                 await _presenter.SelectSessionAsync(session.Id);
             }
         }
+
+
+        // Rendering
 
         /// <summary>
         /// Applies the latest presenter state to the view model and synchronized selections.
@@ -181,6 +185,7 @@ namespace ASLM.Pages
             QueueConsoleLayoutRefresh();
             _suppressSelection = false;
         }
+
 
         // Auto refresh
 
@@ -222,6 +227,7 @@ namespace ASLM.Pages
             {
             }
         }
+
 
         // Responsive layout
 
@@ -305,6 +311,7 @@ namespace ASLM.Pages
             ConsoleOutputHost.InvalidateMeasure();
         }
 
+
         // Collection synchronization
 
         /// <summary>
@@ -375,6 +382,9 @@ namespace ASLM.Pages
             }
         }
 
+        /// <summary>
+        /// Builds a key-to-index map for the current observable collection contents.
+        /// </summary>
         private static Dictionary<string, int> BuildIndex<T>(ObservableCollection<T> target, Func<T, string> keySelector)
             where T : class
         {
@@ -388,8 +398,6 @@ namespace ASLM.Pages
         }
     }
 
-    // Consoles view contract
-
     /// <summary>
     /// Defines the rendering contract used by the consoles presenter.
     /// </summary>
@@ -400,8 +408,6 @@ namespace ASLM.Pages
         /// </summary>
         void Render(ConsolesDashboardState state);
     }
-
-    // Consoles presenter
 
     /// <summary>
     /// Builds dashboard state for the consoles view and coordinates selections with the console store.
@@ -437,6 +443,9 @@ namespace ASLM.Pages
             _showCompletedProcesses = _appData.Data.Consoles.ShowCompletedProcesses;
         }
 
+
+        // Lifetime
+
         /// <summary>
         /// Starts listening for console store changes and renders the initial dashboard state.
         /// </summary>
@@ -467,6 +476,9 @@ namespace ASLM.Pages
             _isActive = false;
         }
 
+
+        // Selection
+
         /// <summary>
         /// Selects a module and resets the session selection to that module's default console.
         /// </summary>
@@ -495,6 +507,9 @@ namespace ASLM.Pages
             _selectedSessionId = sessionId;
             await RefreshAsync(forceModuleReload: false);
         }
+
+
+        // Refresh
 
         /// <summary>
         /// Reloads modules when required and rerenders the dashboard.
@@ -534,6 +549,9 @@ namespace ASLM.Pages
             }
         }
 
+
+        // Console events
+
         /// <summary>
         /// Coalesces bursts of console change notifications into a single refresh.
         /// </summary>
@@ -552,6 +570,9 @@ namespace ASLM.Pages
             });
         }
 
+
+        // Preferences
+
         /// <summary>
         /// Loads console preferences from persisted app data.
         /// </summary>
@@ -560,6 +581,9 @@ namespace ASLM.Pages
             _appData.Data.Consoles.Normalize();
             _showCompletedProcesses = _appData.Data.Consoles.ShowCompletedProcesses;
         }
+
+
+        // State building
 
         /// <summary>
         /// Builds the full dashboard state for the current module and session selection.
@@ -725,6 +749,9 @@ namespace ASLM.Pages
             };
         }
 
+
+        // Mapping
+
         /// <summary>
         /// Maps internal console stage identifiers to localized labels.
         /// </summary>
@@ -861,8 +888,6 @@ namespace ASLM.Pages
         }
     }
 
-    // Consoles dashboard state
-
     /// <summary>
     /// Represents the complete UI state required to render the consoles dashboard.
     /// </summary>
@@ -928,8 +953,6 @@ namespace ASLM.Pages
         /// </summary>
         public string SelectedSessionFooter { get; set; } = string.Empty;
     }
-
-    // Consoles page view model
 
     /// <summary>
     /// Exposes bindable state for the consoles page shell and output pane.
@@ -1045,8 +1068,6 @@ namespace ASLM.Pages
         }
     }
 
-    // Module list item view model
-
     /// <summary>
     /// Represents one module item in the consoles module list.
     /// </summary>
@@ -1132,8 +1153,6 @@ namespace ASLM.Pages
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
-
-    // Session list item view model
 
     /// <summary>
     /// Represents one console session item in the consoles session list.

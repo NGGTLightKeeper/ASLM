@@ -6,15 +6,10 @@ using System.Runtime.CompilerServices;
 using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
-
-// ReadOnlyObservableCollection used as direct binding source to avoid CollectionView item animations.
-
 using Microsoft.Maui.Graphics;
 
 namespace ASLM.Pages
 {
-    // Notifications popover view
-
     /// <summary>
     /// Displays internal ASLM notifications in a compact downloads-style popover.
     /// </summary>
@@ -32,13 +27,21 @@ namespace ASLM.Pages
         private Rect _lastAnchorBounds;
         private bool _popupPositioningActive;
 
+
+        // Events
+
         /// <summary>
         /// Raised when the user asks to close the notifications popover.
         /// </summary>
         public event EventHandler? CloseRequested;
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Raised when a bindable property on this view changes.
+        /// </summary>
         public new event PropertyChangedEventHandler? PropertyChanged;
+
+
+        // Initialization
 
         /// <summary>
         /// Creates the notifications popover and hooks service updates.
@@ -55,7 +58,12 @@ namespace ASLM.Pages
             LocalizableAttach.Hook(this, _localization, this);
         }
 
-        /// <inheritdoc />
+
+        // Localization
+
+        /// <summary>
+        /// Applies localized strings to header, empty state, and visible notification rows.
+        /// </summary>
         public void ApplyLocalization()
         {
             TitleLabel.Text = L.Get(LocalizationKeys.Notifications_Title);
@@ -70,6 +78,9 @@ namespace ASLM.Pages
             OnPropertyChanged(nameof(SummaryText));
             OnPropertyChanged(nameof(SectionTitle));
         }
+
+
+        // Bound properties
 
         /// <summary>
         /// Gets the notifications currently visible in the popover.
@@ -105,6 +116,9 @@ namespace ASLM.Pages
         /// </summary>
         public bool HasAnyNotifications => _notifications.Notifications.Count > 0;
 
+
+        // Public API
+
         /// <summary>
         /// Positions the popover next to the notifications sidebar button.
         /// </summary>
@@ -125,6 +139,9 @@ namespace ASLM.Pages
             RefreshVisibleNotifications();
             return Task.CompletedTask;
         }
+
+
+        // Lifecycle
 
         /// <summary>
         /// Subscribes to notification service changes once the view enters the visual tree.
@@ -147,6 +164,9 @@ namespace ASLM.Pages
             SizeChanged -= OnHostSizeChanged;
             _popupPositioningActive = false;
         }
+
+
+        // Positioning
 
         /// <summary>
         /// Re-clamps the popover when the overlay host is resized so it stays on screen.
@@ -187,6 +207,9 @@ namespace ASLM.Pages
             NotificationsPopup.Margin = new Thickness(x, y, 0, 0);
         }
 
+
+        // Close handling
+
         /// <summary>
         /// Closes the popover when the transparent background is tapped.
         /// </summary>
@@ -218,6 +241,9 @@ namespace ASLM.Pages
         {
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
+
+
+        // Actions
 
         /// <summary>
         /// Clears all notifications when the Clear all button is pressed.
@@ -264,6 +290,12 @@ namespace ASLM.Pages
             }
         }
 
+
+        // Helpers
+
+        /// <summary>
+        /// Walks the visual tree from the event sender to find the bound notification.
+        /// </summary>
         private static bool TryFindNotificationBindingContext(object? sender, out AppNotification notification)
         {
             for (var element = sender as Element; element != null; element = element.Parent)
@@ -279,6 +311,9 @@ namespace ASLM.Pages
             return false;
         }
 
+
+        // Change handling
+
         /// <summary>
         /// Rebuilds the visible list when service state changes.
         /// </summary>
@@ -289,7 +324,6 @@ namespace ASLM.Pages
 
         /// <summary>
         /// Raises view-state properties when the service collection changes.
-        /// The CollectionView is bound directly to the service collection, so no rebuild needed.
         /// </summary>
         private void RefreshVisibleNotifications()
         {
@@ -307,6 +341,9 @@ namespace ASLM.Pages
             OnPropertyChanged(nameof(IsEmptyVisible));
             OnPropertyChanged(nameof(HasAnyNotifications));
         }
+
+
+        // Property notifications
 
         /// <summary>
         /// Raises the view property changed event.

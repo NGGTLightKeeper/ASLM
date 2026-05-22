@@ -13,8 +13,6 @@ using Microsoft.Maui.Controls;
 
 namespace ASLM.Pages
 {
-    // ASLM API page
-
     /// <summary>
     /// Displays and controls the local ASLM API mirror server.
     /// </summary>
@@ -68,7 +66,12 @@ namespace ASLM.Pages
             _moduleInstaller.ModulesChanged += OnModulesChanged;
         }
 
-        /// <inheritdoc />
+
+        // Localization
+
+        /// <summary>
+        /// Applies localized strings to page chrome and visible host rows.
+        /// </summary>
         public void ApplyLocalization()
         {
             PageTitleLabel.Text = L.Get(LocalizationKeys.AslmApi_Title);
@@ -89,9 +92,11 @@ namespace ASLM.Pages
         }
 
 
-        // Notifications
+        // Property notifications
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Raised when a bindable property on this view changes.
+        /// </summary>
         public new event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
@@ -160,16 +165,28 @@ namespace ASLM.Pages
             StopRefreshLoop();
         }
 
+
+        // Theme chrome
+
+        /// <summary>
+        /// Refreshes host copy-button chrome after a custom palette is applied.
+        /// </summary>
         private void OnPaletteAppliedForCopyButtons()
         {
             MainThread.BeginInvokeOnMainThread(RefreshHostCopyButtonChrome);
         }
 
+        /// <summary>
+        /// Refreshes host copy-button chrome when the application theme changes.
+        /// </summary>
         private void OnApplicationRequestedThemeChanged(object? sender, AppThemeChangedEventArgs e)
         {
             MainThread.BeginInvokeOnMainThread(RefreshHostCopyButtonChrome);
         }
 
+        /// <summary>
+        /// Updates copy-button fill and icon tint on every visible host row.
+        /// </summary>
         private void RefreshHostCopyButtonChrome()
         {
             foreach (var host in Hosts)
@@ -456,7 +473,6 @@ namespace ASLM.Pages
     /// </summary>
     public sealed record AslmApiModuleDisplayState(string Name, bool IsEnabled);
 
-    // ASLM API host row
 
     /// <summary>
     /// Exposes one mirror host row to the ASLM API page.
@@ -475,6 +491,9 @@ namespace ASLM.Pages
         private Color _copyButtonBackground = Colors.Black;
         private ImageSource _copyIconSource = ImageSource.FromFile("icon_copy.png");
 
+
+        // Initialization
+
         /// <summary>
         /// Creates a host row from the current service host info.
         /// </summary>
@@ -488,8 +507,16 @@ namespace ASLM.Pages
             RefreshCopyButtonChrome();
         }
 
-        /// <inheritdoc />
+
+        // Property notifications
+
+        /// <summary>
+        /// Raised when a bindable property on this host row changes.
+        /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged;
+
+
+        // Bound properties
 
         /// <summary>
         /// Gets the module identifier for this host.
@@ -592,11 +619,17 @@ namespace ASLM.Pages
         /// </summary>
         public Command CopyCommand => _copyCommand ??= new Command(async () => await CopyMirrorUrlAsync());
 
+
+        // Localization
+
         /// <summary>
         /// Refreshes localized bindable labels after a culture change.
         /// </summary>
         public void RefreshLocalizationLabels() =>
             OnPropertyChanged(nameof(ModuleStatusText));
+
+
+        // Theme chrome
 
         /// <summary>
         /// Recomputes copy-button fill and tinted icon after theme or palette changes.
@@ -609,20 +642,8 @@ namespace ASLM.Pages
             CopyIconSource = PackagedIconTintCache.Get("icon_copy.png", iconTint);
         }
 
-        private static bool IsAppDarkAppearance()
-        {
-            if (Application.Current is not { } app)
-            {
-                return false;
-            }
 
-            return app.RequestedTheme switch
-            {
-                AppTheme.Dark => true,
-                AppTheme.Light => false,
-                _ => ThemeService.IsSystemDark()
-            };
-        }
+        // Actions
 
         /// <summary>
         /// Copies the host URL and publishes a shared toast confirmation.
@@ -636,6 +657,9 @@ namespace ASLM.Pages
                 L.Get(LocalizationKeys.AslmApi_AddressCopiedStatus),
                 $"aslm-api:{Key.GetHashCode(StringComparison.OrdinalIgnoreCase)}");
         }
+
+
+        // Row updates
 
         /// <summary>
         /// Updates the row from fresh service data without recreating the row object.
@@ -661,6 +685,27 @@ namespace ASLM.Pages
             IsModuleDisabled = !moduleState.IsEnabled;
             OnPropertyChanged(nameof(Title));
             OnPropertyChanged(nameof(ModuleStatusText));
+        }
+
+
+        // Helpers
+
+        /// <summary>
+        /// Resolves whether the app should treat the current appearance as dark.
+        /// </summary>
+        private static bool IsAppDarkAppearance()
+        {
+            if (Application.Current is not { } app)
+            {
+                return false;
+            }
+
+            return app.RequestedTheme switch
+            {
+                AppTheme.Dark => true,
+                AppTheme.Light => false,
+                _ => ThemeService.IsSystemDark()
+            };
         }
 
         /// <summary>
@@ -728,6 +773,9 @@ namespace ASLM.Pages
 
             return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(lower);
         }
+
+
+        // Property notifications
 
         /// <summary>
         /// Raises one binding notification for this row.

@@ -17,8 +17,6 @@ using ASLM.Services;
 
 namespace ASLM.Pages
 {
-    // Home dashboard view
-
     /// <summary>
     /// Reads semantic colors from the active app palette so presenter snapshots stay readable in light and dark themes.
     /// </summary>
@@ -30,6 +28,9 @@ namespace ASLM.Pages
         public static Color LabelSecondary =>
             Resolve("LabelSecondary", Color.FromArgb("#FF636366"));
 
+        /// <summary>
+        /// Resolves a semantic palette color from application resources.
+        /// </summary>
         private static Color Resolve(string key, Color fallback)
         {
             if (Application.Current?.Resources.TryGetValue(key, out var v) == true && v is Color c)
@@ -40,6 +41,7 @@ namespace ASLM.Pages
             return fallback;
         }
     }
+
 
     /// <summary>
     /// Displays the main ASLM dashboard with live runtime metrics, module controls, and the managed process tree.
@@ -114,6 +116,7 @@ namespace ASLM.Pages
             return _presenter.RefreshAsync();
         }
 
+
         // Lifetime events
 
         /// <summary>
@@ -134,6 +137,7 @@ namespace ASLM.Pages
             _presenter.Deactivate();
         }
 
+
         // Layout events
 
         /// <summary>
@@ -143,6 +147,7 @@ namespace ASLM.Pages
         {
             UpdateResponsiveLayout();
         }
+
 
         // Rendering
 
@@ -170,6 +175,7 @@ namespace ASLM.Pages
                 static item => item.SourcePath,
                 static (target, source) => target.CopyFrom(source));
         }
+
 
         // Responsive layout
 
@@ -214,6 +220,7 @@ namespace ASLM.Pages
             }
         }
 
+
         // Timed refresh
 
         /// <summary>
@@ -252,6 +259,7 @@ namespace ASLM.Pages
             timer.Tick += OnRefreshTimerTick;
             return timer;
         }
+
 
         // Collection helpers
 
@@ -339,6 +347,9 @@ namespace ASLM.Pages
             }
         }
 
+        /// <summary>
+        /// Builds a key-to-index map for the current observable collection contents.
+        /// </summary>
         private static Dictionary<string, int> BuildIndex<T>(ObservableCollection<T> target, Func<T, string> keySelector)
             where T : class
         {
@@ -353,8 +364,6 @@ namespace ASLM.Pages
     }
 
 
-    // View contract
-
     /// <summary>
     /// Defines the rendering contract used by the home dashboard presenter.
     /// </summary>
@@ -366,8 +375,6 @@ namespace ASLM.Pages
         void Render(HomeDashboardState state);
     }
 
-
-    // Presenter
 
     /// <summary>
     /// Builds the home dashboard state, coordinates live refreshes, and handles module actions.
@@ -455,7 +462,7 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Reloads modules when needed, captures diagnostics, and rerenders the dashboard.
+        /// Reloads modules, captures diagnostics, and rerenders the dashboard using the default refresh policy.
         /// </summary>
         public Task RefreshAsync()
         {
@@ -465,6 +472,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Reloads modules when needed, captures diagnostics, and rerenders the dashboard.
         /// </summary>
+        /// <param name="forceModuleReload">When <see langword="true"/>, rediscover modules before sampling diagnostics.</param>
         public async Task RefreshAsync(bool forceModuleReload)
         {
             if (forceModuleReload)
@@ -534,15 +542,17 @@ namespace ASLM.Pages
             MainThread.BeginInvokeOnMainThread(() => _shell?.OpenConsoles());
         }
 
+
         // Console refresh triggers
 
         /// <summary>
-        /// Coalesces bursts of console-store changes into a single dashboard refresh.
+        /// Handles console-store change notifications; periodic refresh already keeps metrics current.
         /// </summary>
         private void OnConsoleStateChanged(object? sender, EventArgs e)
         {
             // Periodic one-second refreshes already keep the dashboard current.
         }
+
 
         // State construction
 
@@ -876,6 +886,7 @@ namespace ASLM.Pages
             return operationState;
         }
 
+
         // Module actions
 
         /// <summary>
@@ -1053,6 +1064,7 @@ namespace ASLM.Pages
         {
             MainThread.BeginInvokeOnMainThread(() => _shell?.OpenConsoles(sourcePath));
         }
+
 
         // Formatting helpers
 
@@ -1318,8 +1330,6 @@ namespace ASLM.Pages
     }
 
 
-    // Dashboard state
-
     /// <summary>
     /// Represents the full UI state required to render the home dashboard.
     /// </summary>
@@ -1340,6 +1350,7 @@ namespace ASLM.Pages
         /// </summary>
         public IReadOnlyList<HomeModuleCardViewModel> Modules { get; set; } = [];
     }
+
 
     /// <summary>
     /// Stores one fully prepared refresh payload before it is rendered on the UI thread.
@@ -1362,8 +1373,6 @@ namespace ASLM.Pages
         public HomeDashboardState State { get; set; } = new();
     }
 
-
-    // Page view model
 
     /// <summary>
     /// Exposes bindable dashboard state for the home page shell.
@@ -1482,8 +1491,6 @@ namespace ASLM.Pages
     }
 
 
-    // Bindable view models
-
     /// <summary>
     /// Provides a small bindable base implementation for dashboard item models.
     /// </summary>
@@ -1506,6 +1513,7 @@ namespace ASLM.Pages
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
+
 
     /// <summary>
     /// Represents one summary card on the home dashboard.
@@ -1598,6 +1606,7 @@ namespace ASLM.Pages
         }
     }
 
+
     /// <summary>
     /// Represents one summary metric row inside a home dashboard card.
     /// </summary>
@@ -1634,6 +1643,7 @@ namespace ASLM.Pages
         public Color AccentColor { get; set; } = Color.FromArgb("#FF32D74B");
     }
 
+
     /// <summary>
     /// Represents one compact metric badge.
     /// </summary>
@@ -1649,6 +1659,7 @@ namespace ASLM.Pages
         /// </summary>
         public Color BackgroundColor { get; set; } = Color.FromArgb("#2238383A");
     }
+
 
     /// <summary>
     /// Represents one module row in the home dashboard.
@@ -1806,6 +1817,7 @@ namespace ASLM.Pages
             ConsoleCommand = source.ConsoleCommand;
         }
     }
+
 
     /// <summary>
     /// Represents one visible row of the managed process tree.
@@ -1976,8 +1988,6 @@ namespace ASLM.Pages
     }
 
 
-    // Presenter support state
-
     /// <summary>
     /// Tracks the busy state of one module action initiated from the home dashboard.
     /// </summary>
@@ -2032,7 +2042,6 @@ namespace ASLM.Pages
         }
     }
 
-    // Diagnostics collector
 
     /// <summary>
     /// Captures live system and process diagnostics used by the home dashboard.
@@ -2056,6 +2065,9 @@ namespace ASLM.Pages
         private HashSet<int> _cachedConnectionProcessIds = new();
         private DateTimeOffset _cachedConnectionCountsUtc = DateTimeOffset.MinValue;
 
+        /// <summary>
+        /// Creates the diagnostics collector used by the home dashboard presenter.
+        /// </summary>
         public HomeDiagnosticsCollector(ProcessSnapshotReader processSnapshots)
         {
             _processSnapshots = processSnapshots;
@@ -2212,6 +2224,7 @@ namespace ASLM.Pages
             return _cachedConnectionCounts;
         }
 
+
         // Module diagnostics
 
         /// <summary>
@@ -2340,6 +2353,7 @@ namespace ASLM.Pages
                 CollectProcessBranch(childProcessId, childrenByParent, liveProcesses, results);
             }
         }
+
 
         // Tree construction
 
@@ -2567,6 +2581,7 @@ namespace ASLM.Pages
                 : $"{processCount} processes";
         }
 
+
         // Process sampling
 
         /// <summary>
@@ -2717,6 +2732,7 @@ namespace ASLM.Pages
                 ConnectionCount = connectionCount
             };
         }
+
 
         // System metrics
 
@@ -3176,6 +3192,7 @@ namespace ASLM.Pages
             }
         }
 
+
         // Process-tree helpers
 
         /// <summary>
@@ -3210,6 +3227,7 @@ namespace ASLM.Pages
 
             return descendants;
         }
+
 
         // Native helpers
 
@@ -3334,23 +3352,36 @@ namespace ASLM.Pages
             return ((ulong)fileTime.HighDateTime << 32) | fileTime.LowDateTime;
         }
 
+
         // Native interop
 
         private const uint ErrorSuccess = 0;
         private const uint ErrorInsufficientBuffer = 122;
 
+        /// <summary>
+        /// Reads cumulative system idle, kernel, and user times from the Windows kernel.
+        /// </summary>
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool GetSystemTimes(
             out FileTime idleTime,
             out FileTime kernelTime,
             out FileTime userTime);
 
+        /// <summary>
+        /// Reads the current global memory status for the host system.
+        /// </summary>
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         private static extern bool GlobalMemoryStatusEx([In, Out] MemoryStatusEx memoryStatus);
 
+        /// <summary>
+        /// Reads cumulative I/O counters for one process handle.
+        /// </summary>
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool GetProcessIoCounters(IntPtr hProcess, out IoCounters ioCounters);
 
+        /// <summary>
+        /// Queries the extended TCP owner table for one IP version.
+        /// </summary>
         [DllImport("iphlpapi.dll", SetLastError = true)]
         private static extern uint GetExtendedTcpTable(
             IntPtr tcpTable,
@@ -3360,6 +3391,9 @@ namespace ASLM.Pages
             TcpTableClass tableClass,
             uint reserved);
 
+        /// <summary>
+        /// Queries the extended UDP owner table for one IP version.
+        /// </summary>
         [DllImport("iphlpapi.dll", SetLastError = true)]
         private static extern uint GetExtendedUdpTable(
             IntPtr udpTable,
@@ -3458,8 +3492,6 @@ namespace ASLM.Pages
     }
 
 
-    // Diagnostics models
-
     /// <summary>
     /// Represents one complete diagnostics capture used to render the home dashboard.
     /// </summary>
@@ -3511,6 +3543,7 @@ namespace ASLM.Pages
         /// </summary>
         public DateTimeOffset? LastModuleActivityUtc { get; set; }
     }
+
 
     /// <summary>
     /// Represents one aggregate usage snapshot.
@@ -3580,6 +3613,7 @@ namespace ASLM.Pages
         public int ConnectionCount { get; set; }
     }
 
+
     /// <summary>
     /// Represents the diagnostics for one installed module.
     /// </summary>
@@ -3627,6 +3661,7 @@ namespace ASLM.Pages
         public int ConsoleSessionCount => ConsoleSnapshot?.Sessions.Count ?? 0;
     }
 
+
     /// <summary>
     /// Represents one live process inside the managed runtime tree.
     /// </summary>
@@ -3652,6 +3687,7 @@ namespace ASLM.Pages
         /// </summary>
         public HomeUsageSnapshot Usage { get; set; } = new();
     }
+
 
     /// <summary>
     /// Represents one GPU adapter with both system-wide and ASLM-runtime utilization.
@@ -3679,6 +3715,7 @@ namespace ASLM.Pages
         public double RuntimePercent { get; set; }
     }
 
+
     /// <summary>
     /// Stores raw GPU engine samples captured during one refresh.
     /// </summary>
@@ -3705,6 +3742,7 @@ namespace ASLM.Pages
         public double Utilization { get; set; }
     }
 
+
     /// <summary>
     /// Stores the GPU query results used for per-process and per-adapter aggregation.
     /// </summary>
@@ -3725,6 +3763,7 @@ namespace ASLM.Pages
         /// </summary>
         public IReadOnlyList<HomeGpuEngineSample> Samples { get; set; } = [];
     }
+
 
     /// <summary>
     /// Represents one tree node before it is flattened for display.
@@ -3792,6 +3831,7 @@ namespace ASLM.Pages
         public bool DefaultExpanded { get; set; }
     }
 
+
     /// <summary>
     /// Stores one raw per-process sample used to calculate CPU and I/O deltas.
     /// </summary>
@@ -3817,6 +3857,7 @@ namespace ASLM.Pages
         /// </summary>
         public ulong WriteTransferCount { get; set; }
     }
+
 
     /// <summary>
     /// Stores one raw system CPU sample used for delta-based utilization calculation.
@@ -3844,6 +3885,7 @@ namespace ASLM.Pages
         public ulong UserTime { get; set; }
     }
 
+
     /// <summary>
     /// Stores one raw network-interface sample used to calculate transfer rates.
     /// </summary>
@@ -3865,6 +3907,7 @@ namespace ASLM.Pages
         public long TotalSentBytes { get; set; }
     }
 
+
     /// <summary>
     /// Stores one host-memory snapshot used to build memory metrics.
     /// </summary>
@@ -3880,6 +3923,7 @@ namespace ASLM.Pages
         /// </summary>
         public long UsedPhysicalBytes { get; set; }
     }
+
 
     /// <summary>
     /// Stores one normalized disk-usage snapshot.
@@ -3901,6 +3945,7 @@ namespace ASLM.Pages
         /// </summary>
         public double WriteBytesPerSecond { get; set; }
     }
+
 
     /// <summary>
     /// Stores one normalized network-throughput snapshot.

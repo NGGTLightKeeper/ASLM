@@ -9,8 +9,6 @@ using Microsoft.Maui.Controls.Shapes;
 
 namespace ASLM.Pages
 {
-    // Application shell
-
     /// <summary>
     /// Hosts the shared sidebar, system views, and module pages.
     /// </summary>
@@ -65,6 +63,7 @@ namespace ASLM.Pages
         private readonly SemaphoreSlim _moduleRefreshLock = new(1, 1);
         private bool _shellEventsHooked;
         private int _moduleRefreshQueued;
+
 
         // Initialization
 
@@ -143,12 +142,10 @@ namespace ASLM.Pages
         }
 
 
-        // Notifications
+        // Property change
 
         /// <inheritdoc />
         public new event PropertyChangedEventHandler? PropertyChanged;
-
-        // Property change
 
         /// <summary>
         /// Raises the shell-level property changed event.
@@ -293,6 +290,7 @@ namespace ASLM.Pages
             }
         }
 
+
         // Module refresh
 
         /// <summary>
@@ -371,8 +369,6 @@ namespace ASLM.Pages
         {
             _ = RefreshModulesAsync();
         }
-
-        // Module state callback
 
         /// <summary>
         /// Refreshes module page buttons after a module changes state.
@@ -499,6 +495,7 @@ namespace ASLM.Pages
             }
         }
 
+
         // Overlay navigation
 
         /// <summary>
@@ -623,6 +620,7 @@ namespace ASLM.Pages
         {
             OverlayContainer.IsVisible = false;
         }
+
 
         // Toast notifications
 
@@ -962,6 +960,9 @@ namespace ASLM.Pages
                 MainThread.BeginInvokeOnMainThread(() => ToastPanel.Children.Remove(toast)));
         }
 
+
+        // Overlay geometry
+
         /// <summary>
         /// Calculates one child element's bounds in the shell coordinate space.
         /// </summary>
@@ -1141,9 +1142,6 @@ namespace ASLM.Pages
 
         // Button labels
 
-        /// <summary>
-        /// Returns the display label for one static shell button.
-        /// </summary>
         /// <inheritdoc />
         public void ApplyLocalization()
         {
@@ -1163,6 +1161,9 @@ namespace ASLM.Pages
             }
         }
 
+        /// <summary>
+        /// Returns the display label for one static shell button.
+        /// </summary>
         private string GetButtonLabel(Button button)
         {
             if (button == HomeButton)
@@ -1366,8 +1367,10 @@ namespace ASLM.Pages
             await Task.WhenAll(startTasks);
         }
 
+
 #if WINDOWS
-        // Module WebView: WinUI WebView2 does not accept external or in-page HTML5 drag/drop unless AllowDrop is enabled.
+
+        // Module WebView
 
         private Microsoft.UI.Xaml.Controls.WebView2? _moduleWebView2;
 
@@ -1388,6 +1391,9 @@ namespace ASLM.Pages
             ApplyModuleWebViewDropTarget(_moduleWebView2);
         }
 
+        /// <summary>
+        /// Enables drag-and-drop on the module WebView2 after the core is initialized.
+        /// </summary>
         private void OnModuleWebViewCoreInitialized(
             Microsoft.UI.Xaml.Controls.WebView2 sender,
             Microsoft.UI.Xaml.Controls.CoreWebView2InitializedEventArgs e)
@@ -1395,6 +1401,9 @@ namespace ASLM.Pages
             ApplyModuleWebViewDropTarget(sender);
         }
 
+        /// <summary>
+        /// Unhooks module WebView2 drag-and-drop handlers when the browser handler is released.
+        /// </summary>
         private void ReleaseModuleWebViewDropTarget()
         {
             if (_moduleWebView2 is null)
@@ -1406,11 +1415,15 @@ namespace ASLM.Pages
             _moduleWebView2 = null;
         }
 
+        /// <summary>
+        /// Sets AllowDrop on the native WebView2 so module pages accept HTML5 drag-and-drop.
+        /// </summary>
         private static void ApplyModuleWebViewDropTarget(Microsoft.UI.Xaml.Controls.WebView2 native)
         {
             native.AllowDrop = true;
         }
 #endif
+
 
         // Browser safety
 
@@ -1461,6 +1474,9 @@ namespace ASLM.Pages
 #endif
         }
 
+        /// <summary>
+        /// Applies inactive sidebar styling to one navigation button.
+        /// </summary>
         private void ApplyShellNavInactiveStyle(Button button)
         {
             button.SetDynamicResource(Button.TextColorProperty, "LabelSecondary");
@@ -1468,6 +1484,9 @@ namespace ASLM.Pages
             ApplySidebarButtonIconFromPalette(button, "LabelPrimary");
         }
 
+        /// <summary>
+        /// Applies active sidebar styling to one navigation button.
+        /// </summary>
         private void ApplyShellNavActiveStyle(Button button)
         {
             button.SetDynamicResource(Button.TextColorProperty, "LabelPrimary");

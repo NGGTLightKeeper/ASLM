@@ -19,8 +19,6 @@ namespace ASLM.Pages
         Update
     }
 
-    // Module update overlay
-
     /// <summary>
     /// Displays module update configuration and installation progress inside the shell overlay.
     /// </summary>
@@ -43,6 +41,9 @@ namespace ASLM.Pages
         private int _logSyncQueued;
         private int _logSyncRequested;
 
+
+        // Events
+
         /// <summary>
         /// Raised when the user asks to close the module update overlay.
         /// </summary>
@@ -51,11 +52,14 @@ namespace ASLM.Pages
         /// <inheritdoc />
         public new event PropertyChangedEventHandler? PropertyChanged;
 
+
+        // Initialization
+
+        private readonly AppLocalizationService _localization;
+
         /// <summary>
         /// Creates the module update overlay and hooks layout updates.
         /// </summary>
-        private readonly AppLocalizationService _localization;
-
         public ModuleUpdateView(AppLocalizationService localization)
         {
             _localization = localization;
@@ -788,6 +792,8 @@ namespace ASLM.Pages
         }
 
 
+        // Picker synchronization
+
         /// <summary>
         /// Keeps picker controls aligned with the module view model after option lists are rebuilt.
         /// </summary>
@@ -821,6 +827,9 @@ namespace ASLM.Pages
             _ = BranchPickerDeferredResyncLoopAsync();
         }
 
+        /// <summary>
+        /// Re-applies branch selection on a short delay loop after the branch list changes.
+        /// </summary>
         private async Task BranchPickerDeferredResyncLoopAsync()
         {
             for (var attempt = 0; attempt < 3; attempt++)
