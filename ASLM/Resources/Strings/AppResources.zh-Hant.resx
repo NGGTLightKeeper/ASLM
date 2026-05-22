@@ -36,8 +36,17 @@
   <data name="AppShell_Title" xml:space="preserve">
     <value>ASLM</value>
   </data>
+  <data name="AslmApi_AddressCopiedStatus" xml:space="preserve">
+    <value>已複製</value>
+  </data>
+  <data name="AslmApi_AddressCopiedTitle" xml:space="preserve">
+    <value>地址已複製</value>
+  </data>
   <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
     <value>複製位址</value>
+  </data>
+  <data name="AslmApi_Disabled" xml:space="preserve">
+    <value>已停用</value>
   </data>
   <data name="AslmApi_Hosts" xml:space="preserve">
     <value>主機</value>
@@ -99,17 +108,161 @@
   <data name="Common_Variant" xml:space="preserve">
     <value>變體</value>
   </data>
+  <data name="Consoles_ActiveModulesFormat" xml:space="preserve">
+    <value>{0} 個活動模組</value>
+  </data>
+  <data name="Consoles_AllActiveModules" xml:space="preserve">
+    <value>所有活動模組</value>
+  </data>
+  <data name="Consoles_AllModules" xml:space="preserve">
+    <value>所有模組</value>
+  </data>
+  <data name="Consoles_AllModulesUnifiedTitle" xml:space="preserve">
+    <value>所有模組 / 統一主控台</value>
+  </data>
+  <data name="Consoles_EmptySelectionDescription" xml:space="preserve">
+    <value>模組啟動、設定、設定同步、服務和執行子程序的主控台輸出將顯示在此處。</value>
+  </data>
+  <data name="Consoles_EmptySelectionFooter" xml:space="preserve">
+    <value>正在等待模組活動。</value>
+  </data>
+  <data name="Consoles_EmptySelectionStatus" xml:space="preserve">
+    <value>啟動或選取模組以查看主控台活動。</value>
+  </data>
+  <data name="Consoles_EmptySelectionTitle" xml:space="preserve">
+    <value>未選取主控台</value>
+  </data>
+  <data name="Consoles_Footer_BufferedFormat" xml:space="preserve">
+    <value>已緩衝 {0} 行 – {1}{2}{3}</value>
+  </data>
+  <data name="Consoles_Footer_EndedFormat" xml:space="preserve">
+    <value> – 於 {0} 結束</value>
+  </data>
+  <data name="Consoles_Footer_ObservedCaptureNote" xml:space="preserve">
+    <value> – 可能無法直接擷取 stdout/stderr</value>
+  </data>
+  <data name="Consoles_Footer_StartedFormat" xml:space="preserve">
+    <value>於 {0} 啟動</value>
+  </data>
+  <data name="Consoles_LastActivityFormat" xml:space="preserve">
+    <value>最近活動 {0}</value>
+  </data>
+  <data name="Consoles_MergedOutput" xml:space="preserve">
+    <value>合併輸出</value>
+  </data>
+  <data name="Consoles_ModuleUnifiedTitleFormat" xml:space="preserve">
+    <value>{0} / 統一主控台</value>
+  </data>
   <data name="Consoles_ModulesHeader" xml:space="preserve">
     <value>模組</value>
   </data>
   <data name="Consoles_NoActiveModules" xml:space="preserve">
     <value>沒有作用中的模組</value>
   </data>
+  <data name="Consoles_NoActivityYet" xml:space="preserve">
+    <value>暫無活動</value>
+  </data>
   <data name="Consoles_NoConsoles" xml:space="preserve">
     <value>沒有主控台</value>
   </data>
+  <data name="Consoles_NoOutputYet" xml:space="preserve">
+    <value>暫無輸出。</value>
+  </data>
+  <data name="Consoles_PidFormat" xml:space="preserve">
+    <value> – PID {0}</value>
+  </data>
+  <data name="Consoles_Run" xml:space="preserve">
+    <value>執行</value>
+  </data>
+  <data name="Consoles_Selected_ObservedRunning" xml:space="preserve">
+    <value>被監視的服務正在執行{0}</value>
+  </data>
+  <data name="Consoles_Selected_ObservedStopped" xml:space="preserve">
+    <value>被監視的服務已停止{0}</value>
+  </data>
+  <data name="Consoles_Selected_SessionCompleted" xml:space="preserve">
+    <value>{0} 工作階段已完成</value>
+  </data>
+  <data name="Consoles_Selected_SessionExitFormat" xml:space="preserve">
+    <value>{0} 工作階段以結束代碼 {1}{2} 結束</value>
+  </data>
+  <data name="Consoles_Selected_SessionRunning" xml:space="preserve">
+    <value>{0} 工作階段正在執行{1}</value>
+  </data>
+  <data name="Consoles_SessionObservedDescription" xml:space="preserve">
+    <value>模組啟動的被監視子程序。ASLM 可以將其作為服務保持可見，但對於第三方可執行檔，可能無法直接擷取 stdout/stderr。</value>
+  </data>
+  <data name="Consoles_SessionObservedPreview" xml:space="preserve">
+    <value>被監視的子程序。可能無法直接擷取 stdout/stderr。</value>
+  </data>
+  <data name="Consoles_SessionStageFormat" xml:space="preserve">
+    <value>{0} 工作階段</value>
+  </data>
+  <data name="Consoles_Stage_Command" xml:space="preserve">
+    <value>命令</value>
+  </data>
+  <data name="Consoles_Stage_Lifecycle" xml:space="preserve">
+    <value>生命週期</value>
+  </data>
+  <data name="Consoles_Stage_Service" xml:space="preserve">
+    <value>服務</value>
+  </data>
+  <data name="Consoles_Status_Completed" xml:space="preserve">
+    <value>{0} – 已完成</value>
+  </data>
+  <data name="Consoles_Status_Disabled" xml:space="preserve">
+    <value>已停用</value>
+  </data>
+  <data name="Consoles_Status_Enabled" xml:space="preserve">
+    <value>已啟用</value>
+  </data>
+  <data name="Consoles_Status_ExitFormat" xml:space="preserve">
+    <value>{0} – 結束 {1}{2}</value>
+  </data>
+  <data name="Consoles_Status_ModuleFormat" xml:space="preserve">
+    <value>{0} – {1} 活動 – {2} 個工作階段</value>
+  </data>
+  <data name="Consoles_Status_RunningFormat" xml:space="preserve">
+    <value>{0} – 執行中{1}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedRunningFormat" xml:space="preserve">
+    <value>服務 – 被監視{0}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedStoppedFormat" xml:space="preserve">
+    <value>服務 – 已停止{0}</value>
+  </data>
   <data name="Consoles_Title" xml:space="preserve">
     <value>主控台</value>
+  </data>
+  <data name="Consoles_UnifiedConsole" xml:space="preserve">
+    <value>統一主控台</value>
+  </data>
+  <data name="Consoles_UnifiedConsoleForActive" xml:space="preserve">
+    <value>所有活動模組的統一主控台</value>
+  </data>
+  <data name="Consoles_UnifiedPreview" xml:space="preserve">
+    <value>包含來自活動模組的統一記錄和已完成程序歷程記錄。</value>
+  </data>
+  <data name="Consoles_VisibleLinesFormat" xml:space="preserve">
+    <value>{0} 行可見</value>
+  </data>
+  <data name="Downloads_CatalogBridgeLoadFailed" xml:space="preserve">
+    <value>無法從已安裝的模組橋接器載入共用目錄。</value>
+  </data>
+  <data name="Downloads_CatalogColumnTitle" xml:space="preserve">
+    <value>目錄</value>
+  </data>
+  <data name="Downloads_CatalogRefreshFailedFormat" xml:space="preserve">
+    <value>下載目錄重新整理失敗：{0}</value>
+  </data>
+  <data name="Downloads_CatalogTitle" xml:space="preserve">
+    <value>下載目錄</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedManyFormat" xml:space="preserve">
+    <value>目錄已更新。已載入 {0} 個類別。</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedOneCategory" xml:space="preserve">
+    <value>目錄已更新。已載入 1 個類別。</value>
   </data>
   <data name="Downloads_CategoryCount_Many" xml:space="preserve">
     <value>{0} 個分類</value>
@@ -120,11 +273,17 @@
   <data name="Downloads_CategoryCount_One" xml:space="preserve">
     <value>1 個分類</value>
   </data>
+  <data name="Downloads_ChooseVariantHint" xml:space="preserve">
+    <value>選取一個系列，然後選取您想要的確切變體。</value>
+  </data>
   <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
     <value>選擇資源系列以檢視其變體與詳細資訊</value>
   </data>
   <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
     <value>目前沒有已安裝的模組提供下載橋接</value>
+  </data>
+  <data name="Downloads_Details" xml:space="preserve">
+    <value>詳細資訊</value>
   </data>
   <data name="Downloads_EmptyCategory" xml:space="preserve">
     <value>此分類沒有可用的分組下載</value>
@@ -135,8 +294,35 @@
   <data name="Downloads_EmptySearch" xml:space="preserve">
     <value>提供者端沒有符合「{0}」的結果</value>
   </data>
+  <data name="Downloads_FamilyCountFormat" xml:space="preserve">
+    <value>{0} 個系列</value>
+  </data>
+  <data name="Downloads_Installed" xml:space="preserve">
+    <value>已安裝</value>
+  </data>
+  <data name="Downloads_InstalledVersionFormat" xml:space="preserve">
+    <value>已安裝 | {0}</value>
+  </data>
+  <data name="Downloads_LoadedManyFormat" xml:space="preserve">
+    <value>已載入 {0} 個類別。</value>
+  </data>
+  <data name="Downloads_LoadedOneCategory" xml:space="preserve">
+    <value>已載入 1 個類別。</value>
+  </data>
+  <data name="Downloads_LoadingCatalog" xml:space="preserve">
+    <value>正在載入共用下載目錄...</value>
+  </data>
   <data name="Downloads_NoItems" xml:space="preserve">
     <value>沒有項目</value>
+  </data>
+  <data name="Downloads_NoSharedDownloads" xml:space="preserve">
+    <value>目前模組沒有發佈共用下載。</value>
+  </data>
+  <data name="Downloads_OneFamily" xml:space="preserve">
+    <value>1 個系列</value>
+  </data>
+  <data name="Downloads_RefreshingCatalog" xml:space="preserve">
+    <value>正在重新整理共用下載目錄...</value>
   </data>
   <data name="Downloads_SearchPlaceholder" xml:space="preserve">
     <value>搜尋提供者目錄</value>
@@ -144,8 +330,68 @@
   <data name="Downloads_SelectItem" xml:space="preserve">
     <value>選取項目</value>
   </data>
+  <data name="Downloads_Status_DetailsLoadFailedFormat" xml:space="preserve">
+    <value>無法載入 {0} 的詳細資訊：{1}</value>
+  </data>
+  <data name="Downloads_Status_InstallCanceledFormat" xml:space="preserve">
+    <value>已取消 {0} 的安裝。</value>
+  </data>
+  <data name="Downloads_Status_InstallFailedFormat" xml:space="preserve">
+    <value>{0} 的安裝失敗：{1}</value>
+  </data>
+  <data name="Downloads_Status_InstallingFormat" xml:space="preserve">
+    <value>正在安裝 {0}...</value>
+  </data>
+  <data name="Downloads_Status_InvalidUrlFormat" xml:space="preserve">
+    <value>開啟失敗：無效 URL '{0}'。</value>
+  </data>
+  <data name="Downloads_Status_NoPageToOpen" xml:space="preserve">
+    <value>所選變體沒有可開啟的頁面。</value>
+  </data>
+  <data name="Downloads_Status_OpenFailedFormat" xml:space="preserve">
+    <value>無法開啟所選頁面：{0}</value>
+  </data>
+  <data name="Downloads_Status_OpenedFormat" xml:space="preserve">
+    <value>已開啟 {0}{1}。</value>
+  </data>
+  <data name="Downloads_Status_Ready" xml:space="preserve">
+    <value>就緒。</value>
+  </data>
+  <data name="Downloads_Status_RefreshingDetailsFormat" xml:space="preserve">
+    <value>正在重新整理 {0} 的詳細資訊...</value>
+  </data>
+  <data name="Downloads_Status_RemoveCanceledFormat" xml:space="preserve">
+    <value>已取消 {0} 的移除。</value>
+  </data>
+  <data name="Downloads_Status_RemoveFailedFormat" xml:space="preserve">
+    <value>{0} 的移除失敗：{1}</value>
+  </data>
+  <data name="Downloads_Status_RemovingFormat" xml:space="preserve">
+    <value>正在移除 {0}...</value>
+  </data>
   <data name="Downloads_Title" xml:space="preserve">
     <value>下載</value>
+  </data>
+  <data name="Home_Badge_DiskFormat" xml:space="preserve">
+    <value>磁碟 {0}</value>
+  </data>
+  <data name="Home_Badge_GpuPercentFormat" xml:space="preserve">
+    <value>GPU {0:F1}%</value>
+  </data>
+  <data name="Home_Badge_GpuUnavailable" xml:space="preserve">
+    <value>GPU 不可用</value>
+  </data>
+  <data name="Home_Badge_NetFormat" xml:space="preserve">
+    <value>網路 {0}</value>
+  </data>
+  <data name="Home_Badge_ProcessesFormat" xml:space="preserve">
+    <value>程序 {0}</value>
+  </data>
+  <data name="Home_Badge_RamFormat" xml:space="preserve">
+    <value>記憶體 {0}</value>
+  </data>
+  <data name="Home_Badge_SessionsFormat" xml:space="preserve">
+    <value>工作階段 {0}</value>
   </data>
   <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
     <value>上次模組活動 {0}</value>
@@ -221,6 +467,12 @@
   </data>
   <data name="Home_Metric_Active_Detail" xml:space="preserve">
     <value>具有即時受管理程序的模組</value>
+  </data>
+  <data name="Home_Metric_ConnectionManyFormat" xml:space="preserve">
+    <value>{0} 連線</value>
+  </data>
+  <data name="Home_Metric_ConnectionOne" xml:space="preserve">
+    <value>1 連線</value>
   </data>
   <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
     <value>{0} 個邏輯核心</value>
@@ -309,6 +561,18 @@
   <data name="Loading_Text" xml:space="preserve">
     <value>載入中...</value>
   </data>
+  <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
+    <value>更新活動</value>
+  </data>
+  <data name="ModuleUpdate_ActivityTitle_Status" xml:space="preserve">
+    <value>更新狀態</value>
+  </data>
+  <data name="ModuleUpdate_Activity_FailedFormat" xml:space="preserve">
+    <value>{0} 更新失敗。</value>
+  </data>
+  <data name="ModuleUpdate_Activity_SuccessFormat" xml:space="preserve">
+    <value>{0} 已成功更新。</value>
+  </data>
   <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
     <value>檢查更新</value>
   </data>
@@ -321,14 +585,38 @@
   <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
     <value>安裝更新</value>
   </data>
+  <data name="ModuleUpdate_LoadOptionsFailedFormat" xml:space="preserve">
+    <value>載入更新選項失敗：{0}</value>
+  </data>
+  <data name="ModuleUpdate_Log_CheckingFormat" xml:space="preserve">
+    <value>正在檢查 {0} 的更新...</value>
+  </data>
+  <data name="ModuleUpdate_Log_Failed" xml:space="preserve">
+    <value>更新未成功完成。</value>
+  </data>
+  <data name="ModuleUpdate_Log_InstallingFormat" xml:space="preserve">
+    <value>正在安裝 {0} 的更新...</value>
+  </data>
+  <data name="ModuleUpdate_Log_StartingFormat" xml:space="preserve">
+    <value>正在啟動 {0} 的更新。</value>
+  </data>
+  <data name="ModuleUpdate_Log_SuccessFormat" xml:space="preserve">
+    <value>更新完成。已安裝 {0}。</value>
+  </data>
   <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
     <value>未選取模組</value>
+  </data>
+  <data name="ModuleUpdate_NoVersionSelected" xml:space="preserve">
+    <value>未選取版本</value>
   </data>
   <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
     <value>整體進度</value>
   </data>
   <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
     <value>偏好設定會自動儲存</value>
+  </data>
+  <data name="ModuleUpdate_ReadyDefault" xml:space="preserve">
+    <value>就緒。</value>
   </data>
   <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
     <value>發行版本</value>
@@ -339,8 +627,35 @@
   <data name="ModuleUpdate_SearchMode" xml:space="preserve">
     <value>搜尋模式</value>
   </data>
+  <data name="ModuleUpdate_SelectBranchRequired" xml:space="preserve">
+    <value>檢查更新前請選取存放庫分支。</value>
+  </data>
   <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
     <value>選取的目標</value>
+  </data>
+  <data name="ModuleUpdate_Status_CheckFailedFormat" xml:space="preserve">
+    <value>檢查失敗：{0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_Checking" xml:space="preserve">
+    <value>正在檢查更新...</value>
+  </data>
+  <data name="ModuleUpdate_Status_ReadyToCheck" xml:space="preserve">
+    <value>準備檢查。</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpToDate" xml:space="preserve">
+    <value>已是最新</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateAvailableFormat" xml:space="preserve">
+    <value>有可用更新：{0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateFailed" xml:space="preserve">
+    <value>更新失敗</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updated" xml:space="preserve">
+    <value>已更新</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updating" xml:space="preserve">
+    <value>正在更新...</value>
   </data>
   <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
     <value>{0} - {1}</value>
@@ -390,6 +705,27 @@
   <data name="Modules_Updating" xml:space="preserve">
     <value>更新中</value>
   </data>
+  <data name="Notifications_ActionFailed" xml:space="preserve">
+    <value>動作失敗</value>
+  </data>
+  <data name="Notifications_AslmUpdateAvailable" xml:space="preserve">
+    <value>ASLM 更新可用</value>
+  </data>
+  <data name="Notifications_AslmUpdateNotAvailable" xml:space="preserve">
+    <value>目前沒有可用的 ASLM 更新。</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailed" xml:space="preserve">
+    <value>無法下載 ASLM 更新。</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailedStatus" xml:space="preserve">
+    <value>準備失敗</value>
+  </data>
+  <data name="Notifications_AslmUpdateTitle" xml:space="preserve">
+    <value>ASLM 更新</value>
+  </data>
+  <data name="Notifications_ChannelFormat" xml:space="preserve">
+    <value>頻道：{0}</value>
+  </data>
   <data name="Notifications_ClearAll" xml:space="preserve">
     <value>全部清除</value>
   </data>
@@ -399,6 +735,18 @@
   <data name="Notifications_EmptyTitle" xml:space="preserve">
     <value>沒有通知</value>
   </data>
+  <data name="Notifications_InstalledVersionFallback" xml:space="preserve">
+    <value>已安裝版本</value>
+  </data>
+  <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
+    <value>該模組已不再安裝。</value>
+  </data>
+  <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
+    <value>模組更新可用</value>
+  </data>
+  <data name="Notifications_NewVersionFound" xml:space="preserve">
+    <value>發現新版本</value>
+  </data>
   <data name="Notifications_SectionRecent" xml:space="preserve">
     <value>最近</value>
   </data>
@@ -407,6 +755,12 @@
   </data>
   <data name="Notifications_Title" xml:space="preserve">
     <value>通知</value>
+  </data>
+  <data name="Notifications_Unavailable" xml:space="preserve">
+    <value>不可用</value>
+  </data>
+  <data name="Notifications_UpdateActionTitle" xml:space="preserve">
+    <value>更新</value>
   </data>
   <data name="Notifications_UpdateLater" xml:space="preserve">
     <value>稍後更新</value>
@@ -720,7 +1074,7 @@
     <value>刪除佈景主題</value>
   </data>
   <data name="Settings_ThemeEditor_Base" xml:space="preserve">
-    <value>基底</value>
+    <value>主題色彩編輯器</value>
   </data>
   <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
     <value>尚未覆寫權杖的內建語意預設值</value>

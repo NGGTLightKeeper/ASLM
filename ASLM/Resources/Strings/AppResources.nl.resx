@@ -36,8 +36,17 @@
   <data name="AppShell_Title" xml:space="preserve">
     <value>ASLM</value>
   </data>
+  <data name="AslmApi_AddressCopiedStatus" xml:space="preserve">
+    <value>Gekopieerd</value>
+  </data>
+  <data name="AslmApi_AddressCopiedTitle" xml:space="preserve">
+    <value>Adres gekopieerd</value>
+  </data>
   <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
     <value>Adres kopiëren</value>
+  </data>
+  <data name="AslmApi_Disabled" xml:space="preserve">
+    <value>Uitgeschakeld</value>
   </data>
   <data name="AslmApi_Hosts" xml:space="preserve">
     <value>Hosts</value>
@@ -99,17 +108,161 @@
   <data name="Common_Variant" xml:space="preserve">
     <value>Variant</value>
   </data>
+  <data name="Consoles_ActiveModulesFormat" xml:space="preserve">
+    <value>{0} actieve modules</value>
+  </data>
+  <data name="Consoles_AllActiveModules" xml:space="preserve">
+    <value>Alle actieve modules</value>
+  </data>
+  <data name="Consoles_AllModules" xml:space="preserve">
+    <value>Alle modules</value>
+  </data>
+  <data name="Consoles_AllModulesUnifiedTitle" xml:space="preserve">
+    <value>Alle modules / Geïntegreerde console</value>
+  </data>
+  <data name="Consoles_EmptySelectionDescription" xml:space="preserve">
+    <value>Console-uitvoer van het opstarten, instellen, synchroniseren van instellingen, services en subprocessen van modules wordt hier weergegeven.</value>
+  </data>
+  <data name="Consoles_EmptySelectionFooter" xml:space="preserve">
+    <value>Wachten op moduleactiviteit.</value>
+  </data>
+  <data name="Consoles_EmptySelectionStatus" xml:space="preserve">
+    <value>Start of selecteer een module om console-activiteit te zien.</value>
+  </data>
+  <data name="Consoles_EmptySelectionTitle" xml:space="preserve">
+    <value>Geen console geselecteerd</value>
+  </data>
+  <data name="Consoles_Footer_BufferedFormat" xml:space="preserve">
+    <value>{0} gebufferde regels – {1}{2}{3}</value>
+  </data>
+  <data name="Consoles_Footer_EndedFormat" xml:space="preserve">
+    <value> – Beëindigd {0}</value>
+  </data>
+  <data name="Consoles_Footer_ObservedCaptureNote" xml:space="preserve">
+    <value> – directe stdout/stderr-opname is mogelijk niet beschikbaar</value>
+  </data>
+  <data name="Consoles_Footer_StartedFormat" xml:space="preserve">
+    <value>Gestart {0}</value>
+  </data>
+  <data name="Consoles_LastActivityFormat" xml:space="preserve">
+    <value>Laatste activiteit {0}</value>
+  </data>
+  <data name="Consoles_MergedOutput" xml:space="preserve">
+    <value>Samengevoegde uitvoer</value>
+  </data>
+  <data name="Consoles_ModuleUnifiedTitleFormat" xml:space="preserve">
+    <value>{0} / Geïntegreerde console</value>
+  </data>
   <data name="Consoles_ModulesHeader" xml:space="preserve">
     <value>Modules</value>
   </data>
   <data name="Consoles_NoActiveModules" xml:space="preserve">
     <value>Geen actieve modules</value>
   </data>
+  <data name="Consoles_NoActivityYet" xml:space="preserve">
+    <value>Nog geen activiteit</value>
+  </data>
   <data name="Consoles_NoConsoles" xml:space="preserve">
     <value>Geen consoles</value>
   </data>
+  <data name="Consoles_NoOutputYet" xml:space="preserve">
+    <value>Nog geen uitvoer.</value>
+  </data>
+  <data name="Consoles_PidFormat" xml:space="preserve">
+    <value> – PID {0}</value>
+  </data>
+  <data name="Consoles_Run" xml:space="preserve">
+    <value>Uitvoeren</value>
+  </data>
+  <data name="Consoles_Selected_ObservedRunning" xml:space="preserve">
+    <value>Geobserveerde service wordt uitgevoerd{0}</value>
+  </data>
+  <data name="Consoles_Selected_ObservedStopped" xml:space="preserve">
+    <value>Geobserveerde service gestopt{0}</value>
+  </data>
+  <data name="Consoles_Selected_SessionCompleted" xml:space="preserve">
+    <value>{0}-sessie voltooid</value>
+  </data>
+  <data name="Consoles_Selected_SessionExitFormat" xml:space="preserve">
+    <value>{0}-sessie beëindigd met afsluitcode {1}{2}</value>
+  </data>
+  <data name="Consoles_Selected_SessionRunning" xml:space="preserve">
+    <value>{0}-sessie wordt uitgevoerd{1}</value>
+  </data>
+  <data name="Consoles_SessionObservedDescription" xml:space="preserve">
+    <value>Geobserveerd kindproces gestart door de module. ASLM kan het zichtbaar houden als service, maar directe stdout/stderr-opname is mogelijk niet beschikbaar voor uitvoerbare bestanden van derden.</value>
+  </data>
+  <data name="Consoles_SessionObservedPreview" xml:space="preserve">
+    <value>Geobserveerd kindproces. Directe stdout/stderr-opname is mogelijk niet beschikbaar.</value>
+  </data>
+  <data name="Consoles_SessionStageFormat" xml:space="preserve">
+    <value>{0}-sessie</value>
+  </data>
+  <data name="Consoles_Stage_Command" xml:space="preserve">
+    <value>Opdracht</value>
+  </data>
+  <data name="Consoles_Stage_Lifecycle" xml:space="preserve">
+    <value>Levenscyclus</value>
+  </data>
+  <data name="Consoles_Stage_Service" xml:space="preserve">
+    <value>Service</value>
+  </data>
+  <data name="Consoles_Status_Completed" xml:space="preserve">
+    <value>{0} – Voltooid</value>
+  </data>
+  <data name="Consoles_Status_Disabled" xml:space="preserve">
+    <value>Uitgeschakeld</value>
+  </data>
+  <data name="Consoles_Status_Enabled" xml:space="preserve">
+    <value>Ingeschakeld</value>
+  </data>
+  <data name="Consoles_Status_ExitFormat" xml:space="preserve">
+    <value>{0} – Afsluiten {1}{2}</value>
+  </data>
+  <data name="Consoles_Status_ModuleFormat" xml:space="preserve">
+    <value>{0} – {1} actief – {2} sessies</value>
+  </data>
+  <data name="Consoles_Status_RunningFormat" xml:space="preserve">
+    <value>{0} – Wordt uitgevoerd{1}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedRunningFormat" xml:space="preserve">
+    <value>Service – Geobserveerd{0}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedStoppedFormat" xml:space="preserve">
+    <value>Service – Gestopt{0}</value>
+  </data>
   <data name="Consoles_Title" xml:space="preserve">
     <value>Consoles</value>
+  </data>
+  <data name="Consoles_UnifiedConsole" xml:space="preserve">
+    <value>Geïntegreerde console</value>
+  </data>
+  <data name="Consoles_UnifiedConsoleForActive" xml:space="preserve">
+    <value>Geïntegreerde console voor alle actieve modules</value>
+  </data>
+  <data name="Consoles_UnifiedPreview" xml:space="preserve">
+    <value>Bevat geïntegreerde logboeken en voltooide procesgeschiedenis van actieve modules.</value>
+  </data>
+  <data name="Consoles_VisibleLinesFormat" xml:space="preserve">
+    <value>{0} zichtbare regels</value>
+  </data>
+  <data name="Downloads_CatalogBridgeLoadFailed" xml:space="preserve">
+    <value>De gedeelde catalogus kon niet worden geladen vanuit de geïnstalleerde modulebridges.</value>
+  </data>
+  <data name="Downloads_CatalogColumnTitle" xml:space="preserve">
+    <value>Catalogus</value>
+  </data>
+  <data name="Downloads_CatalogRefreshFailedFormat" xml:space="preserve">
+    <value>Vernieuwen van downloadcatalogus mislukt: {0}</value>
+  </data>
+  <data name="Downloads_CatalogTitle" xml:space="preserve">
+    <value>Downloadcatalogus</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedManyFormat" xml:space="preserve">
+    <value>Catalogus bijgewerkt. {0} categorieën geladen.</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedOneCategory" xml:space="preserve">
+    <value>Catalogus bijgewerkt. 1 categorie geladen.</value>
   </data>
   <data name="Downloads_CategoryCount_Many" xml:space="preserve">
     <value>{0} categorieën</value>
@@ -120,11 +273,17 @@
   <data name="Downloads_CategoryCount_One" xml:space="preserve">
     <value>1 categorie</value>
   </data>
+  <data name="Downloads_ChooseVariantHint" xml:space="preserve">
+    <value>Kies een familie en vervolgens de exacte variant die u wilt.</value>
+  </data>
   <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
     <value>Kies een resourcefamilie om varianten en details te bekijken</value>
   </data>
   <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
     <value>Geen geïnstalleerde module biedt momenteel een downloadbrug</value>
+  </data>
+  <data name="Downloads_Details" xml:space="preserve">
+    <value>Details</value>
   </data>
   <data name="Downloads_EmptyCategory" xml:space="preserve">
     <value>Er zijn geen gegroepeerde downloads beschikbaar voor deze categorie</value>
@@ -135,8 +294,35 @@
   <data name="Downloads_EmptySearch" xml:space="preserve">
     <value>Geen resultaten voor "{0}" aan de kant van de provider</value>
   </data>
+  <data name="Downloads_FamilyCountFormat" xml:space="preserve">
+    <value>{0} gezinnen</value>
+  </data>
+  <data name="Downloads_Installed" xml:space="preserve">
+    <value>Geïnstalleerd</value>
+  </data>
+  <data name="Downloads_InstalledVersionFormat" xml:space="preserve">
+    <value>Geïnstalleerd | {0}</value>
+  </data>
+  <data name="Downloads_LoadedManyFormat" xml:space="preserve">
+    <value>{0} categorieën geladen.</value>
+  </data>
+  <data name="Downloads_LoadedOneCategory" xml:space="preserve">
+    <value>1 categorie geladen.</value>
+  </data>
+  <data name="Downloads_LoadingCatalog" xml:space="preserve">
+    <value>Gedeelde downloadcatalogus laden...</value>
+  </data>
   <data name="Downloads_NoItems" xml:space="preserve">
     <value>Geen items</value>
+  </data>
+  <data name="Downloads_NoSharedDownloads" xml:space="preserve">
+    <value>Er zijn geen gedeelde downloads gepubliceerd door de huidige modules.</value>
+  </data>
+  <data name="Downloads_OneFamily" xml:space="preserve">
+    <value>1 familie</value>
+  </data>
+  <data name="Downloads_RefreshingCatalog" xml:space="preserve">
+    <value>Gedeelde downloadcatalogus vernieuwen...</value>
   </data>
   <data name="Downloads_SearchPlaceholder" xml:space="preserve">
     <value>Doorzoek de providercatalogus</value>
@@ -144,8 +330,68 @@
   <data name="Downloads_SelectItem" xml:space="preserve">
     <value>Selecteer een item</value>
   </data>
+  <data name="Downloads_Status_DetailsLoadFailedFormat" xml:space="preserve">
+    <value>Details konden niet worden geladen voor {0}: {1}</value>
+  </data>
+  <data name="Downloads_Status_InstallCanceledFormat" xml:space="preserve">
+    <value>Installatie geannuleerd voor {0}.</value>
+  </data>
+  <data name="Downloads_Status_InstallFailedFormat" xml:space="preserve">
+    <value>Installatie mislukt voor {0}: {1}</value>
+  </data>
+  <data name="Downloads_Status_InstallingFormat" xml:space="preserve">
+    <value>{0} installeren...</value>
+  </data>
+  <data name="Downloads_Status_InvalidUrlFormat" xml:space="preserve">
+    <value>Openen mislukt: ongeldige URL '{0}'.</value>
+  </data>
+  <data name="Downloads_Status_NoPageToOpen" xml:space="preserve">
+    <value>De geselecteerde variant heeft geen pagina om te openen.</value>
+  </data>
+  <data name="Downloads_Status_OpenFailedFormat" xml:space="preserve">
+    <value>Geselecteerde pagina kon niet worden geopend: {0}</value>
+  </data>
+  <data name="Downloads_Status_OpenedFormat" xml:space="preserve">
+    <value>{0}{1} geopend.</value>
+  </data>
+  <data name="Downloads_Status_Ready" xml:space="preserve">
+    <value>Gereed.</value>
+  </data>
+  <data name="Downloads_Status_RefreshingDetailsFormat" xml:space="preserve">
+    <value>Details vernieuwen voor {0}...</value>
+  </data>
+  <data name="Downloads_Status_RemoveCanceledFormat" xml:space="preserve">
+    <value>Verwijdering geannuleerd voor {0}.</value>
+  </data>
+  <data name="Downloads_Status_RemoveFailedFormat" xml:space="preserve">
+    <value>Verwijdering mislukt voor {0}: {1}</value>
+  </data>
+  <data name="Downloads_Status_RemovingFormat" xml:space="preserve">
+    <value>{0} verwijderen...</value>
+  </data>
   <data name="Downloads_Title" xml:space="preserve">
     <value>Downloaden</value>
+  </data>
+  <data name="Home_Badge_DiskFormat" xml:space="preserve">
+    <value>Schijf {0}</value>
+  </data>
+  <data name="Home_Badge_GpuPercentFormat" xml:space="preserve">
+    <value>GPU {0:F1}%</value>
+  </data>
+  <data name="Home_Badge_GpuUnavailable" xml:space="preserve">
+    <value>GPU n.v.t.</value>
+  </data>
+  <data name="Home_Badge_NetFormat" xml:space="preserve">
+    <value>Net {0}</value>
+  </data>
+  <data name="Home_Badge_ProcessesFormat" xml:space="preserve">
+    <value>Processen {0}</value>
+  </data>
+  <data name="Home_Badge_RamFormat" xml:space="preserve">
+    <value>RAM {0}</value>
+  </data>
+  <data name="Home_Badge_SessionsFormat" xml:space="preserve">
+    <value>Sessie {0}</value>
   </data>
   <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
     <value>Laatste moduleactiviteit {0}</value>
@@ -221,6 +467,12 @@
   </data>
   <data name="Home_Metric_Active_Detail" xml:space="preserve">
     <value>Modules met actieve beheerde processen</value>
+  </data>
+  <data name="Home_Metric_ConnectionManyFormat" xml:space="preserve">
+    <value>{0} verb.</value>
+  </data>
+  <data name="Home_Metric_ConnectionOne" xml:space="preserve">
+    <value>1 verb.</value>
   </data>
   <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
     <value>{0} logische kernen</value>
@@ -309,6 +561,18 @@
   <data name="Loading_Text" xml:space="preserve">
     <value>Laden...</value>
   </data>
+  <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
+    <value>Updateactiviteit</value>
+  </data>
+  <data name="ModuleUpdate_ActivityTitle_Status" xml:space="preserve">
+    <value>Updatestatus</value>
+  </data>
+  <data name="ModuleUpdate_Activity_FailedFormat" xml:space="preserve">
+    <value>Update van {0} mislukt.</value>
+  </data>
+  <data name="ModuleUpdate_Activity_SuccessFormat" xml:space="preserve">
+    <value>{0} succesvol bijgewerkt.</value>
+  </data>
   <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
     <value>Updates controleren</value>
   </data>
@@ -321,14 +585,38 @@
   <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
     <value>Update installeren</value>
   </data>
+  <data name="ModuleUpdate_LoadOptionsFailedFormat" xml:space="preserve">
+    <value>Laden van updateopties mislukt: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Log_CheckingFormat" xml:space="preserve">
+    <value>Updates controleren voor {0}...</value>
+  </data>
+  <data name="ModuleUpdate_Log_Failed" xml:space="preserve">
+    <value>Update is niet succesvol voltooid.</value>
+  </data>
+  <data name="ModuleUpdate_Log_InstallingFormat" xml:space="preserve">
+    <value>Update voor {0} installeren...</value>
+  </data>
+  <data name="ModuleUpdate_Log_StartingFormat" xml:space="preserve">
+    <value>Update voor {0} starten.</value>
+  </data>
+  <data name="ModuleUpdate_Log_SuccessFormat" xml:space="preserve">
+    <value>Update voltooid. {0} geïnstalleerd.</value>
+  </data>
   <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
     <value>Geen module geselecteerd</value>
+  </data>
+  <data name="ModuleUpdate_NoVersionSelected" xml:space="preserve">
+    <value>Geen versie geselecteerd</value>
   </data>
   <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
     <value>Totale voortgang</value>
   </data>
   <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
     <value>Voorkeuren worden automatisch opgeslagen</value>
+  </data>
+  <data name="ModuleUpdate_ReadyDefault" xml:space="preserve">
+    <value>Gereed.</value>
   </data>
   <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
     <value>Releaseversie</value>
@@ -339,8 +627,35 @@
   <data name="ModuleUpdate_SearchMode" xml:space="preserve">
     <value>Zoekmodus</value>
   </data>
+  <data name="ModuleUpdate_SelectBranchRequired" xml:space="preserve">
+    <value>Selecteer een repository-branch voordat u updates controleert.</value>
+  </data>
   <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
     <value>Geselecteerd doel</value>
+  </data>
+  <data name="ModuleUpdate_Status_CheckFailedFormat" xml:space="preserve">
+    <value>Controle mislukt: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_Checking" xml:space="preserve">
+    <value>Updates controleren...</value>
+  </data>
+  <data name="ModuleUpdate_Status_ReadyToCheck" xml:space="preserve">
+    <value>Klaar om te controleren.</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpToDate" xml:space="preserve">
+    <value>Up-to-date</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateAvailableFormat" xml:space="preserve">
+    <value>Update beschikbaar: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateFailed" xml:space="preserve">
+    <value>Update mislukt</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updated" xml:space="preserve">
+    <value>Bijgewerkt</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updating" xml:space="preserve">
+    <value>Bijwerken...</value>
   </data>
   <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
     <value>{0} - {1}</value>
@@ -390,6 +705,27 @@
   <data name="Modules_Updating" xml:space="preserve">
     <value>Bijwerken</value>
   </data>
+  <data name="Notifications_ActionFailed" xml:space="preserve">
+    <value>Actie mislukt</value>
+  </data>
+  <data name="Notifications_AslmUpdateAvailable" xml:space="preserve">
+    <value>ASLM-update beschikbaar</value>
+  </data>
+  <data name="Notifications_AslmUpdateNotAvailable" xml:space="preserve">
+    <value>Er is momenteel geen ASLM-update beschikbaar.</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailed" xml:space="preserve">
+    <value>De ASLM-update kon niet worden gedownload.</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailedStatus" xml:space="preserve">
+    <value>Voorbereiding mislukt</value>
+  </data>
+  <data name="Notifications_AslmUpdateTitle" xml:space="preserve">
+    <value>ASLM-update</value>
+  </data>
+  <data name="Notifications_ChannelFormat" xml:space="preserve">
+    <value>Kanaal: {0}</value>
+  </data>
   <data name="Notifications_ClearAll" xml:space="preserve">
     <value>Alles wissen</value>
   </data>
@@ -399,6 +735,18 @@
   <data name="Notifications_EmptyTitle" xml:space="preserve">
     <value>Geen meldingen</value>
   </data>
+  <data name="Notifications_InstalledVersionFallback" xml:space="preserve">
+    <value>geïnstalleerde versie</value>
+  </data>
+  <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
+    <value>Die module is niet meer geïnstalleerd.</value>
+  </data>
+  <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
+    <value>Module-update beschikbaar</value>
+  </data>
+  <data name="Notifications_NewVersionFound" xml:space="preserve">
+    <value>Nieuwe versie gevonden</value>
+  </data>
   <data name="Notifications_SectionRecent" xml:space="preserve">
     <value>Recent</value>
   </data>
@@ -407,6 +755,12 @@
   </data>
   <data name="Notifications_Title" xml:space="preserve">
     <value>Meldingen</value>
+  </data>
+  <data name="Notifications_Unavailable" xml:space="preserve">
+    <value>Niet beschikbaar</value>
+  </data>
+  <data name="Notifications_UpdateActionTitle" xml:space="preserve">
+    <value>Bijwerken</value>
   </data>
   <data name="Notifications_UpdateLater" xml:space="preserve">
     <value>Later bijwerken</value>
@@ -466,7 +820,7 @@
     <value>Themamodus, taal en aangepaste thema-instellingen</value>
   </data>
   <data name="Settings_Category_Updates" xml:space="preserve">
-    <value>Updates</value>
+    <value>Bijwerkingen</value>
   </data>
   <data name="Settings_Category_Updates_Description" xml:space="preserve">
     <value>Voorkeuren voor applicatie- en module-updates</value>
@@ -720,7 +1074,7 @@
     <value>Thema verwijderen</value>
   </data>
   <data name="Settings_ThemeEditor_Base" xml:space="preserve">
-    <value>Basis</value>
+    <value>Thema-kleureneditor</value>
   </data>
   <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
     <value>Ingebouwde semantische standaardwaarden voor tokens die u nog niet hebt overschreven</value>

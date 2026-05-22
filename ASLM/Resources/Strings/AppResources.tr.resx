@@ -36,8 +36,17 @@
   <data name="AppShell_Title" xml:space="preserve">
     <value>ASLM</value>
   </data>
+  <data name="AslmApi_AddressCopiedStatus" xml:space="preserve">
+    <value>Kopyalandı</value>
+  </data>
+  <data name="AslmApi_AddressCopiedTitle" xml:space="preserve">
+    <value>Adres kopyalandı</value>
+  </data>
   <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
     <value>Adresi kopyala</value>
+  </data>
+  <data name="AslmApi_Disabled" xml:space="preserve">
+    <value>Devre dışı</value>
   </data>
   <data name="AslmApi_Hosts" xml:space="preserve">
     <value>Sunucular</value>
@@ -99,17 +108,161 @@
   <data name="Common_Variant" xml:space="preserve">
     <value>Varyant</value>
   </data>
+  <data name="Consoles_ActiveModulesFormat" xml:space="preserve">
+    <value>{0} etkin modül</value>
+  </data>
+  <data name="Consoles_AllActiveModules" xml:space="preserve">
+    <value>Tüm etkin modüller</value>
+  </data>
+  <data name="Consoles_AllModules" xml:space="preserve">
+    <value>Tüm modüller</value>
+  </data>
+  <data name="Consoles_AllModulesUnifiedTitle" xml:space="preserve">
+    <value>Tüm modüller / Birleşik konsol</value>
+  </data>
+  <data name="Consoles_EmptySelectionDescription" xml:space="preserve">
+    <value>Modül başlatma, kurulum, ayar senkronizasyonu, hizmetler ve çalıştırma alt süreçlerinden gelen konsol çıktısı burada görünecek.</value>
+  </data>
+  <data name="Consoles_EmptySelectionFooter" xml:space="preserve">
+    <value>Modül etkinliği bekleniyor.</value>
+  </data>
+  <data name="Consoles_EmptySelectionStatus" xml:space="preserve">
+    <value>Konsol etkinliğini görmek için bir modül başlatın veya seçin.</value>
+  </data>
+  <data name="Consoles_EmptySelectionTitle" xml:space="preserve">
+    <value>Konsol seçilmedi</value>
+  </data>
+  <data name="Consoles_Footer_BufferedFormat" xml:space="preserve">
+    <value>{0} arabelleğe alınan satır – {1}{2}{3}</value>
+  </data>
+  <data name="Consoles_Footer_EndedFormat" xml:space="preserve">
+    <value> – {0} tarihinde sona erdi</value>
+  </data>
+  <data name="Consoles_Footer_ObservedCaptureNote" xml:space="preserve">
+    <value> – stdout/stderr doğrudan yakalanması mevcut olmayabilir</value>
+  </data>
+  <data name="Consoles_Footer_StartedFormat" xml:space="preserve">
+    <value>{0} tarihinde başlatıldı</value>
+  </data>
+  <data name="Consoles_LastActivityFormat" xml:space="preserve">
+    <value>Son etkinlik {0}</value>
+  </data>
+  <data name="Consoles_MergedOutput" xml:space="preserve">
+    <value>Birleştirilmiş çıktı</value>
+  </data>
+  <data name="Consoles_ModuleUnifiedTitleFormat" xml:space="preserve">
+    <value>{0} / Birleşik konsol</value>
+  </data>
   <data name="Consoles_ModulesHeader" xml:space="preserve">
     <value>Modüller</value>
   </data>
   <data name="Consoles_NoActiveModules" xml:space="preserve">
     <value>Etkin modül yok</value>
   </data>
+  <data name="Consoles_NoActivityYet" xml:space="preserve">
+    <value>Henüz etkinlik yok</value>
+  </data>
   <data name="Consoles_NoConsoles" xml:space="preserve">
     <value>Konsol yok</value>
   </data>
+  <data name="Consoles_NoOutputYet" xml:space="preserve">
+    <value>Henüz çıktı yok.</value>
+  </data>
+  <data name="Consoles_PidFormat" xml:space="preserve">
+    <value> – PID {0}</value>
+  </data>
+  <data name="Consoles_Run" xml:space="preserve">
+    <value>Çalıştır</value>
+  </data>
+  <data name="Consoles_Selected_ObservedRunning" xml:space="preserve">
+    <value>Gözlemlenen hizmet çalışıyor{0}</value>
+  </data>
+  <data name="Consoles_Selected_ObservedStopped" xml:space="preserve">
+    <value>Gözlemlenen hizmet durdu{0}</value>
+  </data>
+  <data name="Consoles_Selected_SessionCompleted" xml:space="preserve">
+    <value>{0} oturumu tamamlandı</value>
+  </data>
+  <data name="Consoles_Selected_SessionExitFormat" xml:space="preserve">
+    <value>{0} oturumu {1}{2} çıkış koduyla sona erdi</value>
+  </data>
+  <data name="Consoles_Selected_SessionRunning" xml:space="preserve">
+    <value>{0} oturumu çalışıyor{1}</value>
+  </data>
+  <data name="Consoles_SessionObservedDescription" xml:space="preserve">
+    <value>Modül tarafından başlatılan gözlemlenen alt süreç. ASLM bunu bir hizmet olarak görünür tutabilir, ancak üçüncü taraf çalıştırılabilir dosyalar için stdout/stderr doğrudan yakalanması mevcut olmayabilir.</value>
+  </data>
+  <data name="Consoles_SessionObservedPreview" xml:space="preserve">
+    <value>Gözlemlenen alt süreç. stdout/stderr doğrudan yakalanması mevcut olmayabilir.</value>
+  </data>
+  <data name="Consoles_SessionStageFormat" xml:space="preserve">
+    <value>{0} oturumu</value>
+  </data>
+  <data name="Consoles_Stage_Command" xml:space="preserve">
+    <value>Komut</value>
+  </data>
+  <data name="Consoles_Stage_Lifecycle" xml:space="preserve">
+    <value>Yaşam döngüsü</value>
+  </data>
+  <data name="Consoles_Stage_Service" xml:space="preserve">
+    <value>Hizmet</value>
+  </data>
+  <data name="Consoles_Status_Completed" xml:space="preserve">
+    <value>{0} – Tamamlandı</value>
+  </data>
+  <data name="Consoles_Status_Disabled" xml:space="preserve">
+    <value>Devre dışı</value>
+  </data>
+  <data name="Consoles_Status_Enabled" xml:space="preserve">
+    <value>Etkin</value>
+  </data>
+  <data name="Consoles_Status_ExitFormat" xml:space="preserve">
+    <value>{0} – Çıkış {1}{2}</value>
+  </data>
+  <data name="Consoles_Status_ModuleFormat" xml:space="preserve">
+    <value>{0} – {1} etkin – {2} oturum</value>
+  </data>
+  <data name="Consoles_Status_RunningFormat" xml:space="preserve">
+    <value>{0} – Çalışıyor{1}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedRunningFormat" xml:space="preserve">
+    <value>Hizmet – Gözlemleniyor{0}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedStoppedFormat" xml:space="preserve">
+    <value>Hizmet – Durdu{0}</value>
+  </data>
   <data name="Consoles_Title" xml:space="preserve">
     <value>Konsollar</value>
+  </data>
+  <data name="Consoles_UnifiedConsole" xml:space="preserve">
+    <value>Birleşik konsol</value>
+  </data>
+  <data name="Consoles_UnifiedConsoleForActive" xml:space="preserve">
+    <value>Tüm etkin modüller için birleşik konsol</value>
+  </data>
+  <data name="Consoles_UnifiedPreview" xml:space="preserve">
+    <value>Etkin modüllerin birleşik günlüklerini ve tamamlanan süreç geçmişini içerir.</value>
+  </data>
+  <data name="Consoles_VisibleLinesFormat" xml:space="preserve">
+    <value>{0} görünür satır</value>
+  </data>
+  <data name="Downloads_CatalogBridgeLoadFailed" xml:space="preserve">
+    <value>Paylaşılan katalog, yüklü modül köprülerinden yüklenemedi.</value>
+  </data>
+  <data name="Downloads_CatalogColumnTitle" xml:space="preserve">
+    <value>Katalog</value>
+  </data>
+  <data name="Downloads_CatalogRefreshFailedFormat" xml:space="preserve">
+    <value>İndirme kataloğu yenileme başarısız: {0}</value>
+  </data>
+  <data name="Downloads_CatalogTitle" xml:space="preserve">
+    <value>İndirme kataloğu</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedManyFormat" xml:space="preserve">
+    <value>Katalog güncellendi. {0} kategori yüklendi.</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedOneCategory" xml:space="preserve">
+    <value>Katalog güncellendi. 1 kategori yüklendi.</value>
   </data>
   <data name="Downloads_CategoryCount_Many" xml:space="preserve">
     <value>{0} kategori</value>
@@ -120,11 +273,17 @@
   <data name="Downloads_CategoryCount_One" xml:space="preserve">
     <value>1 kategori</value>
   </data>
+  <data name="Downloads_ChooseVariantHint" xml:space="preserve">
+    <value>Bir aile seçin, ardından istediğiniz tam varyantı seçin.</value>
+  </data>
   <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
     <value>Varyantları ve ayrıntıları incelemek için bir kaynak ailesi seçin</value>
   </data>
   <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
     <value>Yüklü modüllerden hiçbiri şu anda indirme köprüsü sunmuyor</value>
+  </data>
+  <data name="Downloads_Details" xml:space="preserve">
+    <value>Ayrıntılar</value>
   </data>
   <data name="Downloads_EmptyCategory" xml:space="preserve">
     <value>Bu kategori için gruplanmış indirme yok</value>
@@ -135,8 +294,35 @@
   <data name="Downloads_EmptySearch" xml:space="preserve">
     <value>Sağlayıcı tarafında "{0}" ile eşleşen sonuç yok</value>
   </data>
+  <data name="Downloads_FamilyCountFormat" xml:space="preserve">
+    <value>{0} aile</value>
+  </data>
+  <data name="Downloads_Installed" xml:space="preserve">
+    <value>Yüklendi</value>
+  </data>
+  <data name="Downloads_InstalledVersionFormat" xml:space="preserve">
+    <value>Yüklendi | {0}</value>
+  </data>
+  <data name="Downloads_LoadedManyFormat" xml:space="preserve">
+    <value>{0} kategori yüklendi.</value>
+  </data>
+  <data name="Downloads_LoadedOneCategory" xml:space="preserve">
+    <value>1 kategori yüklendi.</value>
+  </data>
+  <data name="Downloads_LoadingCatalog" xml:space="preserve">
+    <value>Paylaşılan indirme kataloğu yükleniyor...</value>
+  </data>
   <data name="Downloads_NoItems" xml:space="preserve">
     <value>Öğe yok</value>
+  </data>
+  <data name="Downloads_NoSharedDownloads" xml:space="preserve">
+    <value>Geçerli modüller tarafından paylaşılan indirme yayımlanmadı.</value>
+  </data>
+  <data name="Downloads_OneFamily" xml:space="preserve">
+    <value>1 aile</value>
+  </data>
+  <data name="Downloads_RefreshingCatalog" xml:space="preserve">
+    <value>Paylaşılan indirme kataloğu yenileniyor...</value>
   </data>
   <data name="Downloads_SearchPlaceholder" xml:space="preserve">
     <value>Sağlayıcı kataloğunda ara</value>
@@ -144,8 +330,68 @@
   <data name="Downloads_SelectItem" xml:space="preserve">
     <value>Bir öğe seçin</value>
   </data>
+  <data name="Downloads_Status_DetailsLoadFailedFormat" xml:space="preserve">
+    <value>{0} için ayrıntılar yüklenemedi: {1}</value>
+  </data>
+  <data name="Downloads_Status_InstallCanceledFormat" xml:space="preserve">
+    <value>{0} için kurulum iptal edildi.</value>
+  </data>
+  <data name="Downloads_Status_InstallFailedFormat" xml:space="preserve">
+    <value>{0} için kurulum başarısız: {1}</value>
+  </data>
+  <data name="Downloads_Status_InstallingFormat" xml:space="preserve">
+    <value>{0} yükleniyor...</value>
+  </data>
+  <data name="Downloads_Status_InvalidUrlFormat" xml:space="preserve">
+    <value>Açma başarısız: geçersiz URL '{0}'.</value>
+  </data>
+  <data name="Downloads_Status_NoPageToOpen" xml:space="preserve">
+    <value>Seçilen varyant açılacak bir sayfa sunmuyor.</value>
+  </data>
+  <data name="Downloads_Status_OpenFailedFormat" xml:space="preserve">
+    <value>Seçilen sayfa açılamadı: {0}</value>
+  </data>
+  <data name="Downloads_Status_OpenedFormat" xml:space="preserve">
+    <value>{0}{1} açıldı.</value>
+  </data>
+  <data name="Downloads_Status_Ready" xml:space="preserve">
+    <value>Hazır.</value>
+  </data>
+  <data name="Downloads_Status_RefreshingDetailsFormat" xml:space="preserve">
+    <value>{0} için ayrıntılar yenileniyor...</value>
+  </data>
+  <data name="Downloads_Status_RemoveCanceledFormat" xml:space="preserve">
+    <value>{0} için kaldırma iptal edildi.</value>
+  </data>
+  <data name="Downloads_Status_RemoveFailedFormat" xml:space="preserve">
+    <value>{0} için kaldırma başarısız: {1}</value>
+  </data>
+  <data name="Downloads_Status_RemovingFormat" xml:space="preserve">
+    <value>{0} kaldırılıyor...</value>
+  </data>
   <data name="Downloads_Title" xml:space="preserve">
     <value>İndirme</value>
+  </data>
+  <data name="Home_Badge_DiskFormat" xml:space="preserve">
+    <value>Depolama {0}</value>
+  </data>
+  <data name="Home_Badge_GpuPercentFormat" xml:space="preserve">
+    <value>GPU {0:F1}%</value>
+  </data>
+  <data name="Home_Badge_GpuUnavailable" xml:space="preserve">
+    <value>GPU yok</value>
+  </data>
+  <data name="Home_Badge_NetFormat" xml:space="preserve">
+    <value>Ağ {0}</value>
+  </data>
+  <data name="Home_Badge_ProcessesFormat" xml:space="preserve">
+    <value>İşlemler {0}</value>
+  </data>
+  <data name="Home_Badge_RamFormat" xml:space="preserve">
+    <value>RAM {0}</value>
+  </data>
+  <data name="Home_Badge_SessionsFormat" xml:space="preserve">
+    <value>Oturum {0}</value>
   </data>
   <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
     <value>Son modül etkinliği {0}</value>
@@ -196,7 +442,7 @@
     <value>Ayrıntılar</value>
   </data>
   <data name="Home_Column_Disk" xml:space="preserve">
-    <value>Disk</value>
+    <value>Depolama</value>
   </data>
   <data name="Home_Column_Gpu" xml:space="preserve">
     <value>GPU</value>
@@ -221,6 +467,12 @@
   </data>
   <data name="Home_Metric_Active_Detail" xml:space="preserve">
     <value>Canlı yönetilen süreçleri olan modüller</value>
+  </data>
+  <data name="Home_Metric_ConnectionManyFormat" xml:space="preserve">
+    <value>{0} bağl.</value>
+  </data>
+  <data name="Home_Metric_ConnectionOne" xml:space="preserve">
+    <value>1 bağl.</value>
   </data>
   <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
     <value>{0} mantıksal çekirdek</value>
@@ -309,6 +561,18 @@
   <data name="Loading_Text" xml:space="preserve">
     <value>Yükleniyor...</value>
   </data>
+  <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
+    <value>Güncelleme etkinliği</value>
+  </data>
+  <data name="ModuleUpdate_ActivityTitle_Status" xml:space="preserve">
+    <value>Güncelleme durumu</value>
+  </data>
+  <data name="ModuleUpdate_Activity_FailedFormat" xml:space="preserve">
+    <value>{0} güncellemesi başarısız.</value>
+  </data>
+  <data name="ModuleUpdate_Activity_SuccessFormat" xml:space="preserve">
+    <value>{0} başarıyla güncellendi.</value>
+  </data>
   <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
     <value>Güncellemeleri denetle</value>
   </data>
@@ -321,14 +585,38 @@
   <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
     <value>Güncellemeyi yükle</value>
   </data>
+  <data name="ModuleUpdate_LoadOptionsFailedFormat" xml:space="preserve">
+    <value>Güncelleme seçenekleri yüklenemedi: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Log_CheckingFormat" xml:space="preserve">
+    <value>{0} için güncellemeler denetleniyor...</value>
+  </data>
+  <data name="ModuleUpdate_Log_Failed" xml:space="preserve">
+    <value>Güncelleme başarıyla tamamlanamadı.</value>
+  </data>
+  <data name="ModuleUpdate_Log_InstallingFormat" xml:space="preserve">
+    <value>{0} için güncelleme yükleniyor...</value>
+  </data>
+  <data name="ModuleUpdate_Log_StartingFormat" xml:space="preserve">
+    <value>{0} için güncelleme başlatılıyor.</value>
+  </data>
+  <data name="ModuleUpdate_Log_SuccessFormat" xml:space="preserve">
+    <value>Güncelleme tamamlandı. {0} yüklendi.</value>
+  </data>
   <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
     <value>Modül seçilmedi</value>
+  </data>
+  <data name="ModuleUpdate_NoVersionSelected" xml:space="preserve">
+    <value>Sürüm seçilmedi</value>
   </data>
   <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
     <value>Genel ilerleme</value>
   </data>
   <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
     <value>Tercihler otomatik olarak kaydedilir</value>
+  </data>
+  <data name="ModuleUpdate_ReadyDefault" xml:space="preserve">
+    <value>Hazır.</value>
   </data>
   <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
     <value>Yayın sürümü</value>
@@ -339,8 +627,35 @@
   <data name="ModuleUpdate_SearchMode" xml:space="preserve">
     <value>Arama modu</value>
   </data>
+  <data name="ModuleUpdate_SelectBranchRequired" xml:space="preserve">
+    <value>Güncellemeleri denetlemeden önce bir depo dalı seçin.</value>
+  </data>
   <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
     <value>Seçili hedef</value>
+  </data>
+  <data name="ModuleUpdate_Status_CheckFailedFormat" xml:space="preserve">
+    <value>Denetim başarısız: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_Checking" xml:space="preserve">
+    <value>Güncellemeler denetleniyor...</value>
+  </data>
+  <data name="ModuleUpdate_Status_ReadyToCheck" xml:space="preserve">
+    <value>Denetim için hazır.</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpToDate" xml:space="preserve">
+    <value>Güncel</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateAvailableFormat" xml:space="preserve">
+    <value>Güncelleme mevcut: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateFailed" xml:space="preserve">
+    <value>Güncelleme başarısız</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updated" xml:space="preserve">
+    <value>Güncellendi</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updating" xml:space="preserve">
+    <value>Güncelleniyor...</value>
   </data>
   <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
     <value>{0} - {1}</value>
@@ -390,6 +705,27 @@
   <data name="Modules_Updating" xml:space="preserve">
     <value>Güncelleniyor</value>
   </data>
+  <data name="Notifications_ActionFailed" xml:space="preserve">
+    <value>Eylem başarısız</value>
+  </data>
+  <data name="Notifications_AslmUpdateAvailable" xml:space="preserve">
+    <value>ASLM güncellemesi mevcut</value>
+  </data>
+  <data name="Notifications_AslmUpdateNotAvailable" xml:space="preserve">
+    <value>Şu anda mevcut ASLM güncellemesi yok.</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailed" xml:space="preserve">
+    <value>ASLM güncellemesi indirilemedi.</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailedStatus" xml:space="preserve">
+    <value>Hazırlık başarısız</value>
+  </data>
+  <data name="Notifications_AslmUpdateTitle" xml:space="preserve">
+    <value>ASLM güncellemesi</value>
+  </data>
+  <data name="Notifications_ChannelFormat" xml:space="preserve">
+    <value>Kanal: {0}</value>
+  </data>
   <data name="Notifications_ClearAll" xml:space="preserve">
     <value>Tümünü temizle</value>
   </data>
@@ -399,6 +735,18 @@
   <data name="Notifications_EmptyTitle" xml:space="preserve">
     <value>Bildirim yok</value>
   </data>
+  <data name="Notifications_InstalledVersionFallback" xml:space="preserve">
+    <value>yüklü sürüm</value>
+  </data>
+  <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
+    <value>Bu modül artık yüklü değil.</value>
+  </data>
+  <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
+    <value>Modül güncellemesi mevcut</value>
+  </data>
+  <data name="Notifications_NewVersionFound" xml:space="preserve">
+    <value>Yeni sürüm bulundu</value>
+  </data>
   <data name="Notifications_SectionRecent" xml:space="preserve">
     <value>Son</value>
   </data>
@@ -407,6 +755,12 @@
   </data>
   <data name="Notifications_Title" xml:space="preserve">
     <value>Bildirimler</value>
+  </data>
+  <data name="Notifications_Unavailable" xml:space="preserve">
+    <value>Kullanılamıyor</value>
+  </data>
+  <data name="Notifications_UpdateActionTitle" xml:space="preserve">
+    <value>Güncelle</value>
   </data>
   <data name="Notifications_UpdateLater" xml:space="preserve">
     <value>Daha sonra güncelle</value>
@@ -720,7 +1074,7 @@
     <value>Temayı sil</value>
   </data>
   <data name="Settings_ThemeEditor_Base" xml:space="preserve">
-    <value>Temel</value>
+    <value>Tema renk düzenleyicisi</value>
   </data>
   <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
     <value>Henüz geçersiz kılmadığınız belirteçler için yerleşik anlamsal varsayılanlar</value>

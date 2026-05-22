@@ -36,8 +36,17 @@
   <data name="AppShell_Title" xml:space="preserve">
     <value>ASLM</value>
   </data>
+  <data name="AslmApi_AddressCopiedStatus" xml:space="preserve">
+    <value>Copié</value>
+  </data>
+  <data name="AslmApi_AddressCopiedTitle" xml:space="preserve">
+    <value>Adresse copiée</value>
+  </data>
   <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
     <value>Copier l'adresse</value>
+  </data>
+  <data name="AslmApi_Disabled" xml:space="preserve">
+    <value>Désactivé</value>
   </data>
   <data name="AslmApi_Hosts" xml:space="preserve">
     <value>Hôtes</value>
@@ -99,17 +108,161 @@
   <data name="Common_Variant" xml:space="preserve">
     <value>Variante</value>
   </data>
+  <data name="Consoles_ActiveModulesFormat" xml:space="preserve">
+    <value>{0} modules actifs</value>
+  </data>
+  <data name="Consoles_AllActiveModules" xml:space="preserve">
+    <value>Tous les modules actifs</value>
+  </data>
+  <data name="Consoles_AllModules" xml:space="preserve">
+    <value>Tous les modules</value>
+  </data>
+  <data name="Consoles_AllModulesUnifiedTitle" xml:space="preserve">
+    <value>Tous les modules / Console unifiée</value>
+  </data>
+  <data name="Consoles_EmptySelectionDescription" xml:space="preserve">
+    <value>La sortie de la console lors du démarrage du module, de la configuration, de la synchronisation des paramètres, des services et des sous-processus s'affichera ici.</value>
+  </data>
+  <data name="Consoles_EmptySelectionFooter" xml:space="preserve">
+    <value>En attente d'activité du module.</value>
+  </data>
+  <data name="Consoles_EmptySelectionStatus" xml:space="preserve">
+    <value>Démarrez ou sélectionnez un module pour voir l'activité de la console.</value>
+  </data>
+  <data name="Consoles_EmptySelectionTitle" xml:space="preserve">
+    <value>Aucune console sélectionnée</value>
+  </data>
+  <data name="Consoles_Footer_BufferedFormat" xml:space="preserve">
+    <value>{0} lignes en mémoire tampon – {1}{2}{3}</value>
+  </data>
+  <data name="Consoles_Footer_EndedFormat" xml:space="preserve">
+    <value> – Terminé {0}</value>
+  </data>
+  <data name="Consoles_Footer_ObservedCaptureNote" xml:space="preserve">
+    <value> – la capture directe de stdout/stderr peut être indisponible</value>
+  </data>
+  <data name="Consoles_Footer_StartedFormat" xml:space="preserve">
+    <value>Démarré {0}</value>
+  </data>
+  <data name="Consoles_LastActivityFormat" xml:space="preserve">
+    <value>Dernière activité {0}</value>
+  </data>
+  <data name="Consoles_MergedOutput" xml:space="preserve">
+    <value>Sortie fusionnée</value>
+  </data>
+  <data name="Consoles_ModuleUnifiedTitleFormat" xml:space="preserve">
+    <value>{0} / Console unifiée</value>
+  </data>
   <data name="Consoles_ModulesHeader" xml:space="preserve">
     <value>Modules</value>
   </data>
   <data name="Consoles_NoActiveModules" xml:space="preserve">
     <value>Aucun module actif</value>
   </data>
+  <data name="Consoles_NoActivityYet" xml:space="preserve">
+    <value>Aucune activité pour l'instant</value>
+  </data>
   <data name="Consoles_NoConsoles" xml:space="preserve">
     <value>Aucune console</value>
   </data>
+  <data name="Consoles_NoOutputYet" xml:space="preserve">
+    <value>Aucune sortie pour l'instant.</value>
+  </data>
+  <data name="Consoles_PidFormat" xml:space="preserve">
+    <value> – PID {0}</value>
+  </data>
+  <data name="Consoles_Run" xml:space="preserve">
+    <value>Exécuter</value>
+  </data>
+  <data name="Consoles_Selected_ObservedRunning" xml:space="preserve">
+    <value>Le service observé est en cours d'exécution{0}</value>
+  </data>
+  <data name="Consoles_Selected_ObservedStopped" xml:space="preserve">
+    <value>Le service observé s'est arrêté{0}</value>
+  </data>
+  <data name="Consoles_Selected_SessionCompleted" xml:space="preserve">
+    <value>Session {0} terminée</value>
+  </data>
+  <data name="Consoles_Selected_SessionExitFormat" xml:space="preserve">
+    <value>La session {0} s'est terminée avec le code de sortie {1}{2}</value>
+  </data>
+  <data name="Consoles_Selected_SessionRunning" xml:space="preserve">
+    <value>La session {0} est en cours d'exécution{1}</value>
+  </data>
+  <data name="Consoles_SessionObservedDescription" xml:space="preserve">
+    <value>Processus enfant observé démarré par le module. ASLM peut le maintenir visible en tant que service, mais la capture directe de stdout/stderr peut être indisponible pour les exécutables tiers.</value>
+  </data>
+  <data name="Consoles_SessionObservedPreview" xml:space="preserve">
+    <value>Processus enfant observé. La capture directe de stdout/stderr peut être indisponible.</value>
+  </data>
+  <data name="Consoles_SessionStageFormat" xml:space="preserve">
+    <value>Session {0}</value>
+  </data>
+  <data name="Consoles_Stage_Command" xml:space="preserve">
+    <value>Commande</value>
+  </data>
+  <data name="Consoles_Stage_Lifecycle" xml:space="preserve">
+    <value>Cycle de vie</value>
+  </data>
+  <data name="Consoles_Stage_Service" xml:space="preserve">
+    <value>Service</value>
+  </data>
+  <data name="Consoles_Status_Completed" xml:space="preserve">
+    <value>{0} – Terminé</value>
+  </data>
+  <data name="Consoles_Status_Disabled" xml:space="preserve">
+    <value>Désactivé</value>
+  </data>
+  <data name="Consoles_Status_Enabled" xml:space="preserve">
+    <value>Activé</value>
+  </data>
+  <data name="Consoles_Status_ExitFormat" xml:space="preserve">
+    <value>{0} – Sortie {1}{2}</value>
+  </data>
+  <data name="Consoles_Status_ModuleFormat" xml:space="preserve">
+    <value>{0} – {1} actif – {2} sessions</value>
+  </data>
+  <data name="Consoles_Status_RunningFormat" xml:space="preserve">
+    <value>{0} – En cours{1}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedRunningFormat" xml:space="preserve">
+    <value>Service – Observé{0}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedStoppedFormat" xml:space="preserve">
+    <value>Service – Arrêté{0}</value>
+  </data>
   <data name="Consoles_Title" xml:space="preserve">
     <value>Consoles</value>
+  </data>
+  <data name="Consoles_UnifiedConsole" xml:space="preserve">
+    <value>Console unifiée</value>
+  </data>
+  <data name="Consoles_UnifiedConsoleForActive" xml:space="preserve">
+    <value>Console unifiée pour tous les modules actifs</value>
+  </data>
+  <data name="Consoles_UnifiedPreview" xml:space="preserve">
+    <value>Inclut les journaux unifiés et l'historique des processus terminés des modules actifs.</value>
+  </data>
+  <data name="Consoles_VisibleLinesFormat" xml:space="preserve">
+    <value>{0} lignes visibles</value>
+  </data>
+  <data name="Downloads_CatalogBridgeLoadFailed" xml:space="preserve">
+    <value>Le catalogue partagé n'a pas pu être chargé depuis les ponts de modules installés.</value>
+  </data>
+  <data name="Downloads_CatalogColumnTitle" xml:space="preserve">
+    <value>Catalogue</value>
+  </data>
+  <data name="Downloads_CatalogRefreshFailedFormat" xml:space="preserve">
+    <value>Échec de l'actualisation du catalogue de téléchargements : {0}</value>
+  </data>
+  <data name="Downloads_CatalogTitle" xml:space="preserve">
+    <value>Catalogue de téléchargements</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedManyFormat" xml:space="preserve">
+    <value>Catalogue mis à jour. {0} catégories chargées.</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedOneCategory" xml:space="preserve">
+    <value>Catalogue mis à jour. 1 catégorie chargée.</value>
   </data>
   <data name="Downloads_CategoryCount_Many" xml:space="preserve">
     <value>{0} catégories</value>
@@ -120,11 +273,17 @@
   <data name="Downloads_CategoryCount_One" xml:space="preserve">
     <value>1 catégorie</value>
   </data>
+  <data name="Downloads_ChooseVariantHint" xml:space="preserve">
+    <value>Choisissez une famille, puis la variante exacte souhaitée.</value>
+  </data>
   <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
     <value>Choisissez une famille de ressources pour examiner ses variantes et détails</value>
   </data>
   <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
     <value>Aucun module installé n'expose actuellement de pont de téléchargements</value>
+  </data>
+  <data name="Downloads_Details" xml:space="preserve">
+    <value>Détails</value>
   </data>
   <data name="Downloads_EmptyCategory" xml:space="preserve">
     <value>Aucun téléchargement groupé n'est disponible pour cette catégorie</value>
@@ -135,8 +294,35 @@
   <data name="Downloads_EmptySearch" xml:space="preserve">
     <value>Aucun résultat ne correspond à « {0} » côté fournisseur</value>
   </data>
+  <data name="Downloads_FamilyCountFormat" xml:space="preserve">
+    <value>{0} familles</value>
+  </data>
+  <data name="Downloads_Installed" xml:space="preserve">
+    <value>Installé</value>
+  </data>
+  <data name="Downloads_InstalledVersionFormat" xml:space="preserve">
+    <value>Installé | {0}</value>
+  </data>
+  <data name="Downloads_LoadedManyFormat" xml:space="preserve">
+    <value>{0} catégories chargées.</value>
+  </data>
+  <data name="Downloads_LoadedOneCategory" xml:space="preserve">
+    <value>1 catégorie chargée.</value>
+  </data>
+  <data name="Downloads_LoadingCatalog" xml:space="preserve">
+    <value>Chargement du catalogue de téléchargements partagés...</value>
+  </data>
   <data name="Downloads_NoItems" xml:space="preserve">
     <value>Aucun élément</value>
+  </data>
+  <data name="Downloads_NoSharedDownloads" xml:space="preserve">
+    <value>Aucun téléchargement partagé n'a été publié par les modules actuels.</value>
+  </data>
+  <data name="Downloads_OneFamily" xml:space="preserve">
+    <value>1 famille</value>
+  </data>
+  <data name="Downloads_RefreshingCatalog" xml:space="preserve">
+    <value>Actualisation du catalogue de téléchargements partagés...</value>
   </data>
   <data name="Downloads_SearchPlaceholder" xml:space="preserve">
     <value>Rechercher dans le catalogue du fournisseur</value>
@@ -144,8 +330,68 @@
   <data name="Downloads_SelectItem" xml:space="preserve">
     <value>Sélectionner un élément</value>
   </data>
+  <data name="Downloads_Status_DetailsLoadFailedFormat" xml:space="preserve">
+    <value>Impossible de charger les détails pour {0} : {1}</value>
+  </data>
+  <data name="Downloads_Status_InstallCanceledFormat" xml:space="preserve">
+    <value>Installation annulée pour {0}.</value>
+  </data>
+  <data name="Downloads_Status_InstallFailedFormat" xml:space="preserve">
+    <value>Échec de l'installation pour {0} : {1}</value>
+  </data>
+  <data name="Downloads_Status_InstallingFormat" xml:space="preserve">
+    <value>Installation de {0}...</value>
+  </data>
+  <data name="Downloads_Status_InvalidUrlFormat" xml:space="preserve">
+    <value>Échec de l'ouverture : URL invalide '{0}'.</value>
+  </data>
+  <data name="Downloads_Status_NoPageToOpen" xml:space="preserve">
+    <value>La variante sélectionnée n'expose pas de page à ouvrir.</value>
+  </data>
+  <data name="Downloads_Status_OpenFailedFormat" xml:space="preserve">
+    <value>Impossible d'ouvrir la page sélectionnée : {0}</value>
+  </data>
+  <data name="Downloads_Status_OpenedFormat" xml:space="preserve">
+    <value>{0}{1} ouvert.</value>
+  </data>
+  <data name="Downloads_Status_Ready" xml:space="preserve">
+    <value>Prêt.</value>
+  </data>
+  <data name="Downloads_Status_RefreshingDetailsFormat" xml:space="preserve">
+    <value>Actualisation des détails pour {0}...</value>
+  </data>
+  <data name="Downloads_Status_RemoveCanceledFormat" xml:space="preserve">
+    <value>Suppression annulée pour {0}.</value>
+  </data>
+  <data name="Downloads_Status_RemoveFailedFormat" xml:space="preserve">
+    <value>Échec de la suppression pour {0} : {1}</value>
+  </data>
+  <data name="Downloads_Status_RemovingFormat" xml:space="preserve">
+    <value>Suppression de {0}...</value>
+  </data>
   <data name="Downloads_Title" xml:space="preserve">
     <value>Téléchargements</value>
+  </data>
+  <data name="Home_Badge_DiskFormat" xml:space="preserve">
+    <value>Disque {0}</value>
+  </data>
+  <data name="Home_Badge_GpuPercentFormat" xml:space="preserve">
+    <value>GPU {0:F1}%</value>
+  </data>
+  <data name="Home_Badge_GpuUnavailable" xml:space="preserve">
+    <value>GPU n/d</value>
+  </data>
+  <data name="Home_Badge_NetFormat" xml:space="preserve">
+    <value>Réseau {0}</value>
+  </data>
+  <data name="Home_Badge_ProcessesFormat" xml:space="preserve">
+    <value>Processus {0}</value>
+  </data>
+  <data name="Home_Badge_RamFormat" xml:space="preserve">
+    <value>RAM {0}</value>
+  </data>
+  <data name="Home_Badge_SessionsFormat" xml:space="preserve">
+    <value>Sess. {0}</value>
   </data>
   <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
     <value>Dernière activité de module {0}</value>
@@ -221,6 +467,12 @@
   </data>
   <data name="Home_Metric_Active_Detail" xml:space="preserve">
     <value>Modules avec processus gérés actifs</value>
+  </data>
+  <data name="Home_Metric_ConnectionManyFormat" xml:space="preserve">
+    <value>{0} con.</value>
+  </data>
+  <data name="Home_Metric_ConnectionOne" xml:space="preserve">
+    <value>1 con.</value>
   </data>
   <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
     <value>{0} cœurs logiques</value>
@@ -309,6 +561,18 @@
   <data name="Loading_Text" xml:space="preserve">
     <value>Chargement...</value>
   </data>
+  <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
+    <value>Activité de mise à jour</value>
+  </data>
+  <data name="ModuleUpdate_ActivityTitle_Status" xml:space="preserve">
+    <value>État de la mise à jour</value>
+  </data>
+  <data name="ModuleUpdate_Activity_FailedFormat" xml:space="preserve">
+    <value>Échec de la mise à jour de {0}.</value>
+  </data>
+  <data name="ModuleUpdate_Activity_SuccessFormat" xml:space="preserve">
+    <value>{0} mis à jour avec succès.</value>
+  </data>
   <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
     <value>Rechercher des mises à jour</value>
   </data>
@@ -321,14 +585,38 @@
   <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
     <value>Installer la mise à jour</value>
   </data>
+  <data name="ModuleUpdate_LoadOptionsFailedFormat" xml:space="preserve">
+    <value>Échec du chargement des options de mise à jour : {0}</value>
+  </data>
+  <data name="ModuleUpdate_Log_CheckingFormat" xml:space="preserve">
+    <value>Vérification des mises à jour pour {0}...</value>
+  </data>
+  <data name="ModuleUpdate_Log_Failed" xml:space="preserve">
+    <value>La mise à jour ne s'est pas terminée avec succès.</value>
+  </data>
+  <data name="ModuleUpdate_Log_InstallingFormat" xml:space="preserve">
+    <value>Installation de la mise à jour pour {0}...</value>
+  </data>
+  <data name="ModuleUpdate_Log_StartingFormat" xml:space="preserve">
+    <value>Démarrage de la mise à jour pour {0}.</value>
+  </data>
+  <data name="ModuleUpdate_Log_SuccessFormat" xml:space="preserve">
+    <value>Mise à jour terminée. {0} installé.</value>
+  </data>
   <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
     <value>Aucun module sélectionné</value>
+  </data>
+  <data name="ModuleUpdate_NoVersionSelected" xml:space="preserve">
+    <value>Aucune version sélectionnée</value>
   </data>
   <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
     <value>Progression globale</value>
   </data>
   <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
     <value>Les préférences sont enregistrées automatiquement</value>
+  </data>
+  <data name="ModuleUpdate_ReadyDefault" xml:space="preserve">
+    <value>Prêt.</value>
   </data>
   <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
     <value>Version de publication</value>
@@ -339,8 +627,35 @@
   <data name="ModuleUpdate_SearchMode" xml:space="preserve">
     <value>Mode de recherche</value>
   </data>
+  <data name="ModuleUpdate_SelectBranchRequired" xml:space="preserve">
+    <value>Sélectionnez une branche du référentiel avant de vérifier les mises à jour.</value>
+  </data>
   <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
     <value>Cible sélectionnée</value>
+  </data>
+  <data name="ModuleUpdate_Status_CheckFailedFormat" xml:space="preserve">
+    <value>Vérification échouée : {0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_Checking" xml:space="preserve">
+    <value>Vérification des mises à jour...</value>
+  </data>
+  <data name="ModuleUpdate_Status_ReadyToCheck" xml:space="preserve">
+    <value>Prêt à vérifier.</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpToDate" xml:space="preserve">
+    <value>À jour</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateAvailableFormat" xml:space="preserve">
+    <value>Mise à jour disponible : {0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateFailed" xml:space="preserve">
+    <value>Échec de la mise à jour</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updated" xml:space="preserve">
+    <value>Mis à jour</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updating" xml:space="preserve">
+    <value>Mise à jour en cours...</value>
   </data>
   <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
     <value>{0} - {1}</value>
@@ -390,6 +705,27 @@
   <data name="Modules_Updating" xml:space="preserve">
     <value>Mise à jour</value>
   </data>
+  <data name="Notifications_ActionFailed" xml:space="preserve">
+    <value>Échec de l'action</value>
+  </data>
+  <data name="Notifications_AslmUpdateAvailable" xml:space="preserve">
+    <value>Mise à jour ASLM disponible</value>
+  </data>
+  <data name="Notifications_AslmUpdateNotAvailable" xml:space="preserve">
+    <value>Aucune mise à jour ASLM n'est disponible pour l'instant.</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailed" xml:space="preserve">
+    <value>La mise à jour ASLM n'a pas pu être téléchargée.</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailedStatus" xml:space="preserve">
+    <value>Échec de la préparation</value>
+  </data>
+  <data name="Notifications_AslmUpdateTitle" xml:space="preserve">
+    <value>Mise à jour ASLM</value>
+  </data>
+  <data name="Notifications_ChannelFormat" xml:space="preserve">
+    <value>Canal : {0}</value>
+  </data>
   <data name="Notifications_ClearAll" xml:space="preserve">
     <value>Tout effacer</value>
   </data>
@@ -399,6 +735,18 @@
   <data name="Notifications_EmptyTitle" xml:space="preserve">
     <value>Aucune notification</value>
   </data>
+  <data name="Notifications_InstalledVersionFallback" xml:space="preserve">
+    <value>version installée</value>
+  </data>
+  <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
+    <value>Ce module n'est plus installé.</value>
+  </data>
+  <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
+    <value>Mise à jour du module disponible</value>
+  </data>
+  <data name="Notifications_NewVersionFound" xml:space="preserve">
+    <value>Nouvelle version trouvée</value>
+  </data>
   <data name="Notifications_SectionRecent" xml:space="preserve">
     <value>Récentes</value>
   </data>
@@ -407,6 +755,12 @@
   </data>
   <data name="Notifications_Title" xml:space="preserve">
     <value>Notifications</value>
+  </data>
+  <data name="Notifications_Unavailable" xml:space="preserve">
+    <value>Indisponible</value>
+  </data>
+  <data name="Notifications_UpdateActionTitle" xml:space="preserve">
+    <value>Mettre à jour</value>
   </data>
   <data name="Notifications_UpdateLater" xml:space="preserve">
     <value>Mettre à jour plus tard</value>
@@ -720,7 +1074,7 @@
     <value>Supprimer le thème</value>
   </data>
   <data name="Settings_ThemeEditor_Base" xml:space="preserve">
-    <value>Base</value>
+    <value>Éditeur de couleurs du thème</value>
   </data>
   <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
     <value>Valeurs sémantiques intégrées par défaut pour les jetons que vous n'avez pas encore remplacés</value>

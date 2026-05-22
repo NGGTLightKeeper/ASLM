@@ -36,8 +36,17 @@
   <data name="AppShell_Title" xml:space="preserve">
     <value>ASLM</value>
   </data>
+  <data name="AslmApi_AddressCopiedStatus" xml:space="preserve">
+    <value>Disalin</value>
+  </data>
+  <data name="AslmApi_AddressCopiedTitle" xml:space="preserve">
+    <value>Alamat disalin</value>
+  </data>
   <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
     <value>Salin alamat</value>
+  </data>
+  <data name="AslmApi_Disabled" xml:space="preserve">
+    <value>Dinonaktifkan</value>
   </data>
   <data name="AslmApi_Hosts" xml:space="preserve">
     <value>Host</value>
@@ -99,17 +108,161 @@
   <data name="Common_Variant" xml:space="preserve">
     <value>Varian</value>
   </data>
+  <data name="Consoles_ActiveModulesFormat" xml:space="preserve">
+    <value>{0} modul aktif</value>
+  </data>
+  <data name="Consoles_AllActiveModules" xml:space="preserve">
+    <value>Semua modul aktif</value>
+  </data>
+  <data name="Consoles_AllModules" xml:space="preserve">
+    <value>Semua Modul</value>
+  </data>
+  <data name="Consoles_AllModulesUnifiedTitle" xml:space="preserve">
+    <value>Semua Modul / Konsol Terpadu</value>
+  </data>
+  <data name="Consoles_EmptySelectionDescription" xml:space="preserve">
+    <value>Output konsol dari startup modul, pengaturan, sinkronisasi setelan, layanan, dan subproses akan muncul di sini.</value>
+  </data>
+  <data name="Consoles_EmptySelectionFooter" xml:space="preserve">
+    <value>Menunggu aktivitas modul.</value>
+  </data>
+  <data name="Consoles_EmptySelectionStatus" xml:space="preserve">
+    <value>Mulai atau pilih modul untuk melihat aktivitas konsol.</value>
+  </data>
+  <data name="Consoles_EmptySelectionTitle" xml:space="preserve">
+    <value>Tidak ada konsol yang dipilih</value>
+  </data>
+  <data name="Consoles_Footer_BufferedFormat" xml:space="preserve">
+    <value>{0} baris buffer – {1}{2}{3}</value>
+  </data>
+  <data name="Consoles_Footer_EndedFormat" xml:space="preserve">
+    <value> – Berakhir {0}</value>
+  </data>
+  <data name="Consoles_Footer_ObservedCaptureNote" xml:space="preserve">
+    <value> – penangkapan stdout/stderr langsung mungkin tidak tersedia</value>
+  </data>
+  <data name="Consoles_Footer_StartedFormat" xml:space="preserve">
+    <value>Dimulai {0}</value>
+  </data>
+  <data name="Consoles_LastActivityFormat" xml:space="preserve">
+    <value>Aktivitas terakhir {0}</value>
+  </data>
+  <data name="Consoles_MergedOutput" xml:space="preserve">
+    <value>Output gabungan</value>
+  </data>
+  <data name="Consoles_ModuleUnifiedTitleFormat" xml:space="preserve">
+    <value>{0} / Konsol Terpadu</value>
+  </data>
   <data name="Consoles_ModulesHeader" xml:space="preserve">
     <value>Modul</value>
   </data>
   <data name="Consoles_NoActiveModules" xml:space="preserve">
     <value>Tidak ada modul aktif</value>
   </data>
+  <data name="Consoles_NoActivityYet" xml:space="preserve">
+    <value>Belum ada aktivitas</value>
+  </data>
   <data name="Consoles_NoConsoles" xml:space="preserve">
     <value>Tidak ada konsol</value>
   </data>
+  <data name="Consoles_NoOutputYet" xml:space="preserve">
+    <value>Belum ada output.</value>
+  </data>
+  <data name="Consoles_PidFormat" xml:space="preserve">
+    <value> – PID {0}</value>
+  </data>
+  <data name="Consoles_Run" xml:space="preserve">
+    <value>Jalankan</value>
+  </data>
+  <data name="Consoles_Selected_ObservedRunning" xml:space="preserve">
+    <value>Layanan yang dipantau sedang berjalan{0}</value>
+  </data>
+  <data name="Consoles_Selected_ObservedStopped" xml:space="preserve">
+    <value>Layanan yang dipantau berhenti{0}</value>
+  </data>
+  <data name="Consoles_Selected_SessionCompleted" xml:space="preserve">
+    <value>Sesi {0} selesai</value>
+  </data>
+  <data name="Consoles_Selected_SessionExitFormat" xml:space="preserve">
+    <value>Sesi {0} selesai dengan kode keluar {1}{2}</value>
+  </data>
+  <data name="Consoles_Selected_SessionRunning" xml:space="preserve">
+    <value>Sesi {0} sedang berjalan{1}</value>
+  </data>
+  <data name="Consoles_SessionObservedDescription" xml:space="preserve">
+    <value>Proses anak yang dipantau dimulai oleh modul. ASLM dapat menjaganya tetap terlihat sebagai layanan, tetapi penangkapan stdout/stderr langsung mungkin tidak tersedia untuk executable pihak ketiga.</value>
+  </data>
+  <data name="Consoles_SessionObservedPreview" xml:space="preserve">
+    <value>Proses anak yang dipantau. Penangkapan stdout/stderr langsung mungkin tidak tersedia.</value>
+  </data>
+  <data name="Consoles_SessionStageFormat" xml:space="preserve">
+    <value>Sesi {0}</value>
+  </data>
+  <data name="Consoles_Stage_Command" xml:space="preserve">
+    <value>Perintah</value>
+  </data>
+  <data name="Consoles_Stage_Lifecycle" xml:space="preserve">
+    <value>Siklus hidup</value>
+  </data>
+  <data name="Consoles_Stage_Service" xml:space="preserve">
+    <value>Layanan</value>
+  </data>
+  <data name="Consoles_Status_Completed" xml:space="preserve">
+    <value>{0} – Selesai</value>
+  </data>
+  <data name="Consoles_Status_Disabled" xml:space="preserve">
+    <value>Dinonaktifkan</value>
+  </data>
+  <data name="Consoles_Status_Enabled" xml:space="preserve">
+    <value>Diaktifkan</value>
+  </data>
+  <data name="Consoles_Status_ExitFormat" xml:space="preserve">
+    <value>{0} – Keluar {1}{2}</value>
+  </data>
+  <data name="Consoles_Status_ModuleFormat" xml:space="preserve">
+    <value>{0} – {1} aktif – {2} sesi</value>
+  </data>
+  <data name="Consoles_Status_RunningFormat" xml:space="preserve">
+    <value>{0} – Berjalan{1}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedRunningFormat" xml:space="preserve">
+    <value>Layanan – Dipantau{0}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedStoppedFormat" xml:space="preserve">
+    <value>Layanan – Berhenti{0}</value>
+  </data>
   <data name="Consoles_Title" xml:space="preserve">
     <value>Konsol</value>
+  </data>
+  <data name="Consoles_UnifiedConsole" xml:space="preserve">
+    <value>Konsol Terpadu</value>
+  </data>
+  <data name="Consoles_UnifiedConsoleForActive" xml:space="preserve">
+    <value>Konsol terpadu untuk semua modul aktif</value>
+  </data>
+  <data name="Consoles_UnifiedPreview" xml:space="preserve">
+    <value>Mencakup log terpadu dan riwayat proses selesai dari modul aktif.</value>
+  </data>
+  <data name="Consoles_VisibleLinesFormat" xml:space="preserve">
+    <value>{0} baris terlihat</value>
+  </data>
+  <data name="Downloads_CatalogBridgeLoadFailed" xml:space="preserve">
+    <value>Katalog bersama tidak dapat dimuat dari bridge modul yang diinstal.</value>
+  </data>
+  <data name="Downloads_CatalogColumnTitle" xml:space="preserve">
+    <value>Katalog</value>
+  </data>
+  <data name="Downloads_CatalogRefreshFailedFormat" xml:space="preserve">
+    <value>Pembaruan katalog unduhan gagal: {0}</value>
+  </data>
+  <data name="Downloads_CatalogTitle" xml:space="preserve">
+    <value>Katalog Unduhan</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedManyFormat" xml:space="preserve">
+    <value>Katalog diperbarui. {0} kategori dimuat.</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedOneCategory" xml:space="preserve">
+    <value>Katalog diperbarui. 1 kategori dimuat.</value>
   </data>
   <data name="Downloads_CategoryCount_Many" xml:space="preserve">
     <value>{0} kategori</value>
@@ -120,11 +273,17 @@
   <data name="Downloads_CategoryCount_One" xml:space="preserve">
     <value>1 kategori</value>
   </data>
+  <data name="Downloads_ChooseVariantHint" xml:space="preserve">
+    <value>Pilih keluarga, lalu varian yang tepat yang Anda inginkan.</value>
+  </data>
   <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
     <value>Pilih keluarga sumber daya untuk memeriksa varian dan detailnya</value>
   </data>
   <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
     <value>Tidak ada modul terpasang yang saat ini mengekspos jembatan unduhan</value>
+  </data>
+  <data name="Downloads_Details" xml:space="preserve">
+    <value>Detail</value>
   </data>
   <data name="Downloads_EmptyCategory" xml:space="preserve">
     <value>Tidak ada unduhan terkelompok yang tersedia untuk kategori ini</value>
@@ -135,8 +294,35 @@
   <data name="Downloads_EmptySearch" xml:space="preserve">
     <value>Tidak ada hasil yang cocok dengan "{0}" di sisi penyedia</value>
   </data>
+  <data name="Downloads_FamilyCountFormat" xml:space="preserve">
+    <value>{0} keluarga</value>
+  </data>
+  <data name="Downloads_Installed" xml:space="preserve">
+    <value>Terinstal</value>
+  </data>
+  <data name="Downloads_InstalledVersionFormat" xml:space="preserve">
+    <value>Terinstal | {0}</value>
+  </data>
+  <data name="Downloads_LoadedManyFormat" xml:space="preserve">
+    <value>{0} kategori dimuat.</value>
+  </data>
+  <data name="Downloads_LoadedOneCategory" xml:space="preserve">
+    <value>1 kategori dimuat.</value>
+  </data>
+  <data name="Downloads_LoadingCatalog" xml:space="preserve">
+    <value>Memuat katalog unduhan bersama...</value>
+  </data>
   <data name="Downloads_NoItems" xml:space="preserve">
     <value>Tidak ada item</value>
+  </data>
+  <data name="Downloads_NoSharedDownloads" xml:space="preserve">
+    <value>Tidak ada unduhan bersama yang diterbitkan oleh modul saat ini.</value>
+  </data>
+  <data name="Downloads_OneFamily" xml:space="preserve">
+    <value>1 keluarga</value>
+  </data>
+  <data name="Downloads_RefreshingCatalog" xml:space="preserve">
+    <value>Menyegarkan katalog unduhan bersama...</value>
   </data>
   <data name="Downloads_SearchPlaceholder" xml:space="preserve">
     <value>Cari katalog penyedia</value>
@@ -144,8 +330,68 @@
   <data name="Downloads_SelectItem" xml:space="preserve">
     <value>Pilih item</value>
   </data>
+  <data name="Downloads_Status_DetailsLoadFailedFormat" xml:space="preserve">
+    <value>Detail tidak dapat dimuat untuk {0}: {1}</value>
+  </data>
+  <data name="Downloads_Status_InstallCanceledFormat" xml:space="preserve">
+    <value>Instalasi dibatalkan untuk {0}.</value>
+  </data>
+  <data name="Downloads_Status_InstallFailedFormat" xml:space="preserve">
+    <value>Instalasi gagal untuk {0}: {1}</value>
+  </data>
+  <data name="Downloads_Status_InstallingFormat" xml:space="preserve">
+    <value>Menginstal {0}...</value>
+  </data>
+  <data name="Downloads_Status_InvalidUrlFormat" xml:space="preserve">
+    <value>Buka gagal: URL tidak valid '{0}'.</value>
+  </data>
+  <data name="Downloads_Status_NoPageToOpen" xml:space="preserve">
+    <value>Varian yang dipilih tidak menyediakan halaman untuk dibuka.</value>
+  </data>
+  <data name="Downloads_Status_OpenFailedFormat" xml:space="preserve">
+    <value>Tidak dapat membuka halaman yang dipilih: {0}</value>
+  </data>
+  <data name="Downloads_Status_OpenedFormat" xml:space="preserve">
+    <value>{0}{1} dibuka.</value>
+  </data>
+  <data name="Downloads_Status_Ready" xml:space="preserve">
+    <value>Siap.</value>
+  </data>
+  <data name="Downloads_Status_RefreshingDetailsFormat" xml:space="preserve">
+    <value>Menyegarkan detail untuk {0}...</value>
+  </data>
+  <data name="Downloads_Status_RemoveCanceledFormat" xml:space="preserve">
+    <value>Penghapusan dibatalkan untuk {0}.</value>
+  </data>
+  <data name="Downloads_Status_RemoveFailedFormat" xml:space="preserve">
+    <value>Penghapusan gagal untuk {0}: {1}</value>
+  </data>
+  <data name="Downloads_Status_RemovingFormat" xml:space="preserve">
+    <value>Menghapus {0}...</value>
+  </data>
   <data name="Downloads_Title" xml:space="preserve">
     <value>Unduh</value>
+  </data>
+  <data name="Home_Badge_DiskFormat" xml:space="preserve">
+    <value>Disk {0}</value>
+  </data>
+  <data name="Home_Badge_GpuPercentFormat" xml:space="preserve">
+    <value>GPU {0:F1}%</value>
+  </data>
+  <data name="Home_Badge_GpuUnavailable" xml:space="preserve">
+    <value>GPU t/t</value>
+  </data>
+  <data name="Home_Badge_NetFormat" xml:space="preserve">
+    <value>Net {0}</value>
+  </data>
+  <data name="Home_Badge_ProcessesFormat" xml:space="preserve">
+    <value>Proses {0}</value>
+  </data>
+  <data name="Home_Badge_RamFormat" xml:space="preserve">
+    <value>RAM {0}</value>
+  </data>
+  <data name="Home_Badge_SessionsFormat" xml:space="preserve">
+    <value>Sesi {0}</value>
   </data>
   <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
     <value>Aktivitas modul terakhir {0}</value>
@@ -154,7 +400,7 @@
     <value>Belum ada aktivitas modul yang tercatat</value>
   </data>
   <data name="Home_Card_Modules_StatusTotal" xml:space="preserve">
-    <value>{0} total</value>
+    <value>{0} modul</value>
   </data>
   <data name="Home_Card_Modules_Subtitle" xml:space="preserve">
     <value>Siklus hidup dan aktivitas konsol</value>
@@ -196,7 +442,7 @@
     <value>Detail</value>
   </data>
   <data name="Home_Column_Disk" xml:space="preserve">
-    <value>Disk</value>
+    <value>Penyimpanan</value>
   </data>
   <data name="Home_Column_Gpu" xml:space="preserve">
     <value>GPU</value>
@@ -221,6 +467,12 @@
   </data>
   <data name="Home_Metric_Active_Detail" xml:space="preserve">
     <value>Modul dengan proses terkelola yang aktif</value>
+  </data>
+  <data name="Home_Metric_ConnectionManyFormat" xml:space="preserve">
+    <value>{0} kon.</value>
+  </data>
+  <data name="Home_Metric_ConnectionOne" xml:space="preserve">
+    <value>1 kon.</value>
   </data>
   <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
     <value>{0} inti logis</value>
@@ -309,6 +561,18 @@
   <data name="Loading_Text" xml:space="preserve">
     <value>Memuat...</value>
   </data>
+  <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
+    <value>Aktivitas Pembaruan</value>
+  </data>
+  <data name="ModuleUpdate_ActivityTitle_Status" xml:space="preserve">
+    <value>Status Pembaruan</value>
+  </data>
+  <data name="ModuleUpdate_Activity_FailedFormat" xml:space="preserve">
+    <value>Pembaruan {0} gagal.</value>
+  </data>
+  <data name="ModuleUpdate_Activity_SuccessFormat" xml:space="preserve">
+    <value>{0} berhasil diperbarui.</value>
+  </data>
   <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
     <value>Periksa pembaruan</value>
   </data>
@@ -321,14 +585,38 @@
   <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
     <value>Pasang pembaruan</value>
   </data>
+  <data name="ModuleUpdate_LoadOptionsFailedFormat" xml:space="preserve">
+    <value>Gagal memuat opsi pembaruan: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Log_CheckingFormat" xml:space="preserve">
+    <value>Memeriksa pembaruan untuk {0}...</value>
+  </data>
+  <data name="ModuleUpdate_Log_Failed" xml:space="preserve">
+    <value>Pembaruan tidak selesai dengan sukses.</value>
+  </data>
+  <data name="ModuleUpdate_Log_InstallingFormat" xml:space="preserve">
+    <value>Menginstal pembaruan untuk {0}...</value>
+  </data>
+  <data name="ModuleUpdate_Log_StartingFormat" xml:space="preserve">
+    <value>Memulai pembaruan untuk {0}.</value>
+  </data>
+  <data name="ModuleUpdate_Log_SuccessFormat" xml:space="preserve">
+    <value>Pembaruan selesai. {0} diinstal.</value>
+  </data>
   <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
     <value>Tidak ada modul yang dipilih</value>
+  </data>
+  <data name="ModuleUpdate_NoVersionSelected" xml:space="preserve">
+    <value>Tidak ada versi yang dipilih</value>
   </data>
   <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
     <value>Kemajuan keseluruhan</value>
   </data>
   <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
     <value>Preferensi disimpan secara otomatis</value>
+  </data>
+  <data name="ModuleUpdate_ReadyDefault" xml:space="preserve">
+    <value>Siap.</value>
   </data>
   <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
     <value>Versi rilis</value>
@@ -339,8 +627,35 @@
   <data name="ModuleUpdate_SearchMode" xml:space="preserve">
     <value>Mode pencarian</value>
   </data>
+  <data name="ModuleUpdate_SelectBranchRequired" xml:space="preserve">
+    <value>Pilih cabang repositori sebelum memeriksa pembaruan.</value>
+  </data>
   <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
     <value>Target yang dipilih</value>
+  </data>
+  <data name="ModuleUpdate_Status_CheckFailedFormat" xml:space="preserve">
+    <value>Pemeriksaan gagal: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_Checking" xml:space="preserve">
+    <value>Memeriksa pembaruan...</value>
+  </data>
+  <data name="ModuleUpdate_Status_ReadyToCheck" xml:space="preserve">
+    <value>Siap untuk diperiksa.</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpToDate" xml:space="preserve">
+    <value>Mutakhir</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateAvailableFormat" xml:space="preserve">
+    <value>Pembaruan tersedia: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateFailed" xml:space="preserve">
+    <value>Pembaruan gagal</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updated" xml:space="preserve">
+    <value>Diperbarui</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updating" xml:space="preserve">
+    <value>Memperbarui...</value>
   </data>
   <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
     <value>{0} - {1}</value>
@@ -390,6 +705,27 @@
   <data name="Modules_Updating" xml:space="preserve">
     <value>Memperbarui</value>
   </data>
+  <data name="Notifications_ActionFailed" xml:space="preserve">
+    <value>Tindakan gagal</value>
+  </data>
+  <data name="Notifications_AslmUpdateAvailable" xml:space="preserve">
+    <value>Pembaruan ASLM tersedia</value>
+  </data>
+  <data name="Notifications_AslmUpdateNotAvailable" xml:space="preserve">
+    <value>Tidak ada pembaruan ASLM yang tersedia saat ini.</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailed" xml:space="preserve">
+    <value>Pembaruan ASLM tidak dapat diunduh.</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailedStatus" xml:space="preserve">
+    <value>Persiapan gagal</value>
+  </data>
+  <data name="Notifications_AslmUpdateTitle" xml:space="preserve">
+    <value>Pembaruan ASLM</value>
+  </data>
+  <data name="Notifications_ChannelFormat" xml:space="preserve">
+    <value>Saluran: {0}</value>
+  </data>
   <data name="Notifications_ClearAll" xml:space="preserve">
     <value>Hapus semua</value>
   </data>
@@ -399,14 +735,32 @@
   <data name="Notifications_EmptyTitle" xml:space="preserve">
     <value>Tidak ada notifikasi</value>
   </data>
+  <data name="Notifications_InstalledVersionFallback" xml:space="preserve">
+    <value>versi terinstal</value>
+  </data>
+  <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
+    <value>Modul tersebut sudah tidak lagi terinstal.</value>
+  </data>
+  <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
+    <value>Pembaruan modul tersedia</value>
+  </data>
+  <data name="Notifications_NewVersionFound" xml:space="preserve">
+    <value>Versi baru ditemukan</value>
+  </data>
   <data name="Notifications_SectionRecent" xml:space="preserve">
     <value>Terbaru</value>
   </data>
   <data name="Notifications_SummaryFormat" xml:space="preserve">
-    <value>{0} total</value>
+    <value>{0} notifikasi</value>
   </data>
   <data name="Notifications_Title" xml:space="preserve">
     <value>Notifikasi</value>
+  </data>
+  <data name="Notifications_Unavailable" xml:space="preserve">
+    <value>Tidak tersedia</value>
+  </data>
+  <data name="Notifications_UpdateActionTitle" xml:space="preserve">
+    <value>Perbarui</value>
   </data>
   <data name="Notifications_UpdateLater" xml:space="preserve">
     <value>Perbarui nanti</value>
@@ -646,7 +1000,7 @@
     <value>Mengatur bahasa antarmuka untuk ASLM dan modul yang didukung</value>
   </data>
   <data name="Settings_Personalization_Mode" xml:space="preserve">
-    <value>Mode</value>
+    <value>Mode tampilan</value>
   </data>
   <data name="Settings_Personalization_ModeDescription" xml:space="preserve">
     <value>Menentukan cara aplikasi memilih tampilan antarmuka keseluruhan</value>
@@ -720,7 +1074,7 @@
     <value>Hapus tema</value>
   </data>
   <data name="Settings_ThemeEditor_Base" xml:space="preserve">
-    <value>Dasar</value>
+    <value>Editor warna tema</value>
   </data>
   <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
     <value>Default semantik bawaan untuk token yang belum Anda ganti</value>
