@@ -7,8 +7,6 @@ using System.Text.Json;
 
 namespace ASLM.Installer;
 
-// Installation orchestration.
-
 /// <summary>
 /// Installs the embedded ASLM payload to the selected directory.
 /// </summary>
@@ -36,6 +34,7 @@ public sealed class InstallerService
     /// </summary>
     public InstallPathValidation ValidateInstallPath(string basePath, string folderName)
     {
+        // Reject empty parent directory or folder name inputs early.
         if (string.IsNullOrWhiteSpace(basePath))
         {
             return InstallPathValidation.Error("Choose an installation directory.");
@@ -74,6 +73,7 @@ public sealed class InstallerService
             return InstallPathValidation.Error("The folder name must stay inside the selected installation directory.");
         }
 
+        // Block installs into an existing non-empty target folder.
         if (Directory.Exists(installPath) && Directory.EnumerateFileSystemEntries(installPath).Any())
         {
             return InstallPathValidation.Error("The target folder already exists and is not empty.");
@@ -114,6 +114,7 @@ public sealed class InstallerService
             cancellationToken.ThrowIfCancellationRequested();
             await ExtractPayloadAsync(stagingPath, progress, cancellationToken);
 
+            // Promote the staged tree into the final install directory.
             cancellationToken.ThrowIfCancellationRequested();
             progress.Report(new InstallProgress("Finalizing files...", 88));
 
@@ -124,6 +125,7 @@ public sealed class InstallerService
 
             MoveStagingDirectory(stagingPath, installPath);
 
+            // Persist install metadata and optional Windows shortcuts.
             var manifest = new InstallManifest(
                 App: "ASLM",
                 Version: options.Version,
@@ -218,6 +220,7 @@ public sealed class InstallerService
             await using var destination = File.Create(destinationPath);
             await source.CopyToAsync(destination, cancellationToken);
 
+            // Map archive progress into the installer wizard range.
             var percent = 6 + (int)Math.Round((index + 1d) / entries.Count * 80d);
             progress.Report(new InstallProgress($"Extracting {entry.FullName}", percent));
         }
@@ -235,6 +238,7 @@ public sealed class InstallerService
         AddCandidate(candidates, Path.Combine(AppContext.BaseDirectory, PayloadFileName));
         AddCandidate(candidates, Path.Combine(Environment.CurrentDirectory, PayloadFileName));
 
+        // Prefer the bootstrapper-provided payload path and local copies before packaged assets.
         foreach (var candidate in candidates)
         {
             if (File.Exists(candidate))
@@ -314,6 +318,7 @@ public sealed class InstallerService
         }
         catch (IOException)
         {
+            // Fall back to a full copy when a cross-volume move is not supported.
             CopyDirectory(stagingPath, installPath);
             Directory.Delete(stagingPath, recursive: true);
         }
@@ -452,8 +457,6 @@ public sealed class InstallerService
 }
 
 
-// Installation option models.
-
 /// <summary>
 /// Contains user-selected installation options.
 /// </summary>
@@ -476,8 +479,6 @@ public sealed record AcceptedLegalDocument(
     DateTimeOffset AcceptedAtUtc);
 
 
-// Installation result models.
-
 /// <summary>
 /// Describes the completed ASLM installation.
 /// </summary>
@@ -493,8 +494,6 @@ public sealed record InstallManifest(
 /// </summary>
 public sealed record InstallProgress(string Message, int Percent);
 
-
-// Validation models.
 
 /// <summary>
 /// Describes the result of installation path validation.

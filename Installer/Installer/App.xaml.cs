@@ -2,8 +2,6 @@
 
 namespace ASLM.Installer;
 
-// Installer application shell.
-
 /// <summary>
 /// Hosts the installer wizard and configures the primary window.
 /// </summary>

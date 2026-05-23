@@ -13,6 +13,12 @@ namespace ASLM.Services
         private static readonly object Gate = new();
         private static readonly Dictionary<string, ImageSource> Cache = new(StringComparer.Ordinal);
 
+
+        // Cache lifecycle
+
+        /// <summary>
+        /// Clears every cached tinted image so palette changes can rebuild icons.
+        /// </summary>
         internal static void Clear()
         {
             lock (Gate)
@@ -21,6 +27,12 @@ namespace ASLM.Services
             }
         }
 
+
+        // Cache access
+
+        /// <summary>
+        /// Returns a cached tinted image for the requested file and color, creating it when needed.
+        /// </summary>
         internal static ImageSource Get(string fileNameOrPath, Color tint)
         {
             var key = $"{fileNameOrPath}\u001f{ColorToKey(tint)}";
@@ -37,9 +49,18 @@ namespace ASLM.Services
             }
         }
 
+
+        // Image creation
+
+        /// <summary>
+        /// Builds a stable cache key fragment from one tint color.
+        /// </summary>
         private static string ColorToKey(Color c) =>
             FormattableString.Invariant($"{c.Red:F4}|{c.Green:F4}|{c.Blue:F4}|{c.Alpha:F4}");
 
+        /// <summary>
+        /// Decodes one icon, applies the tint, and returns a stream-backed image source.
+        /// </summary>
         private static ImageSource CreateImageSource(string fileNameOrPath, Color tint)
         {
             try
@@ -81,6 +102,9 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Opens the packaged or on-disk PNG stream used as the tint source bitmap.
+        /// </summary>
         private static Stream? OpenImageStream(string fileNameOrPath)
         {
             if (Path.IsPathRooted(fileNameOrPath) && File.Exists(fileNameOrPath))

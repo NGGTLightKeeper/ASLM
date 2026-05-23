@@ -23,7 +23,8 @@
             <VerticalStackLayout Spacing="0"
                                  Margin="0,0,0,8"
                                  Padding="4">
-                <Label Text="Modules"
+                <Label x:Name="PageTitleLabel"
+                       Text="Modules"
                        FontSize="24"
                        FontAttributes="Bold"
                        TextColor="{DynamicResource LabelPrimary}" />
@@ -31,7 +32,8 @@
         </CollectionView.Header>
 
         <CollectionView.EmptyView>
-            <Label Text="No modules found. Install modules via the Setup Wizard."
+            <Label x:Name="EmptyModulesLabel"
+                   Text="No modules found. Install modules via the Setup Wizard."
                    FontSize="14"
                    TextColor="{DynamicResource LabelSecondary}"
                    HorizontalOptions="Center"
@@ -71,14 +73,65 @@
                                 <Grid Grid.Row="0"
                                       ColumnDefinitions="*,Auto,Auto,Auto"
                                       ColumnSpacing="4">
-                                    <Label Text="{Binding Name}"
-                                           FontSize="16"
-                                           HeightRequest="24"
-                                           FontAttributes="Bold"
-                                           TextColor="{DynamicResource LabelPrimary}"
-                                           VerticalOptions="Center"
-                                           MaxLines="1"
-                                           LineBreakMode="TailTruncation" />
+                                    <Grid Grid.Column="0"
+                                          ColumnDefinitions="*,Auto,Auto"
+                                          ColumnSpacing="0"
+                                          VerticalOptions="Center"
+                                          HorizontalOptions="Start">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding Name}"
+                                               FontSize="16"
+                                               HeightRequest="24"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource LabelPrimary}"
+                                               VerticalOptions="Center"
+                                               MaxLines="1"
+                                               LineBreakMode="TailTruncation"
+                                               HorizontalOptions="Fill"
+                                               HorizontalTextAlignment="Start"
+                                               Margin="0,0,4,0"/>
+
+                                        <Border Grid.Column="1"
+                                                IsVisible="{Binding ShowVerifiedBadge}"
+                                                BackgroundColor="Transparent"
+                                                StrokeThickness="0"
+                                                WidthRequest="24"
+                                                HeightRequest="24"
+                                                Padding="0"
+                                                VerticalOptions="Center">
+                                            <Image Source="icon_verified.png"
+                                                   WidthRequest="24"
+                                                   HeightRequest="24"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"
+                                                   Aspect="AspectFit" />
+                                        </Border>
+
+                                        <Border Grid.Column="2"
+                                                IsVisible="{Binding ShowUnverifiedWarning}"
+                                                Background="#FF453A"
+                                                StrokeThickness="0"
+                                                StrokeShape="RoundRectangle 2"
+                                                HeightRequest="24"
+                                                Padding="0"
+                                                VerticalOptions="Center">
+                                            <HorizontalStackLayout Spacing="4"
+                                                                   Padding="4,0"
+                                                                   VerticalOptions="Center">
+                                                <Image Source="icon_warning.png"
+                                                       WidthRequest="20"
+                                                       HeightRequest="20"
+                                                       VerticalOptions="Center"
+                                                       Aspect="AspectFit" />
+                                                <Label Text="{Binding NotVerifiedLabel}"
+                                                       FontSize="14"
+                                                       TextColor="#FFFFFF"
+                                                       VerticalOptions="Center"
+                                                       Padding="0"
+                                                       LineBreakMode="NoWrap" />
+                                            </HorizontalStackLayout>
+                                        </Border>
+                                    </Grid>
 
                                     <ActivityIndicator Grid.Column="1"
                                                        IsRunning="{Binding ShowHeaderBusyIndicator}"
@@ -110,7 +163,7 @@
                                                    HorizontalOptions="Center"
                                                    VerticalOptions="Center" />
                                             <Label Grid.Column="1"
-                                                   Text="Update"
+                                                   Text="{Binding UpdateLabel}"
                                                    FontSize="14"
                                                    TextColor="{DynamicResource White}"
                                                    VerticalOptions="Center"
@@ -153,7 +206,7 @@
                                       ColumnSpacing="8"
                                       IsVisible="{Binding ShowRunningActions}">
                                     <Button Grid.Column="0"
-                                            Text="Stop"
+                                            Text="{Binding StopLabel}"
                                             ImageSource="icon_stop.png"
                                             ContentLayout="Left,4"
                                             Command="{Binding StopCommand}"
@@ -164,7 +217,7 @@
                                             CornerRadius="4"
                                             HorizontalOptions="Fill" />
                                     <Button Grid.Column="1"
-                                            Text="Restart"
+                                            Text="{Binding RestartLabel}"
                                             ImageSource="icon_restart.png"
                                             ContentLayout="Left,4"
                                             Command="{Binding RestartCommand}"
@@ -173,7 +226,8 @@
                                             FontSize="13"
                                             HeightRequest="32"
                                             CornerRadius="4"
-                                            HorizontalOptions="Fill" />
+                                            HorizontalOptions="Fill"
+                                            Padding="0,10" />
                                 </Grid>
 
                                 <Border Grid.Row="2"
@@ -196,7 +250,7 @@
                                                            WidthRequest="16"
                                                            HeightRequest="16"
                                                            VerticalOptions="Center" />
-                                        <Label Text="Restarting"
+                                        <Label Text="{Binding RestartingLabel}"
                                                TextColor="{DynamicResource LabelPrimary}"
                                                FontSize="13"
                                                VerticalOptions="Center" />
@@ -223,7 +277,7 @@
                                                            WidthRequest="16"
                                                            HeightRequest="16"
                                                            VerticalOptions="Center" />
-                                        <Label Text="Starting"
+                                        <Label Text="{Binding StartingLabel}"
                                                TextColor="{DynamicResource LabelPrimary}"
                                                FontSize="13"
                                                VerticalOptions="Center" />
@@ -250,7 +304,7 @@
                                                            WidthRequest="16"
                                                            HeightRequest="16"
                                                            VerticalOptions="Center" />
-                                        <Label Text="Updating"
+                                        <Label Text="{Binding UpdatingLabel}"
                                                TextColor="{DynamicResource LabelPrimary}"
                                                FontSize="13"
                                                VerticalOptions="Center" />
@@ -258,7 +312,7 @@
                                 </Border>
 
                                 <Button Grid.Row="2"
-                                        Text="Launch"
+                                        Text="{Binding LaunchLabel}"
                                         ImageSource="icon_play.png"
                                         ContentLayout="Left,4"
                                         Command="{Binding LaunchCommand}"
@@ -296,7 +350,7 @@
                                         <Grid.GestureRecognizers>
                                             <TapGestureRecognizer Command="{Binding CheckUpdateCommand}" />
                                         </Grid.GestureRecognizers>
-                                        <Label Text="Check updates"
+                                        <Label Text="{Binding CheckUpdatesLabel}"
                                                FontSize="13"
                                                TextColor="{DynamicResource LabelPrimary}"
                                                HorizontalOptions="Start"
@@ -307,7 +361,7 @@
                                         <Grid.GestureRecognizers>
                                             <TapGestureRecognizer Command="{Binding OpenConfigureUpdatesCommand}" />
                                         </Grid.GestureRecognizers>
-                                        <Label Text="Configure updates"
+                                        <Label Text="{Binding ConfigureUpdatesLabel}"
                                                FontSize="13"
                                                TextColor="{DynamicResource LabelPrimary}"
                                                HorizontalOptions="Start"

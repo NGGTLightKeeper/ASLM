@@ -2,8 +2,6 @@
 
 namespace ASLM.Installer;
 
-// Installer wizard UI.
-
 /// <summary>
 /// Coordinates installer wizard state, validation, and installation progress.
 /// </summary>
@@ -72,6 +70,7 @@ public partial class MainPage : ContentPage
     /// </summary>
     private async void OnNextClicked(object? sender, EventArgs e)
     {
+        // Ignore navigation while installation is running.
         if (_isInstalling)
         {
             return;
@@ -79,12 +78,14 @@ public partial class MainPage : ContentPage
 
         FooterLabel.Text = string.Empty;
 
+        // Finish the wizard or launch ASLM after a successful install.
         if (_isInstalled)
         {
             CloseOrLaunch();
             return;
         }
 
+        // Require explicit acceptance before leaving a legal step.
         if (IsLegalStep(_step) && !IsCurrentLegalDocumentAccepted())
         {
             _showLegalRequired = true;
@@ -95,6 +96,7 @@ public partial class MainPage : ContentPage
 
         _showLegalRequired = false;
 
+        // Validate the target directory before leaving the path step.
         if (_step == PathStep)
         {
             var validation = ValidateCurrentInstallPath();
@@ -105,6 +107,7 @@ public partial class MainPage : ContentPage
             }
         }
 
+        // Start installation instead of advancing to another view step.
         if (_step == ConfirmStep)
         {
             _step = InstallStep;
@@ -228,6 +231,7 @@ public partial class MainPage : ContentPage
 
         try
         {
+            // Run the file extraction workflow and surface progress in the install view.
             var options = CreateInstallOptions();
             var progress = new Progress<InstallProgress>(update =>
             {
@@ -237,6 +241,7 @@ public partial class MainPage : ContentPage
 
             _manifest = await _installerService.InstallAsync(options, progress, _installCancellation.Token);
 
+            // Switch the wizard into the post-install completion state.
             _isInstalled = true;
             LaunchAfterInstallPanel.IsVisible = true;
             NextButton.Text = "Finish";
@@ -246,6 +251,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
+            // Return to confirmation so the user can adjust options and retry.
             FooterLabel.Text = ex.Message;
             NextButton.Text = "Retry";
             NextButton.IsEnabled = true;
@@ -330,18 +336,21 @@ public partial class MainPage : ContentPage
     {
         _isRendering = true;
 
+        // Toggle the panel that matches the active wizard step.
         WelcomeView.IsVisible = _step == 0;
         LegalView.IsVisible = IsLegalStep(_step);
         PathView.IsVisible = _step == PathStep;
         ConfirmView.IsVisible = _step == ConfirmStep;
         InstallView.IsVisible = _step == InstallStep;
 
+        // Update navigation buttons and the step indicator.
         DeclineButton.IsVisible = IsLegalStep(_step);
         BackButton.IsVisible = _step > 0 && !_isInstalled;
         BackButton.IsEnabled = !_isInstalling && _step > 0;
         NextButton.IsEnabled = !_isInstalling;
         StepLabel.Text = $"Step {_step + 1} of {TotalStepCount}";
 
+        // Apply step-specific titles, subtitles, and primary actions.
         if (_step == 0)
         {
             TitleLabel.Text = "Install ASLM";
@@ -438,14 +447,32 @@ public partial class MainPage : ContentPage
         return step >= 1 && step < PathStep;
     }
 
+
+    // Wizard step indices.
+
+    /// <summary>
+    /// Returns the zero-based legal document index for the current wizard step.
+    /// </summary>
     private int CurrentLegalDocumentIndex => _step - 1;
 
+    /// <summary>
+    /// Returns the wizard step index for the installation path page.
+    /// </summary>
     private int PathStep => 1 + _legalDocuments.Count;
 
+    /// <summary>
+    /// Returns the wizard step index for the confirmation page.
+    /// </summary>
     private int ConfirmStep => PathStep + 1;
 
+    /// <summary>
+    /// Returns the wizard step index for the installation progress page.
+    /// </summary>
     private int InstallStep => PathStep + 2;
 
+    /// <summary>
+    /// Returns the total number of wizard steps including the welcome page.
+    /// </summary>
     private int TotalStepCount => InstallStep + 1;
 
 

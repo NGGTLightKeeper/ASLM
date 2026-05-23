@@ -5,8 +5,6 @@ using Microsoft.Maui.Graphics;
 
 namespace ASLM.Services
 {
-    // Palette resolution
-
     /// <summary>
     /// Builds the full resolved color palette for a given theme mode.
     /// <para>
@@ -146,6 +144,8 @@ namespace ASLM.Services
         };
 
 
+        // Custom palette
+
         /// <summary>
         /// Fills <paramref name="theme"/>.Colors with every palette key from the chosen built-in base.
         /// </summary>
@@ -245,7 +245,9 @@ namespace ASLM.Services
         public static string ToHex(Color color) =>
             $"#{(int)(color.Alpha * 255):X2}{(int)(color.Red * 255):X2}{(int)(color.Green * 255):X2}{(int)(color.Blue * 255):X2}";
 
-        // Inline constructor shorthand
+        /// <summary>
+        /// Parses one palette hex literal into a MAUI color.
+        /// </summary>
         private static Color C(string hex) => Color.FromArgb(hex);
     }
 }

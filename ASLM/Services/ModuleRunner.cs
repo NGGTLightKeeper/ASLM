@@ -2,14 +2,13 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using ASLM.Models;
 using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Module runner
-
     /// <summary>
     /// Executes module setup, runtime, and settings commands and tracks their processes.
     /// </summary>
@@ -22,6 +21,8 @@ namespace ASLM.Services
         private readonly ModuleConsoleStore _consoleStore;
         private readonly ProcessSnapshotReader _processSnapshots;
         private readonly ModuleThemePayloadBuilder _themePayloadBuilder;
+        private readonly ModuleLocalePayloadBuilder _localePayloadBuilder;
+        private readonly ModuleInteropHostState _interopHostState;
         private readonly ILogger<ModuleRunner> _logger;
         private readonly SemaphoreSlim _settingCommandThrottle = new(4, 4);
         private static readonly Encoding Utf8NoBom = new UTF8Encoding(false);
@@ -47,6 +48,8 @@ namespace ASLM.Services
         /// <param name="consoleStore">Service to report console output and process sessions.</param>
         /// <param name="processSnapshots">Service that shares cached process-table snapshots.</param>
         /// <param name="themePayloadBuilder">Builds host theme JSON for modules that declare a theme setting.</param>
+        /// <param name="localePayloadBuilder">Builds host locale JSON for modules that declare a locale setting.</param>
+        /// <param name="interopHostState">Tracks the module interop listener URL for opted-in modules.</param>
         /// <param name="logger">Logger instance.</param>
         public ModuleRunner(
             EngineInstaller engineInstaller,
@@ -56,6 +59,8 @@ namespace ASLM.Services
             ModuleConsoleStore consoleStore,
             ProcessSnapshotReader processSnapshots,
             ModuleThemePayloadBuilder themePayloadBuilder,
+            ModuleLocalePayloadBuilder localePayloadBuilder,
+            ModuleInteropHostState interopHostState,
             ILogger<ModuleRunner> logger)
         {
             _engineInstaller = engineInstaller;
@@ -65,6 +70,8 @@ namespace ASLM.Services
             _consoleStore = consoleStore;
             _processSnapshots = processSnapshots;
             _themePayloadBuilder = themePayloadBuilder;
+            _localePayloadBuilder = localePayloadBuilder;
+            _interopHostState = interopHostState;
             _logger = logger;
             _ports.PortsRedistributed += OnPortsRedistributed;
         }
@@ -279,6 +286,44 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Returns stable identifiers for modules that currently have tracked live processes.
+        /// </summary>
+        public IReadOnlyList<RunningModuleSnapshot> GetRunningModulesSnapshot()
+        {
+            lock (_processLock)
+            {
+                var results = new List<RunningModuleSnapshot>();
+
+                foreach (var pair in _runningProcesses)
+                {
+                    var hasLiveProcess = pair.Value.Any(static process =>
+                    {
+                        try
+                        {
+                            return !process.HasExited;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    });
+
+                    if (!hasLiveProcess)
+                    {
+                        continue;
+                    }
+
+                    if (_runningModules.TryGetValue(pair.Key, out var module))
+                    {
+                        results.Add(new RunningModuleSnapshot(module.Id, module.Name, module.SourcePath));
+                    }
+                }
+
+                return results;
+            }
+        }
+
+        /// <summary>
         /// Restarts currently running modules after the shared port map changes.
         /// </summary>
         private void OnPortsRedistributed(object? sender, EventArgs e)
@@ -381,7 +426,7 @@ namespace ASLM.Services
 
             foreach (var setting in module.Settings)
             {
-                if (string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase))
+                if (IsHostManagedSetting(setting.NormalizedType))
                 {
                     continue;
                 }
@@ -394,6 +439,13 @@ namespace ASLM.Services
             // Also expose some useful module context values to child processes.
             psi.Environment["ASLM_MODULE_ID"] = module.Id;
             psi.Environment["ASLM_MODULE_DIR"] = Path.GetDirectoryName(module.SourcePath) ?? "";
+
+            if (module.ModuleInterop?.IsClientEnabled == true &&
+                _interopHostState.TryGetListening(out var interopBaseUrl, out var interopPort))
+            {
+                psi.Environment["ASLM_MODULE_INTEROP_BASE_URL"] = interopBaseUrl;
+                psi.Environment["ASLM_MODULE_INTEROP_PORT"] = interopPort.ToString(CultureInfo.InvariantCulture);
+            }
         }
 
         /// <summary>
@@ -474,6 +526,9 @@ namespace ASLM.Services
 
                 case "theme":
                     return _themePayloadBuilder.BuildJson();
+
+                case "locale":
+                    return _localePayloadBuilder.BuildJson();
 
                 default:
                     return (setting.Value ?? setting.Default)?.ToString() ?? string.Empty;
@@ -787,19 +842,20 @@ namespace ASLM.Services
             if (string.IsNullOrEmpty(execStr)) return null;
 
             await _settingCommandThrottle.WaitAsync(ct);
-            string? themePayloadFile = null;
+            string? hostPayloadFile = null;
             try
             {
                 if (isSet && newValue != null)
                 {
-                    if (string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase))
+                    if (UsesHostFilePayload(setting.NormalizedType))
                     {
-                        // Large JSON payloads are written to a temp file so the child process argv stays reliable on Windows.
+                        // JSON payloads are written to a temp file so the child process argv stays reliable on Windows.
                         var safeId = SanitizeFileNameSegment(module.Id);
-                        themePayloadFile = Path.Combine(Path.GetTempPath(), $"aslm_theme_{safeId}_{Guid.NewGuid():N}.json");
-                        await File.WriteAllTextAsync(themePayloadFile, newValue, Utf8NoBom, ct).ConfigureAwait(false);
+                        var prefix = GetHostPayloadFilePrefix(setting.NormalizedType);
+                        hostPayloadFile = Path.Combine(Path.GetTempPath(), $"{prefix}_{safeId}_{Guid.NewGuid():N}.json");
+                        await File.WriteAllTextAsync(hostPayloadFile, newValue, Utf8NoBom, ct).ConfigureAwait(false);
                         // Paths must be quoted for CreateProcess argv parsing when the profile or temp dir contains spaces.
-                        execStr = execStr.Replace("{value}", QuoteWindowsArgument(themePayloadFile));
+                        execStr = execStr.Replace("{value}", QuoteWindowsArgument(hostPayloadFile));
                     }
                     else
                     {
@@ -860,21 +916,45 @@ namespace ASLM.Services
             }
             finally
             {
-                if (themePayloadFile != null)
+                if (hostPayloadFile != null)
                 {
                     try
                     {
-                        File.Delete(themePayloadFile);
+                        File.Delete(hostPayloadFile);
                     }
                     catch
                     {
-                        // Best-effort cleanup of the theme payload staging file.
+                        // Best-effort cleanup of the host payload staging file.
                     }
                 }
 
                 _settingCommandThrottle.Release();
             }
         }
+
+
+        // Host-managed settings
+
+        /// <summary>
+        /// Returns whether one setting type is owned by the host rather than module commands.
+        /// </summary>
+        private static bool IsHostManagedSetting(string normalizedType) =>
+            string.Equals(normalizedType, "theme", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(normalizedType, "locale", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Returns whether the setting value is delivered through a host-generated payload file.
+        /// </summary>
+        private static bool UsesHostFilePayload(string normalizedType) =>
+            IsHostManagedSetting(normalizedType);
+
+        /// <summary>
+        /// Returns the temp-file prefix used for one host-managed payload type.
+        /// </summary>
+        private static string GetHostPayloadFilePrefix(string normalizedType) =>
+            string.Equals(normalizedType, "locale", StringComparison.OrdinalIgnoreCase)
+                ? "aslm_locale"
+                : "aslm_theme";
 
         // Console forwarding
 
@@ -1235,8 +1315,6 @@ namespace ASLM.Services
             return args;
         }
 
-        // Argument join
-
         /// <summary>
         /// Rebuilds an argument string from parsed arguments.
         /// </summary>
@@ -1246,8 +1324,6 @@ namespace ASLM.Services
         {
             return string.Join(" ", args.Select(a => a.Contains(' ') ? $"\"{a}\"" : a));
         }
-
-        // Engine key parsing
 
         /// <summary>
         /// Wraps one argument in double quotes for Windows process command lines (temp paths, user profiles with spaces).

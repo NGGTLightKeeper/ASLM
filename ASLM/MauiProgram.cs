@@ -45,15 +45,21 @@ namespace ASLM
 
             // Service registrations
             builder.Services.AddSingleton<AppDataStore>();
+            builder.Services.AddSingleton<DockerService>();
             builder.Services.AddSingleton<EngineInstaller>();
             builder.Services.AddSingleton<ModuleEnvironmentResolver>();
+            builder.Services.AddSingleton<ModuleTrustService>();
             builder.Services.AddSingleton<ModuleInstaller>();
             builder.Services.AddSingleton<ModuleConsoleStore>();
             builder.Services.AddSingleton<ProcessSnapshotReader>();
             builder.Services.AddSingleton<ProcessTracker>();
             builder.Services.AddSingleton<ModuleThemePayloadBuilder>();
-            builder.Services.AddSingleton<ModuleRunner>();
+            builder.Services.AddSingleton<ModuleLocalePayloadBuilder>();
+            builder.Services.AddSingleton<AppLocalizationService>();
+            builder.Services.AddSingleton<ModuleInteropHostState>();
+            builder.Services.AddSingleton<ModuleStartThrottle>();
             builder.Services.AddSingleton<PortRegistry>();
+            builder.Services.AddSingleton<ModuleRunner>();
             builder.Services.AddSingleton<ModuleDownloadBridge>();
             builder.Services.AddSingleton<DownloadStateStore>();
             builder.Services.AddSingleton<DownloadCatalog>();
@@ -63,6 +69,8 @@ namespace ASLM
             builder.Services.AddSingleton<GitHubUpdateClient>();
             builder.Services.AddSingleton<UpdateManager>();
             builder.Services.AddSingleton<UpdateScheduler>();
+            builder.Services.AddSingleton<ModuleLaunchCoordinator>();
+            builder.Services.AddSingleton<AslmModuleInteropServer>();
             builder.Services.AddSingleton<AslmApiServer>();
             builder.Services.AddSingleton<SettingsService>();
             builder.Services.AddSingleton<CustomThemesStore>();
@@ -83,7 +91,11 @@ namespace ASLM
             builder.Services.AddTransient<SettingsView>();
             builder.Services.AddTransient<ModuleUpdateView>();
 
-            return builder.Build();
+            var app = builder.Build();
+            var localization = app.Services.GetRequiredService<AppLocalizationService>();
+            Localization.L.Initialize(localization);
+            localization.ApplyCulture();
+            return app;
         }
     }
 }

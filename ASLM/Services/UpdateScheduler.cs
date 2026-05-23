@@ -5,8 +5,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Update scheduler
-
     /// <summary>
     /// Runs periodic background update checks according to user preferences.
     /// </summary>

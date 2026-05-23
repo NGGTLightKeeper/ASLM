@@ -11,7 +11,8 @@
 
         <Grid Grid.Row="0">
             <VerticalStackLayout>
-                <Label Text="Consoles"
+                <Label x:Name="PageTitleLabel"
+                       Text="Consoles"
                        FontSize="24"
                        FontAttributes="Bold"
                        TextColor="{DynamicResource LabelPrimary}" />
@@ -35,7 +36,8 @@
                 <Grid RowDefinitions="Auto,*"
                       RowSpacing="4">
                     <VerticalStackLayout Spacing="0">
-                        <Label Text="Modules"
+                        <Label x:Name="ModulesHeaderLabel"
+                               Text="Modules"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource LabelPrimary}" />
@@ -48,7 +50,8 @@
                                     SelectionChanged="OnModuleSelectionChanged"
                                     Margin="0">
                         <CollectionView.EmptyView>
-                            <Label Text="No active modules"
+                            <Label x:Name="ModulesEmptyLabel"
+                                   Text="No active modules"
                                    FontSize="13"
                                    TextColor="{DynamicResource LabelSecondary}"
                                    HorizontalOptions="Center"
@@ -87,7 +90,8 @@
                 <Grid RowDefinitions="Auto,*"
                       RowSpacing="4">
                     <VerticalStackLayout Spacing="0">
-                        <Label Text="Consoles"
+                        <Label x:Name="SessionsHeaderLabel"
+                               Text="Consoles"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource LabelPrimary}" />
@@ -100,7 +104,8 @@
                                     SelectionChanged="OnSessionSelectionChanged"
                                     Margin="0">
                         <CollectionView.EmptyView>
-                            <Label Text="No consoles"
+                            <Label x:Name="SessionsEmptyLabel"
+                                   Text="No consoles"
                                    FontSize="13"
                                    TextColor="{DynamicResource LabelSecondary}"
                                    HorizontalOptions="Center"

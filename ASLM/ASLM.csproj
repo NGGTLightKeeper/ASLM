@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>net10.0-windows10.0.19041.0</TargetFrameworks>
@@ -58,6 +58,78 @@
 		<PackageReference Include="System.Management" Version="9.0.0" />
 		<PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.9" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="Resources\Strings\AppResources.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.resx">
+	    <Generator>PublicResXFileCodeGenerator</Generator>
+	    <LastGenOutput>AppResources.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.zh-Hans.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.es.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.ar.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.hi.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.pt-BR.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.ru.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.ja.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.de.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.fr.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.ko.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.it.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.zh-Hant.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.pt.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.tr.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.pl.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.uk.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.id.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.vi.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	  <EmbeddedResource Update="Resources\Strings\AppResources.nl.resx">
+	    <DependentUpon>AppResources.resx</DependentUpon>
+	  </EmbeddedResource>
+	</ItemGroup>
 	
 	<!-- Flatten icon_*.scale-100.png into tint_png/ for PackagedIconTintCache (unpackaged WinUI). -->
 	<Target Name="_CopyResizedIconsForTint" AfterTargets="ResizetizeImages">
@@ -65,9 +137,7 @@
 			<_TintPngs Include="$(IntermediateOutputPath)resizetizer\r\icon_*.scale-100.png" />
 		</ItemGroup>
 		<MakeDir Directories="$(OutputPath)tint_png" />
-		<Copy SourceFiles="@(_TintPngs)"
-			  DestinationFiles="@(_TintPngs->'$(OutputPath)tint_png\$([System.String]::Copy('%(Filename)').Replace('.scale-100','')).png')"
-			  SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(_TintPngs)" DestinationFiles="@(_TintPngs-&gt;'$(OutputPath)tint_png\$([System.String]::Copy('%(Filename)').Replace('.scale-100','')).png')" SkipUnchangedFiles="true" />
 	</Target>
 
 </Project>

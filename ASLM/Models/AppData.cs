@@ -227,13 +227,17 @@ namespace ASLM.Models
     // Personalization
 
     /// <summary>
-    /// Stores the selected appearance mode and the active custom theme identifier.
+    /// Stores the selected appearance mode, UI language, and the active custom theme identifier.
     /// </summary>
     public class AppPersonalizationConfig
     {
         // One of: Dark, Light, System, Custom.
         [JsonPropertyName("appearance")]
         public string Appearance { get; set; } = "Dark";
+
+        // BCP-47-style language code (e.g. en). Managed in personalization; modules receive a snapshot via locale settings.
+        [JsonPropertyName("language")]
+        public string Language { get; set; } = "en";
 
         // Identifier of the selected custom theme when Appearance is "Custom".
         [JsonPropertyName("customThemeId")]
@@ -245,10 +249,32 @@ namespace ASLM.Models
         public void Normalize()
         {
             Appearance = NormalizeAppearance(Appearance);
+            Language = NormalizeLanguage(Language);
             if (!string.Equals(Appearance, "Custom", StringComparison.OrdinalIgnoreCase))
             {
                 CustomThemeId = null;
             }
+        }
+
+        private static readonly HashSet<string> SupportedLanguageCodes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "en",
+            "zh-Hans", "es", "ar", "hi", "pt-BR", "ru", "ja", "de", "fr", "ko", "it",
+            "zh-Hant", "pt", "tr", "pl", "uk", "id", "vi", "nl",
+        };
+
+        /// <summary>
+        /// Returns the canonical language code, falling back to English for unknown values.
+        /// </summary>
+        public static string NormalizeLanguage(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "en";
+            }
+
+            var trimmed = value.Trim();
+            return SupportedLanguageCodes.Contains(trimmed) ? trimmed : "en";
         }
 
         /// <summary>

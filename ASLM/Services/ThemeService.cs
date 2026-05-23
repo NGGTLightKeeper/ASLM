@@ -5,8 +5,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Theme management
-
     /// <summary>
     /// Applies a color palette to <see cref="Application.Current"/> resources so that all
     /// <c>DynamicResource</c> bindings update immediately when the active theme changes.
@@ -137,6 +135,9 @@ namespace ASLM.Services
 
         // Theme application
 
+        /// <summary>
+        /// Applies the built-in palette and listens for OS theme changes.
+        /// </summary>
         private void ApplySystemTheme()
         {
             if (Application.Current is { } app)
@@ -149,6 +150,9 @@ namespace ASLM.Services
             ApplyBuiltInTheme(isDark: IsSystemDark());
         }
 
+        /// <summary>
+        /// Unsubscribes from OS theme change notifications.
+        /// </summary>
         private void StopTrackingSystemTheme()
         {
             if (Application.Current is { } app)
@@ -157,12 +161,18 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Reapplies the built-in palette when the OS appearance changes.
+        /// </summary>
         private void OnSystemThemeChanged(object? sender, AppThemeChangedEventArgs e)
         {
             var isDark = e.RequestedTheme != AppTheme.Light;
             MainThread.BeginInvokeOnMainThread(() => ApplyBuiltInTheme(isDark));
         }
 
+        /// <summary>
+        /// Applies one built-in dark or light palette to application resources.
+        /// </summary>
         private void ApplyBuiltInTheme(bool isDark)
         {
             StopTrackingSystemTheme();
@@ -178,6 +188,9 @@ namespace ASLM.Services
             WritePaletteToResources(palette);
         }
 
+        /// <summary>
+        /// Applies one custom theme palette to application resources.
+        /// </summary>
         private void ApplyCustomTheme(CustomTheme theme)
         {
             StopTrackingSystemTheme();
@@ -191,6 +204,8 @@ namespace ASLM.Services
             WritePaletteToResources(palette);
         }
 
+
+        // Palette notifications
 
         /// <summary>
         /// Raised on the main thread after the application palette dictionary is rewritten.

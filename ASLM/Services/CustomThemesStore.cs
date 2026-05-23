@@ -8,8 +8,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Custom themes persistence
-
     /// <summary>
     /// Loads and saves user-defined themes from <c>Data/App/ASLM_CustomThemes.json</c>.
     /// </summary>
@@ -212,6 +210,9 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Returns whether another theme already uses the requested display name.
+        /// </summary>
         private bool IsDisplayNameTaken(string name, string? exceptThemeId) =>
             Root.Themes.Any(t =>
                 (exceptThemeId == null ||

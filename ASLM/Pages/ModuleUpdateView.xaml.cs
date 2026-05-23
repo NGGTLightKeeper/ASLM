@@ -3,8 +3,10 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
+using Microsoft.Maui.Controls;
 
 namespace ASLM.Pages
 {
@@ -17,12 +19,10 @@ namespace ASLM.Pages
         Update
     }
 
-    // Module update overlay
-
     /// <summary>
     /// Displays module update configuration and installation progress inside the shell overlay.
     /// </summary>
-    public partial class ModuleUpdateView : ContentView, INotifyPropertyChanged
+    public partial class ModuleUpdateView : ContentView, INotifyPropertyChanged, ILocalizable
     {
         private const double DialogWidthFactor = 0.78;
         private const double DialogHeightFactor = 0.82;
@@ -41,6 +41,9 @@ namespace ASLM.Pages
         private int _logSyncQueued;
         private int _logSyncRequested;
 
+
+        // Events
+
         /// <summary>
         /// Raised when the user asks to close the module update overlay.
         /// </summary>
@@ -49,12 +52,19 @@ namespace ASLM.Pages
         /// <inheritdoc />
         public new event PropertyChangedEventHandler? PropertyChanged;
 
+
+        // Initialization
+
+        private readonly AppLocalizationService _localization;
+
         /// <summary>
         /// Creates the module update overlay and hooks layout updates.
         /// </summary>
-        public ModuleUpdateView()
+        public ModuleUpdateView(AppLocalizationService localization)
         {
+            _localization = localization;
             InitializeComponent();
+            LocalizableAttach.Hook(this, _localization, this);
             ApplyBorderlessPickerStyle(SourceModePicker);
             ApplyBorderlessPickerStyle(ReleasePicker);
             ApplyBorderlessPickerStyle(BranchPicker);
@@ -69,15 +79,35 @@ namespace ASLM.Pages
         /// Gets the title shown in the dialog header.
         /// </summary>
         public string DialogTitle => _mode == ModuleUpdateMode.Update
-            ? "Module Update"
-            : "Configure Module Updates";
+            ? L.Get(LocalizationKeys.ModuleUpdate_Title_Update)
+            : L.Get(LocalizationKeys.ModuleUpdate_Title_Configure);
 
         /// <summary>
         /// Gets the subtitle shown in the dialog header.
         /// </summary>
         public string DialogSubtitle => _module == null
-            ? "No module selected."
-            : $"{_module.Name} - {_module.Description}";
+            ? L.Get(LocalizationKeys.ModuleUpdate_NoModuleSelected)
+            : L.Get(LocalizationKeys.ModuleUpdate_SubtitleFormat, _module.Name, _module.Description);
+
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            ToolTipProperties.SetText(CloseButton, L.Get(LocalizationKeys.ModuleUpdate_CloseTooltip));
+            CurrentVersionHeaderLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_CurrentVersion);
+            SelectedTargetHeaderLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_SelectedTarget);
+            UpdateSourceHeaderLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_UpdateSource);
+            PrefsAutoSavedLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_PrefsAutoSaved);
+            SearchModeLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_SearchMode);
+            ReleaseVersionLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_ReleaseVersion);
+            RepositoryBranchLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_RepositoryBranch);
+            OverallProgressLabel.Text = L.Get(LocalizationKeys.ModuleUpdate_OverallProgress);
+            CheckUpdatesButton.Text = L.Get(LocalizationKeys.ModuleUpdate_CheckUpdates);
+            InstallUpdateButton.Text = L.Get(LocalizationKeys.ModuleUpdate_InstallUpdate);
+            OnPropertyChanged(nameof(DialogTitle));
+            OnPropertyChanged(nameof(DialogSubtitle));
+            OnPropertyChanged(nameof(ActivityTitle));
+            OnPropertyChanged(nameof(ActivityStatus));
+        }
 
         /// <summary>
         /// Gets the currently installed module version.
@@ -87,7 +117,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Gets the selected target label shown in the header.
         /// </summary>
-        public string TargetVersionLabel => _module?.SelectedTargetLabel ?? "No version selected";
+        public string TargetVersionLabel => _module?.SelectedTargetLabel ?? L.Get(LocalizationKeys.ModuleUpdate_NoVersionSelected);
 
         /// <summary>
         /// Gets selectable module update source modes.
@@ -198,13 +228,13 @@ namespace ASLM.Pages
         /// Gets the title shown above the activity panel.
         /// </summary>
         public string ActivityTitle => _mode == ModuleUpdateMode.Update
-            ? "Update Activity"
-            : "Update Status";
+            ? L.Get(LocalizationKeys.ModuleUpdate_ActivityTitle_Activity)
+            : L.Get(LocalizationKeys.ModuleUpdate_ActivityTitle_Status);
 
         /// <summary>
         /// Gets the current activity status text shown in the progress area.
         /// </summary>
-        public string ActivityStatus => _module?.UpdateActivityStatus ?? _module?.UpdateStatus ?? "Ready.";
+        public string ActivityStatus => _module?.UpdateActivityStatus ?? _module?.UpdateStatus ?? L.Get(LocalizationKeys.ModuleUpdate_ReadyDefault);
 
         /// <summary>
         /// Gets whether the progress area should show the bars.
@@ -501,10 +531,10 @@ namespace ASLM.Pages
 
             if (announceInLog)
             {
-                module.AppendUpdateLog($"Checking updates for {module.Name}...");
+                module.AppendUpdateLog(L.Get(LocalizationKeys.ModuleUpdate_Log_CheckingFormat, module.Name));
             }
 
-            module.SetUpdateActivityStatus("Checking for updates...");
+            module.SetUpdateActivityStatus(L.Get(LocalizationKeys.ModuleUpdate_Status_Checking));
             RaiseActivityProperties();
 
             try
@@ -518,7 +548,7 @@ namespace ASLM.Pages
             }
             catch (Exception ex)
             {
-                module.SetUpdateActivityStatus($"Check failed: {ex.Message}");
+                module.SetUpdateActivityStatus(L.Get(LocalizationKeys.ModuleUpdate_Status_CheckFailedFormat, ex.Message));
                 if (announceInLog)
                 {
                     module.AppendUpdateLog(module.UpdateActivityStatus);
@@ -562,7 +592,7 @@ namespace ASLM.Pages
             }
             catch (Exception ex)
             {
-                module.SetUpdateActivityStatus($"Failed to load update options: {ex.Message}");
+                module.SetUpdateActivityStatus(L.Get(LocalizationKeys.ModuleUpdate_LoadOptionsFailedFormat, ex.Message));
                 if (ReferenceEquals(_module, module))
                 {
                     RaiseActivityProperties();
@@ -603,19 +633,19 @@ namespace ASLM.Pages
             }
 
             module.ResetUpdateSession(clearLog: true);
-            module.SetUpdateActivityStatus($"Installing update for {module.Name}...");
+            module.SetUpdateActivityStatus(L.Get(LocalizationKeys.ModuleUpdate_Log_InstallingFormat, module.Name));
             RaiseActivityProperties();
-            module.AppendUpdateLog($"Starting update for {module.Name}.");
+            module.AppendUpdateLog(L.Get(LocalizationKeys.ModuleUpdate_Log_StartingFormat, module.Name));
 
             var success = await module.ApplyUpdateAsync();
 
             module.SetUpdateActivityStatus(success
-                ? $"{module.Name} updated successfully."
-                : $"{module.Name} update failed.");
+                ? L.Get(LocalizationKeys.ModuleUpdate_Activity_SuccessFormat, module.Name)
+                : L.Get(LocalizationKeys.ModuleUpdate_Activity_FailedFormat, module.Name));
 
             module.AppendUpdateLog(success
-                ? $"Update finished. Installed {module.VersionString}."
-                : "Update did not complete successfully.");
+                ? L.Get(LocalizationKeys.ModuleUpdate_Log_SuccessFormat, module.VersionString)
+                : L.Get(LocalizationKeys.ModuleUpdate_Log_Failed));
 
             if (ReferenceEquals(_module, module))
             {
@@ -645,7 +675,7 @@ namespace ASLM.Pages
                 var selectedBranch = ResolveSelectedBranchFromPicker();
                 if (string.IsNullOrWhiteSpace(selectedBranch))
                 {
-                    _module.SetUpdateActivityStatus("Select a repository branch before checking updates.");
+                    _module.SetUpdateActivityStatus(L.Get(LocalizationKeys.ModuleUpdate_SelectBranchRequired));
                     RaiseActivityProperties();
                     return false;
                 }
@@ -762,6 +792,8 @@ namespace ASLM.Pages
         }
 
 
+        // Picker synchronization
+
         /// <summary>
         /// Keeps picker controls aligned with the module view model after option lists are rebuilt.
         /// </summary>
@@ -795,6 +827,9 @@ namespace ASLM.Pages
             _ = BranchPickerDeferredResyncLoopAsync();
         }
 
+        /// <summary>
+        /// Re-applies branch selection on a short delay loop after the branch list changes.
+        /// </summary>
         private async Task BranchPickerDeferredResyncLoopAsync()
         {
             for (var attempt = 0; attempt < 3; attempt++)

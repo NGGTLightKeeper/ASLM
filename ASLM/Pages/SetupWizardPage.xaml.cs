@@ -2,31 +2,35 @@
 
 using System.Diagnostics;
 using System.Text;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
 
 namespace ASLM.Pages
 {
-    // Setup wizard page
-
     /// <summary>
     /// Guides the first-run flow from profile setup through module installation.
     /// </summary>
-    public partial class SetupWizardPage : ContentPage
+    public partial class SetupWizardPage : ContentPage, ILocalizable
     {
         private const int TotalSteps = 3;
 
         private readonly AppDataStore _appData;
+        private readonly DockerService _dockerService;
         private readonly EngineInstaller _engineInstaller;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly UpdateManager _updateManager;
+        private readonly AppLocalizationService _localization;
         private readonly IServiceProvider _services;
 
         private readonly List<(ModuleConfig Module, CheckBox Check)> _moduleChecks = [];
         private readonly StringBuilder _logBuffer = new();
 
         private int _currentStep;
+        private bool _skipDockerStep = true;
+        private bool _showDockerGate;
+        private bool _pendingFastSetup;
         private CancellationTokenSource? _cts;
         private bool _logVisible;
         private bool _moduleListLoaded;
@@ -45,20 +49,25 @@ namespace ASLM.Pages
         /// </summary>
         public SetupWizardPage(
             AppDataStore appData,
+            DockerService dockerService,
             EngineInstaller engineInstaller,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
             UpdateManager updateManager,
+            AppLocalizationService localization,
             IServiceProvider services)
         {
             _appData = appData;
+            _dockerService = dockerService;
             _engineInstaller = engineInstaller;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             _updateManager = updateManager;
+            _localization = localization;
             _services = services;
 
             InitializeComponent();
+            LocalizableAttach.Hook(this, _localization, this);
 
             // Reuse the saved profile name when available, otherwise fall back to the Windows user name.
             var existingName = _appData.Data.User.Name;
@@ -88,36 +97,62 @@ namespace ASLM.Pages
 
             _moduleListLoaded = true;
             await PopulateModuleListAsync();
+            _skipDockerStep = await _dockerService.IsCliInstalledAsync();
         }
 
 
-        // Welcome actions
+        // Setup actions
 
         /// <summary>
         /// Starts the step-by-step setup flow.
         /// </summary>
         private void OnSetupClicked(object? sender, EventArgs e)
         {
+            _pendingFastSetup = false;
             _currentStep = 1;
+            _showDockerGate = !_skipDockerStep;
             UpdateStepUI();
         }
-
-        // Fast setup
 
         /// <summary>
         /// Saves default values and jumps directly to module selection.
         /// </summary>
         private async void OnFastSetupClicked(object? sender, EventArgs e)
         {
-            // Fast setup uses the Windows username and the default port ranges.
             _appData.Data.User.Name = Environment.UserName;
             var defaultPorts = new AppPortConfig();
             _appData.Data.Ports.OfficialStart = defaultPorts.OfficialStart;
             _appData.Data.Ports.ThirdPartyStart = defaultPorts.ThirdPartyStart;
             await _appData.SaveAsync();
 
-            _currentStep = 3;
+            _pendingFastSetup = true;
+            if (_skipDockerStep)
+            {
+                _currentStep = 3;
+                _showDockerGate = false;
+            }
+            else
+            {
+                _currentStep = 1;
+                _showDockerGate = true;
+            }
+
             UpdateStepUI();
+        }
+
+        /// <summary>
+        /// Opens the Docker Desktop install guide in the system browser.
+        /// </summary>
+        private async void OnDockerOpenGuideClicked(object? sender, EventArgs e)
+        {
+            try
+            {
+                await _dockerService.OpenInstallGuideAsync();
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlertAsync("Error", $"Could not open the browser: {ex.Message}", "OK");
+            }
         }
 
 
@@ -199,6 +234,15 @@ namespace ASLM.Pages
         /// </summary>
         private void OnBackClicked(object? sender, EventArgs e)
         {
+            if (_currentStep == 1 && _showDockerGate)
+            {
+                _currentStep = 0;
+                _showDockerGate = false;
+                _pendingFastSetup = false;
+                UpdateStepUI();
+                return;
+            }
+
             if (_currentStep <= 1)
             {
                 return;
@@ -208,8 +252,6 @@ namespace ASLM.Pages
             UpdateStepUI();
         }
 
-        // Next action
-
         /// <summary>
         /// Advances the wizard or starts installation on the last step.
         /// </summary>
@@ -217,6 +259,29 @@ namespace ASLM.Pages
         {
             if (_currentStep < TotalSteps)
             {
+                if (_currentStep == 1 && _showDockerGate)
+                {
+                    _skipDockerStep = await _dockerService.IsCliInstalledAsync();
+                    if (!_skipDockerStep)
+                    {
+                        await DisplayAlertAsync(
+                            "Docker",
+                            "Install Docker Desktop, then tap Next again.",
+                            "OK");
+                        return;
+                    }
+
+                    _showDockerGate = false;
+                    if (_pendingFastSetup)
+                    {
+                        _currentStep = 3;
+                        _pendingFastSetup = false;
+                    }
+
+                    UpdateStepUI();
+                    return;
+                }
+
                 if (_currentStep == 1)
                 {
                     if (!SettingsService.TryValidateDisplayName(UsernameEntry.Text, out var validatedUserName, out var displayNameErrorMessage))
@@ -241,6 +306,35 @@ namespace ASLM.Pages
             await StartInstallAsync();
         }
 
+        // Localization
+
+        /// <summary>
+        /// Applies localized strings to wizard labels and refreshes step UI.
+        /// </summary>
+        public void ApplyLocalization()
+        {
+            Title = L.Get(LocalizationKeys.SetupWizard_Title);
+            HeaderTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_Title);
+            WelcomeTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_WelcomeTitle);
+            WelcomeSubtitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_WelcomeSubtitle);
+            SetupButton.Text = L.Get(LocalizationKeys.SetupWizard_Setup);
+            FastSetupButton.Text = L.Get(LocalizationKeys.SetupWizard_FastSetup);
+            FastSetupHintLabel.Text = L.Get(LocalizationKeys.SetupWizard_FastSetupHint);
+            DockerTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_DockerTitle);
+            DockerDescriptionLabel.Text = L.Get(LocalizationKeys.SetupWizard_DockerDescription);
+            InstallDockerButton.Text = L.Get(LocalizationKeys.SetupWizard_InstallDocker);
+            DisplayNameTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_DisplayNameTitle);
+            UsernameEntry.Placeholder = L.Get(LocalizationKeys.SetupWizard_DisplayNamePlaceholder);
+            PortAllocationTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_PortAllocationTitle);
+            OfficialPortsLabel.Text = L.Get(LocalizationKeys.SetupWizard_OfficialPortsLabel);
+            ThirdPartyPortsLabel.Text = L.Get(LocalizationKeys.SetupWizard_ThirdPartyPortsLabel);
+            InstallStatusLabel.Text = L.Get(LocalizationKeys.SetupWizard_Preparing);
+            OverallProgressLabel.Text = L.Get(LocalizationKeys.SetupWizard_OverallProgress);
+            BackButton.Text = L.Get(LocalizationKeys.Common_Back);
+            UpdateStepUI();
+        }
+
+
         // Step UI
 
         /// <summary>
@@ -249,21 +343,25 @@ namespace ASLM.Pages
         private void UpdateStepUI()
         {
             Step0Panel.IsVisible = _currentStep == 0;
-            Step1Panel.IsVisible = _currentStep == 1;
+            DockerGatePanel.IsVisible = _currentStep == 1 && _showDockerGate;
+            Step1Panel.IsVisible = _currentStep == 1 && !_showDockerGate;
             Step2Panel.IsVisible = _currentStep == 2;
             Step3Panel.IsVisible = _currentStep == 3;
 
             HeaderRow.IsVisible = _currentStep > 0;
             ButtonPanel.IsVisible = _currentStep > 0;
-            BackButton.IsVisible = _currentStep > 1;
-            NextButton.Text = _currentStep == TotalSteps ? "Install" : "Next";
+            BackButton.IsVisible = _currentStep > 1 || (_currentStep == 1 && _showDockerGate);
+            NextButton.Text = _currentStep == TotalSteps
+                ? L.Get(LocalizationKeys.SetupWizard_Next_Install)
+                : L.Get(LocalizationKeys.Common_Next);
             ResetNavigationButtons();
 
             StepLabel.Text = _currentStep switch
             {
-                1 => "Step 1 of 3 - User Profile",
-                2 => "Step 2 of 3 - Port Configuration",
-                3 => "Step 3 of 3 - Module Selection",
+                1 when _showDockerGate => L.Get(LocalizationKeys.SetupWizard_Step_DockerDesktop),
+                1 => L.Get(LocalizationKeys.SetupWizard_StepFormat, 1, 3, L.Get(LocalizationKeys.SetupWizard_Step_UserProfile)),
+                2 => L.Get(LocalizationKeys.SetupWizard_StepFormat, 2, 3, L.Get(LocalizationKeys.SetupWizard_Step_PortConfiguration)),
+                3 => L.Get(LocalizationKeys.SetupWizard_StepFormat, 3, 3, L.Get(LocalizationKeys.SetupWizard_Step_ModuleSelection)),
                 _ => string.Empty
             };
         }
@@ -289,8 +387,6 @@ namespace ASLM.Pages
             return true;
         }
 
-        // Port error
-
         /// <summary>
         /// Shows the current port validation error.
         /// </summary>
@@ -310,7 +406,9 @@ namespace ASLM.Pages
         {
             _logVisible = !_logVisible;
             LogScroll.IsVisible = _logVisible;
-            ToggleLogButton.Text = _logVisible ? "Hide Log" : "Show Log";
+            ToggleLogButton.Text = _logVisible
+                ? L.Get(LocalizationKeys.SetupWizard_HideLog)
+                : L.Get(LocalizationKeys.SetupWizard_ShowLog);
         }
 
 
@@ -354,7 +452,7 @@ namespace ASLM.Pages
             ModuleListScroll.IsVisible = false;
             InstallPanel.IsVisible = true;
             ToggleLogButton.IsVisible = true;
-            StepLabel.Text = "Installing...";
+            StepLabel.Text = L.Get(LocalizationKeys.SetupWizard_Installing);
 
             _cts = new CancellationTokenSource();
             var logProgress = new InlineProgress<string>(AddLog);
@@ -508,19 +606,19 @@ namespace ASLM.Pages
                 }
 
                 UpdateInstallStatus("Setup complete!");
-                StepLabel.Text = "Setup complete!";
+                StepLabel.Text = L.Get(LocalizationKeys.SetupWizard_SetupComplete);
             }
             catch (OperationCanceledException)
             {
                 hasFailures = true;
                 UpdateInstallStatus("Installation canceled.");
-                StepLabel.Text = "Installation canceled.";
+                StepLabel.Text = L.Get(LocalizationKeys.SetupWizard_Canceled);
             }
             catch (Exception ex)
             {
                 hasFailures = true;
                 UpdateInstallStatus($"Error: {ex.Message}");
-                StepLabel.Text = "Installation failed.";
+                StepLabel.Text = L.Get(LocalizationKeys.SetupWizard_Failed);
                 AddLog($"Error: {ex.Message}");
             }
 
@@ -537,7 +635,7 @@ namespace ASLM.Pages
         }
 
 
-        // Navigation button state
+        // Install button state
 
         /// <summary>
         /// Restores the default back and next button handlers.
@@ -558,8 +656,6 @@ namespace ASLM.Pages
             BackButton.Text = "Back";
         }
 
-        // Finish state
-
         /// <summary>
         /// Converts the main action button into the finish action.
         /// </summary>
@@ -567,12 +663,10 @@ namespace ASLM.Pages
         {
             ResetNavigationButtons();
             BackButton.IsVisible = false;
-            NextButton.Text = "Finish";
+            NextButton.Text = L.Get(LocalizationKeys.SetupWizard_Finish);
             NextButton.Clicked -= OnNextClicked;
             NextButton.Clicked += OnFinishClicked;
         }
-
-        // Retry state
 
         /// <summary>
         /// Converts the buttons into retry and skip actions after a failed install.
@@ -581,7 +675,7 @@ namespace ASLM.Pages
         {
             ResetNavigationButtons();
 
-            NextButton.Text = "Retry";
+            NextButton.Text = L.Get(LocalizationKeys.SetupWizard_Retry);
             NextButton.Clicked -= OnNextClicked;
             NextButton.Clicked += OnRetryInstallClicked;
 
@@ -591,7 +685,8 @@ namespace ASLM.Pages
             BackButton.Clicked += OnSkipClicked;
         }
 
-        // Retry action
+
+        // Install completion actions
 
         /// <summary>
         /// Restarts the installation phase after a failure.
@@ -602,8 +697,6 @@ namespace ASLM.Pages
             await StartInstallAsync();
         }
 
-        // Finish action
-
         /// <summary>
         /// Completes the wizard and opens the main application shell.
         /// </summary>
@@ -611,8 +704,6 @@ namespace ASLM.Pages
         {
             await FinishSetupAsync();
         }
-
-        // Skip action
 
         /// <summary>
         /// Completes the wizard even when installation had failures.
@@ -634,8 +725,6 @@ namespace ASLM.Pages
                 InstallStatusLabel.Text = message);
         }
 
-        // Overall progress
-
         /// <summary>
         /// Updates the overall installation progress bar.
         /// </summary>
@@ -649,8 +738,6 @@ namespace ASLM.Pages
             MainThread.BeginInvokeOnMainThread(() =>
                 InstallProgress.Progress = (double)completed / total);
         }
-
-        // File progress
 
         /// <summary>
         /// Clears the per-file progress UI before the next download.
@@ -841,9 +928,9 @@ namespace ASLM.Pages
             }
         }
 
-        /// <summary>
-        /// Reports progress synchronously on the producer thread so UI updates can be throttled explicitly.
-        /// </summary>
+
+        // Helpers
+
         /// <summary>
         /// Finds a named color resource with a defensive fallback when the key is absent.
         /// </summary>
@@ -852,6 +939,9 @@ namespace ASLM.Pages
                 ? c
                 : fallback;
 
+        /// <summary>
+        /// Reports progress synchronously on the producer thread so UI updates can be throttled explicitly.
+        /// </summary>
         private sealed class InlineProgress<T>(Action<T> handler) : IProgress<T>
         {
             public void Report(T value)

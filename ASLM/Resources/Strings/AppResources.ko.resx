@@ -1,0 +1,1289 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AppShell_Nav_Api" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="AppShell_Nav_Consoles" xml:space="preserve">
+    <value>콘솔</value>
+  </data>
+  <data name="AppShell_Nav_Download" xml:space="preserve">
+    <value>다운로드</value>
+  </data>
+  <data name="AppShell_Nav_Home" xml:space="preserve">
+    <value>홈</value>
+  </data>
+  <data name="AppShell_Nav_Modules" xml:space="preserve">
+    <value>모듈</value>
+  </data>
+  <data name="AppShell_Nav_Notifications" xml:space="preserve">
+    <value>알림</value>
+  </data>
+  <data name="AppShell_Nav_Settings" xml:space="preserve">
+    <value>설정</value>
+  </data>
+  <data name="AppShell_Title" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="AslmApi_AddressCopiedStatus" xml:space="preserve">
+    <value>복사됨</value>
+  </data>
+  <data name="AslmApi_AddressCopiedTitle" xml:space="preserve">
+    <value>주소가 복사되었습니다</value>
+  </data>
+  <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
+    <value>주소 복사</value>
+  </data>
+  <data name="AslmApi_Disabled" xml:space="preserve">
+    <value>비활성화됨</value>
+  </data>
+  <data name="AslmApi_Hosts" xml:space="preserve">
+    <value>호스트</value>
+  </data>
+  <data name="AslmApi_NoHosts" xml:space="preserve">
+    <value>호스트 없음</value>
+  </data>
+  <data name="AslmApi_Open" xml:space="preserve">
+    <value>열기</value>
+  </data>
+  <data name="AslmApi_Title" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="Common_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Common_Back" xml:space="preserve">
+    <value>뒤로</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="Common_Discard" xml:space="preserve">
+    <value>버리기</value>
+  </data>
+  <data name="Common_Done" xml:space="preserve">
+    <value>완료</value>
+  </data>
+  <data name="Common_Install" xml:space="preserve">
+    <value>설치</value>
+  </data>
+  <data name="Common_Install_Action" xml:space="preserve">
+    <value>설치</value>
+  </data>
+  <data name="Common_Next" xml:space="preserve">
+    <value>다음</value>
+  </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>확인</value>
+  </data>
+  <data name="Common_Open" xml:space="preserve">
+    <value>열기</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>새로 고침</value>
+  </data>
+  <data name="Common_Remove" xml:space="preserve">
+    <value>제거</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>저장</value>
+  </data>
+  <data name="Common_Saved" xml:space="preserve">
+    <value>저장됨</value>
+  </data>
+  <data name="Common_Stay" xml:space="preserve">
+    <value>머물기</value>
+  </data>
+  <data name="Common_Variant" xml:space="preserve">
+    <value>변형</value>
+  </data>
+  <data name="Consoles_ActiveModulesFormat" xml:space="preserve">
+    <value>활성 모듈 {0}개</value>
+  </data>
+  <data name="Consoles_AllActiveModules" xml:space="preserve">
+    <value>모든 활성 모듈</value>
+  </data>
+  <data name="Consoles_AllModules" xml:space="preserve">
+    <value>모든 모듈</value>
+  </data>
+  <data name="Consoles_AllModulesUnifiedTitle" xml:space="preserve">
+    <value>모든 모듈 / 통합 콘솔</value>
+  </data>
+  <data name="Consoles_EmptySelectionDescription" xml:space="preserve">
+    <value>모듈 시작, 설정, 설정 동기화, 서비스 및 실행 서브프로세스의 콘솔 출력이 여기에 표시됩니다.</value>
+  </data>
+  <data name="Consoles_EmptySelectionFooter" xml:space="preserve">
+    <value>모듈 활동을 기다리는 중.</value>
+  </data>
+  <data name="Consoles_EmptySelectionStatus" xml:space="preserve">
+    <value>콘솔 활동을 보려면 모듈을 시작하거나 선택하세요.</value>
+  </data>
+  <data name="Consoles_EmptySelectionTitle" xml:space="preserve">
+    <value>콘솔이 선택되지 않았습니다</value>
+  </data>
+  <data name="Consoles_Footer_BufferedFormat" xml:space="preserve">
+    <value>버퍼된 {0}줄 – {1}{2}{3}</value>
+  </data>
+  <data name="Consoles_Footer_EndedFormat" xml:space="preserve">
+    <value> – {0}에 종료</value>
+  </data>
+  <data name="Consoles_Footer_ObservedCaptureNote" xml:space="preserve">
+    <value> – stdout/stderr 직접 캡처를 사용할 수 없을 수 있습니다</value>
+  </data>
+  <data name="Consoles_Footer_StartedFormat" xml:space="preserve">
+    <value>{0}에 시작</value>
+  </data>
+  <data name="Consoles_LastActivityFormat" xml:space="preserve">
+    <value>마지막 활동 {0}</value>
+  </data>
+  <data name="Consoles_MergedOutput" xml:space="preserve">
+    <value>병합된 출력</value>
+  </data>
+  <data name="Consoles_ModuleUnifiedTitleFormat" xml:space="preserve">
+    <value>{0} / 통합 콘솔</value>
+  </data>
+  <data name="Consoles_ModulesHeader" xml:space="preserve">
+    <value>모듈</value>
+  </data>
+  <data name="Consoles_NoActiveModules" xml:space="preserve">
+    <value>활성 모듈 없음</value>
+  </data>
+  <data name="Consoles_NoActivityYet" xml:space="preserve">
+    <value>아직 활동 없음</value>
+  </data>
+  <data name="Consoles_NoConsoles" xml:space="preserve">
+    <value>콘솔 없음</value>
+  </data>
+  <data name="Consoles_NoOutputYet" xml:space="preserve">
+    <value>아직 출력 없음.</value>
+  </data>
+  <data name="Consoles_PidFormat" xml:space="preserve">
+    <value> – PID {0}</value>
+  </data>
+  <data name="Consoles_Run" xml:space="preserve">
+    <value>실행</value>
+  </data>
+  <data name="Consoles_Selected_ObservedRunning" xml:space="preserve">
+    <value>관찰된 서비스가 실행 중{0}</value>
+  </data>
+  <data name="Consoles_Selected_ObservedStopped" xml:space="preserve">
+    <value>관찰된 서비스가 중지됨{0}</value>
+  </data>
+  <data name="Consoles_Selected_SessionCompleted" xml:space="preserve">
+    <value>{0} 세션 완료</value>
+  </data>
+  <data name="Consoles_Selected_SessionExitFormat" xml:space="preserve">
+    <value>{0} 세션이 종료 코드 {1}{2}(으)로 종료됨</value>
+  </data>
+  <data name="Consoles_Selected_SessionRunning" xml:space="preserve">
+    <value>{0} 세션이 실행 중{1}</value>
+  </data>
+  <data name="Consoles_SessionObservedDescription" xml:space="preserve">
+    <value>모듈이 시작한 관찰된 자식 프로세스입니다. ASLM은 이를 서비스로 계속 표시할 수 있지만 서드파티 실행 파일의 경우 stdout/stderr 직접 캡처를 사용할 수 없을 수 있습니다.</value>
+  </data>
+  <data name="Consoles_SessionObservedPreview" xml:space="preserve">
+    <value>관찰된 자식 프로세스. stdout/stderr 직접 캡처를 사용할 수 없을 수 있습니다.</value>
+  </data>
+  <data name="Consoles_SessionStageFormat" xml:space="preserve">
+    <value>{0} 세션</value>
+  </data>
+  <data name="Consoles_Stage_Command" xml:space="preserve">
+    <value>명령</value>
+  </data>
+  <data name="Consoles_Stage_Lifecycle" xml:space="preserve">
+    <value>수명 주기</value>
+  </data>
+  <data name="Consoles_Stage_Service" xml:space="preserve">
+    <value>서비스</value>
+  </data>
+  <data name="Consoles_Status_Completed" xml:space="preserve">
+    <value>{0} – 완료</value>
+  </data>
+  <data name="Consoles_Status_Disabled" xml:space="preserve">
+    <value>비활성화됨</value>
+  </data>
+  <data name="Consoles_Status_Enabled" xml:space="preserve">
+    <value>활성화됨</value>
+  </data>
+  <data name="Consoles_Status_ExitFormat" xml:space="preserve">
+    <value>{0} – 종료 {1}{2}</value>
+  </data>
+  <data name="Consoles_Status_ModuleFormat" xml:space="preserve">
+    <value>{0} – {1} 활성 – {2} 세션</value>
+  </data>
+  <data name="Consoles_Status_RunningFormat" xml:space="preserve">
+    <value>{0} – 실행 중{1}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedRunningFormat" xml:space="preserve">
+    <value>서비스 – 관찰 중{0}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedStoppedFormat" xml:space="preserve">
+    <value>서비스 – 중지됨{0}</value>
+  </data>
+  <data name="Consoles_Title" xml:space="preserve">
+    <value>콘솔</value>
+  </data>
+  <data name="Consoles_UnifiedConsole" xml:space="preserve">
+    <value>통합 콘솔</value>
+  </data>
+  <data name="Consoles_UnifiedConsoleForActive" xml:space="preserve">
+    <value>모든 활성 모듈에 대한 통합 콘솔</value>
+  </data>
+  <data name="Consoles_UnifiedPreview" xml:space="preserve">
+    <value>활성 모듈의 통합 로그 및 완료된 프로세스 기록을 포함합니다.</value>
+  </data>
+  <data name="Consoles_VisibleLinesFormat" xml:space="preserve">
+    <value>표시되는 {0}줄</value>
+  </data>
+  <data name="Downloads_CatalogBridgeLoadFailed" xml:space="preserve">
+    <value>설치된 모듈 브리지에서 공유 카탈로그를 로드할 수 없습니다.</value>
+  </data>
+  <data name="Downloads_CatalogColumnTitle" xml:space="preserve">
+    <value>카탈로그</value>
+  </data>
+  <data name="Downloads_CatalogRefreshFailedFormat" xml:space="preserve">
+    <value>다운로드 카탈로그 새로 고침에 실패했습니다: {0}</value>
+  </data>
+  <data name="Downloads_CatalogTitle" xml:space="preserve">
+    <value>다운로드 카탈로그</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedManyFormat" xml:space="preserve">
+    <value>카탈로그가 업데이트되었습니다. {0}개의 카테고리가 로드되었습니다.</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedOneCategory" xml:space="preserve">
+    <value>카탈로그가 업데이트되었습니다. 1개의 카테고리가 로드되었습니다.</value>
+  </data>
+  <data name="Downloads_CategoryCount_Many" xml:space="preserve">
+    <value>카테고리 {0}개</value>
+  </data>
+  <data name="Downloads_CategoryCount_None" xml:space="preserve">
+    <value>카테고리 없음</value>
+  </data>
+  <data name="Downloads_CategoryCount_One" xml:space="preserve">
+    <value>카테고리 1개</value>
+  </data>
+  <data name="Downloads_ChooseVariantHint" xml:space="preserve">
+    <value>패밀리를 선택한 다음 원하는 정확한 변형을 선택하세요.</value>
+  </data>
+  <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
+    <value>리소스 패밀리를 선택하여 변형 및 세부 정보를 확인하세요</value>
+  </data>
+  <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
+    <value>설치된 모듈 중 다운로드 브리지를 제공하는 모듈이 없습니다</value>
+  </data>
+  <data name="Downloads_Details" xml:space="preserve">
+    <value>세부 정보</value>
+  </data>
+  <data name="Downloads_EmptyCategory" xml:space="preserve">
+    <value>이 카테고리에는 그룹화된 다운로드가 없습니다</value>
+  </data>
+  <data name="Downloads_EmptyFiltered" xml:space="preserve">
+    <value>현재 공급자 필터와 일치하는 그룹화된 다운로드가 없습니다</value>
+  </data>
+  <data name="Downloads_EmptySearch" xml:space="preserve">
+    <value>공급자 측에서 "{0}"과(와) 일치하는 결과가 없습니다</value>
+  </data>
+  <data name="Downloads_FamilyCountFormat" xml:space="preserve">
+    <value>{0}개의 패밀리</value>
+  </data>
+  <data name="Downloads_Installed" xml:space="preserve">
+    <value>설치됨</value>
+  </data>
+  <data name="Downloads_InstalledVersionFormat" xml:space="preserve">
+    <value>설치됨 | {0}</value>
+  </data>
+  <data name="Downloads_LoadedManyFormat" xml:space="preserve">
+    <value>{0}개의 카테고리가 로드되었습니다.</value>
+  </data>
+  <data name="Downloads_LoadedOneCategory" xml:space="preserve">
+    <value>1개의 카테고리가 로드되었습니다.</value>
+  </data>
+  <data name="Downloads_LoadingCatalog" xml:space="preserve">
+    <value>공유 다운로드 카탈로그 로드 중...</value>
+  </data>
+  <data name="Downloads_NoItems" xml:space="preserve">
+    <value>항목 없음</value>
+  </data>
+  <data name="Downloads_NoSharedDownloads" xml:space="preserve">
+    <value>현재 모듈에서 공유 다운로드가 게시되지 않았습니다.</value>
+  </data>
+  <data name="Downloads_OneFamily" xml:space="preserve">
+    <value>패밀리 1개</value>
+  </data>
+  <data name="Downloads_RefreshingCatalog" xml:space="preserve">
+    <value>공유 다운로드 카탈로그 새로 고침 중...</value>
+  </data>
+  <data name="Downloads_SearchPlaceholder" xml:space="preserve">
+    <value>공급자 카탈로그 검색</value>
+  </data>
+  <data name="Downloads_SelectItem" xml:space="preserve">
+    <value>항목 선택</value>
+  </data>
+  <data name="Downloads_Status_DetailsLoadFailedFormat" xml:space="preserve">
+    <value>{0}에 대한 세부 정보를 로드할 수 없습니다: {1}</value>
+  </data>
+  <data name="Downloads_Status_InstallCanceledFormat" xml:space="preserve">
+    <value>{0}에 대한 설치가 취소되었습니다.</value>
+  </data>
+  <data name="Downloads_Status_InstallFailedFormat" xml:space="preserve">
+    <value>{0}에 대한 설치에 실패했습니다: {1}</value>
+  </data>
+  <data name="Downloads_Status_InstallingFormat" xml:space="preserve">
+    <value>{0} 설치 중...</value>
+  </data>
+  <data name="Downloads_Status_InvalidUrlFormat" xml:space="preserve">
+    <value>열기 실패: 잘못된 URL '{0}'.</value>
+  </data>
+  <data name="Downloads_Status_NoPageToOpen" xml:space="preserve">
+    <value>선택한 변형에는 열 페이지가 없습니다.</value>
+  </data>
+  <data name="Downloads_Status_OpenFailedFormat" xml:space="preserve">
+    <value>선택한 페이지를 열 수 없습니다: {0}</value>
+  </data>
+  <data name="Downloads_Status_OpenedFormat" xml:space="preserve">
+    <value>{0}{1}을(를) 열었습니다.</value>
+  </data>
+  <data name="Downloads_Status_Ready" xml:space="preserve">
+    <value>준비 완료.</value>
+  </data>
+  <data name="Downloads_Status_RefreshingDetailsFormat" xml:space="preserve">
+    <value>{0}에 대한 세부 정보 새로 고침 중...</value>
+  </data>
+  <data name="Downloads_Status_RemoveCanceledFormat" xml:space="preserve">
+    <value>{0}에 대한 제거가 취소되었습니다.</value>
+  </data>
+  <data name="Downloads_Status_RemoveFailedFormat" xml:space="preserve">
+    <value>{0}에 대한 제거에 실패했습니다: {1}</value>
+  </data>
+  <data name="Downloads_Status_RemovingFormat" xml:space="preserve">
+    <value>{0} 제거 중...</value>
+  </data>
+  <data name="Downloads_Title" xml:space="preserve">
+    <value>다운로드</value>
+  </data>
+  <data name="Home_Badge_DiskFormat" xml:space="preserve">
+    <value>디스크 {0}</value>
+  </data>
+  <data name="Home_Badge_GpuPercentFormat" xml:space="preserve">
+    <value>GPU {0:F1}%</value>
+  </data>
+  <data name="Home_Badge_GpuUnavailable" xml:space="preserve">
+    <value>GPU 없음</value>
+  </data>
+  <data name="Home_Badge_NetFormat" xml:space="preserve">
+    <value>네트워크 {0}</value>
+  </data>
+  <data name="Home_Badge_ProcessesFormat" xml:space="preserve">
+    <value>프로세스 {0}</value>
+  </data>
+  <data name="Home_Badge_RamFormat" xml:space="preserve">
+    <value>RAM {0}</value>
+  </data>
+  <data name="Home_Badge_SessionsFormat" xml:space="preserve">
+    <value>세션 {0}</value>
+  </data>
+  <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
+    <value>마지막 모듈 활동 {0}</value>
+  </data>
+  <data name="Home_Card_Modules_NoActivity" xml:space="preserve">
+    <value>기록된 모듈 활동 없음</value>
+  </data>
+  <data name="Home_Card_Modules_StatusTotal" xml:space="preserve">
+    <value>총 {0}개</value>
+  </data>
+  <data name="Home_Card_Modules_Subtitle" xml:space="preserve">
+    <value>수명 주기 및 콘솔 활동</value>
+  </data>
+  <data name="Home_Card_Modules_Title" xml:space="preserve">
+    <value>관리 모듈</value>
+  </data>
+  <data name="Home_Card_Runtime_ChildCount" xml:space="preserve">
+    <value>ASLM 트리 내 활성 자식 프로세스 {0}개</value>
+  </data>
+  <data name="Home_Card_Runtime_NoChildren" xml:space="preserve">
+    <value>현재 활성 관리 자식 프로세스 없음</value>
+  </data>
+  <data name="Home_Card_Runtime_StatusPid" xml:space="preserve">
+    <value>PID {0}</value>
+  </data>
+  <data name="Home_Card_Runtime_Subtitle" xml:space="preserve">
+    <value>앱 프로세스 및 관리 자식 트리</value>
+  </data>
+  <data name="Home_Card_Runtime_Title" xml:space="preserve">
+    <value>ASLM 런타임</value>
+  </data>
+  <data name="Home_Card_System_SampledAt" xml:space="preserve">
+    <value>{0}에 샘플링됨</value>
+  </data>
+  <data name="Home_Card_System_Status" xml:space="preserve">
+    <value>실시간</value>
+  </data>
+  <data name="Home_Card_System_Subtitle" xml:space="preserve">
+    <value>호스트 머신 부하</value>
+  </data>
+  <data name="Home_Card_System_Title" xml:space="preserve">
+    <value>시스템</value>
+  </data>
+  <data name="Home_Column_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Home_Column_Details" xml:space="preserve">
+    <value>세부 정보</value>
+  </data>
+  <data name="Home_Column_Disk" xml:space="preserve">
+    <value>디스크</value>
+  </data>
+  <data name="Home_Column_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="Home_Column_Name" xml:space="preserve">
+    <value>이름</value>
+  </data>
+  <data name="Home_Column_Net" xml:space="preserve">
+    <value>네트</value>
+  </data>
+  <data name="Home_Column_Ram" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="Home_Loading_WaitingSample" xml:space="preserve">
+    <value>샘플 대기 중</value>
+  </data>
+  <data name="Home_ManagedProcesses" xml:space="preserve">
+    <value>관리 프로세스</value>
+  </data>
+  <data name="Home_Metric_Active" xml:space="preserve">
+    <value>활성</value>
+  </data>
+  <data name="Home_Metric_Active_Detail" xml:space="preserve">
+    <value>라이브 관리 프로세스가 있는 모듈</value>
+  </data>
+  <data name="Home_Metric_ConnectionManyFormat" xml:space="preserve">
+    <value>{0} 연결</value>
+  </data>
+  <data name="Home_Metric_ConnectionOne" xml:space="preserve">
+    <value>1 연결</value>
+  </data>
+  <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
+    <value>논리 코어 {0}개</value>
+  </data>
+  <data name="Home_Metric_Cpu_RuntimeDetail" xml:space="preserve">
+    <value>애플리케이션 호스트 및 관리 하위 프로세스</value>
+  </data>
+  <data name="Home_Metric_Disk_CombinedIo" xml:space="preserve">
+    <value>결합된 관리 프로세스 I/O</value>
+  </data>
+  <data name="Home_Metric_Disk_Rw" xml:space="preserve">
+    <value>R {0} - W {1}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Index" xml:space="preserve">
+    <value>GPU {0}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Unavailable" xml:space="preserve">
+    <value>GPU 카운터를 사용할 수 없음</value>
+  </data>
+  <data name="Home_Metric_Installed" xml:space="preserve">
+    <value>설치됨</value>
+  </data>
+  <data name="Home_Metric_Installed_Detail" xml:space="preserve">
+    <value>디스크에서 발견된 모듈</value>
+  </data>
+  <data name="Home_Metric_Network" xml:space="preserve">
+    <value>네트워크</value>
+  </data>
+  <data name="Home_Metric_Network_Endpoints" xml:space="preserve">
+    <value>ASLM 트리의 열린 TCP 및 UDP 엔드포인트</value>
+  </data>
+  <data name="Home_Metric_Network_RxTx" xml:space="preserve">
+    <value>Rx {0} - Tx {1}</value>
+  </data>
+  <data name="Home_Metric_NotAvailable" xml:space="preserve">
+    <value>해당 없음</value>
+  </data>
+  <data name="Home_Metric_Processes" xml:space="preserve">
+    <value>프로세스</value>
+  </data>
+  <data name="Home_Metric_Processes_Detail" xml:space="preserve">
+    <value>ASLM이 관리하는 라이브 하위 프로세스</value>
+  </data>
+  <data name="Home_Metric_Ram_Resident" xml:space="preserve">
+    <value>상주 {0}</value>
+  </data>
+  <data name="Home_Metric_Ram_Usage" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="Home_Metric_Running" xml:space="preserve">
+    <value>실행 중</value>
+  </data>
+  <data name="Home_Metric_Running_Detail" xml:space="preserve">
+    <value>활성화로 표시된 모듈</value>
+  </data>
+  <data name="Home_Metric_Sessions" xml:space="preserve">
+    <value>세션</value>
+  </data>
+  <data name="Home_Metric_Sessions_Detail" xml:space="preserve">
+    <value>활성 콘솔 세션 {0}개</value>
+  </data>
+  <data name="Home_Module_ByAuthor" xml:space="preserve">
+    <value>{0} 제작</value>
+  </data>
+  <data name="Home_Module_InstalledDefault" xml:space="preserve">
+    <value>설치된 모듈</value>
+  </data>
+  <data name="Home_Module_Launching" xml:space="preserve">
+    <value>시작 중</value>
+  </data>
+  <data name="Home_Module_Stopped" xml:space="preserve">
+    <value>중지됨</value>
+  </data>
+  <data name="Home_Module_Stopping" xml:space="preserve">
+    <value>중지 중</value>
+  </data>
+  <data name="Home_ModulesHeader" xml:space="preserve">
+    <value>모듈</value>
+  </data>
+  <data name="Home_Status_Loading" xml:space="preserve">
+    <value>로드 중</value>
+  </data>
+  <data name="Home_Title" xml:space="preserve">
+    <value>홈</value>
+  </data>
+  <data name="Loading_Text" xml:space="preserve">
+    <value>로드 중...</value>
+  </data>
+  <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
+    <value>업데이트 활동</value>
+  </data>
+  <data name="ModuleUpdate_ActivityTitle_Status" xml:space="preserve">
+    <value>업데이트 상태</value>
+  </data>
+  <data name="ModuleUpdate_Activity_FailedFormat" xml:space="preserve">
+    <value>{0} 업데이트에 실패했습니다.</value>
+  </data>
+  <data name="ModuleUpdate_Activity_SuccessFormat" xml:space="preserve">
+    <value>{0}이(가) 성공적으로 업데이트되었습니다.</value>
+  </data>
+  <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
+    <value>업데이트 확인</value>
+  </data>
+  <data name="ModuleUpdate_CloseTooltip" xml:space="preserve">
+    <value>모듈 업데이트 닫기</value>
+  </data>
+  <data name="ModuleUpdate_CurrentVersion" xml:space="preserve">
+    <value>현재 버전</value>
+  </data>
+  <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
+    <value>업데이트 설치</value>
+  </data>
+  <data name="ModuleUpdate_LoadOptionsFailedFormat" xml:space="preserve">
+    <value>업데이트 옵션 로드에 실패했습니다: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Log_CheckingFormat" xml:space="preserve">
+    <value>{0}에 대한 업데이트 확인 중...</value>
+  </data>
+  <data name="ModuleUpdate_Log_Failed" xml:space="preserve">
+    <value>업데이트가 성공적으로 완료되지 않았습니다.</value>
+  </data>
+  <data name="ModuleUpdate_Log_InstallingFormat" xml:space="preserve">
+    <value>{0}에 대한 업데이트 설치 중...</value>
+  </data>
+  <data name="ModuleUpdate_Log_StartingFormat" xml:space="preserve">
+    <value>{0}에 대한 업데이트를 시작합니다.</value>
+  </data>
+  <data name="ModuleUpdate_Log_SuccessFormat" xml:space="preserve">
+    <value>업데이트가 완료되었습니다. {0}이(가) 설치되었습니다.</value>
+  </data>
+  <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
+    <value>선택된 모듈 없음</value>
+  </data>
+  <data name="ModuleUpdate_NoVersionSelected" xml:space="preserve">
+    <value>선택된 버전 없음</value>
+  </data>
+  <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
+    <value>전체 진행률</value>
+  </data>
+  <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
+    <value>기본 설정이 자동으로 저장됩니다</value>
+  </data>
+  <data name="ModuleUpdate_ReadyDefault" xml:space="preserve">
+    <value>준비 완료.</value>
+  </data>
+  <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
+    <value>릴리스 버전</value>
+  </data>
+  <data name="ModuleUpdate_RepositoryBranch" xml:space="preserve">
+    <value>저장소 브랜치</value>
+  </data>
+  <data name="ModuleUpdate_SearchMode" xml:space="preserve">
+    <value>검색 모드</value>
+  </data>
+  <data name="ModuleUpdate_SelectBranchRequired" xml:space="preserve">
+    <value>업데이트 확인 전에 저장소 브랜치를 선택하세요.</value>
+  </data>
+  <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
+    <value>선택된 대상</value>
+  </data>
+  <data name="ModuleUpdate_Status_CheckFailedFormat" xml:space="preserve">
+    <value>확인 실패: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_Checking" xml:space="preserve">
+    <value>업데이트 확인 중...</value>
+  </data>
+  <data name="ModuleUpdate_Status_ReadyToCheck" xml:space="preserve">
+    <value>확인할 준비가 되었습니다.</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpToDate" xml:space="preserve">
+    <value>최신 상태</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateAvailableFormat" xml:space="preserve">
+    <value>업데이트 가능: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateFailed" xml:space="preserve">
+    <value>업데이트 실패</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updated" xml:space="preserve">
+    <value>업데이트됨</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updating" xml:space="preserve">
+    <value>업데이트 중...</value>
+  </data>
+  <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="ModuleUpdate_Title_Configure" xml:space="preserve">
+    <value>모듈 업데이트 구성</value>
+  </data>
+  <data name="ModuleUpdate_Title_Update" xml:space="preserve">
+    <value>모듈 업데이트</value>
+  </data>
+  <data name="ModuleUpdate_UpdateSource" xml:space="preserve">
+    <value>업데이트 소스</value>
+  </data>
+  <data name="Modules_CheckUpdates" xml:space="preserve">
+    <value>업데이트 확인</value>
+  </data>
+  <data name="Modules_ConfigureUpdates" xml:space="preserve">
+    <value>업데이트 구성</value>
+  </data>
+  <data name="Modules_Empty" xml:space="preserve">
+    <value>모듈을 찾을 수 없습니다. 설정 마법사를 통해 모듈을 설치하세요</value>
+  </data>
+  <data name="Modules_Launch" xml:space="preserve">
+    <value>실행</value>
+  </data>
+  <data name="Modules_NotVerified" xml:space="preserve">
+    <value>확인되지 않음</value>
+  </data>
+  <data name="Modules_Restart" xml:space="preserve">
+    <value>다시 시작</value>
+  </data>
+  <data name="Modules_Restarting" xml:space="preserve">
+    <value>다시 시작 중</value>
+  </data>
+  <data name="Modules_Starting" xml:space="preserve">
+    <value>시작 중</value>
+  </data>
+  <data name="Modules_Stop" xml:space="preserve">
+    <value>중지</value>
+  </data>
+  <data name="Modules_Title" xml:space="preserve">
+    <value>모듈</value>
+  </data>
+  <data name="Modules_Update" xml:space="preserve">
+    <value>업데이트</value>
+  </data>
+  <data name="Modules_Updating" xml:space="preserve">
+    <value>업데이트 중</value>
+  </data>
+  <data name="Notifications_ActionFailed" xml:space="preserve">
+    <value>작업 실패</value>
+  </data>
+  <data name="Notifications_AslmUpdateAvailable" xml:space="preserve">
+    <value>ASLM 업데이트 가능</value>
+  </data>
+  <data name="Notifications_AslmUpdateNotAvailable" xml:space="preserve">
+    <value>현재 사용 가능한 ASLM 업데이트가 없습니다.</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailed" xml:space="preserve">
+    <value>ASLM 업데이트를 다운로드할 수 없습니다.</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailedStatus" xml:space="preserve">
+    <value>준비 실패</value>
+  </data>
+  <data name="Notifications_AslmUpdateTitle" xml:space="preserve">
+    <value>ASLM 업데이트</value>
+  </data>
+  <data name="Notifications_ChannelFormat" xml:space="preserve">
+    <value>채널: {0}</value>
+  </data>
+  <data name="Notifications_ClearAll" xml:space="preserve">
+    <value>모두 지우기</value>
+  </data>
+  <data name="Notifications_EmptyMessage" xml:space="preserve">
+    <value>새 ASLM 이벤트가 여기에 표시됩니다</value>
+  </data>
+  <data name="Notifications_EmptyTitle" xml:space="preserve">
+    <value>알림 없음</value>
+  </data>
+  <data name="Notifications_InstalledVersionFallback" xml:space="preserve">
+    <value>설치된 버전</value>
+  </data>
+  <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
+    <value>해당 모듈은 더 이상 설치되어 있지 않습니다.</value>
+  </data>
+  <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
+    <value>모듈 업데이트 가능</value>
+  </data>
+  <data name="Notifications_NewVersionFound" xml:space="preserve">
+    <value>새 버전이 발견되었습니다</value>
+  </data>
+  <data name="Notifications_SectionRecent" xml:space="preserve">
+    <value>최근</value>
+  </data>
+  <data name="Notifications_SummaryFormat" xml:space="preserve">
+    <value>총 {0}개</value>
+  </data>
+  <data name="Notifications_Title" xml:space="preserve">
+    <value>알림</value>
+  </data>
+  <data name="Notifications_Unavailable" xml:space="preserve">
+    <value>사용할 수 없음</value>
+  </data>
+  <data name="Notifications_UpdateActionTitle" xml:space="preserve">
+    <value>업데이트</value>
+  </data>
+  <data name="Notifications_UpdateLater" xml:space="preserve">
+    <value>나중에 업데이트</value>
+  </data>
+  <data name="Notifications_UpdateNow" xml:space="preserve">
+    <value>지금 업데이트</value>
+  </data>
+  <data name="Settings_ApiServer_Description" xml:space="preserve">
+    <value>ASLM과 함께 로컬 미러 서버를 시작합니다</value>
+  </data>
+  <data name="Settings_ApiServer_Title" xml:space="preserve">
+    <value>API 서버</value>
+  </data>
+  <data name="Settings_AppChannel_Description" xml:space="preserve">
+    <value>릴리스는 안정적인 GitHub 릴리스만 사용합니다. 프리릴리스는 미리보기 릴리스도 허용합니다</value>
+  </data>
+  <data name="Settings_AppChannel_Title" xml:space="preserve">
+    <value>애플리케이션 업데이트 채널</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Description" xml:space="preserve">
+    <value>백그라운드 업데이트 확인 간격(시간)</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Title" xml:space="preserve">
+    <value>자동 확인 주기</value>
+  </data>
+  <data name="Settings_AutoInstall_Description" xml:space="preserve">
+    <value>모듈 업데이트를 자동으로 적용하고 다음 재시작을 위해 ASLM 빌드를 준비합니다</value>
+  </data>
+  <data name="Settings_AutoInstall_Title" xml:space="preserve">
+    <value>업데이트 자동 설치</value>
+  </data>
+  <data name="Settings_Category_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Settings_Category_ASLM_Description" xml:space="preserve">
+    <value>ASLM 핵심 동작, 포트, API 및 콘솔</value>
+  </data>
+  <data name="Settings_Category_Account" xml:space="preserve">
+    <value>계정</value>
+  </data>
+  <data name="Settings_Category_Account_Description" xml:space="preserve">
+    <value>ASLM 및 모듈과 공유되는 표시 이름</value>
+  </data>
+  <data name="Settings_Category_Module_Description" xml:space="preserve">
+    <value>모듈별 구성</value>
+  </data>
+  <data name="Settings_Category_Ollama" xml:space="preserve">
+    <value>Ollama</value>
+  </data>
+  <data name="Settings_Category_Ollama_Description" xml:space="preserve">
+    <value>Ollama 계정 로그인 및 로그아웃 제어</value>
+  </data>
+  <data name="Settings_Category_Personalization" xml:space="preserve">
+    <value>개인 설정</value>
+  </data>
+  <data name="Settings_Category_Personalization_Description" xml:space="preserve">
+    <value>테마 모드, 언어 및 사용자 지정 테마 설정</value>
+  </data>
+  <data name="Settings_Category_Updates" xml:space="preserve">
+    <value>업데이트</value>
+  </data>
+  <data name="Settings_Category_Updates_Description" xml:space="preserve">
+    <value>애플리케이션 및 모듈 업데이트 기본 설정</value>
+  </data>
+  <data name="Settings_CheckNow" xml:space="preserve">
+    <value>지금 확인</value>
+  </data>
+  <data name="Settings_CheckUpdates_Description" xml:space="preserve">
+    <value>ASLM이 구성된 GitHub 저장소를 조회하도록 허용합니다</value>
+  </data>
+  <data name="Settings_CheckUpdates_Title" xml:space="preserve">
+    <value>업데이트 확인</value>
+  </data>
+  <data name="Settings_CloseTooltip" xml:space="preserve">
+    <value>설정 닫기</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Description" xml:space="preserve">
+    <value>개별 콘솔이 활성화된 경우 완료된 프로세스 콘솔을 표시합니다</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Title" xml:space="preserve">
+    <value>완료된 프로세스 콘솔</value>
+  </data>
+  <data name="Settings_ConsolesPage_Description" xml:space="preserve">
+    <value>사이드바에 기본 제공 콘솔 페이지를 표시합니다</value>
+  </data>
+  <data name="Settings_ConsolesPage_Title" xml:space="preserve">
+    <value>콘솔 페이지</value>
+  </data>
+  <data name="Settings_DiscardChanges" xml:space="preserve">
+    <value>변경 사항 버리기</value>
+  </data>
+  <data name="Settings_DiscardDialog_Message" xml:space="preserve">
+    <value>이 섹션에 저장되지 않은 변경 사항이 있습니다. 버리고 전환하시겠습니까?</value>
+  </data>
+  <data name="Settings_DiscardDialog_Title" xml:space="preserve">
+    <value>저장되지 않은 변경 사항</value>
+  </data>
+  <data name="Settings_DisplayName" xml:space="preserve">
+    <value>표시 이름</value>
+  </data>
+  <data name="Settings_DisplayNameDescription" xml:space="preserve">
+    <value>ASLM에 표시되며 모듈과 공유되는 이름</value>
+  </data>
+  <data name="Settings_EmptyCategory" xml:space="preserve">
+    <value>이 카테고리에는 설정이 없습니다</value>
+  </data>
+  <data name="Settings_Engine_Installed" xml:space="preserve">
+    <value>설치됨</value>
+  </data>
+  <data name="Settings_Engine_NotInstalled" xml:space="preserve">
+    <value>설치되지 않음</value>
+  </data>
+  <data name="Settings_Header_Modules" xml:space="preserve">
+    <value>모듈</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Description" xml:space="preserve">
+    <value>통합 모듈 출력과 함께 프로세스별 콘솔을 표시합니다</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Title" xml:space="preserve">
+    <value>개별 콘솔</value>
+  </data>
+  <data name="Settings_LoadDefault" xml:space="preserve">
+    <value>기본값 불러오기</value>
+  </data>
+  <data name="Settings_ManualCheck_Title" xml:space="preserve">
+    <value>수동 확인</value>
+  </data>
+  <data name="Settings_ModuleChannel_Description" xml:space="preserve">
+    <value>GitHub 릴리스를 따르는 모듈에서 사용됩니다</value>
+  </data>
+  <data name="Settings_ModuleChannel_Title" xml:space="preserve">
+    <value>기본 모듈 릴리스 채널</value>
+  </data>
+  <data name="Settings_ModuleNoSettings" xml:space="preserve">
+    <value>현재 상태에서 이 모듈에는 설정이 없습니다</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Description" xml:space="preserve">
+    <value>새 모듈 기본 설정이 이 모드에서 시작됩니다. 개별 모듈에서 재정의할 수 있습니다</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Title" xml:space="preserve">
+    <value>기본 모듈 업데이트 모드</value>
+  </data>
+  <data name="Settings_NoSettingsAvailable" xml:space="preserve">
+    <value>사용 가능한 설정이 없습니다</value>
+  </data>
+  <data name="Settings_OfficialPortDescription" xml:space="preserve">
+    <value>공식 모듈의 시작점입니다. 이 값부터 100개의 포트가 예약됩니다</value>
+  </data>
+  <data name="Settings_OfficialPortTitle" xml:space="preserve">
+    <value>공식 모듈 시작 포트</value>
+  </data>
+  <data name="Settings_OllamaAccount_Title" xml:space="preserve">
+    <value>Ollama 계정</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Confirm" xml:space="preserve">
+    <value>로그아웃</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Message" xml:space="preserve">
+    <value>이 Windows 프로필의 현재 ollama.com 세션이 제거됩니다. 계속하시겠습니까?</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Title" xml:space="preserve">
+    <value>Ollama에서 로그아웃</value>
+  </data>
+  <data name="Settings_Ollama_CheckingAccount" xml:space="preserve">
+    <value>계정 확인 중</value>
+  </data>
+  <data name="Settings_Ollama_NotInstalled" xml:space="preserve">
+    <value>내장 Ollama가 설치되지 않았습니다</value>
+  </data>
+  <data name="Settings_Ollama_NotSignedIn" xml:space="preserve">
+    <value>로그인되지 않음</value>
+  </data>
+  <data name="Settings_Ollama_SignIn" xml:space="preserve">
+    <value>로그인</value>
+  </data>
+  <data name="Settings_Ollama_SignOut" xml:space="preserve">
+    <value>로그아웃</value>
+  </data>
+  <data name="Settings_Ollama_SignedIn" xml:space="preserve">
+    <value>로그인됨</value>
+  </data>
+  <data name="Settings_Ollama_SignedInAs" xml:space="preserve">
+    <value>{0}(으)로 로그인됨</value>
+  </data>
+  <data name="Settings_Ollama_SigningIn" xml:space="preserve">
+    <value>로그인 중...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOut" xml:space="preserve">
+    <value>로그아웃 중...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOutStatus" xml:space="preserve">
+    <value>로그아웃 중</value>
+  </data>
+  <data name="Settings_Ollama_WaitingSignIn" xml:space="preserve">
+    <value>브라우저 로그인 대기 중</value>
+  </data>
+  <data name="Settings_Personalization_ActiveTheme" xml:space="preserve">
+    <value>활성 테마</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Custom" xml:space="preserve">
+    <value>사용자 지정</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Dark" xml:space="preserve">
+    <value>어두운 모드</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Light" xml:space="preserve">
+    <value>밝은 모드</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_System" xml:space="preserve">
+    <value>시스템</value>
+  </data>
+  <data name="Settings_Personalization_Delete" xml:space="preserve">
+    <value>삭제</value>
+  </data>
+  <data name="Settings_Personalization_Export" xml:space="preserve">
+    <value>보내기</value>
+  </data>
+  <data name="Settings_Personalization_Import" xml:space="preserve">
+    <value>가져오기</value>
+  </data>
+  <data name="Settings_Personalization_ImportPickerTitle" xml:space="preserve">
+    <value>테마 가져오기</value>
+  </data>
+  <data name="Settings_Personalization_InheritDark" xml:space="preserve">
+    <value>어두운 모드(기본 제공)</value>
+  </data>
+  <data name="Settings_Personalization_InheritLight" xml:space="preserve">
+    <value>밝은 모드(기본 제공)</value>
+  </data>
+  <data name="Settings_Personalization_InheritTitle" xml:space="preserve">
+    <value>색상 상속 원본</value>
+  </data>
+  <data name="Settings_Personalization_Language" xml:space="preserve">
+    <value>언어</value>
+  </data>
+  <data name="Settings_Personalization_LanguageDescription" xml:space="preserve">
+    <value>ASLM 및 지원 모듈의 인터페이스 언어를 설정합니다</value>
+  </data>
+  <data name="Settings_Personalization_Mode" xml:space="preserve">
+    <value>모드</value>
+  </data>
+  <data name="Settings_Personalization_ModeDescription" xml:space="preserve">
+    <value>앱이 전체 인터페이스 모양을 선택하는 방식을 설정합니다</value>
+  </data>
+  <data name="Settings_Personalization_New" xml:space="preserve">
+    <value>새로 만들기</value>
+  </data>
+  <data name="Settings_Personalization_NoThemes" xml:space="preserve">
+    <value>사용자 지정 테마가 아직 없습니다. 사용자 지정 모양을 사용하려면 테마를 만드세요</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeActive" xml:space="preserve">
+    <value>아래 토큰 행이 속한 저장된 팔레트</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeDescription" xml:space="preserve">
+    <value>활성 사용자 지정 테마를 선택합니다</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeEmpty" xml:space="preserve">
+    <value>먼저 팔레트를 만드세요. 선택 목록에 표시됩니다</value>
+  </data>
+  <data name="Settings_Personalization_Themes" xml:space="preserve">
+    <value>테마</value>
+  </data>
+  <data name="Settings_Personalization_ThemesDescription" xml:space="preserve">
+    <value>파일로 저장된 팔레트 정의를 추가, 가져오기 또는 공유합니다</value>
+  </data>
+  <data name="Settings_Ports" xml:space="preserve">
+    <value>포트</value>
+  </data>
+  <data name="Settings_PrepareAslmUpdate" xml:space="preserve">
+    <value>ASLM 업데이트 준비</value>
+  </data>
+  <data name="Settings_RestartNow" xml:space="preserve">
+    <value>지금 다시 시작</value>
+  </data>
+  <data name="Settings_Save" xml:space="preserve">
+    <value>저장</value>
+  </data>
+  <data name="Settings_SaveAndRestart" xml:space="preserve">
+    <value>저장 후 다시 시작</value>
+  </data>
+  <data name="Settings_SaveMessage_Deferred" xml:space="preserve">
+    <value>설정이 저장되었습니다. 일부 모듈 설정을 즉시 적용할 수 없으며 다음 모듈 시작 시 다시 시도합니다
+
+{0}</value>
+  </data>
+  <data name="Settings_SaveMessage_None" xml:space="preserve">
+    <value>저장할 변경 사항 없음</value>
+  </data>
+  <data name="Settings_SaveMessage_Saved" xml:space="preserve">
+    <value>설정이 저장되고 적용되었습니다.</value>
+  </data>
+  <data name="Settings_SavedTitle" xml:space="preserve">
+    <value>설정 저장됨</value>
+  </data>
+  <data name="Settings_Saving" xml:space="preserve">
+    <value>저장 중...</value>
+  </data>
+  <data name="Settings_SubGroup_API" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="Settings_SubGroup_Consoles" xml:space="preserve">
+    <value>콘솔</value>
+  </data>
+  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+    <value>삭제</value>
+  </data>
+  <data name="Settings_ThemeDelete_Message" xml:space="preserve">
+    <value>이 테마를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다</value>
+  </data>
+  <data name="Settings_ThemeDelete_Title" xml:space="preserve">
+    <value>테마 삭제</value>
+  </data>
+  <data name="Settings_ThemeEditor_Base" xml:space="preserve">
+    <value>테마 색상 편집기</value>
+  </data>
+  <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
+    <value>아직 재정의하지 않은 토큰에 대한 기본 제공 의미 기본값</value>
+  </data>
+  <data name="Settings_ThemeEditor_Clear" xml:space="preserve">
+    <value>지우기</value>
+  </data>
+  <data name="Settings_ThemeEditor_ColorsFormat" xml:space="preserve">
+    <value>테마 색상 편집기: {0}</value>
+  </data>
+  <data name="Settings_ThemeEditor_Pick" xml:space="preserve">
+    <value>선택</value>
+  </data>
+  <data name="Settings_ThemeExport_Failed" xml:space="preserve">
+    <value>테마를 보낼 수 없습니다: {0}</value>
+  </data>
+  <data name="Settings_ThemeExport_Select" xml:space="preserve">
+    <value>보낼 테마를 선택하세요</value>
+  </data>
+  <data name="Settings_ThemeImport_Failed" xml:space="preserve">
+    <value>테마를 가져올 수 없습니다: {0}</value>
+  </data>
+  <data name="Settings_ThemeImport_Invalid" xml:space="preserve">
+    <value>유효한 ASLM 테마 파일이 아닙니다</value>
+  </data>
+  <data name="Settings_ThemeImport_TooLarge" xml:space="preserve">
+    <value>테마 파일이 너무 큽니다</value>
+  </data>
+  <data name="Settings_ThemeNew_DefaultName" xml:space="preserve">
+    <value>내 테마</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptMessage" xml:space="preserve">
+    <value>새 테마 이름을 입력하세요:</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
+    <value>새 테마</value>
+  </data>
+  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
+    <value>외부 모듈의 시작점입니다. 이 값부터 1000개의 포트가 예약됩니다</value>
+  </data>
+  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
+    <value>타사 모듈 시작 포트</value>
+  </data>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>설정</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailable" xml:space="preserve">
+    <value>ASLM 업데이트 {0}을(를) 사용할 수 있습니다. "ASLM 업데이트 준비"를 사용하여 다운로드하세요</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailableStaged" xml:space="preserve">
+    <value>ASLM 업데이트 {0}을(를) 사용할 수 있습니다. {1}이(가) 이미 재시작을 위해 준비되었습니다</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmTagPrepared" xml:space="preserve">
+    <value>ASLM {0}이(가) 준비되었으며 재시작 시 적용됩니다</value>
+  </data>
+  <data name="Settings_UpdateStatus_CheckFailed" xml:space="preserve">
+    <value>업데이트 확인 실패: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Checking" xml:space="preserve">
+    <value>GitHub 저장소 확인 중...</value>
+  </data>
+  <data name="Settings_UpdateStatus_CouldNotPrepare" xml:space="preserve">
+    <value>ASLM 업데이트를 준비할 수 없습니다</value>
+  </data>
+  <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
+    <value>ASLM 빌드 다운로드 중...</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
+    <value>업데이트 {0}개를 사용할 수 있습니다. 모듈 페이지에서 모듈 업데이트를 적용할 수 있습니다</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedAslm" xml:space="preserve">
+    <value>{0} ASLM {1}이(가) 재시작을 위해 준비되었습니다</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedGeneric" xml:space="preserve">
+    <value>{0} ASLM 자체 업데이트가 재시작을 위해 준비되었습니다</value>
+  </data>
+  <data name="Settings_UpdateStatus_None" xml:space="preserve">
+    <value>이 세션에서 업데이트 확인을 실행하지 않았습니다</value>
+  </data>
+  <data name="Settings_UpdateStatus_Prepared" xml:space="preserve">
+    <value>ASLM 업데이트가 준비되었으며 재시작 시 적용됩니다</value>
+  </data>
+  <data name="Settings_UpdateStatus_PreparedWithVersion" xml:space="preserve">
+    <value>ASLM 업데이트 {0}이(가) 준비되었으며 재시작 시 적용됩니다</value>
+  </data>
+  <data name="Settings_UpdateStatus_RestartFailed" xml:space="preserve">
+    <value>다시 시작 실패: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Restarting" xml:space="preserve">
+    <value>ASLM 다시 시작 중...</value>
+  </data>
+  <data name="Settings_UpdateStatus_UpToDate" xml:space="preserve">
+    <value>모두 최신 상태입니다.</value>
+  </data>
+  <data name="Settings_UseCustomValue" xml:space="preserve">
+    <value>사용자 지정 값 사용</value>
+  </data>
+  <data name="Settings_ValidationError" xml:space="preserve">
+    <value>유효성 검사 오류</value>
+  </data>
+  <data name="SetupWizard_Canceled" xml:space="preserve">
+    <value>설치가 취소되었습니다.</value>
+  </data>
+  <data name="SetupWizard_DisplayNamePlaceholder" xml:space="preserve">
+    <value>이름</value>
+  </data>
+  <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
+    <value>표시 이름 선택</value>
+  </data>
+  <data name="SetupWizard_DockerDescription" xml:space="preserve">
+    <value>ASLM에 Docker CLI가 필요합니다. Docker Desktop을 설치한 후 다음을 누르세요</value>
+  </data>
+  <data name="SetupWizard_DockerTitle" xml:space="preserve">
+    <value>Docker Desktop 설치</value>
+  </data>
+  <data name="SetupWizard_Failed" xml:space="preserve">
+    <value>설치 실패</value>
+  </data>
+  <data name="SetupWizard_FastSetup" xml:space="preserve">
+    <value>빠른 설정</value>
+  </data>
+  <data name="SetupWizard_FastSetupHint" xml:space="preserve">
+    <value>빠른 설정은 Windows 사용자 이름과 기본 포트를 사용합니다</value>
+  </data>
+  <data name="SetupWizard_Finish" xml:space="preserve">
+    <value>완료</value>
+  </data>
+  <data name="SetupWizard_HideLog" xml:space="preserve">
+    <value>로그 숨기기</value>
+  </data>
+  <data name="SetupWizard_InstallDocker" xml:space="preserve">
+    <value>Docker 설치</value>
+  </data>
+  <data name="SetupWizard_Installing" xml:space="preserve">
+    <value>설치 중...</value>
+  </data>
+  <data name="SetupWizard_Next_Install" xml:space="preserve">
+    <value>설치</value>
+  </data>
+  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
+    <value>공식 모듈(포트 100개)</value>
+  </data>
+  <data name="SetupWizard_OverallProgress" xml:space="preserve">
+    <value>전체 진행률</value>
+  </data>
+  <data name="SetupWizard_PortAllocationTitle" xml:space="preserve">
+    <value>포트 할당</value>
+  </data>
+  <data name="SetupWizard_Preparing" xml:space="preserve">
+    <value>준비 중...</value>
+  </data>
+  <data name="SetupWizard_Retry" xml:space="preserve">
+    <value>다시 시도</value>
+  </data>
+  <data name="SetupWizard_Setup" xml:space="preserve">
+    <value>설정</value>
+  </data>
+  <data name="SetupWizard_SetupComplete" xml:space="preserve">
+    <value>설정이 완료되었습니다!</value>
+  </data>
+  <data name="SetupWizard_ShowLog" xml:space="preserve">
+    <value>로그 표시</value>
+  </data>
+  <data name="SetupWizard_StepFormat" xml:space="preserve">
+    <value>{1}단계 중 {0}단계 - {2}</value>
+  </data>
+  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
+    <value>Docker Desktop</value>
+  </data>
+  <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
+    <value>모듈 선택</value>
+  </data>
+  <data name="SetupWizard_Step_Modules" xml:space="preserve">
+    <value>모듈</value>
+  </data>
+  <data name="SetupWizard_Step_PortAllocation" xml:space="preserve">
+    <value>포트 할당</value>
+  </data>
+  <data name="SetupWizard_Step_PortConfiguration" xml:space="preserve">
+    <value>포트 구성</value>
+  </data>
+  <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
+    <value>사용자 프로필</value>
+  </data>
+  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
+    <value>타사 모듈(포트 1000개)</value>
+  </data>
+  <data name="SetupWizard_Title" xml:space="preserve">
+    <value>ASLM 설정</value>
+  </data>
+  <data name="SetupWizard_WelcomeSubtitle" xml:space="preserve">
+    <value>Advanced System Language Models</value>
+  </data>
+  <data name="SetupWizard_WelcomeTitle" xml:space="preserve">
+    <value>ASLM에 오신 것을 환영합니다!</value>
+  </data>
+  <data name="ThemeColorPicker_Brightness" xml:space="preserve">
+    <value>밝기</value>
+  </data>
+  <data name="ThemeColorPicker_Cancel" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="ThemeColorPicker_CustomColor" xml:space="preserve">
+    <value>사용자 지정 색</value>
+  </data>
+  <data name="ThemeColorPicker_HexPlaceholder" xml:space="preserve">
+    <value>#AARRGGBB</value>
+  </data>
+  <data name="ThemeColorPicker_Opacity" xml:space="preserve">
+    <value>불투명도</value>
+  </data>
+</root>

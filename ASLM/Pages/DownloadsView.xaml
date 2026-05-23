@@ -34,7 +34,8 @@
                 <Grid RowDefinitions="Auto,*"
                       RowSpacing="0">
                     <VerticalStackLayout Spacing="0">
-                        <Label Text="Download"
+                        <Label x:Name="DownloadsTitleLabel"
+                               Text="Download"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource LabelPrimary}" />
@@ -223,7 +224,8 @@
                                              HorizontalOptions="Center"
                                              Spacing="6"
                                              Margin="16">
-                            <Label Text="No items"
+                            <Label x:Name="ItemListEmptyTitleLabel"
+                                   Text=""
                                    FontSize="17"
                                    FontAttributes="Bold"
                                    TextColor="{DynamicResource LabelPrimary}"
@@ -273,7 +275,8 @@
                                        WidthRequest="24"
                                        HeightRequest="24"/>
 
-                    <Button Grid.Column="2"
+                    <Button x:Name="RefreshButton"
+                            Grid.Column="2"
                             Text="Refresh"
                             HeightRequest="36"
                             MinimumHeightRequest="36"
@@ -352,7 +355,8 @@
                                         <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto"
                                               ColumnSpacing="8">
                                             <VerticalStackLayout Spacing="2">
-                                                <Label Text="Variant"
+                                                <Label x:Name="VariantSectionLabel"
+                                                       Text="Variant"
                                                        FontSize="13"
                                                        TextColor="{DynamicResource LabelSecondary}" />
                                                 <Label Text="{Binding SelectedVariantTitle}"
@@ -379,7 +383,8 @@
                                                        VerticalTextAlignment="Center"/>
                                             </Border>
 
-                                            <Button Grid.Column="2"
+                                            <Button x:Name="InstallButton"
+                                                    Grid.Column="2"
                                                     Text="Install"
                                                     IsVisible="{Binding ShowInstallButton}"
                                                     HeightRequest="36"
@@ -391,7 +396,8 @@
                                                     FontSize="12"
                                                     Clicked="OnInstallClicked" />
 
-                                            <Button Grid.Column="3"
+                                            <Button x:Name="OpenButton"
+                                                    Grid.Column="3"
                                                     Text="Open"
                                                     IsVisible="{Binding ShowOpenVariantButton}"
                                                     HeightRequest="36"
@@ -403,7 +409,8 @@
                                                     FontSize="12"
                                                     Clicked="OnOpenClicked" />
 
-                                            <Button Grid.Column="4"
+                                            <Button x:Name="RemoveButton"
+                                                    Grid.Column="4"
                                                     Text="Remove"
                                                     IsVisible="{Binding ShowDeleteButton}"
                                                     HeightRequest="36"
@@ -574,7 +581,8 @@
                                          HorizontalOptions="Center"
                                          Spacing="8"
                                          Margin="24">
-                        <Label Text="Select an item"
+                        <Label x:Name="DetailEmptyTitleLabel"
+                               Text="Select an item"
                                FontSize="16"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource LabelPrimary}"

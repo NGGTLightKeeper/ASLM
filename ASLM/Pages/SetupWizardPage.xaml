@@ -12,7 +12,8 @@
         <Grid x:Name="HeaderRow" Grid.Row="0" ColumnDefinitions="*, Auto"
               Margin="0,0,0,16" IsVisible="False">
             <VerticalStackLayout Grid.Column="0" Spacing="5">
-                <Label Text="ASLM Setup"
+                <Label x:Name="HeaderTitleLabel"
+                       Text="ASLM Setup"
                        FontSize="28"
                        FontAttributes="Bold"
                        TextColor="{DynamicResource LabelPrimary}" />
@@ -41,17 +42,20 @@
             <VerticalStackLayout x:Name="Step0Panel" IsVisible="True"
                                  VerticalOptions="Center" HorizontalOptions="Center"
                                  Spacing="8">
-                <Label Text="Welcome to ASLM!"
+                <Label x:Name="WelcomeTitleLabel"
+                       Text="Welcome to ASLM!"
                        FontSize="36"
                        FontAttributes="Bold"
                        TextColor="{DynamicResource LabelPrimary}"
                        HorizontalTextAlignment="Center" />
-                <Label Text="Advanced System Language Models"
+                <Label x:Name="WelcomeSubtitleLabel"
+                       Text="Advanced System Language Models"
                        FontSize="16"
                        TextColor="{DynamicResource LabelSecondary}"
                        HorizontalTextAlignment="Center"
                        Margin="0,0,0,24" />
-                <Button Text="Setup"
+                <Button x:Name="SetupButton"
+                        Text="Setup"
                         BackgroundColor="{DynamicResource ActionBlue}"
                         TextColor="{DynamicResource White}"
                         FontSize="16"
@@ -59,7 +63,8 @@
                         WidthRequest="280"
                         HorizontalOptions="Center"
                         Clicked="OnSetupClicked" />
-                <Button Text="Fast Setup"
+                <Button x:Name="FastSetupButton"
+                        Text="Fast Setup"
                         BackgroundColor="{DynamicResource SystemGray4}"
                         TextColor="{DynamicResource LabelPrimary}"
                         FontSize="16"
@@ -67,18 +72,42 @@
                         WidthRequest="280"
                         HorizontalOptions="Center"
                         Clicked="OnFastSetupClicked" />
-                <Label Text="Fast Setup uses your Windows username and default ports"
+                <Label x:Name="FastSetupHintLabel"
+                       Text="Fast Setup uses your Windows username and default ports"
                        FontSize="12"
                        TextColor="{DynamicResource LabelSecondary}"
                        HorizontalTextAlignment="Center"
                        Margin="0,4,0,0" />
             </VerticalStackLayout>
 
+            <!-- Docker install hint (only when CLI missing on Windows) -->
+            <VerticalStackLayout x:Name="DockerGatePanel" IsVisible="False" Spacing="15"
+                                 VerticalOptions="Center" HorizontalOptions="Center"
+                                 WidthRequest="400">
+                <Label x:Name="DockerTitleLabel"
+                       Text="Install Docker Desktop"
+                       FontSize="18"
+                       TextColor="{DynamicResource LabelPrimary}" />
+                <Label x:Name="DockerDescriptionLabel"
+                       Text="ASLM needs the Docker CLI. Install Docker Desktop, then tap Next."
+                       FontSize="16"
+                       LineBreakMode="WordWrap"
+                       TextColor="{DynamicResource LabelSecondary}" />
+                <Button x:Name="InstallDockerButton"
+                        Text="Install Docker"
+                        BackgroundColor="{DynamicResource ActionBlue}"
+                        TextColor="{DynamicResource LabelPrimary}"
+                        FontSize="16"
+                        HeightRequest="44"
+                        Clicked="OnDockerOpenGuideClicked" />
+            </VerticalStackLayout>
+
             <!-- Step 1: User Profile -->
             <VerticalStackLayout x:Name="Step1Panel" IsVisible="False" Spacing="15"
                                  VerticalOptions="Center" HorizontalOptions="Center"
                                  WidthRequest="400">
-                <Label Text="Choose a display name"
+                <Label x:Name="DisplayNameTitleLabel"
+                       Text="Choose a display name"
                        FontSize="16"
                        TextColor="{DynamicResource LabelPrimary}" />
                 <Entry x:Name="UsernameEntry"
@@ -93,10 +122,12 @@
             <VerticalStackLayout x:Name="Step2Panel" IsVisible="False" Spacing="15"
                                  VerticalOptions="Center" HorizontalOptions="Center"
                                  WidthRequest="400">
-                <Label Text="Port Allocation"
+                <Label x:Name="PortAllocationTitleLabel"
+                       Text="Port Allocation"
                        FontSize="18"
                        TextColor="{DynamicResource LabelPrimary}" />
-                <Label Text="Official modules (100 ports)"
+                <Label x:Name="OfficialPortsLabel"
+                       Text="Official modules (100 ports)"
                        FontSize="13"
                        TextColor="{DynamicResource LabelSecondary}" />
                 <Entry x:Name="OfficialPortEntry"
@@ -105,7 +136,8 @@
                        FontSize="16"
                        TextColor="{DynamicResource LabelPrimary}"
                        BackgroundColor="{DynamicResource BackgroundSecondary}" />
-                <Label Text="Third-party modules (1000 ports)"
+                <Label x:Name="ThirdPartyPortsLabel"
+                       Text="Third-party modules (1000 ports)"
                        FontSize="13"
                        TextColor="{DynamicResource LabelSecondary}" />
                 <Entry x:Name="ThirdPartyPortEntry"
@@ -144,7 +176,8 @@
                            Margin="0,0,0,8" />
 
                     <!-- Overall progress bar -->
-                    <Label Text="Overall Progress"
+                    <Label x:Name="OverallProgressLabel"
+                           Text="Overall Progress"
                            FontSize="12"
                            TextColor="{DynamicResource LabelSecondary}"
                            Grid.Row="1"

@@ -8,13 +8,12 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using ASLM.Localization;
 using ASLM.Models;
 using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // ASLM API reverse proxy
-
     /// <summary>
     /// Hosts a local path-mounted reverse proxy for module endpoints declared in <c>Data/App/ASLM_Ports.json</c>.
     /// </summary>
@@ -1528,7 +1527,9 @@ namespace ASLM.Services
                 return;
             }
 
-            body.Append("<span class=\"badge\">Disabled</span>");
+            body.Append("<span class=\"badge\">");
+            body.Append(HtmlEncode(L.Get(LocalizationKeys.AslmApi_Disabled)));
+            body.Append("</span>");
         }
 
         /// <summary>

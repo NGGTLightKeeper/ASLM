@@ -6,21 +6,23 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows.Input;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
 
 namespace ASLM.Pages
 {
-    // Module management view
-
     /// <summary>
     /// Displays module cards and keeps the grid responsive inside the shell.
     /// </summary>
-    public partial class ModulesView : ContentView, INotifyPropertyChanged
+    public partial class ModulesView : ContentView, INotifyPropertyChanged, ILocalizable
     {
-        private const double MinCardWidth = 400;
+        private const double MinCardWidth = 440;
 
         private readonly UpdateManager _updateManager;
+        private readonly ModuleTrustService _moduleTrustService;
+        private readonly ModuleLaunchCoordinator _launchCoordinator;
+        private readonly AppLocalizationService _localization;
         private AppShellPage? _shell;
         private int _gridSpan = 1;
 
@@ -59,14 +61,33 @@ namespace ASLM.Pages
         /// <summary>
         /// Creates the module management view and hooks the resize handler.
         /// </summary>
-        public ModulesView(UpdateManager updateManager)
+        public ModulesView(
+            UpdateManager updateManager,
+            ModuleTrustService moduleTrustService,
+            ModuleLaunchCoordinator launchCoordinator,
+            AppLocalizationService localization)
         {
             _updateManager = updateManager;
+            _moduleTrustService = moduleTrustService;
+            _launchCoordinator = launchCoordinator;
+            _localization = localization;
             InitializeComponent();
             BindingContext = this;
             DashboardView.HandlerChanged += OnDashboardViewHandlerChanged;
             Loaded += OnLoaded;
             SizeChanged += OnSizeChanged;
+            LocalizableAttach.Hook(this, _localization, this);
+        }
+
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            PageTitleLabel.Text = L.Get(LocalizationKeys.Modules_Title);
+            EmptyModulesLabel.Text = L.Get(LocalizationKeys.Modules_Empty);
+            foreach (var module in Modules)
+            {
+                module.RefreshLocalizedLabels();
+            }
         }
 
 
@@ -152,7 +173,9 @@ namespace ASLM.Pages
                     module,
                     installer,
                     runner,
+                    _launchCoordinator,
                     _updateManager,
+                    _moduleTrustService,
                     OnModuleStateChanged,
                     OnMenuToggleRequested,
                     OpenConfigureUpdates,
@@ -167,17 +190,22 @@ namespace ASLM.Pages
             ModuleConfig config,
             ModuleInstaller installer,
             ModuleRunner runner,
+            ModuleLaunchCoordinator launchCoordinator,
             UpdateManager updateManager,
+            ModuleTrustService moduleTrustService,
             Action onStateChanged) =>
             new ModuleViewModel(
                 config,
                 installer,
                 runner,
+                launchCoordinator,
                 updateManager,
+                moduleTrustService,
                 onStateChanged,
                 static _ => { },
                 static _ => { },
                 static _ => { });
+
 
         // State callback
 
@@ -261,6 +289,17 @@ namespace ASLM.Pages
         }
 
 
+        // Background input
+
+        /// <summary>
+        /// Closes any open module menu when the user taps outside the popup actions.
+        /// </summary>
+        private void OnBackgroundTapped(object? sender, TappedEventArgs e)
+        {
+            CloseAllMenus();
+        }
+
+
         // Layout calculation
 
         /// <summary>
@@ -275,13 +314,6 @@ namespace ASLM.Pages
             }
         }
 
-        /// <summary>
-        /// Closes any open module menu when the user taps outside the popup actions.
-        /// </summary>
-        private void OnBackgroundTapped(object? sender, TappedEventArgs e)
-        {
-            CloseAllMenus();
-        }
 
         // Native list behavior
 
@@ -323,9 +355,6 @@ namespace ASLM.Pages
 #endif
     }
 
-
-    // Module card view model
-
     /// <summary>
     /// Wraps one module config and exposes UI state and commands for its card.
     /// </summary>
@@ -337,6 +366,7 @@ namespace ASLM.Pages
         private readonly ModuleConfig _config;
         private readonly ModuleInstaller _installer;
         private readonly ModuleRunner _runner;
+        private readonly ModuleLaunchCoordinator _launchCoordinator;
         private readonly UpdateManager _updateManager;
         private readonly Action _onStateChanged;
         private readonly Action<ModuleViewModel> _onMenuToggleRequested;
@@ -353,7 +383,9 @@ namespace ASLM.Pages
 
         private string _selectedSourceMode = "release";
         private string _selectedBranch = "main";
-        private string _updateStatus = "Ready to check.";
+        private UpdateStatusPhase _updateStatusPhase = UpdateStatusPhase.ReadyToCheck;
+        private string? _updateStatusFormatArg;
+        private string _updateStatus = string.Empty;
         private UpdateCandidate? _updateCandidate;
         private UpdateCandidate? _selectedReleaseOption;
         private bool _hasUpdate;
@@ -368,7 +400,7 @@ namespace ASLM.Pages
         private bool _isRefreshingReleaseOptions;
         private string _loadedReleaseMode = string.Empty;
         private readonly StringBuilder _updateLogBuffer = new();
-        private string _updateActivityStatus = "Ready to check.";
+        private string _updateActivityStatus = string.Empty;
         private string _updateDownloadDetail = string.Empty;
         private double _updateOverallProgress;
         private double _updateFileProgress;
@@ -384,6 +416,9 @@ namespace ASLM.Pages
         public event PropertyChangedEventHandler? PropertyChanged;
 
 
+        private readonly ModuleTrustLevel _trustLevel;
+
+
         // Initialization
 
         /// <summary>
@@ -393,7 +428,9 @@ namespace ASLM.Pages
             ModuleConfig config,
             ModuleInstaller installer,
             ModuleRunner runner,
+            ModuleLaunchCoordinator launchCoordinator,
             UpdateManager updateManager,
+            ModuleTrustService moduleTrustService,
             Action onStateChanged,
             Action<ModuleViewModel> onMenuToggleRequested,
             Action<ModuleViewModel> onConfigureUpdatesRequested,
@@ -402,7 +439,9 @@ namespace ASLM.Pages
             _config = config;
             _installer = installer;
             _runner = runner;
+            _launchCoordinator = launchCoordinator;
             _updateManager = updateManager;
+            _trustLevel = moduleTrustService.Resolve(config);
             _onStateChanged = onStateChanged;
             _onMenuToggleRequested = onMenuToggleRequested;
             _onConfigureUpdatesRequested = onConfigureUpdatesRequested;
@@ -431,15 +470,170 @@ namespace ASLM.Pages
             UpdateCommand = _updateCommand;
             CloseMenuCommand = _closeMenuCommand;
             TryHydratePendingUpdateFromConfig();
+            if (_updateStatusPhase == UpdateStatusPhase.ReadyToCheck && string.IsNullOrEmpty(_updateStatus))
+            {
+                SetUpdatePhase(UpdateStatusPhase.ReadyToCheck);
+            }
+
+            RefreshLocalizedLabels();
         }
 
 
-        // Static card data
+        // Update status
+
+        /// <summary>
+        /// Describes the update badge phases shown on the module card.
+        /// </summary>
+        private enum UpdateStatusPhase
+        {
+            ReadyToCheck,
+            Checking,
+            UpToDate,
+            Available,
+            CheckFailed,
+            Updating,
+            Updated,
+            Failed
+        }
+
+        /// <summary>
+        /// Updates the cached update phase and refreshes the status text shown on the card.
+        /// </summary>
+        private void SetUpdatePhase(UpdateStatusPhase phase, string? formatArg = null)
+        {
+            _updateStatusPhase = phase;
+            _updateStatusFormatArg = formatArg;
+            var text = FormatUpdateStatus(phase, formatArg);
+            UpdateStatus = text;
+        }
+
+        /// <summary>
+        /// Formats the localized update status text for the requested phase.
+        /// </summary>
+        private static string FormatUpdateStatus(UpdateStatusPhase phase, string? formatArg) =>
+            phase switch
+            {
+                UpdateStatusPhase.ReadyToCheck => L.Get(LocalizationKeys.ModuleUpdate_Status_ReadyToCheck),
+                UpdateStatusPhase.Checking => L.Get(LocalizationKeys.ModuleUpdate_Status_Checking),
+                UpdateStatusPhase.UpToDate => L.Get(LocalizationKeys.ModuleUpdate_Status_UpToDate),
+                UpdateStatusPhase.Available => L.Get(LocalizationKeys.ModuleUpdate_Status_UpdateAvailableFormat, formatArg ?? string.Empty),
+                UpdateStatusPhase.CheckFailed => L.Get(LocalizationKeys.ModuleUpdate_Status_CheckFailedFormat, formatArg ?? string.Empty),
+                UpdateStatusPhase.Updating => L.Get(LocalizationKeys.ModuleUpdate_Status_Updating),
+                UpdateStatusPhase.Updated => L.Get(LocalizationKeys.ModuleUpdate_Status_Updated),
+                UpdateStatusPhase.Failed => L.Get(LocalizationKeys.ModuleUpdate_Status_UpdateFailed),
+                _ => L.Get(LocalizationKeys.ModuleUpdate_Status_ReadyToCheck)
+            };
+
+        /// <summary>
+        /// Reapplies localization to the current update status phase.
+        /// </summary>
+        private void RefreshUpdateStatusLocalization() =>
+            SetUpdatePhase(_updateStatusPhase, _updateStatusFormatArg);
+
+
+        // Localized card labels
+
+        /// <summary>
+        /// Gets the localized not-verified badge text.
+        /// </summary>
+        public string NotVerifiedLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized update action label.
+        /// </summary>
+        public string UpdateLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized stop action label.
+        /// </summary>
+        public string StopLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized restart action label.
+        /// </summary>
+        public string RestartLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized restarting status label.
+        /// </summary>
+        public string RestartingLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized starting status label.
+        /// </summary>
+        public string StartingLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized updating status label.
+        /// </summary>
+        public string UpdatingLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized launch action label.
+        /// </summary>
+        public string LaunchLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized check-updates menu label.
+        /// </summary>
+        public string CheckUpdatesLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the localized configure-updates menu label.
+        /// </summary>
+        public string ConfigureUpdatesLabel { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Refreshes localized strings shown on the module card template.
+        /// </summary>
+        internal void RefreshLocalizedLabels()
+        {
+            NotVerifiedLabel = L.Get(LocalizationKeys.Modules_NotVerified);
+            UpdateLabel = L.Get(LocalizationKeys.Modules_Update);
+            StopLabel = L.Get(LocalizationKeys.Modules_Stop);
+            RestartLabel = L.Get(LocalizationKeys.Modules_Restart);
+            RestartingLabel = L.Get(LocalizationKeys.Modules_Restarting);
+            StartingLabel = L.Get(LocalizationKeys.Modules_Starting);
+            UpdatingLabel = L.Get(LocalizationKeys.Modules_Updating);
+            LaunchLabel = L.Get(LocalizationKeys.Modules_Launch);
+            CheckUpdatesLabel = L.Get(LocalizationKeys.Modules_CheckUpdates);
+            ConfigureUpdatesLabel = L.Get(LocalizationKeys.Modules_ConfigureUpdates);
+            RefreshUpdateStatusLocalization();
+
+            OnPropertyChanged(nameof(NotVerifiedLabel));
+            OnPropertyChanged(nameof(UpdateLabel));
+            OnPropertyChanged(nameof(StopLabel));
+            OnPropertyChanged(nameof(RestartLabel));
+            OnPropertyChanged(nameof(RestartingLabel));
+            OnPropertyChanged(nameof(StartingLabel));
+            OnPropertyChanged(nameof(UpdatingLabel));
+            OnPropertyChanged(nameof(LaunchLabel));
+            OnPropertyChanged(nameof(CheckUpdatesLabel));
+            OnPropertyChanged(nameof(ConfigureUpdatesLabel));
+        }
+
+
+        // Card properties
 
         /// <summary>
         /// Gets the module name shown on the card.
         /// </summary>
         public string Name => _config.Name;
+
+        /// <summary>
+        /// Gets the resolved trust level for the module card.
+        /// </summary>
+        public ModuleTrustLevel TrustLevel => _trustLevel;
+
+        /// <summary>
+        /// Gets whether the official verified badge should be shown.
+        /// </summary>
+        public bool ShowVerifiedBadge => _trustLevel == ModuleTrustLevel.Official;
+
+        /// <summary>
+        /// Gets whether the unverified warning badge should be shown.
+        /// </summary>
+        public bool ShowUnverifiedWarning => _trustLevel == ModuleTrustLevel.Unreviewed;
 
         /// <summary>
         /// Gets the short module description shown on the card.
@@ -451,48 +645,30 @@ namespace ASLM.Pages
         /// </summary>
         public string SourcePath => _config.SourcePath;
 
-
-        // Version label
-
         /// <summary>
         /// Gets the formatted version label shown on the card.
         /// </summary>
         public string VersionString => $"v{_config.Version}";
-
-
-        // Icon path
 
         /// <summary>
         /// Gets the resolved module icon path.
         /// </summary>
         public string? IconFullPath => _config.IconFullPath;
 
-
-        // Icon flag
-
         /// <summary>
         /// Gets whether the module has an icon to render.
         /// </summary>
         public bool HasIcon => !string.IsNullOrEmpty(_config.IconFullPath);
-
-
-        // Running state
 
         /// <summary>
         /// Gets whether the module is currently enabled.
         /// </summary>
         public bool IsRunning => _config.Status.Enabled;
 
-
-        // Stopped state
-
         /// <summary>
         /// Gets whether the module is currently stopped.
         /// </summary>
         public bool IsStopped => !_config.Status.Enabled;
-
-
-        // Restart state
 
         /// <summary>
         /// Gets or sets whether the module is currently restarting.
@@ -514,9 +690,6 @@ namespace ASLM.Pages
                 RefreshCommandStates();
             }
         }
-
-
-        // Restart inverse
 
         /// <summary>
         /// Gets whether the restart overlay should stay hidden.
@@ -563,7 +736,7 @@ namespace ASLM.Pages
                 _updateCandidate = null;
                 HasUpdate = false;
                 PersistPendingUpdateSnapshot();
-                UpdateStatus = "Ready to check.";
+                SetUpdatePhase(UpdateStatusPhase.ReadyToCheck);
                 SetUpdateActivityStatus(UpdateStatus);
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(UpdateCandidate));
@@ -631,6 +804,7 @@ namespace ASLM.Pages
         /// Gets whether release channel controls should be visible.
         /// </summary>
         public bool IsReleaseMode => !IsBranchMode;
+
 
         // Update state
 
@@ -893,23 +1067,17 @@ namespace ASLM.Pages
         }
 
 
-        // Launch command
+        // Commands
 
         /// <summary>
         /// Gets the command that launches the module.
         /// </summary>
         public ICommand LaunchCommand { get; }
 
-
-        // Stop command
-
         /// <summary>
         /// Gets the command that stops the module.
         /// </summary>
         public ICommand StopCommand { get; }
-
-
-        // Restart command
 
         /// <summary>
         /// Gets the command that restarts the module.
@@ -1108,7 +1276,7 @@ namespace ASLM.Pages
 
             _updateCandidate = candidate;
             HasUpdate = true;
-            UpdateStatus = $"Update available: {candidate.RemoteVersion}";
+            SetUpdatePhase(UpdateStatusPhase.Available, candidate.RemoteVersion);
             SetUpdateActivityStatus(UpdateStatus);
             OnPropertyChanged(nameof(UpdateCandidate));
             OnPropertyChanged(nameof(AvailableUpdateLabel));
@@ -1204,7 +1372,7 @@ namespace ASLM.Pages
             _updateCandidate = null;
             HasUpdate = false;
             PersistPendingUpdateSnapshot();
-            UpdateStatus = "Ready to check.";
+            SetUpdatePhase(UpdateStatusPhase.ReadyToCheck);
             SetUpdateActivityStatus(UpdateStatus);
             OnPropertyChanged(nameof(SelectedBranch));
             OnPropertyChanged(nameof(UpdateCandidate));
@@ -1243,7 +1411,7 @@ namespace ASLM.Pages
             }
 
             IsCheckingUpdate = true;
-            UpdateStatus = "Checking for updates...";
+            SetUpdatePhase(UpdateStatusPhase.Checking);
             SetUpdateActivityStatus(UpdateStatus);
 
             try
@@ -1257,9 +1425,15 @@ namespace ASLM.Pages
                 OnPropertyChanged(nameof(AvailableUpdateLabel));
                 ApplyCheckResultSelection();
 
-                UpdateStatus = _updateCandidate == null
-                    ? "Up to date"
-                    : $"Update available: {_updateCandidate.RemoteVersion}";
+                if (_updateCandidate == null)
+                {
+                    SetUpdatePhase(UpdateStatusPhase.UpToDate);
+                }
+                else
+                {
+                    SetUpdatePhase(UpdateStatusPhase.Available, _updateCandidate.RemoteVersion);
+                }
+
                 SetUpdateActivityStatus(UpdateStatus);
             }
             catch (Exception ex)
@@ -1268,7 +1442,7 @@ namespace ASLM.Pages
                 HasUpdate = false;
                 OnPropertyChanged(nameof(UpdateCandidate));
                 OnPropertyChanged(nameof(AvailableUpdateLabel));
-                UpdateStatus = $"Check failed: {ex.Message}";
+                SetUpdatePhase(UpdateStatusPhase.CheckFailed, ex.Message);
                 SetUpdateActivityStatus(UpdateStatus);
             }
             finally
@@ -1529,7 +1703,7 @@ namespace ASLM.Pages
             }
 
             IsUpdating = true;
-            UpdateStatus = "Updating...";
+            SetUpdatePhase(UpdateStatusPhase.Updating);
             SetUpdateActivityStatus(UpdateStatus);
 
             // Reflect the stopped state immediately so the card does not offer launch actions mid-update.
@@ -1577,7 +1751,7 @@ namespace ASLM.Pages
                     await ReloadInstalledConfigAsync();
                 }
 
-                UpdateStatus = success ? "Updated" : "Update failed";
+                SetUpdatePhase(success ? UpdateStatusPhase.Updated : UpdateStatusPhase.Failed);
                 SetUpdateActivityStatus(UpdateStatus);
                 SetOverallProgress(success ? 1.0 : Math.Max(_updateOverallProgress, 0.15));
                 HasUpdate = false;
@@ -1624,33 +1798,26 @@ namespace ASLM.Pages
 
             try
             {
-                // First-run setup must complete before the normal run commands can start.
-                if (!_config.Status.FirstRunCompleted)
+                var launchLog = new Progress<string>(message => Debug.WriteLine($"[Launch] {message}"));
+                var result = await _launchCoordinator.LaunchOrEnsureRunningAsync(_config.Id, launchLog, CancellationToken.None);
+
+                if (result.EffectiveConfig != null &&
+                    string.Equals(result.EffectiveConfig.SourcePath, _config.SourcePath, StringComparison.OrdinalIgnoreCase))
                 {
-                    var setupLog = new Progress<string>(message => Debug.WriteLine($"[Setup] {message}"));
-                    var setupSuccess = await Task.Run(() =>
-                        _runner.ExecuteFirstRunAsync(_config, setupLog, CancellationToken.None));
-
-                    if (!setupSuccess)
-                    {
-                        Debug.WriteLine("Setup failed, cannot launch.");
-                        return;
-                    }
-
-                    _config.Status.FirstRunCompleted = true;
-                    await Task.Run(() => _installer.SaveConfigAsync(_config));
+                    _config.Settings = result.EffectiveConfig.Settings;
+                    _config.Commands = result.EffectiveConfig.Commands;
+                    _config.Status.FirstRunCompleted = result.EffectiveConfig.Status.FirstRunCompleted;
+                    _config.Status.Enabled = result.EffectiveConfig.Status.Enabled;
                 }
 
-                _config.Status.Enabled = true;
-                await Task.Run(() => _installer.SaveConfigAsync(_config));
-                NotifyStateChanged();
-                _onStateChanged?.Invoke();
-
-                // Start background run commands only when the module exposes them.
-                if (_config.Commands.Run.Count > 0)
+                if (result.Status is ModuleLaunchStatus.Started or ModuleLaunchStatus.AlreadyRunning)
                 {
-                    var launchLog = new Progress<string>(message => Debug.WriteLine($"[Launch] {message}"));
-                    _ = Task.Run(() => _runner.ExecuteRunAsync(_config, launchLog, CancellationToken.None));
+                    NotifyStateChanged();
+                    _onStateChanged?.Invoke();
+                }
+                else
+                {
+                    Debug.WriteLine($"Launch failed ({result.Status}): {result.Message}");
                 }
             }
             finally
@@ -1758,6 +1925,7 @@ namespace ASLM.Pages
             _config.Version = freshConfig.Version;
             _config.Author = freshConfig.Author;
             _config.Type = freshConfig.Type;
+            _config.Category = freshConfig.Category;
             _config.Source = freshConfig.Source;
             _config.Dependencies = freshConfig.Dependencies;
             _config.Commands = freshConfig.Commands;
@@ -1947,15 +2115,14 @@ namespace ASLM.Pages
             }
 
             // Do not wipe in-flight install UI if flags were lost but status still reflects an active update.
-            if (string.Equals(UpdateStatus, "Updating...", StringComparison.OrdinalIgnoreCase))
+            if (_updateStatusPhase == UpdateStatusPhase.Updating)
             {
                 return;
             }
 
-            if (string.Equals(UpdateStatus, "Updated", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(UpdateStatus, "Update failed", StringComparison.OrdinalIgnoreCase))
+            if (_updateStatusPhase is UpdateStatusPhase.Updated or UpdateStatusPhase.Failed)
             {
-                UpdateStatus = "Ready to check.";
+                SetUpdatePhase(UpdateStatusPhase.ReadyToCheck);
             }
 
             ResetUpdateSession(clearLog: true);

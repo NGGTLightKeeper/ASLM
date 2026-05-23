@@ -12,13 +12,15 @@
               ColumnDefinitions="*,Auto"
               ColumnSpacing="12">
             <VerticalStackLayout Spacing="0">
-                <Label Text="ASLM API"
+                <Label x:Name="PageTitleLabel"
+                       Text="ASLM API"
                        FontSize="24"
                        FontAttributes="Bold"
                        TextColor="{DynamicResource LabelPrimary}" />
             </VerticalStackLayout>
 
-            <Button Grid.Column="1"
+            <Button x:Name="OpenServerButton"
+                    Grid.Column="1"
                     Text="Open"
                     HeightRequest="31"
                     MinimumHeightRequest="31"
@@ -49,7 +51,8 @@
               RowDefinitions="Auto,*"
               RowSpacing="8"
               Margin="0">
-            <Label Text="Hosts"
+            <Label x:Name="HostsHeaderLabel"
+                   Text="Hosts"
                    FontSize="16"
                    FontAttributes="Bold"
                    TextColor="{DynamicResource LabelPrimary}"
@@ -61,7 +64,8 @@
                     StrokeThickness="1"
                     StrokeShape="RoundRectangle 8"
                     Padding="0">
-                <CollectionView ItemsSource="{Binding Hosts}"
+                <CollectionView x:Name="HostsCollection"
+                                ItemsSource="{Binding Hosts}"
                                 SelectionMode="None">
                     <CollectionView.EmptyView>
                         <VerticalStackLayout HorizontalOptions="Center"

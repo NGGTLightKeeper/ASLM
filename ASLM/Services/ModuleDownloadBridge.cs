@@ -8,8 +8,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Module downloads bridge
-
     /// <summary>
     /// Executes module-declared downloads bridge commands and exchanges JSON requests over stdio.
     /// </summary>
@@ -27,6 +25,9 @@ namespace ASLM.Services
             PropertyNameCaseInsensitive = true,
             WriteIndented = false
         };
+
+
+        // Initialization
 
         /// <summary>
         /// Creates the downloads bridge.

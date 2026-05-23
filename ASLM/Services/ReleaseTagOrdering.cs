@@ -7,6 +7,8 @@ namespace ASLM.Services
     /// </summary>
     public static class ReleaseTagOrdering
     {
+        // Version equivalence
+
         /// <summary>
         /// Returns whether two local or remote version references point at the same GitHub tag identity.
         /// </summary>
@@ -26,6 +28,9 @@ namespace ASLM.Services
 
             return string.Equals(leftNormalized, rightNormalized, StringComparison.OrdinalIgnoreCase);
         }
+
+
+        // Tag precedence
 
         /// <summary>
         /// Compares two release tags; positive when <paramref name="leftTag"/> is strictly newer than <paramref name="rightTag"/>.
@@ -78,6 +83,9 @@ namespace ASLM.Services
             var rightStamp = right.PublishedAt ?? right.CreatedAt ?? DateTimeOffset.MinValue;
             return rightStamp.CompareTo(leftStamp);
         }
+
+
+        // Normalization helpers
 
         /// <summary>
         /// Normalizes a version or release tag while preserving pre-release identifiers and removing build metadata.

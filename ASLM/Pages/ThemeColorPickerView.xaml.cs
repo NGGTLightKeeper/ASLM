@@ -1,6 +1,8 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
+using ASLM.Localization;
 using ASLM.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Maui.Graphics;
 
 namespace ASLM.Pages
@@ -12,7 +14,7 @@ namespace ASLM.Pages
     /// invalidated on every move for smooth tracking. Value/alpha sliders are not written on every HS move; hex/RGB
     /// entries and preview update live while dragging.
     /// </summary>
-    public partial class ThemeColorPickerView : ContentView
+    public partial class ThemeColorPickerView : ContentView, ILocalizable
     {
         private readonly TaskCompletionSource<Color?> _completion = new();
         private Page? _modalHostPage;
@@ -22,10 +24,19 @@ namespace ASLM.Pages
         private double _alpha = 1;
         private bool _hsPointerDown;
         private bool _suppressSync;
+        private readonly AppLocalizationService _localization;
 
-        public ThemeColorPickerView(Color initial)
+
+        // Initialization
+
+        /// <summary>
+        /// Creates the picker, wires controls, and seeds HSV state from the initial color.
+        /// </summary>
+        public ThemeColorPickerView(Color initial, AppLocalizationService localization)
         {
+            _localization = localization;
             InitializeComponent();
+            LocalizableAttach.Hook(this, _localization, this);
 
             RgbToHsv(initial, out _hue, out _saturation, out _value);
             _alpha = initial.Alpha;
@@ -86,6 +97,28 @@ namespace ASLM.Pages
             HsCursor.Invalidate();
         }
 
+
+        // Localization
+
+        /// <summary>
+        /// Applies localized strings to picker labels and footer buttons.
+        /// </summary>
+        public void ApplyLocalization()
+        {
+            TitleLabel.Text = L.Get(LocalizationKeys.ThemeColorPicker_CustomColor);
+            BrightnessLabel.Text = L.Get(LocalizationKeys.ThemeColorPicker_Brightness);
+            OpacityLabel.Text = L.Get(LocalizationKeys.ThemeColorPicker_Opacity);
+            HexEntry.Placeholder = L.Get(LocalizationKeys.ThemeColorPicker_HexPlaceholder);
+            DoneButton.Text = L.Get(LocalizationKeys.Common_Done);
+            CancelButton.Text = L.Get(LocalizationKeys.ThemeColorPicker_Cancel);
+        }
+
+
+        // Modal presentation
+
+        /// <summary>
+        /// Returns a task that completes when the user confirms or cancels the picker.
+        /// </summary>
         public Task<Color?> WaitForResultAsync() => _completion.Task;
 
         /// <summary>
@@ -99,7 +132,8 @@ namespace ASLM.Pages
                 return null;
             }
 
-            var picker = new ThemeColorPickerView(initial);
+            var localization = Application.Current?.Handler?.MauiContext?.Services.GetRequiredService<AppLocalizationService>();
+            var picker = new ThemeColorPickerView(initial, localization!);
             var modal = new ContentPage
             {
                 BackgroundColor = Colors.Transparent,
@@ -112,12 +146,21 @@ namespace ASLM.Pages
             return await picker.WaitForResultAsync().ConfigureAwait(true);
         }
 
+
+        // Modal host
+
+        /// <summary>
+        /// Associates the modal host page and completes with <c>null</c> if it disappears early.
+        /// </summary>
         internal void AttachModalHost(Page modalHost)
         {
             _modalHostPage = modalHost;
             modalHost.Disappearing += OnModalHostDisappearing;
         }
 
+        /// <summary>
+        /// Completes the picker with <c>null</c> when the modal host is dismissed externally.
+        /// </summary>
         private void OnModalHostDisappearing(object? sender, EventArgs e)
         {
             if (!_completion.Task.IsCompleted)
@@ -126,22 +169,40 @@ namespace ASLM.Pages
             }
         }
 
+
+        // Overlay gestures
+
+        /// <summary>
+        /// Cancels the picker when the dimmed backdrop is tapped.
+        /// </summary>
         private void OnBackdropTapped(object? sender, TappedEventArgs e)
         {
             _ = CompleteAsync(null);
         }
 
+        /// <summary>
+        /// Swallows taps on the card so they do not reach the backdrop handler.
+        /// </summary>
         private static void OnCardTapped(object? sender, TappedEventArgs e)
         {
             // Swallow taps so backdrop does not receive them (same pattern as SettingsView dialog).
         }
 
+
+        // HS plane pointer
+
+        /// <summary>
+        /// Begins hue/saturation selection from a pointer press on the HS plane.
+        /// </summary>
         private void OnHsPointerPressed(object? sender, PointerEventArgs e)
         {
             _hsPointerDown = true;
             ApplyHsFromPointer(e, syncTextFields: true);
         }
 
+        /// <summary>
+        /// Updates hue/saturation while the pointer moves over the HS plane.
+        /// </summary>
         private void OnHsPointerMoved(object? sender, PointerEventArgs e)
         {
             if (!_hsPointerDown)
@@ -152,6 +213,9 @@ namespace ASLM.Pages
             ApplyHsFromPointer(e, syncTextFields: false);
         }
 
+        /// <summary>
+        /// Ends hue/saturation selection and syncs text fields on pointer release.
+        /// </summary>
         private void OnHsPointerReleased(object? sender, PointerEventArgs e)
         {
             if (!_hsPointerDown)
@@ -163,6 +227,9 @@ namespace ASLM.Pages
             ApplyHsFromPointer(e, syncTextFields: true);
         }
 
+        /// <summary>
+        /// Maps a pointer position on the HS plane to hue and saturation, then refreshes the UI.
+        /// </summary>
         private void ApplyHsFromPointer(PointerEventArgs e, bool syncTextFields)
         {
             var pt = e.GetPosition(HsPlaneHost);
@@ -187,6 +254,9 @@ namespace ASLM.Pages
             }
         }
 
+
+        // Color synchronization
+
         /// <summary>
         /// Updates hex and RGB entries from current HSV without touching sliders (HS drag does not change V/A).
         /// </summary>
@@ -201,6 +271,43 @@ namespace ASLM.Pages
             _suppressSync = false;
         }
 
+        /// <summary>
+        /// Builds the current color from HSV and alpha components.
+        /// </summary>
+        private Color GetCurrentColor() => HsvToColor(_hue, _saturation, _value, _alpha);
+
+        /// <summary>
+        /// Updates the preview swatch fill and contrast stroke for the given color.
+        /// </summary>
+        private void ApplyPreviewColor(Color c)
+        {
+            PreviewFill.BackgroundColor = c;
+            PreviewBorder.Stroke = ThemePaletteResolver.SwatchContrastStroke(c);
+        }
+
+        /// <summary>
+        /// Syncs preview, hex/RGB entries, and value/alpha sliders from the current HSV state.
+        /// </summary>
+        private void SyncFromHsv()
+        {
+            var c = GetCurrentColor();
+            _suppressSync = true;
+            ApplyPreviewColor(c);
+            HexEntry.Text = ThemePaletteResolver.ToHex(c);
+            REntry.Text = ((int)(c.Red * 255)).ToString();
+            GEntry.Text = ((int)(c.Green * 255)).ToString();
+            BEntry.Text = ((int)(c.Blue * 255)).ToString();
+            ValueSlider.Value = _value;
+            AlphaSlider.Value = _alpha;
+            _suppressSync = false;
+        }
+
+
+        // Completion
+
+        /// <summary>
+        /// Completes the picker, pops the modal host, and delivers the chosen color or <c>null</c>.
+        /// </summary>
         private async Task CompleteAsync(Color? result)
         {
             if (_completion.Task.IsCompleted)
@@ -225,28 +332,12 @@ namespace ASLM.Pages
             }
         }
 
-        private Color GetCurrentColor() => HsvToColor(_hue, _saturation, _value, _alpha);
 
-        private void ApplyPreviewColor(Color c)
-        {
-            PreviewFill.BackgroundColor = c;
-            PreviewBorder.Stroke = ThemePaletteResolver.SwatchContrastStroke(c);
-        }
+        // Text input
 
-        private void SyncFromHsv()
-        {
-            var c = GetCurrentColor();
-            _suppressSync = true;
-            ApplyPreviewColor(c);
-            HexEntry.Text = ThemePaletteResolver.ToHex(c);
-            REntry.Text = ((int)(c.Red * 255)).ToString();
-            GEntry.Text = ((int)(c.Green * 255)).ToString();
-            BEntry.Text = ((int)(c.Blue * 255)).ToString();
-            ValueSlider.Value = _value;
-            AlphaSlider.Value = _alpha;
-            _suppressSync = false;
-        }
-
+        /// <summary>
+        /// Parses hex input and updates HSV, preview, and RGB fields when valid.
+        /// </summary>
         private void OnHexTextChanged(object? sender, TextChangedEventArgs e)
         {
             if (_suppressSync)
@@ -274,6 +365,9 @@ namespace ASLM.Pages
             _suppressSync = false;
         }
 
+        /// <summary>
+        /// Parses RGB entries and updates HSV, preview, and hex when all components are valid.
+        /// </summary>
         private void OnRgbTextChanged(object? sender, TextChangedEventArgs e)
         {
             if (_suppressSync)
@@ -304,6 +398,12 @@ namespace ASLM.Pages
             _suppressSync = false;
         }
 
+
+        // UI styling
+
+        /// <summary>
+        /// Applies the shared settings footer button style for primary or secondary actions.
+        /// </summary>
         private static void ApplyFooterButtonStyle(Button button, bool isPrimary)
         {
             var key = isPrimary ? "SettingsFooterPrimaryButtonStyle" : "SettingsFooterButtonStyle";
@@ -318,6 +418,12 @@ namespace ASLM.Pages
             }
         }
 
+
+        // Color conversion
+
+        /// <summary>
+        /// Converts an RGBA color to normalized hue, saturation, and value components.
+        /// </summary>
         private static void RgbToHsv(Color color, out double h, out double s, out double v)
         {
             var r = color.Red;
@@ -353,6 +459,9 @@ namespace ASLM.Pages
             h = hh / 6;
         }
 
+        /// <summary>
+        /// Converts normalized HSV and alpha components to an RGBA color.
+        /// </summary>
         private static Color HsvToColor(double h, double s, double v, double a)
         {
             h = (h % 1 + 1) % 1;
@@ -377,7 +486,12 @@ namespace ASLM.Pages
             return new Color((float)r, (float)g, (float)b, (float)a);
         }
 
-        /// <summary>HS field at fixed value V; redraw only when brightness or size changes.</summary>
+
+        // Drawables
+
+        /// <summary>
+        /// HS field at fixed value V; redraw only when brightness or size changes.
+        /// </summary>
         private sealed class HsGradientDrawable : IDrawable
         {
             private readonly ThemeColorPickerView _owner;
@@ -403,7 +517,9 @@ namespace ASLM.Pages
             }
         }
 
-        /// <summary>Selector ring only; redraws on every hue/sat change.</summary>
+        /// <summary>
+        /// Selector ring only; redraws on every hue/sat change.
+        /// </summary>
         private sealed class HsCursorDrawable : IDrawable
         {
             private readonly ThemeColorPickerView _owner;

@@ -1,0 +1,1289 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="AppShell_Nav_Api" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="AppShell_Nav_Consoles" xml:space="preserve">
+    <value>وحدات التحكم</value>
+  </data>
+  <data name="AppShell_Nav_Download" xml:space="preserve">
+    <value>تنزيل</value>
+  </data>
+  <data name="AppShell_Nav_Home" xml:space="preserve">
+    <value>الرئيسية</value>
+  </data>
+  <data name="AppShell_Nav_Modules" xml:space="preserve">
+    <value>الوحدات</value>
+  </data>
+  <data name="AppShell_Nav_Notifications" xml:space="preserve">
+    <value>الإشعارات</value>
+  </data>
+  <data name="AppShell_Nav_Settings" xml:space="preserve">
+    <value>الإعدادات</value>
+  </data>
+  <data name="AppShell_Title" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="AslmApi_AddressCopiedStatus" xml:space="preserve">
+    <value>تم النسخ</value>
+  </data>
+  <data name="AslmApi_AddressCopiedTitle" xml:space="preserve">
+    <value>تم نسخ العنوان</value>
+  </data>
+  <data name="AslmApi_CopyAddressTooltip" xml:space="preserve">
+    <value>نسخ العنوان</value>
+  </data>
+  <data name="AslmApi_Disabled" xml:space="preserve">
+    <value>معطّل</value>
+  </data>
+  <data name="AslmApi_Hosts" xml:space="preserve">
+    <value>المضيفون</value>
+  </data>
+  <data name="AslmApi_NoHosts" xml:space="preserve">
+    <value>لا يوجد مضيفون</value>
+  </data>
+  <data name="AslmApi_Open" xml:space="preserve">
+    <value>فتح</value>
+  </data>
+  <data name="AslmApi_Title" xml:space="preserve">
+    <value>ASLM API</value>
+  </data>
+  <data name="Common_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Common_Back" xml:space="preserve">
+    <value>رجوع</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>إلغاء</value>
+  </data>
+  <data name="Common_Discard" xml:space="preserve">
+    <value>تجاهل</value>
+  </data>
+  <data name="Common_Done" xml:space="preserve">
+    <value>تم</value>
+  </data>
+  <data name="Common_Install" xml:space="preserve">
+    <value>تثبيت</value>
+  </data>
+  <data name="Common_Install_Action" xml:space="preserve">
+    <value>تثبيت</value>
+  </data>
+  <data name="Common_Next" xml:space="preserve">
+    <value>التالي</value>
+  </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>موافق</value>
+  </data>
+  <data name="Common_Open" xml:space="preserve">
+    <value>فتح</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>تحديث</value>
+  </data>
+  <data name="Common_Remove" xml:space="preserve">
+    <value>إزالة</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>حفظ</value>
+  </data>
+  <data name="Common_Saved" xml:space="preserve">
+    <value>تم الحفظ</value>
+  </data>
+  <data name="Common_Stay" xml:space="preserve">
+    <value>البقاء</value>
+  </data>
+  <data name="Common_Variant" xml:space="preserve">
+    <value>متغير</value>
+  </data>
+  <data name="Consoles_ActiveModulesFormat" xml:space="preserve">
+    <value>{0} وحدات نشطة</value>
+  </data>
+  <data name="Consoles_AllActiveModules" xml:space="preserve">
+    <value>جميع الوحدات النشطة</value>
+  </data>
+  <data name="Consoles_AllModules" xml:space="preserve">
+    <value>جميع الوحدات</value>
+  </data>
+  <data name="Consoles_AllModulesUnifiedTitle" xml:space="preserve">
+    <value>جميع الوحدات / وحدة التحكم الموحّدة</value>
+  </data>
+  <data name="Consoles_EmptySelectionDescription" xml:space="preserve">
+    <value>ستظهر هنا مخرجات وحدة التحكم عند بدء تشغيل الوحدة وإعدادها ومزامنة الإعدادات والخدمات والعمليات الفرعية.</value>
+  </data>
+  <data name="Consoles_EmptySelectionFooter" xml:space="preserve">
+    <value>في انتظار نشاط الوحدة.</value>
+  </data>
+  <data name="Consoles_EmptySelectionStatus" xml:space="preserve">
+    <value>ابدأ وحدة أو حددها لعرض نشاط وحدة التحكم.</value>
+  </data>
+  <data name="Consoles_EmptySelectionTitle" xml:space="preserve">
+    <value>لم يتم تحديد وحدة تحكم</value>
+  </data>
+  <data name="Consoles_Footer_BufferedFormat" xml:space="preserve">
+    <value>{0} سطر مخزّن - {1}{2}{3}</value>
+  </data>
+  <data name="Consoles_Footer_EndedFormat" xml:space="preserve">
+    <value> - انتهى {0}</value>
+  </data>
+  <data name="Consoles_Footer_ObservedCaptureNote" xml:space="preserve">
+    <value> - قد يتعذّر التقاط stdout/stderr مباشرةً</value>
+  </data>
+  <data name="Consoles_Footer_StartedFormat" xml:space="preserve">
+    <value>بدأ {0}</value>
+  </data>
+  <data name="Consoles_LastActivityFormat" xml:space="preserve">
+    <value>آخر نشاط {0}</value>
+  </data>
+  <data name="Consoles_MergedOutput" xml:space="preserve">
+    <value>مخرجات مدمجة</value>
+  </data>
+  <data name="Consoles_ModuleUnifiedTitleFormat" xml:space="preserve">
+    <value>{0} / وحدة التحكم الموحّدة</value>
+  </data>
+  <data name="Consoles_ModulesHeader" xml:space="preserve">
+    <value>الوحدات</value>
+  </data>
+  <data name="Consoles_NoActiveModules" xml:space="preserve">
+    <value>لا توجد وحدات نشطة</value>
+  </data>
+  <data name="Consoles_NoActivityYet" xml:space="preserve">
+    <value>لا يوجد نشاط بعد</value>
+  </data>
+  <data name="Consoles_NoConsoles" xml:space="preserve">
+    <value>لا توجد وحدات تحكم</value>
+  </data>
+  <data name="Consoles_NoOutputYet" xml:space="preserve">
+    <value>لا يوجد مخرجات بعد.</value>
+  </data>
+  <data name="Consoles_PidFormat" xml:space="preserve">
+    <value> - PID {0}</value>
+  </data>
+  <data name="Consoles_Run" xml:space="preserve">
+    <value>تشغيل</value>
+  </data>
+  <data name="Consoles_Selected_ObservedRunning" xml:space="preserve">
+    <value>الخدمة المراقبة تعمل{0}</value>
+  </data>
+  <data name="Consoles_Selected_ObservedStopped" xml:space="preserve">
+    <value>الخدمة المراقبة متوقفة{0}</value>
+  </data>
+  <data name="Consoles_Selected_SessionCompleted" xml:space="preserve">
+    <value>اكتملت جلسة {0}</value>
+  </data>
+  <data name="Consoles_Selected_SessionExitFormat" xml:space="preserve">
+    <value>انتهت جلسة {0} برمز الخروج {1}{2}</value>
+  </data>
+  <data name="Consoles_Selected_SessionRunning" xml:space="preserve">
+    <value>جلسة {0} تعمل{1}</value>
+  </data>
+  <data name="Consoles_SessionObservedDescription" xml:space="preserve">
+    <value>عملية فرعية مراقبة بدأتها الوحدة. يمكن لـ ASLM إبقاؤها مرئية كخدمة، لكن قد يتعذّر التقاط stdout/stderr مباشرةً للملفات التنفيذية التابعة لجهات أخرى.</value>
+  </data>
+  <data name="Consoles_SessionObservedPreview" xml:space="preserve">
+    <value>عملية فرعية مراقبة. قد يتعذّر التقاط stdout/stderr مباشرةً.</value>
+  </data>
+  <data name="Consoles_SessionStageFormat" xml:space="preserve">
+    <value>جلسة {0}</value>
+  </data>
+  <data name="Consoles_Stage_Command" xml:space="preserve">
+    <value>الأمر</value>
+  </data>
+  <data name="Consoles_Stage_Lifecycle" xml:space="preserve">
+    <value>دورة الحياة</value>
+  </data>
+  <data name="Consoles_Stage_Service" xml:space="preserve">
+    <value>الخدمة</value>
+  </data>
+  <data name="Consoles_Status_Completed" xml:space="preserve">
+    <value>{0} - مكتمل</value>
+  </data>
+  <data name="Consoles_Status_Disabled" xml:space="preserve">
+    <value>معطّل</value>
+  </data>
+  <data name="Consoles_Status_Enabled" xml:space="preserve">
+    <value>مفعّل</value>
+  </data>
+  <data name="Consoles_Status_ExitFormat" xml:space="preserve">
+    <value>{0} - خروج {1}{2}</value>
+  </data>
+  <data name="Consoles_Status_ModuleFormat" xml:space="preserve">
+    <value>{0} - {1} نشط - {2} جلسات</value>
+  </data>
+  <data name="Consoles_Status_RunningFormat" xml:space="preserve">
+    <value>{0} - يعمل{1}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedRunningFormat" xml:space="preserve">
+    <value>الخدمة - مراقبة{0}</value>
+  </data>
+  <data name="Consoles_Status_ServiceObservedStoppedFormat" xml:space="preserve">
+    <value>الخدمة - متوقفة{0}</value>
+  </data>
+  <data name="Consoles_Title" xml:space="preserve">
+    <value>وحدات التحكم</value>
+  </data>
+  <data name="Consoles_UnifiedConsole" xml:space="preserve">
+    <value>وحدة التحكم الموحّدة</value>
+  </data>
+  <data name="Consoles_UnifiedConsoleForActive" xml:space="preserve">
+    <value>وحدة تحكم موحّدة لجميع الوحدات النشطة</value>
+  </data>
+  <data name="Consoles_UnifiedPreview" xml:space="preserve">
+    <value>تتضمن سجلات موحّدة وسجل العمليات المكتملة من الوحدات النشطة.</value>
+  </data>
+  <data name="Consoles_VisibleLinesFormat" xml:space="preserve">
+    <value>{0} سطر مرئي</value>
+  </data>
+  <data name="Downloads_CatalogBridgeLoadFailed" xml:space="preserve">
+    <value>تعذّر تحميل الكتالوج المشترك من جسور الوحدات المثبّتة.</value>
+  </data>
+  <data name="Downloads_CatalogColumnTitle" xml:space="preserve">
+    <value>الكتالوج</value>
+  </data>
+  <data name="Downloads_CatalogRefreshFailedFormat" xml:space="preserve">
+    <value>فشل تحديث كتالوج التنزيل: {0}</value>
+  </data>
+  <data name="Downloads_CatalogTitle" xml:space="preserve">
+    <value>كتالوج التنزيل</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedManyFormat" xml:space="preserve">
+    <value>تم تحديث الكتالوج. تم تحميل {0} فئات.</value>
+  </data>
+  <data name="Downloads_CatalogUpdatedOneCategory" xml:space="preserve">
+    <value>تم تحديث الكتالوج. تم تحميل فئة واحدة.</value>
+  </data>
+  <data name="Downloads_CategoryCount_Many" xml:space="preserve">
+    <value>{0} فئات</value>
+  </data>
+  <data name="Downloads_CategoryCount_None" xml:space="preserve">
+    <value>لا توجد فئات</value>
+  </data>
+  <data name="Downloads_CategoryCount_One" xml:space="preserve">
+    <value>فئة واحدة</value>
+  </data>
+  <data name="Downloads_ChooseVariantHint" xml:space="preserve">
+    <value>اختر عائلة ثم النوع الدقيق الذي تريده.</value>
+  </data>
+  <data name="Downloads_DetailEmpty_Hint" xml:space="preserve">
+    <value>اختر عائلة موارد لاستعراض متغيراتها وتفاصيلها</value>
+  </data>
+  <data name="Downloads_DetailEmpty_NoBridge" xml:space="preserve">
+    <value>لا توجد وحدة مثبتة تعرض جسر تنزيلات حالياً</value>
+  </data>
+  <data name="Downloads_Details" xml:space="preserve">
+    <value>التفاصيل</value>
+  </data>
+  <data name="Downloads_EmptyCategory" xml:space="preserve">
+    <value>لا تتوفر تنزيلات مجمّعة لهذه الفئة</value>
+  </data>
+  <data name="Downloads_EmptyFiltered" xml:space="preserve">
+    <value>لم تطابق أي تنزيلات مجمّعة عوامل تصفية المزوّد الحالية</value>
+  </data>
+  <data name="Downloads_EmptySearch" xml:space="preserve">
+    <value>لم تطابق أي نتائج «{0}» على جانب المزوّد</value>
+  </data>
+  <data name="Downloads_FamilyCountFormat" xml:space="preserve">
+    <value>{0} عائلات</value>
+  </data>
+  <data name="Downloads_Installed" xml:space="preserve">
+    <value>مثبّت</value>
+  </data>
+  <data name="Downloads_InstalledVersionFormat" xml:space="preserve">
+    <value>مثبّت | {0}</value>
+  </data>
+  <data name="Downloads_LoadedManyFormat" xml:space="preserve">
+    <value>تم تحميل {0} فئات.</value>
+  </data>
+  <data name="Downloads_LoadedOneCategory" xml:space="preserve">
+    <value>تم تحميل فئة واحدة.</value>
+  </data>
+  <data name="Downloads_LoadingCatalog" xml:space="preserve">
+    <value>جارٍ تحميل كتالوج التنزيل المشترك...</value>
+  </data>
+  <data name="Downloads_NoItems" xml:space="preserve">
+    <value>لا توجد عناصر</value>
+  </data>
+  <data name="Downloads_NoSharedDownloads" xml:space="preserve">
+    <value>لم تنشر الوحدات الحالية أي تنزيلات مشتركة.</value>
+  </data>
+  <data name="Downloads_OneFamily" xml:space="preserve">
+    <value>عائلة واحدة</value>
+  </data>
+  <data name="Downloads_RefreshingCatalog" xml:space="preserve">
+    <value>جارٍ تحديث كتالوج التنزيل المشترك...</value>
+  </data>
+  <data name="Downloads_SearchPlaceholder" xml:space="preserve">
+    <value>البحث في كتالوج المزوّد</value>
+  </data>
+  <data name="Downloads_SelectItem" xml:space="preserve">
+    <value>اختر عنصراً</value>
+  </data>
+  <data name="Downloads_Status_DetailsLoadFailedFormat" xml:space="preserve">
+    <value>تعذّر تحميل التفاصيل لـ {0}: {1}</value>
+  </data>
+  <data name="Downloads_Status_InstallCanceledFormat" xml:space="preserve">
+    <value>تم إلغاء التثبيت لـ {0}.</value>
+  </data>
+  <data name="Downloads_Status_InstallFailedFormat" xml:space="preserve">
+    <value>فشل التثبيت لـ {0}: {1}</value>
+  </data>
+  <data name="Downloads_Status_InstallingFormat" xml:space="preserve">
+    <value>جارٍ تثبيت {0}...</value>
+  </data>
+  <data name="Downloads_Status_InvalidUrlFormat" xml:space="preserve">
+    <value>فشل الفتح: عنوان URL غير صالح '{0}'.</value>
+  </data>
+  <data name="Downloads_Status_NoPageToOpen" xml:space="preserve">
+    <value>النوع المحدد لا يوفر صفحة للفتح.</value>
+  </data>
+  <data name="Downloads_Status_OpenFailedFormat" xml:space="preserve">
+    <value>تعذّر فتح الصفحة المحددة: {0}</value>
+  </data>
+  <data name="Downloads_Status_OpenedFormat" xml:space="preserve">
+    <value>تم فتح {0}{1}.</value>
+  </data>
+  <data name="Downloads_Status_Ready" xml:space="preserve">
+    <value>جاهز.</value>
+  </data>
+  <data name="Downloads_Status_RefreshingDetailsFormat" xml:space="preserve">
+    <value>جارٍ تحديث التفاصيل لـ {0}...</value>
+  </data>
+  <data name="Downloads_Status_RemoveCanceledFormat" xml:space="preserve">
+    <value>تم إلغاء إزالة {0}.</value>
+  </data>
+  <data name="Downloads_Status_RemoveFailedFormat" xml:space="preserve">
+    <value>فشل إزالة {0}: {1}</value>
+  </data>
+  <data name="Downloads_Status_RemovingFormat" xml:space="preserve">
+    <value>جارٍ إزالة {0}...</value>
+  </data>
+  <data name="Downloads_Title" xml:space="preserve">
+    <value>تنزيل</value>
+  </data>
+  <data name="Home_Badge_DiskFormat" xml:space="preserve">
+    <value>قرص {0}</value>
+  </data>
+  <data name="Home_Badge_GpuPercentFormat" xml:space="preserve">
+    <value>GPU {0:F1}%</value>
+  </data>
+  <data name="Home_Badge_GpuUnavailable" xml:space="preserve">
+    <value>GPU غير متوفر</value>
+  </data>
+  <data name="Home_Badge_NetFormat" xml:space="preserve">
+    <value>شبكة {0}</value>
+  </data>
+  <data name="Home_Badge_ProcessesFormat" xml:space="preserve">
+    <value>العمليات {0}</value>
+  </data>
+  <data name="Home_Badge_RamFormat" xml:space="preserve">
+    <value>ذاكرة {0}</value>
+  </data>
+  <data name="Home_Badge_SessionsFormat" xml:space="preserve">
+    <value>جلسة {0}</value>
+  </data>
+  <data name="Home_Card_Modules_LastActivity" xml:space="preserve">
+    <value>آخر نشاط للوحدة {0}</value>
+  </data>
+  <data name="Home_Card_Modules_NoActivity" xml:space="preserve">
+    <value>لم يُسجَّل أي نشاط للوحدات بعد</value>
+  </data>
+  <data name="Home_Card_Modules_StatusTotal" xml:space="preserve">
+    <value>{0} إجمالي</value>
+  </data>
+  <data name="Home_Card_Modules_Subtitle" xml:space="preserve">
+    <value>دورة الحياة ونشاط وحدات التحكم</value>
+  </data>
+  <data name="Home_Card_Modules_Title" xml:space="preserve">
+    <value>الوحدات المُدارة</value>
+  </data>
+  <data name="Home_Card_Runtime_ChildCount" xml:space="preserve">
+    <value>{0} عمليات فرعية نشطة داخل شجرة ASLM</value>
+  </data>
+  <data name="Home_Card_Runtime_NoChildren" xml:space="preserve">
+    <value>لا توجد عمليات فرعية مُدارة نشطة حالياً</value>
+  </data>
+  <data name="Home_Card_Runtime_StatusPid" xml:space="preserve">
+    <value>PID {0}</value>
+  </data>
+  <data name="Home_Card_Runtime_Subtitle" xml:space="preserve">
+    <value>عملية التطبيق وشجرة العمليات الفرعية المُدارة</value>
+  </data>
+  <data name="Home_Card_Runtime_Title" xml:space="preserve">
+    <value>وقت تشغيل ASLM</value>
+  </data>
+  <data name="Home_Card_System_SampledAt" xml:space="preserve">
+    <value>عُيِّن عند {0}</value>
+  </data>
+  <data name="Home_Card_System_Status" xml:space="preserve">
+    <value>مباشر</value>
+  </data>
+  <data name="Home_Card_System_Subtitle" xml:space="preserve">
+    <value>حمل الجهاز المضيف</value>
+  </data>
+  <data name="Home_Card_System_Title" xml:space="preserve">
+    <value>النظام</value>
+  </data>
+  <data name="Home_Column_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Home_Column_Details" xml:space="preserve">
+    <value>التفاصيل</value>
+  </data>
+  <data name="Home_Column_Disk" xml:space="preserve">
+    <value>القرص</value>
+  </data>
+  <data name="Home_Column_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="Home_Column_Name" xml:space="preserve">
+    <value>الاسم</value>
+  </data>
+  <data name="Home_Column_Net" xml:space="preserve">
+    <value>الشبكة</value>
+  </data>
+  <data name="Home_Column_Ram" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="Home_Loading_WaitingSample" xml:space="preserve">
+    <value>في انتظار العينة</value>
+  </data>
+  <data name="Home_ManagedProcesses" xml:space="preserve">
+    <value>العمليات المُدارة</value>
+  </data>
+  <data name="Home_Metric_Active" xml:space="preserve">
+    <value>نشط</value>
+  </data>
+  <data name="Home_Metric_Active_Detail" xml:space="preserve">
+    <value>وحدات بعمليات مُدارة نشطة</value>
+  </data>
+  <data name="Home_Metric_ConnectionManyFormat" xml:space="preserve">
+    <value>{0} اتصال</value>
+  </data>
+  <data name="Home_Metric_ConnectionOne" xml:space="preserve">
+    <value>1 اتصال</value>
+  </data>
+  <data name="Home_Metric_Cpu_LogicalCores" xml:space="preserve">
+    <value>{0} أنوية منطقية</value>
+  </data>
+  <data name="Home_Metric_Cpu_RuntimeDetail" xml:space="preserve">
+    <value>مضيف التطبيق والعمليات الفرعية المُدارة</value>
+  </data>
+  <data name="Home_Metric_Disk_CombinedIo" xml:space="preserve">
+    <value>إدخال/إخراج مجمّع للعمليات المُدارة</value>
+  </data>
+  <data name="Home_Metric_Disk_Rw" xml:space="preserve">
+    <value>قراءة {0} - كتابة {1}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Index" xml:space="preserve">
+    <value>GPU {0}</value>
+  </data>
+  <data name="Home_Metric_Gpu_Unavailable" xml:space="preserve">
+    <value>عدادات GPU غير متاحة</value>
+  </data>
+  <data name="Home_Metric_Installed" xml:space="preserve">
+    <value>مثبت</value>
+  </data>
+  <data name="Home_Metric_Installed_Detail" xml:space="preserve">
+    <value>وحدات مكتشفة على القرص</value>
+  </data>
+  <data name="Home_Metric_Network" xml:space="preserve">
+    <value>الشبكة</value>
+  </data>
+  <data name="Home_Metric_Network_Endpoints" xml:space="preserve">
+    <value>نقاط نهاية TCP وUDP مفتوحة في شجرة ASLM</value>
+  </data>
+  <data name="Home_Metric_Network_RxTx" xml:space="preserve">
+    <value>استقبال {0} - إرسال {1}</value>
+  </data>
+  <data name="Home_Metric_NotAvailable" xml:space="preserve">
+    <value>غ/م</value>
+  </data>
+  <data name="Home_Metric_Processes" xml:space="preserve">
+    <value>العمليات</value>
+  </data>
+  <data name="Home_Metric_Processes_Detail" xml:space="preserve">
+    <value>عمليات فرعية نشطة تديرها ASLM</value>
+  </data>
+  <data name="Home_Metric_Ram_Resident" xml:space="preserve">
+    <value>{0} مقيم</value>
+  </data>
+  <data name="Home_Metric_Ram_Usage" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="Home_Metric_Running" xml:space="preserve">
+    <value>قيد التشغيل</value>
+  </data>
+  <data name="Home_Metric_Running_Detail" xml:space="preserve">
+    <value>وحدات مُفعّلة</value>
+  </data>
+  <data name="Home_Metric_Sessions" xml:space="preserve">
+    <value>الجلسات</value>
+  </data>
+  <data name="Home_Metric_Sessions_Detail" xml:space="preserve">
+    <value>{0} جلسات وحدة تحكم نشطة</value>
+  </data>
+  <data name="Home_Module_ByAuthor" xml:space="preserve">
+    <value>بواسطة {0}</value>
+  </data>
+  <data name="Home_Module_InstalledDefault" xml:space="preserve">
+    <value>وحدة مثبتة</value>
+  </data>
+  <data name="Home_Module_Launching" xml:space="preserve">
+    <value>جارٍ التشغيل</value>
+  </data>
+  <data name="Home_Module_Stopped" xml:space="preserve">
+    <value>متوقف</value>
+  </data>
+  <data name="Home_Module_Stopping" xml:space="preserve">
+    <value>جارٍ الإيقاف</value>
+  </data>
+  <data name="Home_ModulesHeader" xml:space="preserve">
+    <value>الوحدات</value>
+  </data>
+  <data name="Home_Status_Loading" xml:space="preserve">
+    <value>جارٍ التحميل</value>
+  </data>
+  <data name="Home_Title" xml:space="preserve">
+    <value>الرئيسية</value>
+  </data>
+  <data name="Loading_Text" xml:space="preserve">
+    <value>جارٍ التحميل...</value>
+  </data>
+  <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
+    <value>نشاط التحديث</value>
+  </data>
+  <data name="ModuleUpdate_ActivityTitle_Status" xml:space="preserve">
+    <value>حالة التحديث</value>
+  </data>
+  <data name="ModuleUpdate_Activity_FailedFormat" xml:space="preserve">
+    <value>فشل تحديث {0}.</value>
+  </data>
+  <data name="ModuleUpdate_Activity_SuccessFormat" xml:space="preserve">
+    <value>تم تحديث {0} بنجاح.</value>
+  </data>
+  <data name="ModuleUpdate_CheckUpdates" xml:space="preserve">
+    <value>التحقق من التحديثات</value>
+  </data>
+  <data name="ModuleUpdate_CloseTooltip" xml:space="preserve">
+    <value>إغلاق تحديثات الوحدات</value>
+  </data>
+  <data name="ModuleUpdate_CurrentVersion" xml:space="preserve">
+    <value>الإصدار الحالي</value>
+  </data>
+  <data name="ModuleUpdate_InstallUpdate" xml:space="preserve">
+    <value>تثبيت التحديث</value>
+  </data>
+  <data name="ModuleUpdate_LoadOptionsFailedFormat" xml:space="preserve">
+    <value>فشل تحميل خيارات التحديث: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Log_CheckingFormat" xml:space="preserve">
+    <value>جارٍ التحقق من التحديثات لـ {0}...</value>
+  </data>
+  <data name="ModuleUpdate_Log_Failed" xml:space="preserve">
+    <value>لم يكتمل التحديث بنجاح.</value>
+  </data>
+  <data name="ModuleUpdate_Log_InstallingFormat" xml:space="preserve">
+    <value>جارٍ تثبيت تحديث {0}...</value>
+  </data>
+  <data name="ModuleUpdate_Log_StartingFormat" xml:space="preserve">
+    <value>بدء تحديث {0}.</value>
+  </data>
+  <data name="ModuleUpdate_Log_SuccessFormat" xml:space="preserve">
+    <value>اكتمل التحديث. تم تثبيت {0}.</value>
+  </data>
+  <data name="ModuleUpdate_NoModuleSelected" xml:space="preserve">
+    <value>لم تُحدَّد وحدة</value>
+  </data>
+  <data name="ModuleUpdate_NoVersionSelected" xml:space="preserve">
+    <value>لم يتم تحديد إصدار</value>
+  </data>
+  <data name="ModuleUpdate_OverallProgress" xml:space="preserve">
+    <value>التقدّم الإجمالي</value>
+  </data>
+  <data name="ModuleUpdate_PrefsAutoSaved" xml:space="preserve">
+    <value>تُحفظ التفضيلات تلقائياً</value>
+  </data>
+  <data name="ModuleUpdate_ReadyDefault" xml:space="preserve">
+    <value>جاهز.</value>
+  </data>
+  <data name="ModuleUpdate_ReleaseVersion" xml:space="preserve">
+    <value>نسخة الإصدار</value>
+  </data>
+  <data name="ModuleUpdate_RepositoryBranch" xml:space="preserve">
+    <value>فرع المستودع</value>
+  </data>
+  <data name="ModuleUpdate_SearchMode" xml:space="preserve">
+    <value>وضع البحث</value>
+  </data>
+  <data name="ModuleUpdate_SelectBranchRequired" xml:space="preserve">
+    <value>اختر فرع المستودع قبل التحقق من التحديثات.</value>
+  </data>
+  <data name="ModuleUpdate_SelectedTarget" xml:space="preserve">
+    <value>الهدف المحدد</value>
+  </data>
+  <data name="ModuleUpdate_Status_CheckFailedFormat" xml:space="preserve">
+    <value>فشلت عملية التحقق: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_Checking" xml:space="preserve">
+    <value>جارٍ التحقق من التحديثات...</value>
+  </data>
+  <data name="ModuleUpdate_Status_ReadyToCheck" xml:space="preserve">
+    <value>جاهز للتحقق.</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpToDate" xml:space="preserve">
+    <value>محدّث</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateAvailableFormat" xml:space="preserve">
+    <value>يتوفر تحديث: {0}</value>
+  </data>
+  <data name="ModuleUpdate_Status_UpdateFailed" xml:space="preserve">
+    <value>فشل التحديث</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updated" xml:space="preserve">
+    <value>تم التحديث</value>
+  </data>
+  <data name="ModuleUpdate_Status_Updating" xml:space="preserve">
+    <value>جارٍ التحديث...</value>
+  </data>
+  <data name="ModuleUpdate_SubtitleFormat" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="ModuleUpdate_Title_Configure" xml:space="preserve">
+    <value>تهيئة تحديثات الوحدات</value>
+  </data>
+  <data name="ModuleUpdate_Title_Update" xml:space="preserve">
+    <value>تحديث الوحدة</value>
+  </data>
+  <data name="ModuleUpdate_UpdateSource" xml:space="preserve">
+    <value>مصدر التحديث</value>
+  </data>
+  <data name="Modules_CheckUpdates" xml:space="preserve">
+    <value>التحقق من التحديثات</value>
+  </data>
+  <data name="Modules_ConfigureUpdates" xml:space="preserve">
+    <value>تهيئة التحديثات</value>
+  </data>
+  <data name="Modules_Empty" xml:space="preserve">
+    <value>لم تُعثر على وحدات. ثبّت الوحدات عبر معالج الإعداد</value>
+  </data>
+  <data name="Modules_Launch" xml:space="preserve">
+    <value>تشغيل</value>
+  </data>
+  <data name="Modules_NotVerified" xml:space="preserve">
+    <value>غير مُتحقَّق</value>
+  </data>
+  <data name="Modules_Restart" xml:space="preserve">
+    <value>إعادة التشغيل</value>
+  </data>
+  <data name="Modules_Restarting" xml:space="preserve">
+    <value>جارٍ إعادة التشغيل</value>
+  </data>
+  <data name="Modules_Starting" xml:space="preserve">
+    <value>جارٍ البدء</value>
+  </data>
+  <data name="Modules_Stop" xml:space="preserve">
+    <value>إيقاف</value>
+  </data>
+  <data name="Modules_Title" xml:space="preserve">
+    <value>الوحدات</value>
+  </data>
+  <data name="Modules_Update" xml:space="preserve">
+    <value>تحديث</value>
+  </data>
+  <data name="Modules_Updating" xml:space="preserve">
+    <value>جارٍ التحديث</value>
+  </data>
+  <data name="Notifications_ActionFailed" xml:space="preserve">
+    <value>فشل الإجراء</value>
+  </data>
+  <data name="Notifications_AslmUpdateAvailable" xml:space="preserve">
+    <value>يتوفر تحديث ASLM</value>
+  </data>
+  <data name="Notifications_AslmUpdateNotAvailable" xml:space="preserve">
+    <value>لا يتوفر تحديث ASLM في الوقت الحالي.</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailed" xml:space="preserve">
+    <value>تعذّر تنزيل تحديث ASLM.</value>
+  </data>
+  <data name="Notifications_AslmUpdatePrepareFailedStatus" xml:space="preserve">
+    <value>فشل الإعداد</value>
+  </data>
+  <data name="Notifications_AslmUpdateTitle" xml:space="preserve">
+    <value>تحديث ASLM</value>
+  </data>
+  <data name="Notifications_ChannelFormat" xml:space="preserve">
+    <value>القناة: {0}</value>
+  </data>
+  <data name="Notifications_ClearAll" xml:space="preserve">
+    <value>مسح الكل</value>
+  </data>
+  <data name="Notifications_EmptyMessage" xml:space="preserve">
+    <value>ستظهر أحداث ASLM الجديدة هنا</value>
+  </data>
+  <data name="Notifications_EmptyTitle" xml:space="preserve">
+    <value>لا إشعارات</value>
+  </data>
+  <data name="Notifications_InstalledVersionFallback" xml:space="preserve">
+    <value>الإصدار المثبّت</value>
+  </data>
+  <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
+    <value>هذه الوحدة لم تعد مثبّتة.</value>
+  </data>
+  <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
+    <value>يتوفر تحديث للوحدة</value>
+  </data>
+  <data name="Notifications_NewVersionFound" xml:space="preserve">
+    <value>تم العثور على إصدار جديد</value>
+  </data>
+  <data name="Notifications_SectionRecent" xml:space="preserve">
+    <value>الأخيرة</value>
+  </data>
+  <data name="Notifications_SummaryFormat" xml:space="preserve">
+    <value>{0} إجمالي</value>
+  </data>
+  <data name="Notifications_Title" xml:space="preserve">
+    <value>الإشعارات</value>
+  </data>
+  <data name="Notifications_Unavailable" xml:space="preserve">
+    <value>غير متوفر</value>
+  </data>
+  <data name="Notifications_UpdateActionTitle" xml:space="preserve">
+    <value>تحديث</value>
+  </data>
+  <data name="Notifications_UpdateLater" xml:space="preserve">
+    <value>التحديث لاحقاً</value>
+  </data>
+  <data name="Notifications_UpdateNow" xml:space="preserve">
+    <value>التحديث الآن</value>
+  </data>
+  <data name="Settings_ApiServer_Description" xml:space="preserve">
+    <value>تشغيل خادم المرآة المحلي مع ASLM</value>
+  </data>
+  <data name="Settings_ApiServer_Title" xml:space="preserve">
+    <value>خادم API</value>
+  </data>
+  <data name="Settings_AppChannel_Description" xml:space="preserve">
+    <value>الإصدار يستخدم إصدارات GitHub المستقرة فقط. ما قبل الإصدار يقبل أيضاً إصدارات المعاينة</value>
+  </data>
+  <data name="Settings_AppChannel_Title" xml:space="preserve">
+    <value>قناة تحديث التطبيق</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Description" xml:space="preserve">
+    <value>ساعات بين فحوصات التحديث في الخلفية</value>
+  </data>
+  <data name="Settings_AutoCheckPeriod_Title" xml:space="preserve">
+    <value>فترة الفحص التلقائي</value>
+  </data>
+  <data name="Settings_AutoInstall_Description" xml:space="preserve">
+    <value>تطبيق تحديثات الوحدات تلقائياً وتحضير بنيات ASLM لإعادة التشغيل التالية</value>
+  </data>
+  <data name="Settings_AutoInstall_Title" xml:space="preserve">
+    <value>تثبيت التحديثات تلقائياً</value>
+  </data>
+  <data name="Settings_Category_ASLM" xml:space="preserve">
+    <value>ASLM</value>
+  </data>
+  <data name="Settings_Category_ASLM_Description" xml:space="preserve">
+    <value>سلوك ASLM الأساسي والمنافذ وAPI ووحدات التحكم</value>
+  </data>
+  <data name="Settings_Category_Account" xml:space="preserve">
+    <value>الحساب</value>
+  </data>
+  <data name="Settings_Category_Account_Description" xml:space="preserve">
+    <value>اسم العرض الذي يستخدمه ASLM ويشاركه مع الوحدات</value>
+  </data>
+  <data name="Settings_Category_Module_Description" xml:space="preserve">
+    <value>تهيئة خاصة بالوحدة</value>
+  </data>
+  <data name="Settings_Category_Ollama" xml:space="preserve">
+    <value>Ollama</value>
+  </data>
+  <data name="Settings_Category_Ollama_Description" xml:space="preserve">
+    <value>عناصر تسجيل الدخول والخروج من حساب Ollama</value>
+  </data>
+  <data name="Settings_Category_Personalization" xml:space="preserve">
+    <value>التخصيص</value>
+  </data>
+  <data name="Settings_Category_Personalization_Description" xml:space="preserve">
+    <value>وضع السمة واللغة وإعدادات السمة المخصصة</value>
+  </data>
+  <data name="Settings_Category_Updates" xml:space="preserve">
+    <value>التحديثات</value>
+  </data>
+  <data name="Settings_Category_Updates_Description" xml:space="preserve">
+    <value>تفضيلات تحديث التطبيق والوحدات</value>
+  </data>
+  <data name="Settings_CheckNow" xml:space="preserve">
+    <value>التحقق الآن</value>
+  </data>
+  <data name="Settings_CheckUpdates_Description" xml:space="preserve">
+    <value>السماح لـ ASLM بالاستعلام عن مستودعات GitHub المُهيّأة</value>
+  </data>
+  <data name="Settings_CheckUpdates_Title" xml:space="preserve">
+    <value>التحقق من التحديثات</value>
+  </data>
+  <data name="Settings_CloseTooltip" xml:space="preserve">
+    <value>إغلاق الإعدادات</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Description" xml:space="preserve">
+    <value>إبقاء وحدات تحكم العمليات المنتهية مرئية عند تفعيل وحدات التحكم الفردية</value>
+  </data>
+  <data name="Settings_CompletedConsoles_Title" xml:space="preserve">
+    <value>وحدات تحكم العمليات المكتملة</value>
+  </data>
+  <data name="Settings_ConsolesPage_Description" xml:space="preserve">
+    <value>إظهار صفحة وحدات التحكم المدمجة في الشريط الجانبي</value>
+  </data>
+  <data name="Settings_ConsolesPage_Title" xml:space="preserve">
+    <value>صفحة وحدات التحكم</value>
+  </data>
+  <data name="Settings_DiscardChanges" xml:space="preserve">
+    <value>تجاهل التغييرات</value>
+  </data>
+  <data name="Settings_DiscardDialog_Message" xml:space="preserve">
+    <value>لديك تغييرات غير محفوظة في هذا القسم. هل تريد تجاهلها والتبديل؟</value>
+  </data>
+  <data name="Settings_DiscardDialog_Title" xml:space="preserve">
+    <value>تغييرات غير محفوظة</value>
+  </data>
+  <data name="Settings_DisplayName" xml:space="preserve">
+    <value>اسم العرض</value>
+  </data>
+  <data name="Settings_DisplayNameDescription" xml:space="preserve">
+    <value>الاسم المعروض في ASLM والمشترك مع الوحدات</value>
+  </data>
+  <data name="Settings_EmptyCategory" xml:space="preserve">
+    <value>لا توجد إعدادات في هذه الفئة</value>
+  </data>
+  <data name="Settings_Engine_Installed" xml:space="preserve">
+    <value>مثبت</value>
+  </data>
+  <data name="Settings_Engine_NotInstalled" xml:space="preserve">
+    <value>غير مثبت</value>
+  </data>
+  <data name="Settings_Header_Modules" xml:space="preserve">
+    <value>الوحدات</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Description" xml:space="preserve">
+    <value>إظهار وحدات تحكم لكل عملية إلى جانب مخرجات الوحدة الموحّدة</value>
+  </data>
+  <data name="Settings_IndividualConsoles_Title" xml:space="preserve">
+    <value>وحدات تحكم فردية</value>
+  </data>
+  <data name="Settings_LoadDefault" xml:space="preserve">
+    <value>تحميل الافتراضي</value>
+  </data>
+  <data name="Settings_ManualCheck_Title" xml:space="preserve">
+    <value>فحص يدوي</value>
+  </data>
+  <data name="Settings_ModuleChannel_Description" xml:space="preserve">
+    <value>يُستخدم من قِبل الوحدات التي تتبع إصدارات GitHub</value>
+  </data>
+  <data name="Settings_ModuleChannel_Title" xml:space="preserve">
+    <value>قناة إصدار الوحدة الافتراضية</value>
+  </data>
+  <data name="Settings_ModuleNoSettings" xml:space="preserve">
+    <value>لا توجد إعدادات لهذه الوحدة في الحالة الحالية</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Description" xml:space="preserve">
+    <value>تبدأ تفضيلات الوحدات الجديدة من هذا الوضع؛ يمكن للوحدات الفردية تجاوزه</value>
+  </data>
+  <data name="Settings_ModuleUpdateMode_Title" xml:space="preserve">
+    <value>وضع تحديث الوحدة الافتراضي</value>
+  </data>
+  <data name="Settings_NoSettingsAvailable" xml:space="preserve">
+    <value>لا تتوفر إعدادات</value>
+  </data>
+  <data name="Settings_OfficialPortDescription" xml:space="preserve">
+    <value>نقطة البداية للوحدات الرسمية. يُحجز 100 منفذاً ابتداءً من هذه القيمة</value>
+  </data>
+  <data name="Settings_OfficialPortTitle" xml:space="preserve">
+    <value>منفذ بداية الوحدات الرسمية</value>
+  </data>
+  <data name="Settings_OllamaAccount_Title" xml:space="preserve">
+    <value>حساب Ollama</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Confirm" xml:space="preserve">
+    <value>تسجيل الخروج</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Message" xml:space="preserve">
+    <value>سيؤدي هذا إلى إزالة جلسة ollama.com الحالية لملف Windows هذا. هل تريد المتابعة؟</value>
+  </data>
+  <data name="Settings_OllamaSignOut_Title" xml:space="preserve">
+    <value>تسجيل الخروج من Ollama</value>
+  </data>
+  <data name="Settings_Ollama_CheckingAccount" xml:space="preserve">
+    <value>جارٍ التحقق من الحساب</value>
+  </data>
+  <data name="Settings_Ollama_NotInstalled" xml:space="preserve">
+    <value>Ollama الداخلي غير مثبت</value>
+  </data>
+  <data name="Settings_Ollama_NotSignedIn" xml:space="preserve">
+    <value>غير مسجّل الدخول</value>
+  </data>
+  <data name="Settings_Ollama_SignIn" xml:space="preserve">
+    <value>تسجيل الدخول</value>
+  </data>
+  <data name="Settings_Ollama_SignOut" xml:space="preserve">
+    <value>تسجيل الخروج</value>
+  </data>
+  <data name="Settings_Ollama_SignedIn" xml:space="preserve">
+    <value>مسجّل الدخول</value>
+  </data>
+  <data name="Settings_Ollama_SignedInAs" xml:space="preserve">
+    <value>مسجّل الدخول باسم {0}</value>
+  </data>
+  <data name="Settings_Ollama_SigningIn" xml:space="preserve">
+    <value>جارٍ تسجيل الدخول...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOut" xml:space="preserve">
+    <value>جارٍ تسجيل الخروج...</value>
+  </data>
+  <data name="Settings_Ollama_SigningOutStatus" xml:space="preserve">
+    <value>جارٍ تسجيل الخروج</value>
+  </data>
+  <data name="Settings_Ollama_WaitingSignIn" xml:space="preserve">
+    <value>في انتظار تسجيل الدخول عبر المتصفح</value>
+  </data>
+  <data name="Settings_Personalization_ActiveTheme" xml:space="preserve">
+    <value>السمة النشطة</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Custom" xml:space="preserve">
+    <value>مخصص</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Dark" xml:space="preserve">
+    <value>داكن</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_Light" xml:space="preserve">
+    <value>فاتح</value>
+  </data>
+  <data name="Settings_Personalization_Appearance_System" xml:space="preserve">
+    <value>النظام</value>
+  </data>
+  <data name="Settings_Personalization_Delete" xml:space="preserve">
+    <value>حذف</value>
+  </data>
+  <data name="Settings_Personalization_Export" xml:space="preserve">
+    <value>تصدير</value>
+  </data>
+  <data name="Settings_Personalization_Import" xml:space="preserve">
+    <value>استيراد</value>
+  </data>
+  <data name="Settings_Personalization_ImportPickerTitle" xml:space="preserve">
+    <value>استيراد سمة</value>
+  </data>
+  <data name="Settings_Personalization_InheritDark" xml:space="preserve">
+    <value>داكن (مدمج)</value>
+  </data>
+  <data name="Settings_Personalization_InheritLight" xml:space="preserve">
+    <value>فاتح (مدمج)</value>
+  </data>
+  <data name="Settings_Personalization_InheritTitle" xml:space="preserve">
+    <value>وراثة الألوان من</value>
+  </data>
+  <data name="Settings_Personalization_Language" xml:space="preserve">
+    <value>اللغة</value>
+  </data>
+  <data name="Settings_Personalization_LanguageDescription" xml:space="preserve">
+    <value>يحدد لغة الواجهة لـ ASLM والوحدات المدعومة</value>
+  </data>
+  <data name="Settings_Personalization_Mode" xml:space="preserve">
+    <value>الوضع</value>
+  </data>
+  <data name="Settings_Personalization_ModeDescription" xml:space="preserve">
+    <value>يحدد كيفية اختيار التطبيق لمظهر الواجهة العام</value>
+  </data>
+  <data name="Settings_Personalization_New" xml:space="preserve">
+    <value>جديد</value>
+  </data>
+  <data name="Settings_Personalization_NoThemes" xml:space="preserve">
+    <value>لا توجد سمات مخصصة بعد. أنشئ سمة لاستخدام المظهر المخصص</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeActive" xml:space="preserve">
+    <value>لوحة الألوان المحفوظة التي تنتمي إليها صفوف الرموز أدناه</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeDescription" xml:space="preserve">
+    <value>اختر السمة المخصصة النشطة</value>
+  </data>
+  <data name="Settings_Personalization_SelectThemeEmpty" xml:space="preserve">
+    <value>أنشئ لوحة ألوان أولاً؛ ستظهر هنا للاختيار</value>
+  </data>
+  <data name="Settings_Personalization_Themes" xml:space="preserve">
+    <value>السمات</value>
+  </data>
+  <data name="Settings_Personalization_ThemesDescription" xml:space="preserve">
+    <value>إضافة أو استيراد أو مشاركة تعريفات لوحات الألوان المخزّنة كملفات</value>
+  </data>
+  <data name="Settings_Ports" xml:space="preserve">
+    <value>المنافذ</value>
+  </data>
+  <data name="Settings_PrepareAslmUpdate" xml:space="preserve">
+    <value>تحضير تحديث ASLM</value>
+  </data>
+  <data name="Settings_RestartNow" xml:space="preserve">
+    <value>إعادة التشغيل الآن</value>
+  </data>
+  <data name="Settings_Save" xml:space="preserve">
+    <value>حفظ</value>
+  </data>
+  <data name="Settings_SaveAndRestart" xml:space="preserve">
+    <value>حفظ وإعادة التشغيل</value>
+  </data>
+  <data name="Settings_SaveMessage_Deferred" xml:space="preserve">
+    <value>تم حفظ الإعدادات. تعذّر تطبيق بعض إعدادات الوحدات فوراً وسيُعاد المحاولة عند بدء الوحدة التالي
+
+{0}</value>
+  </data>
+  <data name="Settings_SaveMessage_None" xml:space="preserve">
+    <value>لا توجد تغييرات للحفظ</value>
+  </data>
+  <data name="Settings_SaveMessage_Saved" xml:space="preserve">
+    <value>تم حفظ الإعدادات وتطبيقها.</value>
+  </data>
+  <data name="Settings_SavedTitle" xml:space="preserve">
+    <value>تم حفظ الإعدادات</value>
+  </data>
+  <data name="Settings_Saving" xml:space="preserve">
+    <value>جارٍ الحفظ...</value>
+  </data>
+  <data name="Settings_SubGroup_API" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="Settings_SubGroup_Consoles" xml:space="preserve">
+    <value>وحدات التحكم</value>
+  </data>
+  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+    <value>حذف</value>
+  </data>
+  <data name="Settings_ThemeDelete_Message" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذه السمة؟ لا يمكن التراجع عن ذلك</value>
+  </data>
+  <data name="Settings_ThemeDelete_Title" xml:space="preserve">
+    <value>حذف السمة</value>
+  </data>
+  <data name="Settings_ThemeEditor_Base" xml:space="preserve">
+    <value>محرر ألوان السمة</value>
+  </data>
+  <data name="Settings_ThemeEditor_BaseDescription" xml:space="preserve">
+    <value>القيم الافتراضية الدلالية المدمجة للرموز التي لم تُعدّل بعد</value>
+  </data>
+  <data name="Settings_ThemeEditor_Clear" xml:space="preserve">
+    <value>مسح</value>
+  </data>
+  <data name="Settings_ThemeEditor_ColorsFormat" xml:space="preserve">
+    <value>محرر الألوان للسمة: {0}</value>
+  </data>
+  <data name="Settings_ThemeEditor_Pick" xml:space="preserve">
+    <value>اختيار</value>
+  </data>
+  <data name="Settings_ThemeExport_Failed" xml:space="preserve">
+    <value>تعذّر تصدير السمة: {0}</value>
+  </data>
+  <data name="Settings_ThemeExport_Select" xml:space="preserve">
+    <value>اختر سمة للتصدير</value>
+  </data>
+  <data name="Settings_ThemeImport_Failed" xml:space="preserve">
+    <value>تعذّر استيراد السمة: {0}</value>
+  </data>
+  <data name="Settings_ThemeImport_Invalid" xml:space="preserve">
+    <value>الملف ليس سمة ASLM صالحة</value>
+  </data>
+  <data name="Settings_ThemeImport_TooLarge" xml:space="preserve">
+    <value>ملف السمة كبير جداً</value>
+  </data>
+  <data name="Settings_ThemeNew_DefaultName" xml:space="preserve">
+    <value>سمتي</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptMessage" xml:space="preserve">
+    <value>أدخل اسماً للسمة الجديدة:</value>
+  </data>
+  <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
+    <value>سمة جديدة</value>
+  </data>
+  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
+    <value>نقطة البداية للوحدات الخارجية. يُحجز 1000 منفذاً ابتداءً من هذه القيمة</value>
+  </data>
+  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
+    <value>منفذ بداية وحدات الطرف الثالث</value>
+  </data>
+  <data name="Settings_Title" xml:space="preserve">
+    <value>الإعدادات</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailable" xml:space="preserve">
+    <value>يتوفر تحديث ASLM {0}. استخدم «تحضير تحديث ASLM» لتنزيله</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmAvailableStaged" xml:space="preserve">
+    <value>يتوفر تحديث ASLM {0}؛ {1} مُجهَّز بالفعل لإعادة التشغيل</value>
+  </data>
+  <data name="Settings_UpdateStatus_AslmTagPrepared" xml:space="preserve">
+    <value>تم تحضير ASLM {0} وسيُطبَّق عند إعادة التشغيل</value>
+  </data>
+  <data name="Settings_UpdateStatus_CheckFailed" xml:space="preserve">
+    <value>فشل التحقق من التحديث: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Checking" xml:space="preserve">
+    <value>جارٍ التحقق من مستودعات GitHub...</value>
+  </data>
+  <data name="Settings_UpdateStatus_CouldNotPrepare" xml:space="preserve">
+    <value>تعذّر تحضير تحديث ASLM</value>
+  </data>
+  <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
+    <value>جارٍ تنزيل بنية ASLM...</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
+    <value>يتوفر {0} تحديث/تحديثات. يمكن تطبيق تحديثات الوحدات من صفحة الوحدات</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedAslm" xml:space="preserve">
+    <value>{0} ASLM {1} مُجهَّز لإعادة التشغيل</value>
+  </data>
+  <data name="Settings_UpdateStatus_ModuleUpdatesStagedGeneric" xml:space="preserve">
+    <value>{0} تحديث ذاتي لـ ASLM مُجهَّز لإعادة التشغيل</value>
+  </data>
+  <data name="Settings_UpdateStatus_None" xml:space="preserve">
+    <value>لم يُجرَ أي فحص للتحديث في هذه الجلسة</value>
+  </data>
+  <data name="Settings_UpdateStatus_Prepared" xml:space="preserve">
+    <value>تم تحضير تحديث ASLM وسيُطبَّق عند إعادة التشغيل</value>
+  </data>
+  <data name="Settings_UpdateStatus_PreparedWithVersion" xml:space="preserve">
+    <value>تم تحضير تحديث ASLM {0} وسيُطبَّق عند إعادة التشغيل</value>
+  </data>
+  <data name="Settings_UpdateStatus_RestartFailed" xml:space="preserve">
+    <value>فشلت إعادة التشغيل: {0}</value>
+  </data>
+  <data name="Settings_UpdateStatus_Restarting" xml:space="preserve">
+    <value>جارٍ إعادة تشغيل ASLM...</value>
+  </data>
+  <data name="Settings_UpdateStatus_UpToDate" xml:space="preserve">
+    <value>كل شيء محدّث.</value>
+  </data>
+  <data name="Settings_UseCustomValue" xml:space="preserve">
+    <value>استخدام قيمة مخصصة</value>
+  </data>
+  <data name="Settings_ValidationError" xml:space="preserve">
+    <value>خطأ في التحقق</value>
+  </data>
+  <data name="SetupWizard_Canceled" xml:space="preserve">
+    <value>تم إلغاء التثبيت.</value>
+  </data>
+  <data name="SetupWizard_DisplayNamePlaceholder" xml:space="preserve">
+    <value>اسمك</value>
+  </data>
+  <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
+    <value>اختر اسماً للعرض</value>
+  </data>
+  <data name="SetupWizard_DockerDescription" xml:space="preserve">
+    <value>يحتاج ASLM إلى Docker CLI. ثبّت Docker Desktop ثم اضغط التالي</value>
+  </data>
+  <data name="SetupWizard_DockerTitle" xml:space="preserve">
+    <value>تثبيت Docker Desktop</value>
+  </data>
+  <data name="SetupWizard_Failed" xml:space="preserve">
+    <value>فشل التثبيت</value>
+  </data>
+  <data name="SetupWizard_FastSetup" xml:space="preserve">
+    <value>إعداد سريع</value>
+  </data>
+  <data name="SetupWizard_FastSetupHint" xml:space="preserve">
+    <value>يستخدم الإعداد السريع اسم مستخدم Windows والمنافذ الافتراضية</value>
+  </data>
+  <data name="SetupWizard_Finish" xml:space="preserve">
+    <value>إنهاء</value>
+  </data>
+  <data name="SetupWizard_HideLog" xml:space="preserve">
+    <value>إخفاء السجل</value>
+  </data>
+  <data name="SetupWizard_InstallDocker" xml:space="preserve">
+    <value>تثبيت Docker</value>
+  </data>
+  <data name="SetupWizard_Installing" xml:space="preserve">
+    <value>جارٍ التثبيت...</value>
+  </data>
+  <data name="SetupWizard_Next_Install" xml:space="preserve">
+    <value>تثبيت</value>
+  </data>
+  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
+    <value>الوحدات الرسمية (100 منفذ)</value>
+  </data>
+  <data name="SetupWizard_OverallProgress" xml:space="preserve">
+    <value>التقدّم الإجمالي</value>
+  </data>
+  <data name="SetupWizard_PortAllocationTitle" xml:space="preserve">
+    <value>تخصيص المنافذ</value>
+  </data>
+  <data name="SetupWizard_Preparing" xml:space="preserve">
+    <value>جارٍ التحضير...</value>
+  </data>
+  <data name="SetupWizard_Retry" xml:space="preserve">
+    <value>إعادة المحاولة</value>
+  </data>
+  <data name="SetupWizard_Setup" xml:space="preserve">
+    <value>إعداد</value>
+  </data>
+  <data name="SetupWizard_SetupComplete" xml:space="preserve">
+    <value>اكتمل الإعداد!</value>
+  </data>
+  <data name="SetupWizard_ShowLog" xml:space="preserve">
+    <value>إظهار السجل</value>
+  </data>
+  <data name="SetupWizard_StepFormat" xml:space="preserve">
+    <value>الخطوة {0} من {1} - {2}</value>
+  </data>
+  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
+    <value>Docker Desktop</value>
+  </data>
+  <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
+    <value>اختيار الوحدات</value>
+  </data>
+  <data name="SetupWizard_Step_Modules" xml:space="preserve">
+    <value>الوحدات</value>
+  </data>
+  <data name="SetupWizard_Step_PortAllocation" xml:space="preserve">
+    <value>تخصيص المنافذ</value>
+  </data>
+  <data name="SetupWizard_Step_PortConfiguration" xml:space="preserve">
+    <value>تهيئة المنافذ</value>
+  </data>
+  <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
+    <value>ملف المستخدم</value>
+  </data>
+  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
+    <value>وحدات الطرف الثالث (1000 منفذ)</value>
+  </data>
+  <data name="SetupWizard_Title" xml:space="preserve">
+    <value>إعداد ASLM</value>
+  </data>
+  <data name="SetupWizard_WelcomeSubtitle" xml:space="preserve">
+    <value>Advanced System Language Models</value>
+  </data>
+  <data name="SetupWizard_WelcomeTitle" xml:space="preserve">
+    <value>مرحباً بك في ASLM!</value>
+  </data>
+  <data name="ThemeColorPicker_Brightness" xml:space="preserve">
+    <value>السطوع</value>
+  </data>
+  <data name="ThemeColorPicker_Cancel" xml:space="preserve">
+    <value>إلغاء</value>
+  </data>
+  <data name="ThemeColorPicker_CustomColor" xml:space="preserve">
+    <value>لون مخصص</value>
+  </data>
+  <data name="ThemeColorPicker_HexPlaceholder" xml:space="preserve">
+    <value>#AARRGGBB</value>
+  </data>
+  <data name="ThemeColorPicker_Opacity" xml:space="preserve">
+    <value>الشفافية</value>
+  </data>
+</root>

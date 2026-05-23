@@ -7,8 +7,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Application data service
-
     /// <summary>
     /// Loads and saves the persisted application data stored in <c>Data/App/ASLM_Data.json</c>.
     /// </summary>
@@ -23,24 +21,23 @@ namespace ASLM.Services
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        // State access
+        // State
 
         /// <summary>
         /// Gets the current application data instance.
         /// </summary>
         public AppData Data { get; private set; } = new();
 
-        // First-run flag
-
         /// <summary>
         /// Gets whether the first-run flow still needs to run.
         /// </summary>
         public bool IsFirstRun => !Data.FirstRunCompleted;
 
-        // Initialization
+
+        // Construction
 
         /// <summary>
-        /// Creates the application data service.
+        /// Creates the store and resolves the persisted data file path.
         /// </summary>
         public AppDataStore(ILogger<AppDataStore> logger)
         {
@@ -51,25 +48,27 @@ namespace ASLM.Services
         }
 
 
-        // Loading
+        // Initialization
 
         /// <summary>
-        /// Initializes the service by loading the persisted data once.
+        /// Initializes the store by loading persisted data once at startup.
         /// </summary>
         public async Task InitializeAsync()
         {
             await LoadAsync();
         }
 
-        // Data load
+
+        // Loading
 
         /// <summary>
-        /// Loads the persisted application data or recreates defaults when needed.
+        /// Loads persisted application data or recreates defaults when the file is missing or invalid.
         /// </summary>
         public async Task LoadAsync()
         {
             try
             {
+                // Read and deserialize the existing file when present and non-empty.
                 if (File.Exists(_filePath))
                 {
                     var json = await File.ReadAllTextAsync(_filePath);
@@ -83,10 +82,11 @@ namespace ASLM.Services
             }
             catch (Exception ex)
             {
-                // Fall back to defaults when the persisted file cannot be read or parsed.
+                // Fall back to defaults when the file cannot be read or parsed.
                 _logger.LogError(ex, "Failed to load app data from {FilePath}. Falling back to defaults.", _filePath);
             }
 
+            // Create defaults and persist them so the next run has a valid file.
             Data = new AppData();
             Data.Normalize();
             await SaveAsync();
@@ -105,8 +105,6 @@ namespace ASLM.Services
             var json = JsonSerializer.Serialize(Data, _jsonOptions);
             File.WriteAllText(_filePath, json);
         }
-
-        // Async save
 
         /// <summary>
         /// Saves the current application data asynchronously.
@@ -133,8 +131,6 @@ namespace ASLM.Services
                 Directory.CreateDirectory(directory);
             }
         }
-
-        // Root path
 
         /// <summary>
         /// Returns the application root directory above the deployed app folder.

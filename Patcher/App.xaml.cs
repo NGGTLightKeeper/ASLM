@@ -7,6 +7,8 @@ namespace ASLM.Patcher;
 /// </summary>
 public partial class App : Application
 {
+    // Application construction
+
     /// <summary>
     /// Creates the patcher application and opens the status page.
     /// </summary>
@@ -14,6 +16,9 @@ public partial class App : Application
     {
         InitializeComponent();
     }
+
+
+    // Window creation
 
     /// <summary>
     /// Creates a compact status window for the update flow.
@@ -26,6 +31,7 @@ public partial class App : Application
         var window = new Window(new MainPage());
         window.Title = "ASLM Patcher";
 
+        // Keep the patcher window at a fixed size so it reads as a lightweight status dialog.
         window.Width = width;
         window.Height = height;
 

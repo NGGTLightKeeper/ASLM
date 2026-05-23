@@ -5,8 +5,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Download catalog aggregation
-
     /// <summary>
     /// Builds the shared download catalog by querying every installed module bridge and merging equivalent items.
     /// </summary>
@@ -376,13 +374,17 @@ namespace ASLM.Services
 
         // Merge builders
 
+
         /// <summary>
         /// Builds one aggregated category while bridge payloads are being merged.
         /// </summary>
         private sealed class CategoryBuilder
         {
             // Category builder initialization
-            // Seed one aggregate category from the first payload
+
+            /// <summary>
+            /// Seeds one aggregate category from the first payload.
+            /// </summary>
             public CategoryBuilder(string groupKey, ModuleDownloadCategoryPayload category)
             {
                 GroupKey = groupKey;
@@ -398,8 +400,12 @@ namespace ASLM.Services
             public Dictionary<string, FilterBuilder> Filters { get; } = new(StringComparer.OrdinalIgnoreCase);
             public Dictionary<string, ItemBuilder> Items { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+
             // Category builder merging
-            // Merge missing category metadata from a later payload
+
+            /// <summary>
+            /// Merges missing category metadata from a later payload.
+            /// </summary>
             public void Merge(ModuleDownloadCategoryPayload category)
             {
                 if (string.IsNullOrWhiteSpace(Title) && !string.IsNullOrWhiteSpace(category.Title))
@@ -418,7 +424,9 @@ namespace ASLM.Services
                 }
             }
 
-            // Merge or create one filter inside the category
+            /// <summary>
+            /// Merges or creates one filter inside the category.
+            /// </summary>
             public void MergeFilter(ModuleDownloadFilterPayload filter)
             {
                 if (!Filters.TryGetValue(filter.Key, out var existing))
@@ -430,7 +438,10 @@ namespace ASLM.Services
                 existing.Merge(filter);
             }
 
-            // Materialize the final category model
+
+            /// <summary>
+            /// Materializes the final category model.
+            /// </summary>
             public DownloadCatalogCategory ToCategory(DownloadStateStore stateStore)
             {
                 return new DownloadCatalogCategory
@@ -453,13 +464,17 @@ namespace ASLM.Services
             }
         }
 
+
         /// <summary>
         /// Builds one merged category filter option while bridge payloads are being merged.
         /// </summary>
         private sealed class FilterBuilder
         {
             // Filter builder initialization
-            // Seed one aggregate filter from the first payload
+
+            /// <summary>
+            /// Seeds one aggregate filter from the first payload.
+            /// </summary>
             public FilterBuilder(ModuleDownloadFilterPayload filter)
             {
                 Key = filter.Key;
@@ -475,8 +490,12 @@ namespace ASLM.Services
             public bool Selected { get; private set; }
             public int SortOrder { get; private set; }
 
+
             // Filter builder merging
-            // Merge missing metadata and preserve any selected state
+
+            /// <summary>
+            /// Merges missing metadata and preserves any selected state.
+            /// </summary>
             public void Merge(ModuleDownloadFilterPayload filter)
             {
                 if (string.IsNullOrWhiteSpace(Title) && !string.IsNullOrWhiteSpace(filter.Title))
@@ -497,7 +516,10 @@ namespace ASLM.Services
                 }
             }
 
-            // Materialize the final filter model
+
+            /// <summary>
+            /// Materializes the final filter model.
+            /// </summary>
             public DownloadCatalogFilter ToFilter()
             {
                 return new DownloadCatalogFilter
@@ -511,13 +533,17 @@ namespace ASLM.Services
             }
         }
 
+
         /// <summary>
         /// Builds one aggregated grouped item while bridge payloads are being merged.
         /// </summary>
         private sealed class ItemBuilder
         {
             // Item builder initialization
-            // Seed one aggregate item from the first payload
+
+            /// <summary>
+            /// Seeds one aggregate item from the first payload.
+            /// </summary>
             public ItemBuilder(
                 string resourceKey,
                 string categoryId,
@@ -554,8 +580,12 @@ namespace ASLM.Services
             public HashSet<string> Tags { get; }
             public List<DownloadCatalogItemSource> Sources { get; } = [];
 
+
             // Item builder merging
-            // Merge non-empty item fields while preserving the earliest stable identity
+
+            /// <summary>
+            /// Merges non-empty item fields while preserving the earliest stable identity.
+            /// </summary>
             public void Merge(ModuleDownloadItemPayload item)
             {
                 if (string.IsNullOrWhiteSpace(Title) && !string.IsNullOrWhiteSpace(item.Title))
@@ -609,7 +639,10 @@ namespace ASLM.Services
                 }
             }
 
-            // Materialize the final grouped item model
+
+            /// <summary>
+            /// Materializes the final grouped item model.
+            /// </summary>
             public DownloadCatalogItem ToItem(DownloadStateStore stateStore)
             {
                 var persistedState = stateStore.GetResourceState(GetPrimaryStateKey(this));
@@ -640,13 +673,17 @@ namespace ASLM.Services
             }
         }
 
+
         /// <summary>
         /// Merges detailed item payloads returned by one or more module bridges.
         /// </summary>
         private sealed class ItemDetailBuilder
         {
             // Detail builder initialization
-            // Seed one aggregate detail model from the selected list item
+
+            /// <summary>
+            /// Seeds one aggregate detail model from the selected list item.
+            /// </summary>
             public ItemDetailBuilder(DownloadCatalogItem item)
             {
                 ResourceKey = item.ResourceKey;
@@ -676,8 +713,12 @@ namespace ASLM.Services
             public Dictionary<string, VariantBuilder> Variants { get; } = new(StringComparer.OrdinalIgnoreCase);
             public Dictionary<string, BlockBuilder> Blocks { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+
             // Detail builder merging
-            // Merge detail payloads from every contributing module source
+
+            /// <summary>
+            /// Merges detail payloads from every contributing module source.
+            /// </summary>
             public void Merge(ModuleDownloadItemDetailPayload detail)
             {
                 if (string.IsNullOrWhiteSpace(CategoryId) && !string.IsNullOrWhiteSpace(detail.CategoryId))
@@ -770,7 +811,10 @@ namespace ASLM.Services
                 }
             }
 
-            // Materialize the final detail model
+
+            /// <summary>
+            /// Materializes the final detail model.
+            /// </summary>
             public DownloadCatalogItemDetail ToDetail(DownloadStateStore stateStore)
             {
                 var variants = Variants.Values
@@ -826,13 +870,17 @@ namespace ASLM.Services
             }
         }
 
+
         /// <summary>
         /// Builds one merged variant payload.
         /// </summary>
         private sealed class VariantBuilder
         {
             // Variant builder initialization
-            // Seed one aggregate variant from the first payload
+
+            /// <summary>
+            /// Seeds one aggregate variant from the first payload.
+            /// </summary>
             public VariantBuilder(ModuleDownloadVariantPayload variant)
             {
                 ResourceKey = variant.ResourceKey;
@@ -854,8 +902,12 @@ namespace ASLM.Services
             public int SortOrder { get; private set; }
             public HashSet<string> Tags { get; }
 
+
             // Variant builder merging
-            // Merge non-empty fields from later payloads
+
+            /// <summary>
+            /// Merges non-empty fields from later payloads.
+            /// </summary>
             public void Merge(ModuleDownloadVariantPayload variant)
             {
                 if (string.IsNullOrWhiteSpace(Title) && !string.IsNullOrWhiteSpace(variant.Title))
@@ -894,7 +946,10 @@ namespace ASLM.Services
                 }
             }
 
-            // Materialize the final variant model
+
+            /// <summary>
+            /// Materializes the final variant model.
+            /// </summary>
             public DownloadCatalogVariant ToVariant(DownloadStateStore stateStore)
             {
                 var persistedState = stateStore.GetResourceState(ResourceKey);
@@ -914,13 +969,17 @@ namespace ASLM.Services
             }
         }
 
+
         /// <summary>
         /// Builds one merged details block payload.
         /// </summary>
         private sealed class BlockBuilder
         {
             // Block builder initialization
-            // Seed one aggregate info block from the first payload
+
+            /// <summary>
+            /// Seeds one aggregate info block from the first payload.
+            /// </summary>
             public BlockBuilder(string key, ModuleDownloadInfoBlockPayload block)
             {
                 Key = key;
@@ -940,8 +999,12 @@ namespace ASLM.Services
             public string SourceUrl { get; private set; }
             public int SortOrder { get; private set; }
 
+
             // Block builder merging
-            // Merge missing block metadata from later payloads
+
+            /// <summary>
+            /// Merges missing block metadata from later payloads.
+            /// </summary>
             public void Merge(ModuleDownloadInfoBlockPayload block)
             {
                 if (string.IsNullOrWhiteSpace(Title) && !string.IsNullOrWhiteSpace(block.Title))
@@ -975,7 +1038,10 @@ namespace ASLM.Services
                 }
             }
 
-            // Materialize the final info block model
+
+            /// <summary>
+            /// Materializes the final info block model.
+            /// </summary>
             public DownloadCatalogInfoBlock ToBlock()
             {
                 return new DownloadCatalogInfoBlock

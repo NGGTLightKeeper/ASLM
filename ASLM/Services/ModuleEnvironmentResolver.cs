@@ -7,8 +7,6 @@ using ASLM.Models;
 
 namespace ASLM.Services
 {
-    // Module environments
-
     /// <summary>
     /// Creates and resolves engine-specific dependency environments for individual modules.
     /// </summary>
@@ -17,6 +15,9 @@ namespace ASLM.Services
         private readonly EngineInstaller _engineInstaller;
         private readonly SemaphoreSlim _environmentLock = new(1, 1);
 
+
+        // Initialization
+
         /// <summary>
         /// Creates the module environment service.
         /// </summary>
@@ -24,6 +25,9 @@ namespace ASLM.Services
         {
             _engineInstaller = engineInstaller;
         }
+
+
+        // Environment lifecycle
 
         /// <summary>
         /// Returns whether the engine declares per-module environments.
@@ -56,6 +60,7 @@ namespace ASLM.Services
             await _environmentLock.WaitAsync(ct);
             try
             {
+                // Re-check after acquiring the lock so only one creator runs.
                 if (IsEnvironmentReady(engine, resolution))
                 {
                     return resolution;
@@ -97,6 +102,9 @@ namespace ASLM.Services
                 _environmentLock.Release();
             }
         }
+
+
+        // Environment resolution
 
         /// <summary>
         /// Resolves the module environment path and executable/package-manager settings.
@@ -151,6 +159,9 @@ namespace ASLM.Services
             };
         }
 
+
+        // Process environment
+
         /// <summary>
         /// Applies environment variables declared by the engine's module environment.
         /// </summary>
@@ -170,6 +181,9 @@ namespace ASLM.Services
 
             psi.Environment["ASLM_ENGINE_ENV_DIR"] = resolution.DirectoryPath;
         }
+
+
+        // Package manager
 
         /// <summary>
         /// Returns a package-manager command line with package names appended.
@@ -218,12 +232,18 @@ namespace ASLM.Services
             return ResolveEngineExecutable(engine);
         }
 
+
+        // Engine executable
+
         /// <summary>
         /// Resolves the installed engine executable from the manifest.
         /// </summary>
         private string ResolveEngineExecutable(EngineConfig engine) =>
             _engineInstaller.GetEngineExecutablePath(engine.Id)
             ?? throw new InvalidOperationException($"Engine executable not found for '{engine.Id}'.");
+
+
+        // Environment readiness
 
         /// <summary>
         /// Returns whether a declared environment already has its expected executable.
@@ -294,6 +314,9 @@ namespace ASLM.Services
                 ct);
         }
 
+
+        // Process execution
+
         /// <summary>
         /// Runs one process and streams output into the provided log.
         /// </summary>
@@ -345,6 +368,9 @@ namespace ASLM.Services
                 }
             }
         }
+
+
+        // Template resolution
 
         /// <summary>
         /// Resolves a template that is expected to produce a filesystem path.
@@ -423,6 +449,9 @@ namespace ASLM.Services
                 .ToLowerInvariant()[..8];
             return $"module-{hash}";
         }
+
+
+        // Command helpers
 
         /// <summary>
         /// Returns the current process environment variable value from a ProcessStartInfo.

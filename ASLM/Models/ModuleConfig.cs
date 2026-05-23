@@ -41,6 +41,10 @@ namespace ASLM.Models
         [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
 
+        // Optional category tags for future grouping or discovery (manifest-only metadata).
+        [JsonPropertyName("category")]
+        public List<string> Category { get; set; } = [];
+
         // Remote source definition for the module package.
         [JsonPropertyName("source")]
         public ModuleSource Source { get; set; } = new();
@@ -81,6 +85,10 @@ namespace ASLM.Models
         [JsonPropertyName("downloadsBridge")]
         public ModuleDownloadsBridge? DownloadsBridge { get; set; }
 
+        // Optional declaration that the module consumes the host module interop API and env injection.
+        [JsonPropertyName("moduleInterop")]
+        public ModuleInteropManifest? ModuleInterop { get; set; }
+
         // Update behavior for this module package.
         [JsonPropertyName("update")]
         public ModuleUpdateConfig Update { get; set; } = new();
@@ -109,6 +117,12 @@ namespace ASLM.Models
             Version ??= string.Empty;
             Author ??= string.Empty;
             Type ??= string.Empty;
+            Category ??= [];
+            Category = Category
+                .Where(static tag => !string.IsNullOrWhiteSpace(tag))
+                .Select(static tag => tag.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
             Icon = string.IsNullOrWhiteSpace(Icon) ? null : Icon;
             SidebarIcon = string.IsNullOrWhiteSpace(SidebarIcon) ? null : SidebarIcon;
             SourcePath ??= string.Empty;
@@ -132,6 +146,9 @@ namespace ASLM.Models
 
             // Normalize the optional downloads bridge only when the manifest declares it.
             DownloadsBridge?.Normalize();
+
+            // Normalize optional module interop client declaration.
+            ModuleInterop?.Normalize();
 
             // Normalize module update preferences and preservation rules.
             Update ??= new();
@@ -591,8 +608,8 @@ namespace ASLM.Models
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
 
-        // Setting type that controls validation and rendering behavior (string, port, bool, theme, …).
-        // The "theme" type is host-managed: ASLM resolves JSON and applies it through setExec without UI or env injection.
+        // Setting type that controls validation and rendering behavior (string, port, bool, theme, locale, …).
+        // The "theme" and "locale" types are host-managed: ASLM resolves JSON and applies through setExec without UI or env injection.
         [JsonPropertyName("type")]
         public string Type { get; set; } = "string";
 

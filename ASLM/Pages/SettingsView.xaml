@@ -33,7 +33,8 @@
                     Margin="12"
                     Padding="0">
                 <Grid RowDefinitions="Auto,*">
-                    <Label Text="Settings"
+                    <Label x:Name="SettingsSidebarTitleLabel"
+                           Text="Settings"
                            FontSize="16"
                            FontAttributes="Bold"
                            TextColor="{DynamicResource LabelPrimary}" />
@@ -71,7 +72,8 @@
                            TextColor="{DynamicResource LabelPrimary}"
                            VerticalOptions="Start" />
 
-                    <Button Grid.Column="1"
+                    <Button x:Name="CloseSettingsButton"
+                            Grid.Column="1"
                             Text="&#x2715;"
                             FontSize="17"
                             WidthRequest="36"
@@ -101,11 +103,13 @@
                                              Spacing="0"
                                              IsVisible="False">
                             <VerticalStackLayout x:Name="UserProfileSection" Spacing="8">
-                                <Label Text="Display Name"
+                                <Label x:Name="DisplayNameTitleLabel"
+                                       Text="Display Name"
                                        FontSize="14"
                                        FontAttributes="Bold"
                                        TextColor="{DynamicResource LabelPrimary}" />
-                                <Label Text="Name shown in ASLM and shared with modules."
+                                <Label x:Name="DisplayNameDescriptionLabel"
+                                       Text="Name shown in ASLM and shared with modules."
                                        FontSize="12"
                                        TextColor="{DynamicResource LabelSecondary}" />
                                 <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
@@ -129,11 +133,13 @@
                                        TextColor="{DynamicResource LabelTertiary}"
                                        Margin="0" />
                                 <VerticalStackLayout Spacing="8">
-                                    <Label Text="Official modules start port"
+                                    <Label x:Name="OfficialPortTitleLabel"
+                                           Text="Official modules start port"
                                            FontSize="14"
                                            FontAttributes="Bold"
                                            TextColor="{DynamicResource LabelPrimary}" />
-                                    <Label Text="Starting point for official modules. 100 ports are reserved from this value."
+                                    <Label x:Name="OfficialPortDescriptionLabel"
+                                           Text=""
                                            FontSize="12"
                                            TextColor="{DynamicResource LabelSecondary}" />
                                     <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
@@ -151,11 +157,13 @@
                                 </VerticalStackLayout>
 
                                 <VerticalStackLayout Spacing="8">
-                                    <Label Text="Third-party modules start port"
+                                    <Label x:Name="ThirdPartyPortTitleLabel"
+                                           Text="Third-party modules start port"
                                            FontSize="14"
                                            FontAttributes="Bold"
                                            TextColor="{DynamicResource LabelPrimary}" />
-                                    <Label Text="Starting point for external modules. 1000 ports are reserved from this value."
+                                    <Label x:Name="ThirdPartyPortDescriptionLabel"
+                                           Text=""
                                            FontSize="12"
                                            TextColor="{DynamicResource LabelSecondary}" />
                                     <Border BackgroundColor="{DynamicResource BackgroundSecondary}"

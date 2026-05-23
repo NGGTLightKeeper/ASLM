@@ -7,8 +7,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Module host theme payload
-
     /// <summary>
     /// Builds a JSON snapshot of the host ASLM theme for modules that declare a <c>theme</c> setting.
     /// The snapshot is delivered through the standard <c>setExec</c> integration (typically via a temp file path).
@@ -26,6 +24,9 @@ namespace ASLM.Services
             WriteIndented = false
         };
 
+
+        // Initialization
+
         /// <summary>
         /// Creates the payload builder.
         /// </summary>
@@ -38,6 +39,9 @@ namespace ASLM.Services
             _customThemes = customThemes;
             _logger = logger;
         }
+
+
+        // Payload build
 
         /// <summary>
         /// Serializes the active host theme (appearance + resolved palette) to a single-line JSON string.
@@ -53,6 +57,8 @@ namespace ASLM.Services
                 string? customName = null;
 
                 Dictionary<string, Microsoft.Maui.Graphics.Color> palette;
+
+                // Resolve the effective palette from system, custom, or built-in appearance.
                 if (string.Equals(appearance, "System", StringComparison.Ordinal))
                 {
                     var isDark = IsHostSystemDark();
@@ -132,6 +138,12 @@ namespace ASLM.Services
             }
         }
 
+
+        // Serialization DTO
+
+        /// <summary>
+        /// JSON shape delivered to modules through the theme setting integration.
+        /// </summary>
         private sealed class ModuleHostThemePayloadDto
         {
             public string Appearance { get; set; } = "Dark";

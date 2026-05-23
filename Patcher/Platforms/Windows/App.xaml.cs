@@ -9,6 +9,8 @@ namespace ASLM.Patcher.WinUI;
 /// </summary>
 public partial class App : MauiWinUIApplication
 {
+    // WinUI construction
+
     /// <summary>
     /// Creates the WinUI application instance.
     /// </summary>
@@ -16,6 +18,9 @@ public partial class App : MauiWinUIApplication
     {
         InitializeComponent();
     }
+
+
+    // MAUI application
 
     /// <summary>
     /// Builds the shared MAUI application instance for the Windows host.

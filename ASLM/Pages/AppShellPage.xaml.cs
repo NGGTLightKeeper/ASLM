@@ -2,18 +2,17 @@
 
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
 using Microsoft.Maui.Controls.Shapes;
 
 namespace ASLM.Pages
 {
-    // Application shell
-
     /// <summary>
     /// Hosts the shared sidebar, system views, and module pages.
     /// </summary>
-    public partial class AppShellPage : ContentPage, INotifyPropertyChanged
+    public partial class AppShellPage : ContentPage, INotifyPropertyChanged, ILocalizable
     {
         private const double PanelExpandedWidth = 240;
         private const double PanelCollapsedWidth = 48;
@@ -28,15 +27,6 @@ namespace ASLM.Pages
         private const string IconSettings = "icon_settings.png";
         private const string IconPage = "icon_page.png";
 
-        private const string LabelHome = "Home";
-        private const string LabelConsoles = "Consoles";
-        private const string LabelModules = "Modules";
-        private const string LabelApi = "ASLM API";
-        private const string LabelNotifications = "Notifications";
-        private const string LabelDownload = "Download";
-        private const string LabelSettings = "Settings";
-        private const int MaxConcurrentModuleStarts = 2;
-
         private static Color TransparentBackground => Colors.Transparent;
 
         private readonly ModuleInstaller _moduleInstaller;
@@ -45,8 +35,12 @@ namespace ASLM.Pages
         private readonly PortRegistry _ports;
         private readonly NotificationCenter _notifications;
         private readonly UpdateManager _updateManager;
+        private readonly ModuleTrustService _moduleTrustService;
         private readonly AslmApiServer _apiServer;
+        private readonly ModuleStartThrottle _moduleStartThrottle;
+        private readonly ModuleLaunchCoordinator _moduleLaunchCoordinator;
         private readonly SettingsService _settingsService;
+        private readonly AppLocalizationService _localization;
         private readonly IServiceProvider _services;
 
         private List<ModuleConfig> _allModules = [];
@@ -70,6 +64,7 @@ namespace ASLM.Pages
         private bool _shellEventsHooked;
         private int _moduleRefreshQueued;
 
+
         // Initialization
 
         /// <summary>
@@ -82,8 +77,12 @@ namespace ASLM.Pages
             PortRegistry ports,
             NotificationCenter notifications,
             UpdateManager updateManager,
+            ModuleTrustService moduleTrustService,
             AslmApiServer apiServer,
+            ModuleStartThrottle moduleStartThrottle,
+            ModuleLaunchCoordinator moduleLaunchCoordinator,
             SettingsService settingsService,
+            AppLocalizationService localization,
             IServiceProvider services)
         {
             _moduleInstaller = moduleInstaller;
@@ -92,11 +91,16 @@ namespace ASLM.Pages
             _ports = ports;
             _notifications = notifications;
             _updateManager = updateManager;
+            _moduleTrustService = moduleTrustService;
             _apiServer = apiServer;
+            _moduleStartThrottle = moduleStartThrottle;
+            _moduleLaunchCoordinator = moduleLaunchCoordinator;
             _settingsService = settingsService;
+            _localization = localization;
             _services = services;
 
             InitializeComponent();
+            LocalizableAttach.Hook(this, _localization, this);
             BindingContext = this;
             Loaded += OnPageLoaded;
             Unloaded += OnPageUnloaded;
@@ -124,7 +128,7 @@ namespace ASLM.Pages
             DownloadsButton.ImageSource = IconDownload;
             SettingsButton.ImageSource = IconSettings;
 
-            ApplySidebarButtonIconFromPalette(CollapseButton, "LabelSecondary");
+            ApplySidebarButtonIconFromPalette(CollapseButton, "LabelPrimary");
 
             // Initialize button labels and image layout based on the current sidebar width.
             foreach (var button in _navButtons)
@@ -138,12 +142,10 @@ namespace ASLM.Pages
         }
 
 
-        // Notifications
+        // Property change
 
         /// <inheritdoc />
         public new event PropertyChangedEventHandler? PropertyChanged;
-
-        // Property change
 
         /// <summary>
         /// Raises the shell-level property changed event.
@@ -229,7 +231,7 @@ namespace ASLM.Pages
         /// </summary>
         private void OnAppPaletteApplied()
         {
-            ApplySidebarButtonIconFromPalette(CollapseButton, "LabelSecondary");
+            ApplySidebarButtonIconFromPalette(CollapseButton, "LabelPrimary");
 
             foreach (var button in _navButtons)
             {
@@ -287,6 +289,7 @@ namespace ASLM.Pages
                 System.Diagnostics.Debug.WriteLine($"[StartupUpdates] Check failed: {ex.Message}");
             }
         }
+
 
         // Module refresh
 
@@ -366,8 +369,6 @@ namespace ASLM.Pages
         {
             _ = RefreshModulesAsync();
         }
-
-        // Module state callback
 
         /// <summary>
         /// Refreshes module page buttons after a module changes state.
@@ -494,6 +495,7 @@ namespace ASLM.Pages
             }
         }
 
+
         // Overlay navigation
 
         /// <summary>
@@ -619,6 +621,7 @@ namespace ASLM.Pages
             OverlayContainer.IsVisible = false;
         }
 
+
         // Toast notifications
 
         /// <summary>
@@ -734,7 +737,7 @@ namespace ASLM.Pages
 
                 var updateNowButton = new Button
                 {
-                    Text = "Update now",
+                    Text = L.Get(LocalizationKeys.Notifications_UpdateNow),
                     FontSize = 11,
                     HeightRequest = 28,
                     MinimumHeightRequest = 28,
@@ -752,7 +755,7 @@ namespace ASLM.Pages
 
                 var updateLaterButton = new Button
                 {
-                    Text = "Update later",
+                    Text = L.Get(LocalizationKeys.Notifications_UpdateLater),
                     FontSize = 11,
                     HeightRequest = 28,
                     MinimumHeightRequest = 28,
@@ -851,9 +854,9 @@ namespace ASLM.Pages
             {
                 System.Diagnostics.Debug.WriteLine($"[UpdateNotification] Action failed: {ex.Message}");
                 _notifications.PublishSystemToast(
-                    "Update",
+                    L.Get(LocalizationKeys.Notifications_UpdateActionTitle),
                     ex.Message,
-                    "Action failed",
+                    L.Get(LocalizationKeys.Notifications_ActionFailed),
                     "update-action");
             }
         }
@@ -870,9 +873,9 @@ namespace ASLM.Pages
             if (config == null)
             {
                 _notifications.PublishSystemToast(
-                    "Module update",
-                    "That module is no longer installed.",
-                    "Unavailable",
+                    L.Get(LocalizationKeys.Notifications_UpdateActionTitle),
+                    L.Get(LocalizationKeys.Notifications_ModuleNotInstalledMessage),
+                    L.Get(LocalizationKeys.Notifications_Unavailable),
                     moduleId);
                 return;
             }
@@ -888,7 +891,9 @@ namespace ASLM.Pages
                 config,
                 _moduleInstaller,
                 _moduleRunner,
+                _moduleLaunchCoordinator,
                 _updateManager,
+                _moduleTrustService,
                 OnModuleStateChanged);
 
             OpenModuleUpdateOverlay(viewModel, ModuleUpdateMode.Configure);
@@ -905,9 +910,9 @@ namespace ASLM.Pages
             if (candidate == null && !_updateManager.HasPendingAppUpdate)
             {
                 _notifications.PublishSystemToast(
-                    "ASLM update",
-                    "No ASLM update is available right now.",
-                    "Up to date",
+                    L.Get(LocalizationKeys.Notifications_AslmUpdateTitle),
+                    L.Get(LocalizationKeys.Notifications_AslmUpdateNotAvailable),
+                    L.Get(LocalizationKeys.ModuleUpdate_Status_UpToDate),
                     "aslm");
                 return;
             }
@@ -919,9 +924,9 @@ namespace ASLM.Pages
                 if (!prepared)
                 {
                     _notifications.PublishSystemToast(
-                        "ASLM update",
-                        "The ASLM update could not be downloaded.",
-                        "Prepare failed",
+                        L.Get(LocalizationKeys.Notifications_AslmUpdateTitle),
+                        L.Get(LocalizationKeys.Notifications_AslmUpdatePrepareFailed),
+                        L.Get(LocalizationKeys.Notifications_AslmUpdatePrepareFailedStatus),
                         "aslm");
                     return;
                 }
@@ -954,6 +959,9 @@ namespace ASLM.Pages
             _ = toast.FadeToAsync(0, 120, Easing.CubicIn).ContinueWith(_ =>
                 MainThread.BeginInvokeOnMainThread(() => ToastPanel.Children.Remove(toast)));
         }
+
+
+        // Overlay geometry
 
         /// <summary>
         /// Calculates one child element's bounds in the shell coordinate space.
@@ -1134,6 +1142,25 @@ namespace ASLM.Pages
 
         // Button labels
 
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            Title = L.Get(LocalizationKeys.AppShell_Title);
+
+            foreach (var button in _navButtons)
+            {
+                button.Text = _panelExpanded ? GetButtonLabel(button) : string.Empty;
+            }
+
+            foreach (var child in ModulePagePanel.Children)
+            {
+                if (child is Button moduleButton && moduleButton.BindingContext is ModuleConfig module)
+                {
+                    moduleButton.Text = _panelExpanded ? module.Name : string.Empty;
+                }
+            }
+        }
+
         /// <summary>
         /// Returns the display label for one static shell button.
         /// </summary>
@@ -1141,37 +1168,37 @@ namespace ASLM.Pages
         {
             if (button == HomeButton)
             {
-                return LabelHome;
+                return L.Get(LocalizationKeys.AppShell_Nav_Home);
             }
 
             if (button == ConsolesButton)
             {
-                return LabelConsoles;
+                return L.Get(LocalizationKeys.AppShell_Nav_Consoles);
             }
 
             if (button == ModulesButton)
             {
-                return LabelModules;
+                return L.Get(LocalizationKeys.AppShell_Nav_Modules);
             }
 
             if (button == AslmApiButton)
             {
-                return LabelApi;
+                return L.Get(LocalizationKeys.AppShell_Nav_Api);
             }
 
             if (button == NotificationsButton)
             {
-                return LabelNotifications;
+                return L.Get(LocalizationKeys.AppShell_Nav_Notifications);
             }
 
             if (button == DownloadsButton)
             {
-                return LabelDownload;
+                return L.Get(LocalizationKeys.AppShell_Nav_Download);
             }
 
             if (button == SettingsButton)
             {
-                return LabelSettings;
+                return L.Get(LocalizationKeys.AppShell_Nav_Settings);
             }
 
             return string.Empty;
@@ -1322,10 +1349,9 @@ namespace ASLM.Pages
                 return;
             }
 
-            using var startThrottle = new SemaphoreSlim(MaxConcurrentModuleStarts);
             var startTasks = enabledModules.Select(async module =>
             {
-                await startThrottle.WaitAsync();
+                await _moduleStartThrottle.WaitAsync();
                 try
                 {
                     var logProgress = new Progress<string>(message => System.Diagnostics.Debug.WriteLine($"[ModuleStart:{module.Name}] {message}"));
@@ -1334,15 +1360,17 @@ namespace ASLM.Pages
                 }
                 finally
                 {
-                    startThrottle.Release();
+                    _moduleStartThrottle.Release();
                 }
             });
 
             await Task.WhenAll(startTasks);
         }
 
+
 #if WINDOWS
-        // Module WebView: WinUI WebView2 does not accept external or in-page HTML5 drag/drop unless AllowDrop is enabled.
+
+        // Module WebView
 
         private Microsoft.UI.Xaml.Controls.WebView2? _moduleWebView2;
 
@@ -1363,6 +1391,9 @@ namespace ASLM.Pages
             ApplyModuleWebViewDropTarget(_moduleWebView2);
         }
 
+        /// <summary>
+        /// Enables drag-and-drop on the module WebView2 after the core is initialized.
+        /// </summary>
         private void OnModuleWebViewCoreInitialized(
             Microsoft.UI.Xaml.Controls.WebView2 sender,
             Microsoft.UI.Xaml.Controls.CoreWebView2InitializedEventArgs e)
@@ -1370,6 +1401,9 @@ namespace ASLM.Pages
             ApplyModuleWebViewDropTarget(sender);
         }
 
+        /// <summary>
+        /// Unhooks module WebView2 drag-and-drop handlers when the browser handler is released.
+        /// </summary>
         private void ReleaseModuleWebViewDropTarget()
         {
             if (_moduleWebView2 is null)
@@ -1381,11 +1415,15 @@ namespace ASLM.Pages
             _moduleWebView2 = null;
         }
 
+        /// <summary>
+        /// Sets AllowDrop on the native WebView2 so module pages accept HTML5 drag-and-drop.
+        /// </summary>
         private static void ApplyModuleWebViewDropTarget(Microsoft.UI.Xaml.Controls.WebView2 native)
         {
             native.AllowDrop = true;
         }
 #endif
+
 
         // Browser safety
 
@@ -1436,6 +1474,9 @@ namespace ASLM.Pages
 #endif
         }
 
+        /// <summary>
+        /// Applies inactive sidebar styling to one navigation button.
+        /// </summary>
         private void ApplyShellNavInactiveStyle(Button button)
         {
             button.SetDynamicResource(Button.TextColorProperty, "LabelSecondary");
@@ -1443,6 +1484,9 @@ namespace ASLM.Pages
             ApplySidebarButtonIconFromPalette(button, "LabelPrimary");
         }
 
+        /// <summary>
+        /// Applies active sidebar styling to one navigation button.
+        /// </summary>
         private void ApplyShellNavActiveStyle(Button button)
         {
             button.SetDynamicResource(Button.TextColorProperty, "LabelPrimary");

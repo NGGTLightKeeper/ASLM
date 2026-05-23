@@ -2,13 +2,13 @@
 
 namespace ASLM.Services
 {
-    // Native console output host
-
     /// <summary>
     /// Hosts the bindable state consumed by the native console output handler.
     /// </summary>
     public sealed class ConsoleOutputView : View
     {
+        // Bindable properties
+
         /// <summary>
         /// Identifies the bindable console text property.
         /// </summary>

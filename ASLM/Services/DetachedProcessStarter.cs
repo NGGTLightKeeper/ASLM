@@ -51,6 +51,9 @@ namespace ASLM.Services
             return true;
         }
 
+
+        // Command line
+
         /// <summary>
         /// Builds a CreateProcess-compatible command line that safely preserves argument boundaries.
         /// </summary>

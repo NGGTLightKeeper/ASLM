@@ -6,8 +6,6 @@ using ASLM.Models;
 
 namespace ASLM.Services
 {
-    // Port manager
-
     /// <summary>
     /// Allocates and persists per-module ports inside the configured application ranges.
     /// </summary>
@@ -18,6 +16,12 @@ namespace ASLM.Services
 
         // Port key used by the internal ASLM API mirror server.
         public const string AslmApiPortKey = "server-port";
+
+        // Port-map owner used by the internal module interop JSON server.
+        public const string AslmModuleInteropServiceId = "__aslm-module-interop";
+
+        // Port key used by the internal module interop server.
+        public const string AslmModuleInteropPortKey = "server-port";
 
         private readonly AppDataStore _appData;
         private readonly string _portMapPath;
@@ -160,7 +164,8 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Rebuilds persisted port assignments and optionally reserves the ASLM API server port.
+        /// Rebuilds persisted port assignments for modules and internal listeners.
+        /// When <paramref name="reserveAslmApiServer"/> is true, reserves the ASLM API mirror port; always reserves the module interop listener port.
         /// </summary>
         public bool RedistributePorts(bool reserveAslmApiServer)
         {
@@ -184,6 +189,14 @@ namespace ASLM.Services
                 {
                     _portMap.Remove(AslmApiServiceId);
                 }
+
+                if (!_portMap.TryGetValue(AslmModuleInteropServiceId, out var interopPorts))
+                {
+                    interopPorts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                    _portMap[AslmModuleInteropServiceId] = interopPorts;
+                }
+
+                interopPorts.TryAdd(AslmModuleInteropPortKey, 0);
 
                 var nextMap = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
                 var usedPorts = new HashSet<int>();
@@ -436,7 +449,8 @@ namespace ASLM.Services
         private List<RedistributionOwner> GetRedistributionOwners(bool reserveAslmApiServer)
         {
             return _portMap
-                .Where(pair => reserveAslmApiServer || !pair.Key.Equals(AslmApiServiceId, StringComparison.OrdinalIgnoreCase))
+                .Where(pair =>
+                    reserveAslmApiServer || !pair.Key.Equals(AslmApiServiceId, StringComparison.OrdinalIgnoreCase))
                 .Where(static pair => pair.Value.Count > 0)
                 .Select(pair => new RedistributionOwner(
                     pair.Key,
@@ -458,7 +472,8 @@ namespace ASLM.Services
         /// </summary>
         private static int GetRedistributionOwnerRank(string ownerId)
         {
-            if (ownerId.Equals(AslmApiServiceId, StringComparison.OrdinalIgnoreCase))
+            if (ownerId.Equals(AslmApiServiceId, StringComparison.OrdinalIgnoreCase) ||
+                ownerId.Equals(AslmModuleInteropServiceId, StringComparison.OrdinalIgnoreCase))
             {
                 return 0;
             }

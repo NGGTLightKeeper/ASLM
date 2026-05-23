@@ -5,13 +5,13 @@ using ASLM.Models;
 
 namespace ASLM.Services
 {
-    // Module console service
-
     /// <summary>
     /// Stores in-memory console sessions for modules and their spawned processes.
     /// </summary>
     public sealed class ModuleConsoleStore
     {
+        // Fields and constants
+
         private const string OverviewSessionId = "overview";
         private const int MaxLinesPerSession = 5000;
         private const int MaxDisplayedLines = 250;
@@ -24,6 +24,9 @@ namespace ASLM.Services
         private readonly Dictionary<string, ModuleConsoleModuleState> _modules = new(StringComparer.OrdinalIgnoreCase);
         private long _lineSequence;
         private int _stateChangeQueued;
+
+
+        // Events
 
         /// <summary>
         /// Raised whenever the console store changes.
@@ -283,6 +286,7 @@ namespace ASLM.Services
                     .Select(process => process.ProcessId)
                     .ToHashSet();
 
+                // Create or revive observed subprocess sessions for the current scan.
                 foreach (var process in observedProcesses)
                 {
                     var existingSession = moduleState.Sessions.Values
@@ -320,6 +324,7 @@ namespace ASLM.Services
                     stateChanged = true;
                 }
 
+                // Mark observed subprocess sessions that disappeared from the latest scan as ended.
                 foreach (var sessionState in moduleState.Sessions.Values
                              .Where(session => session.IsObservedProcess &&
                                                string.Equals(session.ObservedOwnerSessionId, ownerSessionId, StringComparison.OrdinalIgnoreCase) &&
@@ -347,7 +352,7 @@ namespace ASLM.Services
         }
 
 
-        // Snapshot
+        // Snapshot and display
 
         /// <summary>
         /// Returns an immutable snapshot of the current console store.
@@ -448,6 +453,9 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Builds unified log entries from overview and settings sessions for one module.
+        /// </summary>
         private static IEnumerable<ModuleConsoleLineState> BuildUnifiedModuleEntries(ModuleConsoleModuleState module)
         {
             foreach (var session in module.Sessions.Values)
@@ -479,6 +487,9 @@ namespace ASLM.Services
 
         // Internal helpers
 
+        /// <summary>
+        /// Ensures one module exists and refreshes its name and enabled flag when they changed.
+        /// </summary>
         private bool EnsureModuleCore(ModuleConfig module)
         {
             if (!_modules.TryGetValue(module.SourcePath, out var moduleState))
@@ -508,6 +519,9 @@ namespace ASLM.Services
             return changed;
         }
 
+        /// <summary>
+        /// Returns the shared overview session for a module, creating it on first use.
+        /// </summary>
         private ModuleConsoleSessionState GetOrCreateOverviewSessionCore(ModuleConsoleModuleState moduleState)
         {
             if (!moduleState.Sessions.TryGetValue(OverviewSessionId, out var sessionState))
@@ -527,6 +541,9 @@ namespace ASLM.Services
             return sessionState;
         }
 
+        /// <summary>
+        /// Resolves a display title from the command definition or process start info.
+        /// </summary>
         private static string GetFallbackTitle(ModuleCommand command, Process process)
         {
             if (!string.IsNullOrWhiteSpace(command.Exec))
@@ -537,6 +554,9 @@ namespace ASLM.Services
             return process.StartInfo.FileName;
         }
 
+        /// <summary>
+        /// Appends one buffered line to a session and enforces per-session retention limits.
+        /// </summary>
         private void AppendLineCore(ModuleConsoleSessionState sessionState, string message)
         {
             if (message.Length > MaxStoredLineLength)
@@ -558,6 +578,9 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Truncates one line to the maximum length shown in the UI.
+        /// </summary>
         private static string TrimLineForDisplay(string line)
         {
             if (line.Length <= MaxDisplayedLineLength)
@@ -568,6 +591,9 @@ namespace ASLM.Services
             return line[..MaxDisplayedLineLength] + " ...";
         }
 
+        /// <summary>
+        /// Selects the newest lines by sequence while preserving total line count for trim messaging.
+        /// </summary>
         private static (List<ModuleConsoleLineState> Lines, int TotalCount) SelectLatestDisplayEntries(IEnumerable<ModuleConsoleLineState> entries)
         {
             var heap = new PriorityQueue<ModuleConsoleLineState, long>();
@@ -593,8 +619,12 @@ namespace ASLM.Services
             return (latestEntries, totalCount);
         }
 
+        /// <summary>
+        /// Builds UI-safe display lines with line-count and character-budget trimming.
+        /// </summary>
         private static IReadOnlyList<string> BuildDisplayLines(IReadOnlyList<ModuleConsoleLineState> lines, int? totalLineCountOverride = null)
         {
+            // Take the newest tail of buffered lines, applying per-line display truncation.
             var startIndex = Math.Max(0, lines.Count - MaxDisplayedLines);
             var selectedLines = new List<string>(lines.Count - startIndex);
             var currentLength = 0;
@@ -606,6 +636,7 @@ namespace ASLM.Services
                 currentLength += text.Length + Environment.NewLine.Length;
             }
 
+            // Drop oldest visible lines until the rendered text fits the character budget.
             var truncatedByCharacters = false;
             var firstVisibleIndex = 0;
             while (selectedLines.Count - firstVisibleIndex > 1 && currentLength > MaxDisplayedCharacters)
@@ -620,6 +651,7 @@ namespace ASLM.Services
                 selectedLines.RemoveRange(0, firstVisibleIndex);
             }
 
+            // Prepend a trim banner when older buffered output was omitted.
             var totalLineCount = totalLineCountOverride ?? lines.Count;
             var trimmedLineCount = totalLineCount - selectedLines.Count;
             if (trimmedLineCount > 0 || truncatedByCharacters)
@@ -630,6 +662,9 @@ namespace ASLM.Services
             return selectedLines;
         }
 
+        /// <summary>
+        /// Resolves a live session handle to its module and session state under the store lock.
+        /// </summary>
         private bool TryGetSessionCore(
             ModuleConsoleSessionHandle handle,
             out ModuleConsoleModuleState moduleState,
@@ -659,6 +694,9 @@ namespace ASLM.Services
             return true;
         }
 
+        /// <summary>
+        /// Projects one module's mutable state into an immutable UI snapshot.
+        /// </summary>
         private static ModuleConsoleModuleSnapshot CreateModuleSnapshotCore(ModuleConsoleModuleState moduleState)
         {
             var sessions = moduleState.Sessions.Values
@@ -696,6 +734,9 @@ namespace ASLM.Services
             };
         }
 
+        /// <summary>
+        /// Raises <see cref="StateChanged"/> on a background task with debouncing.
+        /// </summary>
         private void RaiseStateChanged()
         {
             if (Interlocked.Exchange(ref _stateChangeQueued, 1) == 1)
@@ -712,8 +753,6 @@ namespace ASLM.Services
         }
     }
 
-
-    // Console snapshot models
 
     /// <summary>
     /// Represents the console snapshot for one module.
@@ -847,8 +886,9 @@ namespace ASLM.Services
     }
 
 
-    // Console state storage
-
+    /// <summary>
+    /// Mutable per-module console state held inside the store.
+    /// </summary>
     internal sealed class ModuleConsoleModuleState
     {
         public string SourcePath { get; set; } = string.Empty;
@@ -858,6 +898,9 @@ namespace ASLM.Services
         public Dictionary<string, ModuleConsoleSessionState> Sessions { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Mutable console session state for one process or overview stream.
+    /// </summary>
     internal sealed class ModuleConsoleSessionState
     {
         public string Id { get; set; } = string.Empty;
@@ -877,6 +920,9 @@ namespace ASLM.Services
         public List<ModuleConsoleLineState> Lines { get; } = [];
     }
 
+    /// <summary>
+    /// One buffered console line with ordering metadata.
+    /// </summary>
     internal sealed class ModuleConsoleLineState
     {
         public long Sequence { get; set; }

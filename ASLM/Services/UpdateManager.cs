@@ -12,13 +12,13 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Update manager
-
     /// <summary>
     /// Checks, prepares, and applies ASLM and module updates.
     /// </summary>
     public sealed class UpdateManager
     {
+        // Fields and constants
+
         private const string UpdateWorkDirName = ".aslm-update";
         private const string PendingFileName = "pending.json";
         private const string UpdateSourceFileName = "ASLM_UpdateSource.json";
@@ -26,6 +26,7 @@ namespace ASLM.Services
         private readonly AppDataStore _appData;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
+        private readonly ModuleTrustService _moduleTrustService;
         private readonly GitHubUpdateClient _github;
         private readonly NotificationCenter _notifications;
         private readonly ILogger<UpdateManager> _logger;
@@ -47,6 +48,7 @@ namespace ASLM.Services
             AppDataStore appData,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
+            ModuleTrustService moduleTrustService,
             GitHubUpdateClient github,
             NotificationCenter notifications,
             ILogger<UpdateManager> logger)
@@ -54,6 +56,7 @@ namespace ASLM.Services
             _appData = appData;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
+            _moduleTrustService = moduleTrustService;
             _github = github;
             _notifications = notifications;
             _logger = logger;
@@ -104,6 +107,7 @@ namespace ASLM.Services
             CancellationToken ct = default,
             bool publishUpdateNotification = true)
         {
+            // Resolve channel, repository, and the platform-specific release asset name.
             var source = await LoadAppUpdateSourceAsync(ct);
             if (!IsValidAppGitHubSource(source))
             {
@@ -121,6 +125,7 @@ namespace ASLM.Services
                 return null;
             }
 
+            // Walk releases until a newer tag exposes the configured asset download URL.
             var releases = await _github.GetReleasesAsync(appSource.Source.Repo, includePrerelease, ct);
             foreach (var release in releases)
             {
@@ -177,6 +182,7 @@ namespace ASLM.Services
                 return null;
             }
 
+            // Branch and release modes use different GitHub resolution strategies.
             if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase))
             {
                 var branchCandidate = await CheckModuleBranchUpdateAsync(module, ct);
@@ -261,6 +267,7 @@ namespace ASLM.Services
         {
             var candidates = new List<UpdateCandidate>();
 
+            // ASLM check failures must not prevent module discovery from running.
             try
             {
                 var appCandidate = await CheckAppUpdateAsync(ct, publishUpdateNotifications);
@@ -274,6 +281,7 @@ namespace ASLM.Services
                 _logger.LogWarning(ex, "ASLM update check failed.");
             }
 
+            // Each module is checked independently so one repository error does not block the rest.
             var modules = await _moduleInstaller.DiscoverModulesAsync();
             foreach (var module in modules)
             {
@@ -296,6 +304,9 @@ namespace ASLM.Services
             return candidates;
         }
 
+
+        // Auto-apply
+
         /// <summary>
         /// Applies automatic updates for a list returned by <see cref="CheckAllUpdatesAsync"/>: modules immediately,
         /// ASLM self-update prepared for the next launcher start when not already staged.
@@ -309,6 +320,7 @@ namespace ASLM.Services
             {
                 ct.ThrowIfCancellationRequested();
 
+                // ASLM self-updates are staged once; modules are applied immediately.
                 if (string.Equals(update.TargetKind, "app", StringComparison.OrdinalIgnoreCase))
                 {
                     if (!HasPendingAppUpdate)
@@ -347,6 +359,9 @@ namespace ASLM.Services
             _moduleInstaller.SaveModuleConfig(module, raiseModulesChanged: false);
         }
 
+
+        // Pending update restoration
+
         /// <summary>
         /// Rebuilds a module <see cref="UpdateCandidate"/> from <see cref="ModuleUpdateConfig.PendingUpdate"/> when the
         /// persisted snapshot still reflects an update newer than the local installation.
@@ -355,6 +370,8 @@ namespace ASLM.Services
         {
             candidate = null;
             module.Normalize();
+
+            // Reject empty or mode-mismatched pending snapshots before rebuilding a candidate.
             var pending = module.Update.PendingUpdate;
             if (pending == null || string.IsNullOrWhiteSpace(pending.RemoteVersion))
             {
@@ -372,6 +389,7 @@ namespace ASLM.Services
                 return false;
             }
 
+            // Branch mode: require a newer commit on the configured tracking branch.
             if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase))
             {
                 if (string.IsNullOrWhiteSpace(pending.CommitSha) || string.IsNullOrWhiteSpace(pending.Branch))
@@ -411,6 +429,7 @@ namespace ASLM.Services
                 return true;
             }
 
+            // Release mode: tag must differ from installed and still match the user's selection policy.
             if (string.IsNullOrWhiteSpace(pending.ReleaseTag))
             {
                 return false;
@@ -473,6 +492,7 @@ namespace ASLM.Services
             IProgress<DownloadProgress>? progress = null,
             CancellationToken ct = default)
         {
+            // Surface download progress and validate the shipped update source before touching disk.
             var operationKey = NotificationCenter.BuildOperationKey("app-update", candidate.TargetId);
             await _notifications.StartDownloadAsync(
                 operationKey,
@@ -489,6 +509,7 @@ namespace ASLM.Services
                 return false;
             }
 
+            // Stage under .aslm-update so the external patcher can apply on next launcher start.
             var rootDir = GetRootDirectory();
             var workDir = Path.Combine(rootDir, UpdateWorkDirName);
             var stagingRoot = Path.Combine(workDir, "staging", SanitizeFileName(candidate.RemoteVersion));
@@ -503,6 +524,7 @@ namespace ASLM.Services
 
             try
             {
+                // Download, extract off the UI thread, then persist pending.json for the patcher.
                 await _github.DownloadFileAsync(candidate.DownloadUrl, archivePath, log, notificationProgress, ct);
                 var payloadDir = await Task.Run(() =>
                 {
@@ -556,6 +578,7 @@ namespace ASLM.Services
                 "Module update candidate does not contain module metadata.");
             module.Normalize();
 
+            // Skip download and file replacement when the candidate already matches local state.
             if (IsModuleAlreadyAtInstallTarget(module, candidate))
             {
                 log?.Report("The selected version is already installed.");
@@ -590,6 +613,7 @@ namespace ASLM.Services
             {
                 Directory.CreateDirectory(extractDir);
 
+                // Download, extract, and validate the archive manifest on a background thread.
                 var notificationProgress = _notifications.CreateDownloadProgressBridge(operationKey, progress);
                 await DownloadModuleArchiveAsync(module, candidate, archivePath, log, notificationProgress, ct);
                 var preparedUpdate = await Task.Run(() =>
@@ -614,6 +638,7 @@ namespace ASLM.Services
 
                 var wasEnabled = module.Status.Enabled;
 
+                // Stop the module and any orphaned processes holding locks under the install directory.
                 if (wasEnabled)
                 {
                     log?.Report($"Stopping {module.Name} before update...");
@@ -635,6 +660,9 @@ namespace ASLM.Services
                 if (success)
                 {
                     _notifications.CompleteDownload(operationKey, $"{module.Name} updated successfully.");
+
+                    // Refresh the signed community-reviewed list when the remote trust API is enabled.
+                    await _moduleTrustService.RefreshReviewedListAsync(ct);
                 }
                 else
                 {
@@ -774,6 +802,7 @@ namespace ASLM.Services
                 return null;
             }
 
+            // Pinned release: offer an update only when the selected tag differs from installed.
             if (!IsLatestReleaseSelection(module.Update.SelectedReleaseTag) &&
                 !string.IsNullOrWhiteSpace(module.Update.SelectedReleaseTag))
             {
@@ -788,6 +817,7 @@ namespace ASLM.Services
                 return !ReleaseTagOrdering.AreEquivalentVersionReferences(selected.ReleaseTag, currentTag) ? selected : null;
             }
 
+            // Latest selection: compare the newest remote tag against the installed baseline.
             var latest = candidates[0];
             return !ReleaseTagOrdering.AreEquivalentVersionReferences(latest.ReleaseTag ?? string.Empty, currentTag)
                 ? latest
@@ -807,6 +837,7 @@ namespace ASLM.Services
                 return null;
             }
 
+            // Resolve pinned tag when set; otherwise take the newest release from the candidate list.
             UpdateCandidate resolved;
             if (!IsLatestReleaseSelection(module.Update.SelectedReleaseTag) &&
                 !string.IsNullOrWhiteSpace(module.Update.SelectedReleaseTag))
@@ -948,6 +979,7 @@ namespace ASLM.Services
         {
             try
             {
+                // Replace module files on a worker thread while honoring declared preserve paths.
                 await Task.Run(async () =>
                 {
                     var preservePaths = BuildPreservePathSet(module.Update.Preserve);
@@ -958,6 +990,7 @@ namespace ASLM.Services
                     CopyDirectory(preparedUpdate.ModuleSourceDir, moduleDir, preservePaths);
                 }, ct);
 
+                // Reload merged manifest, optionally run first-run, then re-enable when the module was active.
                 var installedPath = Path.Combine(moduleDir, "ASLM_Module.json");
                 var installed = await _moduleInstaller.LoadModuleConfig(installedPath)
                     ?? throw new InvalidOperationException("Updated module manifest could not be loaded.");
@@ -1012,6 +1045,7 @@ namespace ASLM.Services
         /// </summary>
         private static void MergeModuleState(ModuleConfig oldConfig, ModuleConfig newConfig, UpdateCandidate candidate)
         {
+            // Carry forward user-edited setting values keyed by setting name.
             var oldSettingValues = oldConfig.Settings
                 .Where(setting => !string.IsNullOrWhiteSpace(setting.Key))
                 .ToDictionary(
@@ -1188,6 +1222,7 @@ namespace ASLM.Services
                 return false;
             }
 
+            // Compare against the higher-precedence of installed and already-staged release tags.
             var baseline = MergeInstalledAndPendingReleaseBaselines(
                 _appData.Data.Updates.InstalledReleaseTag,
                 TryReadPendingAppUpdateVersion());
@@ -1304,6 +1339,7 @@ namespace ASLM.Services
             Directory.CreateDirectory(destination);
             var destinationPrefix = EnsureTrailingSeparator(Path.GetFullPath(destination));
 
+            // Reject zip-slip entries before extracting any file onto disk.
             using var archive = ZipFile.OpenRead(zipPath);
             foreach (var entry in archive.Entries)
             {
@@ -1489,6 +1525,7 @@ namespace ASLM.Services
         {
             const int maxAttempts = 6;
 
+            // Retry cleanup when Windows still holds handles from recently stopped module processes.
             for (var attempt = 1; attempt <= maxAttempts; attempt++)
             {
                 try
@@ -1525,6 +1562,7 @@ namespace ASLM.Services
             var currentProcessId = Environment.ProcessId;
             var stoppedCount = 0;
 
+            // Best-effort scan: kill only processes whose main executable lives under the module root.
             foreach (var process in Process.GetProcesses())
             {
                 try

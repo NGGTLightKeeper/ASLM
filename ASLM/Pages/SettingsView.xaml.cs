@@ -2,18 +2,17 @@
 
 using System.Globalization;
 using Debug = System.Diagnostics.Debug;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
 using Microsoft.Maui.Controls.Shapes;
 
 namespace ASLM.Pages
 {
-    // Settings view
-
     /// <summary>
     /// Displays shared application settings and dynamic module settings inside the shell.
     /// </summary>
-    public partial class SettingsView : ContentView
+    public partial class SettingsView : ContentView, ILocalizable
     {
         private const string PasswordIconHidden = "icon_password_off.png";
         private const string PasswordIconVisible = "icon_password_on.png";
@@ -50,6 +49,7 @@ namespace ASLM.Pages
 
         private readonly AppDataStore _appData;
         private readonly SettingsService _settingsService;
+        private readonly AppLocalizationService _localization;
         private readonly OllamaSettingsStore _ollamaSettings;
         private readonly UpdateManager _updateManager;
         private readonly AslmApiServer _apiServer;
@@ -102,11 +102,11 @@ namespace ASLM.Pages
         private bool _settingsReconcileTimerStarted;
         private bool _settingsReconcileTimerStopRequested;
 
-        // Personalization drafts
         private AppPersonalizationConfig _personalizationDraft = new();
         private AppPersonalizationConfig _personalizationBaseline = new();
         private CustomTheme? _editingThemeDraft;
         private Picker? _appearancePicker;
+        private Picker? _languagePicker;
         private VerticalStackLayout? _customThemeSection;
         private Picker? _customThemePicker;
         private VerticalStackLayout? _themeEditorSection;
@@ -133,9 +133,11 @@ namespace ASLM.Pages
         /// </summary>
         private sealed class CompactToggle
         {
-            // Toggle colors read from the active palette so they respond to theme changes.
+            /// <summary>Gets the on-state track color from the active application palette.</summary>
             private static Color ToggleOnColor => Application.Current?.Resources.TryGetValue("ActionBlue", out var v) == true && v is Color c ? c : Color.FromArgb("#0A84FF");
+            /// <summary>Gets the off-state track color from the active application palette.</summary>
             private static Color ToggleOffColor => Application.Current?.Resources.TryGetValue("BackgroundTertiary", out var v) == true && v is Color c ? c : Color.FromArgb("#3A3A3C");
+            /// <summary>Gets the thumb fill color from the active application palette.</summary>
             private static Color ToggleThumbColor => Application.Current?.Resources.TryGetValue("LabelPrimary", out var v) == true && v is Color c ? c : Colors.White;
             private const double TrackWidth = 36;
             private const double TrackHeight = 20;
@@ -144,6 +146,9 @@ namespace ASLM.Pages
 
             private class ThumbDrawable : IDrawable
             {
+                /// <summary>
+                /// Draws the toggle thumb as a filled circle on the graphics canvas.
+                /// </summary>
                 public void Draw(ICanvas canvas, RectF dirtyRect)
                 {
                     canvas.Antialias = true;
@@ -337,6 +342,7 @@ namespace ASLM.Pages
             private double CurrentThumbOffset => AbsoluteLayout.GetLayoutBounds(_thumb).X - ThumbInset;
         }
 
+
         // Initialization
 
         /// <summary>
@@ -345,6 +351,7 @@ namespace ASLM.Pages
         public SettingsView(
             AppDataStore appData,
             SettingsService settingsService,
+            AppLocalizationService localization,
             OllamaSettingsStore ollamaSettings,
             UpdateManager updateManager,
             AslmApiServer apiServer,
@@ -354,6 +361,7 @@ namespace ASLM.Pages
         {
             _appData = appData;
             _settingsService = settingsService;
+            _localization = localization;
             _ollamaSettings = ollamaSettings;
             _updateManager = updateManager;
             _apiServer = apiServer;
@@ -361,6 +369,7 @@ namespace ASLM.Pages
             _themeService = themeService;
             _customThemesStore = customThemesStore;
             InitializeComponent();
+            LocalizableAttach.Hook(this, _localization, this);
             ApplyFlatEntryStyle(UsernameEntry);
             ApplyFlatEntryStyle(OfficialPortEntry);
             ApplyFlatEntryStyle(ThirdPartyPortEntry);
@@ -373,6 +382,7 @@ namespace ASLM.Pages
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
         }
+
 
         // Refresh
 
@@ -396,23 +406,36 @@ namespace ASLM.Pages
             }
         }
 
+
         // Overlay Events
 
+        /// <summary>
+        /// Closes the settings overlay when the user taps outside the dialog.
+        /// </summary>
         private void OnBackgroundTapped(object? sender, EventArgs e)
         {
             RequestClose();
         }
 
+        /// <summary>
+        /// Absorbs taps on the dialog surface so they do not reach the background handler.
+        /// </summary>
         private void OnBorderTapped(object? sender, EventArgs e)
         {
-            // Do nothing. Swallows the tap so it doesn't propagate to the background.
+            // Intentionally empty: prevents the tap from closing the overlay via the background handler.
         }
 
+        /// <summary>
+        /// Handles the close button and requests overlay dismissal.
+        /// </summary>
         private void OnCloseClicked(object? sender, EventArgs e)
         {
             RequestClose();
         }
 
+        /// <summary>
+        /// Stops background work, confirms discard when needed, and raises <see cref="CloseRequested"/>.
+        /// </summary>
         private async void RequestClose()
         {
             if (!await ConfirmDiscardChangesIfNeededAsync())
@@ -425,6 +448,7 @@ namespace ASLM.Pages
             _ollamaSettings.StopManagedRuntime();
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
+
 
         // Loading
 
@@ -446,7 +470,7 @@ namespace ASLM.Pages
             if (targetCategory == null)
             {
                 _activeCategory = null;
-                ShowEmptyCategory("No settings are available.");
+                ShowEmptyCategory(L.Get(LocalizationKeys.Settings_NoSettingsAvailable));
                 UpdateActionButtons();
                 return;
             }
@@ -494,6 +518,105 @@ namespace ASLM.Pages
             _ollamaSettings.StopManagedRuntime();
         }
 
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            SettingsSidebarTitleLabel.Text = L.Get(LocalizationKeys.Settings_Title);
+            ToolTipProperties.SetText(CloseSettingsButton, L.Get(LocalizationKeys.Settings_CloseTooltip));
+
+            DisplayNameTitleLabel.Text = L.Get(LocalizationKeys.Settings_DisplayName);
+            DisplayNameDescriptionLabel.Text = L.Get(LocalizationKeys.Settings_DisplayNameDescription);
+            PortsGroupHeader.Text = L.Get(LocalizationKeys.Settings_Ports);
+            OfficialPortTitleLabel.Text = L.Get(LocalizationKeys.Settings_OfficialPortTitle);
+            OfficialPortDescriptionLabel.Text = L.Get(LocalizationKeys.Settings_OfficialPortDescription);
+            ThirdPartyPortTitleLabel.Text = L.Get(LocalizationKeys.Settings_ThirdPartyPortTitle);
+            ThirdPartyPortDescriptionLabel.Text = L.Get(LocalizationKeys.Settings_ThirdPartyPortDescription);
+
+            DefaultButton.Text = L.Get(LocalizationKeys.Settings_LoadDefault);
+            DiscardButton.Text = L.Get(LocalizationKeys.Settings_DiscardChanges);
+            UpdateActionButtons();
+
+            if (_categories.Count > 0)
+            {
+                BuildCategorySelectors();
+            }
+
+            if (_activeCategory != null)
+            {
+                ActivateCategory(_activeCategory);
+            }
+        }
+
+        /// <summary>
+        /// Resolves the localized sidebar title for a settings category.
+        /// </summary>
+        private static string GetLocalizedCategoryTitle(SettingsCategory category) =>
+            category.Kind switch
+            {
+                SettingsCategoryKind.Aslm => L.Get(LocalizationKeys.Settings_Category_ASLM),
+                SettingsCategoryKind.AslmProfile => L.Get(LocalizationKeys.Settings_Category_Account),
+                SettingsCategoryKind.Updates => L.Get(LocalizationKeys.Settings_Category_Updates),
+                SettingsCategoryKind.Ollama => L.Get(LocalizationKeys.Settings_Category_Ollama),
+                SettingsCategoryKind.Personalization => L.Get(LocalizationKeys.Settings_Category_Personalization),
+                SettingsCategoryKind.Module => category.Module?.Name ?? category.Title,
+                _ => category.Title
+            };
+
+        private static string BuildLocalizedSaveMessage(
+            bool hadAnyPersistedSettingsChanges,
+            bool touchedModules,
+            IReadOnlyList<string> deferredSettings)
+        {
+            if (!hadAnyPersistedSettingsChanges && !touchedModules)
+            {
+                return L.Get(LocalizationKeys.Settings_SaveMessage_None);
+            }
+
+            if (deferredSettings.Count > 0)
+            {
+                var preview = string.Join("\n", deferredSettings.Take(5));
+                return L.Get(LocalizationKeys.Settings_SaveMessage_Deferred, preview);
+            }
+
+            return L.Get(LocalizationKeys.Settings_SaveMessage_Saved);
+        }
+
+        private static readonly string[] AppearanceOptions = ["Dark", "Light", "System", "Custom"];
+
+        /// <summary>
+        /// Returns the picker display label for a supported language id.
+        /// </summary>
+        private static string GetLanguageDisplayName(string languageId) =>
+            AppLocalizationService.GetPickerDisplayName(languageId);
+
+        /// <summary>
+        /// Returns the localized picker label for an appearance mode id.
+        /// </summary>
+        private static string GetAppearanceDisplayName(string appearance) =>
+            AppPersonalizationConfig.NormalizeAppearance(appearance) switch
+            {
+                "Light" => L.Get(LocalizationKeys.Settings_Personalization_Appearance_Light),
+                "System" => L.Get(LocalizationKeys.Settings_Personalization_Appearance_System),
+                "Custom" => L.Get(LocalizationKeys.Settings_Personalization_Appearance_Custom),
+                _ => L.Get(LocalizationKeys.Settings_Personalization_Appearance_Dark)
+            };
+
+        /// <summary>
+        /// Maps a localized appearance picker label back to its canonical id.
+        /// </summary>
+        private static string ResolveAppearanceFromDisplayName(string? displayName)
+        {
+            foreach (var appearance in AppearanceOptions)
+            {
+                if (string.Equals(GetAppearanceDisplayName(appearance), displayName, StringComparison.Ordinal))
+                {
+                    return appearance;
+                }
+            }
+
+            return "Dark";
+        }
+
         /// <summary>
         /// Keeps the dialog within the requested min/max bounds while scaling to the host size.
         /// </summary>
@@ -522,6 +645,7 @@ namespace ASLM.Pages
         private static double ClampDialogSize(double value, double min, double max) =>
             Math.Max(min, Math.Min(max, value));
 
+
         // Loading helpers
 
         /// <summary>
@@ -533,11 +657,13 @@ namespace ASLM.Pages
             _personalizationDraft = new AppPersonalizationConfig
             {
                 Appearance = AppPersonalizationConfig.NormalizeAppearance(stored.Appearance),
+                Language = AppPersonalizationConfig.NormalizeLanguage(stored.Language),
                 CustomThemeId = stored.CustomThemeId
             };
             _personalizationBaseline = new AppPersonalizationConfig
             {
                 Appearance = _personalizationDraft.Appearance,
+                Language = _personalizationDraft.Language,
                 CustomThemeId = _personalizationDraft.CustomThemeId
             };
         }
@@ -606,6 +732,7 @@ namespace ASLM.Pages
             }
         }
 
+
         // Categories
 
         /// <summary>
@@ -617,10 +744,10 @@ namespace ASLM.Pages
             CategoryPanel.Children.Clear();
 
             // ASLM Group
-            CategoryPanel.Children.Add(CreateSelectorHeader("ASLM"));
+            CategoryPanel.Children.Add(CreateSelectorHeader(L.Get(LocalizationKeys.Settings_Category_ASLM)));
             foreach (var category in _categories.Where(c => SettingsService.GetGroupForCategory(c) == SettingsCategoryGroup.Aslm))
             {
-                var button = CreateSelectorButton(category.Title);
+                var button = CreateSelectorButton(GetLocalizedCategoryTitle(category));
                 button.BindingContext = category;
                 var tapGesture = new TapGestureRecognizer();
                 tapGesture.Tapped += OnCategorySelectorClicked;
@@ -633,11 +760,11 @@ namespace ASLM.Pages
             var modCategories = _categories.Where(c => SettingsService.GetGroupForCategory(c) == SettingsCategoryGroup.Modules).ToList();
             if (modCategories.Count > 0)
             {
-                CategoryPanel.Children.Add(new BoxView { HeightRequest = 12, Color = Colors.Transparent }); // spacing
-                CategoryPanel.Children.Add(CreateSelectorHeader("MODULES"));
+                CategoryPanel.Children.Add(new BoxView { HeightRequest = 12, Color = Colors.Transparent });
+                CategoryPanel.Children.Add(CreateSelectorHeader(L.Get(LocalizationKeys.Settings_Header_Modules)));
                 foreach (var category in modCategories)
                 {
-                    var button = CreateSelectorButton(category.Title);
+                    var button = CreateSelectorButton(GetLocalizedCategoryTitle(category));
                     button.BindingContext = category;
                     var tapGesture = new TapGestureRecognizer();
                     tapGesture.Tapped += OnCategorySelectorClicked;
@@ -742,7 +869,7 @@ namespace ASLM.Pages
         private void ActivateCategory(SettingsCategory category)
         {
             _activeCategory = category;
-            ActiveCategoryTitleLabel.Text = category.Title;
+            ActiveCategoryTitleLabel.Text = GetLocalizedCategoryTitle(category);
 
             switch (category.Kind)
             {
@@ -947,6 +1074,9 @@ namespace ASLM.Pages
             _settingsReconcileTimerStopRequested = true;
         }
 
+        /// <summary>
+        /// Periodically reconciles visible controls with drafts while the settings overlay is open.
+        /// </summary>
         private bool OnSettingsReconcileTimerTick()
         {
             if (_settingsReconcileTimerStopRequested || !IsLoaded)
@@ -996,7 +1126,7 @@ namespace ASLM.Pages
             DiscardButton.IsVisible = canReset && hasChanges;
             DiscardButton.IsEnabled = canInteract && hasChanges;
             SaveButton.IsEnabled = canInteract;
-            SaveButton.Text = _isSaving ? "Saving..." : "Save";
+            SaveButton.Text = _isSaving ? L.Get(LocalizationKeys.Settings_Saving) : L.Get(LocalizationKeys.Settings_Save);
             ApplyActionButtonState(DefaultButton, false);
             ApplyActionButtonState(DiscardButton, isPrimary: false, isDanger: true);
 
@@ -1009,7 +1139,7 @@ namespace ASLM.Pages
                 SaveAndRestartButton.IsVisible = false;
                 SaveButton.IsVisible = false;
                 ApplyActionButtonState(SaveButton, false);
-                SaveAndRestartButton.Text = "Save and restart";
+                SaveAndRestartButton.Text = L.Get(LocalizationKeys.Settings_SaveAndRestart);
                 return;
             }
 
@@ -1017,7 +1147,7 @@ namespace ASLM.Pages
                 (HasPendingRestartChanges() || HasUnsavedPersonalizationChanges());
 
             SaveAndRestartButton.IsEnabled = canInteract && canShowRestart;
-            SaveAndRestartButton.Text = "Save and restart";
+            SaveAndRestartButton.Text = L.Get(LocalizationKeys.Settings_SaveAndRestart);
 
             SaveButton.IsVisible = hasChanges;
             SaveAndRestartButton.IsVisible = canShowRestart;
@@ -1095,6 +1225,7 @@ namespace ASLM.Pages
             button.Style = style;
         }
 
+
         // Rendering
 
         /// <summary>
@@ -1112,10 +1243,10 @@ namespace ASLM.Pages
             var section = CreateModuleSectionBorder();
             var content = new VerticalStackLayout { Spacing = 8 };
 
-            content.Children.Add(CreateSubGroupHeader("API"));
+            content.Children.Add(CreateSubGroupHeader(L.Get(LocalizationKeys.Settings_SubGroup_API)));
             AddAslmApiSettings(content);
 
-            content.Children.Add(CreateSubGroupHeader("Consoles"));
+            content.Children.Add(CreateSubGroupHeader(L.Get(LocalizationKeys.Settings_SubGroup_Consoles)));
             AddConsoleSettings(content);
 
             section.Content = content;
@@ -1164,8 +1295,8 @@ namespace ASLM.Pages
                 QueueActionButtonUpdate();
             };
             content.Children.Add(CreateUpdateCard(
-                "API server",
-                "Start the local mirror server with ASLM.",
+                L.Get(LocalizationKeys.Settings_ApiServer_Title),
+                L.Get(LocalizationKeys.Settings_ApiServer_Description),
                 _apiServerToggle.View));
         }
 
@@ -1181,8 +1312,8 @@ namespace ASLM.Pages
                 QueueActionButtonUpdate();
             };
             content.Children.Add(CreateUpdateCard(
-                "Consoles page",
-                "Show the built-in consoles page in the sidebar.",
+                L.Get(LocalizationKeys.Settings_ConsolesPage_Title),
+                L.Get(LocalizationKeys.Settings_ConsolesPage_Description),
                 _consoleSidebarToggle.View));
 
             _consoleIndividualToggle = CreateCompactToggle(_consoleDraft.ShowIndividualModuleConsoles);
@@ -1192,8 +1323,8 @@ namespace ASLM.Pages
                 QueueActionButtonUpdate();
             };
             content.Children.Add(CreateUpdateCard(
-                "Individual consoles",
-                "Show per-process consoles alongside unified module output.",
+                L.Get(LocalizationKeys.Settings_IndividualConsoles_Title),
+                L.Get(LocalizationKeys.Settings_IndividualConsoles_Description),
                 _consoleIndividualToggle.View));
 
             _consoleCompletedToggle = CreateCompactToggle(_consoleDraft.ShowCompletedProcesses);
@@ -1203,8 +1334,8 @@ namespace ASLM.Pages
                 QueueActionButtonUpdate();
             };
             content.Children.Add(CreateUpdateCard(
-                "Completed process consoles",
-                "Keep finished process consoles visible when individual consoles are enabled.",
+                L.Get(LocalizationKeys.Settings_CompletedConsoles_Title),
+                L.Get(LocalizationKeys.Settings_CompletedConsoles_Description),
                 _consoleCompletedToggle.View));
         }
 
@@ -1216,23 +1347,23 @@ namespace ASLM.Pages
             _checkUpdatesToggle = CreateCompactToggle(_updateDraft.CheckEnabled);
             _checkUpdatesToggle.Toggled += (_, _) => QueueActionButtonUpdate();
             content.Children.Add(CreateUpdateCard(
-                "Check for updates",
-                "Allow ASLM to query configured GitHub repositories.",
+                L.Get(LocalizationKeys.Settings_CheckUpdates_Title),
+                L.Get(LocalizationKeys.Settings_CheckUpdates_Description),
                 _checkUpdatesToggle.View));
 
             _autoUpdatesToggle = CreateCompactToggle(_updateDraft.AutoUpdateEnabled);
             _autoUpdatesToggle.Toggled += (_, _) => QueueActionButtonUpdate();
             content.Children.Add(CreateUpdateCard(
-                "Install updates automatically",
-                "Automatically apply module updates and prepare ASLM builds for the next restart.",
+                L.Get(LocalizationKeys.Settings_AutoInstall_Title),
+                L.Get(LocalizationKeys.Settings_AutoInstall_Description),
                 _autoUpdatesToggle.View));
 
             _updatePeriodEntry = CreateTextEntry(_updateDraft.AutoCheckPeriodHours);
             _updatePeriodEntry.Keyboard = Keyboard.Numeric;
             _updatePeriodEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
             content.Children.Add(CreateUpdateCard(
-                "Auto-check period",
-                "Hours between background update checks.",
+                L.Get(LocalizationKeys.Settings_AutoCheckPeriod_Title),
+                L.Get(LocalizationKeys.Settings_AutoCheckPeriod_Description),
                 CreateFieldContainer(_updatePeriodEntry)));
 
             _appUpdateChannelPicker = CreatePicker(null, 13);
@@ -1240,8 +1371,8 @@ namespace ASLM.Pages
             _appUpdateChannelPicker.SelectedItem = _updateDraft.AppChannel;
             _appUpdateChannelPicker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
             content.Children.Add(CreateUpdateCard(
-                "ASLM release channel",
-                "Release uses stable GitHub releases only. Pre-release also accepts preview releases.",
+                L.Get(LocalizationKeys.Settings_AppChannel_Title),
+                L.Get(LocalizationKeys.Settings_AppChannel_Description),
                 CreateUpdatePickerContainer(_appUpdateChannelPicker)));
 
             _moduleUpdateModePicker = CreatePicker(null, 13);
@@ -1249,8 +1380,8 @@ namespace ASLM.Pages
             _moduleUpdateModePicker.SelectedItem = _updateDraft.ModuleDefaultMode;
             _moduleUpdateModePicker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
             content.Children.Add(CreateUpdateCard(
-                "Default module update mode",
-                "New module preferences start from this mode; individual modules can override it.",
+                L.Get(LocalizationKeys.Settings_ModuleUpdateMode_Title),
+                L.Get(LocalizationKeys.Settings_ModuleUpdateMode_Description),
                 CreateUpdatePickerContainer(_moduleUpdateModePicker)));
 
             _moduleUpdateChannelPicker = CreatePicker(null, 13);
@@ -1258,8 +1389,8 @@ namespace ASLM.Pages
             _moduleUpdateChannelPicker.SelectedItem = _updateDraft.ModuleDefaultChannel;
             _moduleUpdateChannelPicker.SelectedIndexChanged += (_, _) => QueueActionButtonUpdate();
             content.Children.Add(CreateUpdateCard(
-                "Default module release channel",
-                "Used by modules that follow GitHub releases.",
+                L.Get(LocalizationKeys.Settings_ModuleChannel_Title),
+                L.Get(LocalizationKeys.Settings_ModuleChannel_Description),
                 CreateUpdatePickerContainer(_moduleUpdateChannelPicker)));
 
             content.Children.Add(CreateManualUpdateCard());
@@ -1327,7 +1458,7 @@ namespace ASLM.Pages
             var card = CreateSettingCardBorder();
             var content = new VerticalStackLayout { Spacing = TitleDescriptionSpacing };
 
-            content.Children.Add(CreateCardTitle("Manual check"));
+            content.Children.Add(CreateCardTitle(L.Get(LocalizationKeys.Settings_ManualCheck_Title)));
             var installedReleaseSummary = SettingsService.BuildAslmInstalledReleaseSummary(_appData);
             if (!string.IsNullOrWhiteSpace(installedReleaseSummary))
             {
@@ -1337,10 +1468,10 @@ namespace ASLM.Pages
             _updateStatusLabel = CreateSecondaryLabel(BuildInitialManualUpdateStatusText());
 
             var actions = new HorizontalStackLayout { Spacing = 8, Margin = new Thickness(0, 8, 0, 0) };
-            var checkButton = CreateInlineActionButton("Check now", OnCheckUpdatesNowClicked);
-            _prepareAppUpdateButton = CreateInlineActionButton("Prepare ASLM update", OnPrepareAppUpdateClicked);
+            var checkButton = CreateInlineActionButton(L.Get(LocalizationKeys.Settings_CheckNow), OnCheckUpdatesNowClicked);
+            _prepareAppUpdateButton = CreateInlineActionButton(L.Get(LocalizationKeys.Settings_PrepareAslmUpdate), OnPrepareAppUpdateClicked);
             _prepareAppUpdateButton.IsVisible = false;
-            _restartAppUpdateButton = CreateInlineActionButton("Restart now", OnRestartNowClicked);
+            _restartAppUpdateButton = CreateInlineActionButton(L.Get(LocalizationKeys.Settings_RestartNow), OnRestartNowClicked);
             _restartAppUpdateButton.IsVisible = _updateManager.HasPendingAppUpdate;
             actions.Children.Add(checkButton);
             actions.Children.Add(_prepareAppUpdateButton);
@@ -1361,11 +1492,11 @@ namespace ASLM.Pages
             {
                 var pending = _updateManager.TryGetPendingPreparedAppVersion()?.Trim();
                 return string.IsNullOrWhiteSpace(pending)
-                    ? "ASLM update is prepared and will be applied on restart."
-                    : $"ASLM update {pending} is prepared and will be applied on restart.";
+                    ? L.Get(LocalizationKeys.Settings_UpdateStatus_Prepared)
+                    : L.Get(LocalizationKeys.Settings_UpdateStatus_PreparedWithVersion, pending);
             }
 
-            return "No update check has been run in this session.";
+            return L.Get(LocalizationKeys.Settings_UpdateStatus_None);
         }
 
         /// <summary>
@@ -1385,16 +1516,16 @@ namespace ASLM.Pages
                     if (!string.IsNullOrWhiteSpace(pending) &&
                         string.Equals(pending, appTag, StringComparison.OrdinalIgnoreCase))
                     {
-                        return $"ASLM {appTag} is prepared and will be applied on restart.";
+                        return L.Get(LocalizationKeys.Settings_UpdateStatus_AslmTagPrepared, appTag);
                     }
 
                     if (!string.IsNullOrWhiteSpace(pending))
                     {
-                        return $"ASLM update {appTag} is available; {pending} is already staged for restart.";
+                        return L.Get(LocalizationKeys.Settings_UpdateStatus_AslmAvailableStaged, appTag, pending);
                     }
                 }
 
-                return $"ASLM update {appTag} is available. Use \"Prepare ASLM update\" to download it.";
+                return L.Get(LocalizationKeys.Settings_UpdateStatus_AslmAvailable, appTag);
             }
 
             if (updates.Count == 0)
@@ -1403,24 +1534,23 @@ namespace ASLM.Pages
                 {
                     var pendingOnly = _updateManager.TryGetPendingPreparedAppVersion()?.Trim();
                     return string.IsNullOrWhiteSpace(pendingOnly)
-                        ? "ASLM update is prepared and will be applied on restart."
-                        : $"ASLM update {pendingOnly} is prepared and will be applied on restart.";
+                        ? L.Get(LocalizationKeys.Settings_UpdateStatus_Prepared)
+                        : L.Get(LocalizationKeys.Settings_UpdateStatus_PreparedWithVersion, pendingOnly);
                 }
 
-                return "Everything is up to date.";
+                return L.Get(LocalizationKeys.Settings_UpdateStatus_UpToDate);
             }
 
-            var moduleSummary =
-                $"{updates.Count} update(s) available. Module updates can be applied from the Modules page.";
+            var moduleSummary = L.Get(LocalizationKeys.Settings_UpdateStatus_ModuleUpdatesCount, updates.Count);
             if (_updateManager.HasPendingAppUpdate)
             {
                 var pendingStaged = _updateManager.TryGetPendingPreparedAppVersion()?.Trim();
                 if (!string.IsNullOrWhiteSpace(pendingStaged))
                 {
-                    return $"{moduleSummary} ASLM {pendingStaged} is staged for restart.";
+                    return L.Get(LocalizationKeys.Settings_UpdateStatus_ModuleUpdatesStagedAslm, moduleSummary, pendingStaged);
                 }
 
-                return $"{moduleSummary} An ASLM self-update is staged for restart.";
+                return L.Get(LocalizationKeys.Settings_UpdateStatus_ModuleUpdatesStagedGeneric, moduleSummary);
             }
 
             return moduleSummary;
@@ -1451,7 +1581,7 @@ namespace ASLM.Pages
 
                 if (_updateStatusLabel != null)
                 {
-                    _updateStatusLabel.Text = "Checking GitHub repositories...";
+                    _updateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_Checking);
                 }
 
                 var updates = await Task.Run(() => _updateManager.CheckAllUpdatesAsync());
@@ -1477,7 +1607,7 @@ namespace ASLM.Pages
             {
                 if (_updateStatusLabel != null)
                 {
-                    _updateStatusLabel.Text = $"Update check failed: {ex.Message}";
+                    _updateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_CheckFailed, ex.Message);
                 }
             }
             finally
@@ -1508,7 +1638,7 @@ namespace ASLM.Pages
             {
                 if (_updateStatusLabel != null)
                 {
-                    _updateStatusLabel.Text = "Downloading ASLM build...";
+                    _updateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_Downloading);
                 }
 
                 var log = new Progress<string>(message =>
@@ -1526,12 +1656,12 @@ namespace ASLM.Pages
                     {
                         var preparedTag = _pendingAppUpdateCandidate?.ReleaseTag ?? _pendingAppUpdateCandidate?.RemoteVersion;
                         _updateStatusLabel.Text = string.IsNullOrWhiteSpace(preparedTag)
-                            ? "ASLM update is prepared and will be applied on restart."
-                            : $"ASLM update {preparedTag.Trim()} is prepared and will be applied on restart.";
+                            ? L.Get(LocalizationKeys.Settings_UpdateStatus_Prepared)
+                            : L.Get(LocalizationKeys.Settings_UpdateStatus_PreparedWithVersion, preparedTag.Trim());
                     }
                     else
                     {
-                        _updateStatusLabel.Text = "ASLM update could not be prepared.";
+                        _updateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_CouldNotPrepare);
                     }
                 }
 
@@ -1568,7 +1698,7 @@ namespace ASLM.Pages
             {
                 if (_updateStatusLabel != null)
                 {
-                    _updateStatusLabel.Text = "Restarting ASLM...";
+                    _updateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_Restarting);
                 }
 
                 await _settingsService.StopAllModulesAsync();
@@ -1579,7 +1709,7 @@ namespace ASLM.Pages
             {
                 if (_updateStatusLabel != null)
                 {
-                    _updateStatusLabel.Text = $"Restart failed: {ex.Message}";
+                    _updateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_RestartFailed, ex.Message);
                 }
 
                 if (sender is Button failedButton)
@@ -1610,11 +1740,11 @@ namespace ASLM.Pages
                 VerticalOptions = LayoutOptions.Center
             };
 
-            var title = CreateCardTitle("Ollama Account");
+            var title = CreateCardTitle(L.Get(LocalizationKeys.Settings_OllamaAccount_Title));
             title.VerticalOptions = LayoutOptions.Center;
             text.Children.Add(title);
 
-            _ollamaAccountStatusLabel = CreateSecondaryLabel("Not signed in");
+            _ollamaAccountStatusLabel = CreateSecondaryLabel(L.Get(LocalizationKeys.Settings_Ollama_NotSignedIn));
             _ollamaAccountStatusLabel.LineBreakMode = LineBreakMode.TailTruncation;
             _ollamaAccountStatusLabel.MaxLines = 1;
             text.Children.Add(_ollamaAccountStatusLabel);
@@ -1622,7 +1752,7 @@ namespace ASLM.Pages
             row.Children.Add(text);
             Grid.SetColumn(text, 0);
 
-            _ollamaAccountButton = CreateInlineActionButton("Sign In", OnOllamaAccountButtonClicked);
+            _ollamaAccountButton = CreateInlineActionButton(L.Get(LocalizationKeys.Settings_Ollama_SignIn), OnOllamaAccountButtonClicked);
             row.Children.Add(_ollamaAccountButton);
             Grid.SetColumn(_ollamaAccountButton, 1);
 
@@ -1651,7 +1781,7 @@ namespace ASLM.Pages
 
             if (visibleSettings.Count == 0)
             {
-                ShowEmptyCategory("This module has no settings in the current state.");
+                ShowEmptyCategory(L.Get(LocalizationKeys.Settings_ModuleNoSettings));
                 return;
             }
 
@@ -1745,6 +1875,7 @@ namespace ASLM.Pages
                     _consoleIndividualToggle.IsToggled);
             }
         }
+
 
         // Draft synchronization
 
@@ -1856,10 +1987,10 @@ namespace ASLM.Pages
             }
 
             var discardChanges = await ShowAlertAsync(
-                "Unsaved changes",
-                "You have unsaved changes in this section. Discard them and switch?",
-                "Discard",
-                "Stay");
+                L.Get(LocalizationKeys.Settings_DiscardDialog_Title),
+                L.Get(LocalizationKeys.Settings_DiscardDialog_Message),
+                L.Get(LocalizationKeys.Common_Discard),
+                L.Get(LocalizationKeys.Common_Stay));
 
             if (!discardChanges)
             {
@@ -1913,9 +2044,13 @@ namespace ASLM.Pages
         /// </summary>
         private bool HasUnsavedPersonalizationChanges() =>
             !string.Equals(_personalizationDraft.Appearance, _personalizationBaseline.Appearance, StringComparison.Ordinal) ||
+            !string.Equals(_personalizationDraft.Language, _personalizationBaseline.Language, StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(_personalizationDraft.CustomThemeId, _personalizationBaseline.CustomThemeId, StringComparison.Ordinal) ||
             HasUnsavedThemeColorChanges();
 
+        /// <summary>
+        /// Determines whether the in-memory theme editor differs from the saved custom theme.
+        /// </summary>
         private bool HasUnsavedThemeColorChanges()
         {
             if (_editingThemeDraft == null)
@@ -1926,7 +2061,7 @@ namespace ASLM.Pages
             var saved = _customThemesStore.FindById(_editingThemeDraft.Id);
             if (saved == null)
             {
-                // New unsaved theme
+                // Theme exists only in the editor draft, not yet persisted.
                 return true;
             }
 
@@ -1977,11 +2112,17 @@ namespace ASLM.Pages
                 _consoleBaseline,
                 _updateBaseline);
 
+        /// <summary>
+        /// Reads the official port draft from visible controls when the ports section is shown.
+        /// </summary>
         private string GetCurrentOfficialPortDraft() =>
             PortsSection.IsVisible
                 ? OfficialPortEntry.Text?.Trim() ?? string.Empty
                 : _officialPortDraft;
 
+        /// <summary>
+        /// Reads the third-party port draft from visible controls when the ports section is shown.
+        /// </summary>
         private string GetCurrentThirdPartyPortDraft() =>
             PortsSection.IsVisible
                 ? ThirdPartyPortEntry.Text?.Trim() ?? string.Empty
@@ -2129,9 +2270,9 @@ namespace ASLM.Pages
         private Task ShowSuccessAsync(string message)
         {
             _notifications.PublishSystemToast(
-                "Settings saved",
+                L.Get(LocalizationKeys.Settings_SavedTitle),
                 message,
-                "Saved",
+                L.Get(LocalizationKeys.Common_Saved),
                 "settings-save");
             return Task.CompletedTask;
         }
@@ -2141,8 +2282,12 @@ namespace ASLM.Pages
         /// </summary>
         private static Task ShowErrorAsync(string message) =>
             Application.Current?.Windows.Count > 0
-                ? Application.Current.Windows[0].Page!.DisplayAlertAsync("Validation Error", message, "OK")
+                ? Application.Current.Windows[0].Page!.DisplayAlertAsync(
+                    L.Get(LocalizationKeys.Settings_ValidationError),
+                    message,
+                    L.Get(LocalizationKeys.Common_OK))
                 : Task.CompletedTask;
+
 
         // Saving
 
@@ -2250,7 +2395,7 @@ namespace ASLM.Pages
             if (targetCategory == null)
             {
                 _activeCategory = null;
-                ShowEmptyCategory("No settings are available.");
+                ShowEmptyCategory(L.Get(LocalizationKeys.Settings_NoSettingsAvailable));
                 UpdateActionButtons();
                 return;
             }
@@ -2388,7 +2533,7 @@ namespace ASLM.Pages
                 }
 
                 var hadAnyPersistedSettingsChanges = hadAslmChanges || hadPersonalizationChanges;
-                var successMessage = SettingsService.BuildSaveMessage(
+                var successMessage = BuildLocalizedSaveMessage(
                     hadAnyPersistedSettingsChanges,
                     touchedModules.Count > 0,
                     deferredSettings);
@@ -2412,7 +2557,7 @@ namespace ASLM.Pages
 
                 if (restartAfterSave && hadPersonalizationChanges)
                 {
-                    await RestartModulesForPersistedHostThemeAsync(touchedModules);
+                    await RestartModulesForHostPersonalizationAsync(touchedModules);
                 }
             }
             finally
@@ -2443,9 +2588,9 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Restarts enabled modules that were not already restarted so they can reload the persisted host theme.
+        /// Restarts enabled modules that declare host-managed theme or locale settings and were not already restarted.
         /// </summary>
-        private async Task RestartModulesForPersistedHostThemeAsync(IEnumerable<ModuleConfig> alreadyRestarted)
+        private async Task RestartModulesForHostPersonalizationAsync(IEnumerable<ModuleConfig> alreadyRestarted)
         {
             var skip = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var module in alreadyRestarted)
@@ -2457,6 +2602,7 @@ namespace ASLM.Pages
             }
 
             foreach (var module in _loadedModules.Where(m =>
+                         ModuleDeclaresHostPersonalizationSync(m) &&
                          CanRestartModule(m) &&
                          !string.IsNullOrWhiteSpace(m.SourcePath) &&
                          !skip.Contains(m.SourcePath)))
@@ -2464,6 +2610,14 @@ namespace ASLM.Pages
                 await _settingsService.RestartModuleAsync(module);
             }
         }
+
+        /// <summary>
+        /// Returns whether a module exposes theme or locale settings that require a host restart.
+        /// </summary>
+        private static bool ModuleDeclaresHostPersonalizationSync(ModuleConfig module) =>
+            module.Settings?.Any(setting =>
+                string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(setting.NormalizedType, "locale", StringComparison.OrdinalIgnoreCase)) == true;
 
         /// <summary>
         /// Restarts the application startup chain so app-level changes take effect.
@@ -2505,10 +2659,10 @@ namespace ASLM.Pages
             if (!signIn)
             {
                 var confirmed = await ShowAlertAsync(
-                    "Sign out from Ollama",
-                    "This removes the current ollama.com session for this Windows profile. Continue?",
-                    "Sign out",
-                    "Cancel");
+                    L.Get(LocalizationKeys.Settings_OllamaSignOut_Title),
+                    L.Get(LocalizationKeys.Settings_OllamaSignOut_Message),
+                    L.Get(LocalizationKeys.Settings_OllamaSignOut_Confirm),
+                    L.Get(LocalizationKeys.Common_Cancel));
 
                 if (!confirmed)
                 {
@@ -2595,9 +2749,11 @@ namespace ASLM.Pages
             {
                 var isSignedIn = IsOllamaSignedIn();
                 _ollamaAccountButton.Text =
-                    _isOllamaAccountActionRunning && string.Equals(_ollamaAccountAction, "signin", StringComparison.Ordinal) ? "Signing In..." :
-                    _isOllamaAccountActionRunning && string.Equals(_ollamaAccountAction, "signout", StringComparison.Ordinal) ? "Signing Out..." :
-                    isSignedIn ? "Sign Out" : "Sign In";
+                    _isOllamaAccountActionRunning && string.Equals(_ollamaAccountAction, "signin", StringComparison.Ordinal)
+                        ? L.Get(LocalizationKeys.Settings_Ollama_SigningIn) :
+                    _isOllamaAccountActionRunning && string.Equals(_ollamaAccountAction, "signout", StringComparison.Ordinal)
+                        ? L.Get(LocalizationKeys.Settings_Ollama_SigningOut) :
+                    isSignedIn ? L.Get(LocalizationKeys.Settings_Ollama_SignOut) : L.Get(LocalizationKeys.Settings_Ollama_SignIn);
                 _ollamaAccountButton.IsEnabled = _ollamaDraft.IsCliAvailable &&
                     !_isOllamaAccountActionRunning &&
                     !_isOllamaMetadataRefreshRunning;
@@ -2815,37 +2971,37 @@ namespace ASLM.Pages
         {
             if (!_ollamaDraft.IsCliAvailable)
             {
-                return "Internal Ollama is not installed";
+                return L.Get(LocalizationKeys.Settings_Ollama_NotInstalled);
             }
 
             if (_isOllamaAccountActionRunning && string.Equals(_ollamaAccountAction, "signin", StringComparison.Ordinal))
             {
-                return "Waiting for browser sign-in";
+                return L.Get(LocalizationKeys.Settings_Ollama_WaitingSignIn);
             }
 
             if (_isOllamaAccountActionRunning && string.Equals(_ollamaAccountAction, "signout", StringComparison.Ordinal))
             {
-                return "Signing out";
+                return L.Get(LocalizationKeys.Settings_Ollama_SigningOutStatus);
             }
 
             if (_isOllamaMetadataRefreshRunning)
             {
-                return "Checking account";
+                return L.Get(LocalizationKeys.Settings_Ollama_CheckingAccount);
             }
 
             if (_ollamaStatusPollingCts != null && !_ollamaDraft.IsSignedIn)
             {
-                return "Waiting for browser sign-in";
+                return L.Get(LocalizationKeys.Settings_Ollama_WaitingSignIn);
             }
 
             if (_ollamaDraft.IsSignedIn)
             {
                 return string.IsNullOrWhiteSpace(_ollamaDraft.UserName)
-                    ? "Signed in"
-                    : $"Signed in as {_ollamaDraft.UserName}";
+                    ? L.Get(LocalizationKeys.Settings_Ollama_SignedIn)
+                    : L.Get(LocalizationKeys.Settings_Ollama_SignedInAs, _ollamaDraft.UserName);
             }
 
-            return "Not signed in";
+            return L.Get(LocalizationKeys.Settings_Ollama_NotSignedIn);
         }
 
         /// <summary>
@@ -2856,6 +3012,7 @@ namespace ASLM.Pages
             PortErrorLabel.Text = message;
             PortErrorLabel.IsVisible = true;
         }
+
 
         // Editor creation
 
@@ -2883,7 +3040,11 @@ namespace ASLM.Pages
                 row.Children.Add(text);
                 Grid.SetColumn(text, 0);
 
-                var badge = CreateStatusBadge(value is bool installed && installed ? "Installed" : "Not installed", value is bool ready && ready);
+                var badge = CreateStatusBadge(
+                    value is bool installed && installed
+                        ? L.Get(LocalizationKeys.Settings_Engine_Installed)
+                        : L.Get(LocalizationKeys.Settings_Engine_NotInstalled),
+                    value is bool ready && ready);
                 row.Children.Add(badge);
                 Grid.SetColumn(badge, 1);
 
@@ -3144,7 +3305,7 @@ namespace ASLM.Pages
             ApplyTextEntryState(entry, !setting.UseCustomValue);
 
             var container = new VerticalStackLayout { Spacing = 10 };
-            container.Children.Add(CreateInlineToggleRow("Use custom value", customToggle));
+            container.Children.Add(CreateInlineToggleRow(L.Get(LocalizationKeys.Settings_UseCustomValue), customToggle));
             container.Children.Add(entryView.Control);
 
             return (container, new SettingControlMapping(
@@ -3155,6 +3316,7 @@ namespace ASLM.Pages
                 baseline.DisplayValue,
                 baseline.UseCustomValue));
         }
+
 
         // Personalization rendering
 
@@ -3171,18 +3333,39 @@ namespace ASLM.Pages
             var section = CreateModuleSectionBorder();
             var content = new VerticalStackLayout { Spacing = 8 };
 
+            _languagePicker = CreatePicker(string.Empty, 13);
+            foreach (var language in AppLocalizationService.SupportedLanguages)
+            {
+                _languagePicker.Items.Add(GetLanguageDisplayName(language.Id));
+            }
+
+            var selectedLanguage = AppLocalizationService.SupportedLanguages
+                .FirstOrDefault(language =>
+                    string.Equals(language.Id, _personalizationDraft.Language, StringComparison.OrdinalIgnoreCase))
+                ?? AppLocalizationService.SupportedLanguages[0];
+            _personalizationDraft.Language = selectedLanguage.Id;
+            _languagePicker.SelectedItem = GetLanguageDisplayName(selectedLanguage.Id);
+            _languagePicker.SelectedIndexChanged += OnLanguagePickerChanged;
+            ApplyCompactPickerStyle(_languagePicker);
+
+            content.Children.Add(CreateUpdateCard(
+                L.Get(LocalizationKeys.Settings_Personalization_Language),
+                L.Get(LocalizationKeys.Settings_Personalization_LanguageDescription),
+                CreatePickerContainer(_languagePicker, PersonalizationPickerMaxWidth)));
+
             _appearancePicker = CreatePicker(string.Empty, 13);
-            _appearancePicker.Items.Add("Dark");
-            _appearancePicker.Items.Add("Light");
-            _appearancePicker.Items.Add("System");
-            _appearancePicker.Items.Add("Custom");
-            _appearancePicker.SelectedItem = _personalizationDraft.Appearance;
+            foreach (var appearance in AppearanceOptions)
+            {
+                _appearancePicker.Items.Add(GetAppearanceDisplayName(appearance));
+            }
+
+            _appearancePicker.SelectedItem = GetAppearanceDisplayName(_personalizationDraft.Appearance);
             _appearancePicker.SelectedIndexChanged += OnAppearancePickerChanged;
             ApplyCompactPickerStyle(_appearancePicker);
 
             content.Children.Add(CreateUpdateCard(
-                "Mode",
-                "Sets how the app chooses its overall interface appearance.",
+                L.Get(LocalizationKeys.Settings_Personalization_Mode),
+                L.Get(LocalizationKeys.Settings_Personalization_ModeDescription),
                 CreatePickerContainer(_appearancePicker, PersonalizationPickerMaxWidth)));
 
             _customThemeSection = new VerticalStackLayout { Spacing = 8 };
@@ -3216,6 +3399,7 @@ namespace ASLM.Pages
         private void ResetPersonalizationControlReferences()
         {
             _appearancePicker = null;
+            _languagePicker = null;
             _customThemeSection = null;
             _customThemePicker = null;
             _themeEditorSection = null;
@@ -3241,19 +3425,19 @@ namespace ASLM.Pages
                 HorizontalOptions = LayoutOptions.End
             };
 
-            var createButton = CreateInlineActionButton("New", OnCreateThemeClicked);
+            var createButton = CreateInlineActionButton(L.Get(LocalizationKeys.Settings_Personalization_New), OnCreateThemeClicked);
             createButton.FontSize = 13;
             createButton.HeightRequest = 32;
             createButton.MinimumHeightRequest = 32;
             createButton.Padding = new Thickness(12, 0);
 
-            var importButton = CreateInlineActionButton("Import", OnImportThemeClicked);
+            var importButton = CreateInlineActionButton(L.Get(LocalizationKeys.Settings_Personalization_Import), OnImportThemeClicked);
             importButton.FontSize = 13;
             importButton.HeightRequest = 32;
             importButton.MinimumHeightRequest = 32;
             importButton.Padding = new Thickness(12, 0);
 
-            var exportButton = CreateInlineActionButton("Export", OnExportThemeClicked);
+            var exportButton = CreateInlineActionButton(L.Get(LocalizationKeys.Settings_Personalization_Export), OnExportThemeClicked);
             exportButton.FontSize = 13;
             exportButton.HeightRequest = 32;
             exportButton.MinimumHeightRequest = 32;
@@ -3265,8 +3449,8 @@ namespace ASLM.Pages
             manageActions.Children.Add(exportButton);
 
             _customThemeSection.Children.Add(CreateUpdateCard(
-                "Themes",
-                "Add, bring in, or share palette definitions stored as files.",
+                L.Get(LocalizationKeys.Settings_Personalization_Themes),
+                L.Get(LocalizationKeys.Settings_Personalization_ThemesDescription),
                 manageActions));
 
             _customThemePicker = new Picker
@@ -3284,7 +3468,7 @@ namespace ASLM.Pages
 
             var deleteButton = new Button
             {
-                Text = "Delete",
+                Text = L.Get(LocalizationKeys.Settings_Personalization_Delete),
                 Style = GetStyleResource(FooterDangerButtonStyleKey),
                 FontSize = 13,
                 HeightRequest = 32,
@@ -3315,11 +3499,11 @@ namespace ASLM.Pages
             Grid.SetColumn(deleteButton, 1);
 
             var selectDescription = themes.Count == 0
-                ? "Create a palette first; it will show up here for selection."
-                : "Which saved palette the token rows below belong to.";
+                ? L.Get(LocalizationKeys.Settings_Personalization_SelectThemeEmpty)
+                : L.Get(LocalizationKeys.Settings_Personalization_SelectThemeActive);
 
             _customThemeSection.Children.Add(CreateUpdateCard(
-                "Active theme",
+                L.Get(LocalizationKeys.Settings_Personalization_ActiveTheme),
                 selectDescription,
                 selectThemeControls));
 
@@ -3341,6 +3525,9 @@ namespace ASLM.Pages
             _suppressCustomThemePickerEvents = false;
         }
 
+        /// <summary>
+        /// Loads the selected custom theme into the editor when the theme picker changes.
+        /// </summary>
         private void OnCustomThemePickerSelectionChanged(object? sender, EventArgs e)
         {
             if (_suppressCustomThemePickerEvents || _customThemePicker == null)
@@ -3382,6 +3569,9 @@ namespace ASLM.Pages
             QueueActionButtonUpdate();
         }
 
+        /// <summary>
+        /// Deletes the theme currently selected in the custom theme picker.
+        /// </summary>
         private async void OnDeleteCurrentCustomThemeClicked(object? sender, EventArgs e)
         {
             if (_customThemePicker?.SelectedItem is not CustomTheme t)
@@ -3404,12 +3594,17 @@ namespace ASLM.Pages
 
             container.Children.Clear();
 
-            container.Children.Add(CreateSubGroupHeader($"Colors · {_editingThemeDraft.Name}"));
+            container.Children.Add(CreateSubGroupHeader(
+                L.Get(LocalizationKeys.Settings_ThemeEditor_ColorsFormat, _editingThemeDraft.Name)));
 
             var basePicker = CreatePicker(string.Empty, 13);
-            basePicker.Items.Add("Dark");
-            basePicker.Items.Add("Light");
-            basePicker.SelectedItem = _editingThemeDraft.BaseAppearance == "light" ? "Light" : "Dark";
+            var baseDarkLabel = GetAppearanceDisplayName("Dark");
+            var baseLightLabel = GetAppearanceDisplayName("Light");
+            basePicker.Items.Add(baseDarkLabel);
+            basePicker.Items.Add(baseLightLabel);
+            basePicker.SelectedItem = string.Equals(_editingThemeDraft.BaseAppearance, "light", StringComparison.OrdinalIgnoreCase)
+                ? baseLightLabel
+                : baseDarkLabel;
             basePicker.SelectedIndexChanged += (_, _) =>
             {
                 if (_editingThemeDraft == null)
@@ -3417,15 +3612,20 @@ namespace ASLM.Pages
                     return;
                 }
 
-                _editingThemeDraft.BaseAppearance = basePicker.SelectedItem as string == "Light" ? "light" : "dark";
+                _editingThemeDraft.BaseAppearance = string.Equals(
+                    basePicker.SelectedItem as string,
+                    baseLightLabel,
+                    StringComparison.Ordinal)
+                    ? "light"
+                    : "dark";
                 _themeService.PreviewCustomTheme(_editingThemeDraft);
                 RefreshCategorySelectorChromeFromResources();
                 QueueActionButtonUpdate();
             };
             ApplyCompactPickerStyle(basePicker);
             container.Children.Add(CreateUpdateCard(
-                "Base",
-                "Built-in semantic defaults for tokens you have not overridden yet.",
+                L.Get(LocalizationKeys.Settings_ThemeEditor_Base),
+                L.Get(LocalizationKeys.Settings_ThemeEditor_BaseDescription),
                 CreatePickerContainer(basePicker, PersonalizationPickerMaxWidth)));
 
             var keys = ThemePaletteResolver.AllKeys.ToList();
@@ -3482,6 +3682,9 @@ namespace ASLM.Pages
             container.Children.Add(colorsCard);
         }
 
+        /// <summary>
+        /// Builds one compact palette-key row with swatch, hex label, and picker action.
+        /// </summary>
         private View CreateCompactColorEditorRow(string key)
         {
             _editingThemeDraft!.Colors.TryGetValue(key, out var existingValue);
@@ -3521,28 +3724,28 @@ namespace ASLM.Pages
 
             var pickButton = new Button
             {
-                Text = "Pick",
+                Text = L.Get(LocalizationKeys.Settings_ThemeEditor_Pick),
                 FontSize = 12,
                 HeightRequest = 24,
                 MinimumHeightRequest = 24,
-                Padding = new Thickness(8, 0),
+                Padding = new Thickness(4, 0),
                 CornerRadius = 5,
-                WidthRequest = 48,
-                HorizontalOptions = LayoutOptions.Center
+                MinimumWidthRequest = 56,
+                HorizontalOptions = LayoutOptions.End
             };
             pickButton.SetDynamicResource(Button.BackgroundColorProperty, "BackgroundTertiary");
             pickButton.SetDynamicResource(Button.TextColorProperty, "LabelPrimary");
 
             var clearButton = new Button
             {
-                Text = "Clear",
+                Text = L.Get(LocalizationKeys.Settings_ThemeEditor_Clear),
                 FontSize = 12,
                 HeightRequest = 24,
                 MinimumHeightRequest = 24,
-                Padding = new Thickness(8, 0),
+                Padding = new Thickness(4, 0),
                 CornerRadius = 5,
-                WidthRequest = 48,
-                HorizontalOptions = LayoutOptions.Center
+                MinimumWidthRequest = 56,
+                HorizontalOptions = LayoutOptions.End
             };
             clearButton.SetDynamicResource(Button.BackgroundColorProperty, "BackgroundTertiary");
             clearButton.SetDynamicResource(Button.TextColorProperty, "LabelSecondary");
@@ -3587,8 +3790,8 @@ namespace ASLM.Pages
             row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(2, GridUnitType.Star)));
             row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(28, GridUnitType.Absolute)));
             row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
-            row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(50, GridUnitType.Absolute)));
-            row.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(50, GridUnitType.Absolute)));
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
 
             var keyLabel = new Label
             {
@@ -3641,6 +3844,9 @@ namespace ASLM.Pages
             }
         }
 
+        /// <summary>
+        /// Opens the platform color picker for one theme palette key and updates the draft.
+        /// </summary>
         private async Task OpenThemeColorPickerForKeyAsync(string key, Border swatchFrame, Label hexLabel)
         {
             if (_editingThemeDraft == null)
@@ -3665,6 +3871,9 @@ namespace ASLM.Pages
             QueueActionButtonUpdate();
         }
 
+        /// <summary>
+        /// Resolves the initial color shown in the theme editor for a palette key.
+        /// </summary>
         private static Color ResolveThemeEditorColor(string key, string? existingHex)
         {
             if (!string.IsNullOrWhiteSpace(existingHex) && ThemePaletteResolver.TryParseHex(existingHex, out var parsed))
@@ -3680,6 +3889,9 @@ namespace ASLM.Pages
             return Colors.Gray;
         }
 
+        /// <summary>
+        /// Updates appearance draft state and live theme preview when the appearance picker changes.
+        /// </summary>
         private void OnAppearancePickerChanged(object? sender, EventArgs e)
         {
             if (_appearancePicker == null)
@@ -3687,7 +3899,8 @@ namespace ASLM.Pages
                 return;
             }
 
-            var selected = _appearancePicker.SelectedItem as string ?? "Dark";
+            var selectedDisplay = _appearancePicker.SelectedItem as string ?? GetAppearanceDisplayName("Dark");
+            var selected = ResolveAppearanceFromDisplayName(selectedDisplay);
             _personalizationDraft.Appearance = AppPersonalizationConfig.NormalizeAppearance(selected);
 
             var isCustom = string.Equals(selected, "Custom", StringComparison.OrdinalIgnoreCase);
@@ -3725,9 +3938,34 @@ namespace ASLM.Pages
             RefreshCategorySelectorChromeFromResources();
         }
 
+        /// <summary>
+        /// Updates the language draft when the language picker selection changes.
+        /// </summary>
+        private void OnLanguagePickerChanged(object? sender, EventArgs e)
+        {
+            if (_languagePicker == null)
+            {
+                return;
+            }
+
+            var selectedDisplayName = _languagePicker.SelectedItem as string;
+            var language = AppLocalizationService.SupportedLanguages
+                .FirstOrDefault(option =>
+                    string.Equals(GetLanguageDisplayName(option.Id), selectedDisplayName, StringComparison.Ordinal))
+                ?? AppLocalizationService.SupportedLanguages[0];
+            _personalizationDraft.Language = language.Id;
+            QueueActionButtonUpdate();
+        }
+
+        /// <summary>
+        /// Prompts for a new custom theme name, creates it, and selects it in the editor.
+        /// </summary>
         private async void OnCreateThemeClicked(object? sender, EventArgs e)
         {
-            var name = await PromptAsync("New Theme", "Enter a name for the new theme:", "My Theme");
+            var name = await PromptAsync(
+                L.Get(LocalizationKeys.Settings_ThemeNew_PromptTitle),
+                L.Get(LocalizationKeys.Settings_ThemeNew_PromptMessage),
+                L.Get(LocalizationKeys.Settings_ThemeNew_DefaultName));
             if (string.IsNullOrWhiteSpace(name))
             {
                 return;
@@ -3739,20 +3977,22 @@ namespace ASLM.Pages
                 return;
             }
 
+            var inheritDark = L.Get(LocalizationKeys.Settings_Personalization_InheritDark);
+            var inheritLight = L.Get(LocalizationKeys.Settings_Personalization_InheritLight);
             var inheritChoice = await host.DisplayActionSheetAsync(
-                "Inherit colors from",
-                "Cancel",
+                L.Get(LocalizationKeys.Settings_Personalization_InheritTitle),
+                L.Get(LocalizationKeys.Common_Cancel),
                 null,
-                "Dark (built-in)",
-                "Light (built-in)");
+                inheritDark,
+                inheritLight);
 
             if (string.IsNullOrEmpty(inheritChoice) ||
-                string.Equals(inheritChoice, "Cancel", StringComparison.OrdinalIgnoreCase))
+                string.Equals(inheritChoice, L.Get(LocalizationKeys.Common_Cancel), StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            var baseAppearance = string.Equals(inheritChoice, "Light (built-in)", StringComparison.OrdinalIgnoreCase)
+            var baseAppearance = string.Equals(inheritChoice, inheritLight, StringComparison.OrdinalIgnoreCase)
                 ? "light"
                 : "dark";
 
@@ -3765,6 +4005,9 @@ namespace ASLM.Pages
             ApplyCustomThemeSelection(newTheme.Id);
         }
 
+        /// <summary>
+        /// Imports a custom theme from a user-selected JSON file.
+        /// </summary>
         private async void OnImportThemeClicked(object? sender, EventArgs e)
         {
             var host = Application.Current?.Windows.FirstOrDefault()?.Page;
@@ -3777,7 +4020,7 @@ namespace ASLM.Pages
             {
                 var pick = await FilePicker.Default.PickAsync(new PickOptions
                 {
-                    PickerTitle = "Import theme",
+                    PickerTitle = L.Get(LocalizationKeys.Settings_Personalization_ImportPickerTitle),
                     FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
                     {
                         [DevicePlatform.WinUI] = new[] { ".json" },
@@ -3797,14 +4040,14 @@ namespace ASLM.Pages
                 var json = await reader.ReadToEndAsync();
                 if (json.Length > 524_288)
                 {
-                    await ShowErrorAsync("The theme file is too large.");
+                    await ShowErrorAsync(L.Get(LocalizationKeys.Settings_ThemeImport_TooLarge));
                     return;
                 }
 
                 var imported = _customThemesStore.DeserializeImportedTheme(json);
                 if (imported == null)
                 {
-                    await ShowErrorAsync("The file is not a valid ASLM theme.");
+                    await ShowErrorAsync(L.Get(LocalizationKeys.Settings_ThemeImport_Invalid));
                     return;
                 }
 
@@ -3817,15 +4060,18 @@ namespace ASLM.Pages
             }
             catch (Exception ex)
             {
-                await ShowErrorAsync($"Could not import theme: {ex.Message}");
+                await ShowErrorAsync(L.Get(LocalizationKeys.Settings_ThemeImport_Failed, ex.Message));
             }
         }
 
+        /// <summary>
+        /// Exports the selected custom theme to a JSON file on disk.
+        /// </summary>
         private async void OnExportThemeClicked(object? sender, EventArgs e)
         {
             if (_customThemePicker?.SelectedItem is not CustomTheme t)
             {
-                await ShowErrorAsync("Select a theme to export.");
+                await ShowErrorAsync(L.Get(LocalizationKeys.Settings_ThemeExport_Select));
                 return;
             }
 
@@ -3844,10 +4090,13 @@ namespace ASLM.Pages
             }
             catch (Exception ex)
             {
-                await ShowErrorAsync($"Could not export theme: {ex.Message}");
+                await ShowErrorAsync(L.Get(LocalizationKeys.Settings_ThemeExport_Failed, ex.Message));
             }
         }
 
+        /// <summary>
+        /// Normalizes a theme name into a safe file name for export.
+        /// </summary>
         private static string SanitizeThemeFileName(string name)
         {
             var baseName = string.IsNullOrWhiteSpace(name) ? "ASLM_theme" : name.Trim();
@@ -3863,13 +4112,16 @@ namespace ASLM.Pages
             return string.IsNullOrEmpty(s) ? "ASLM_theme" : s;
         }
 
+        /// <summary>
+        /// Confirms deletion, removes a custom theme, and refreshes personalization UI state.
+        /// </summary>
         private async Task OnDeleteThemeClickedAsync(string themeId)
         {
             var confirmed = await ShowAlertAsync(
-                "Delete theme",
-                "Are you sure you want to delete this theme? This cannot be undone.",
-                "Delete",
-                "Cancel");
+                L.Get(LocalizationKeys.Settings_ThemeDelete_Title),
+                L.Get(LocalizationKeys.Settings_ThemeDelete_Message),
+                L.Get(LocalizationKeys.Settings_ThemeDelete_Accept),
+                L.Get(LocalizationKeys.Common_Cancel));
 
             if (!confirmed)
             {
@@ -3910,7 +4162,12 @@ namespace ASLM.Pages
         /// </summary>
         private async Task SavePersonalizationAsync()
         {
-            // Persist custom theme color edits if any.
+            var languageChanged = !string.Equals(
+                _personalizationBaseline.Language,
+                _personalizationDraft.Language,
+                StringComparison.OrdinalIgnoreCase);
+
+            // Persist in-editor custom theme color changes before updating app data.
             if (_editingThemeDraft != null)
             {
                 var existingTheme = _customThemesStore.FindById(_editingThemeDraft.Id);
@@ -3925,20 +4182,27 @@ namespace ASLM.Pages
                 }
             }
 
-            // Update app data personalization section.
+            // Write appearance, language, and custom theme selection to app data.
             _appData.Data.Personalization.Appearance = _personalizationDraft.Appearance;
+            _appData.Data.Personalization.Language = _personalizationDraft.Language;
             _appData.Data.Personalization.CustomThemeId = _personalizationDraft.CustomThemeId;
             _appData.Data.Personalization.Normalize();
 
-            // Reload baselines.
+            // Refresh personalization baselines used by unsaved-change detection.
             _personalizationBaseline = new AppPersonalizationConfig
             {
                 Appearance = _personalizationDraft.Appearance,
+                Language = _personalizationDraft.Language,
                 CustomThemeId = _personalizationDraft.CustomThemeId
             };
 
-            // Apply the saved theme immediately.
+            // Apply the saved theme and palette without waiting for restart.
             _themeService.ApplyFromSettings();
+
+            if (languageChanged)
+            {
+                _localization.ApplyCulture();
+            }
         }
 
         /// <summary>
@@ -4468,6 +4732,7 @@ namespace ASLM.Pages
             entry.Opacity = isReadOnly ? 0.72 : 1.0;
         }
 
+
         // Misc helpers
 
         /// <summary>
@@ -4503,6 +4768,9 @@ namespace ASLM.Pages
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern nint GetForegroundWindow();
 
+        /// <summary>
+        /// Shows the Windows save picker for exporting a custom theme JSON file.
+        /// </summary>
         private static async Task<string?> PickExportThemeFilePathAsync(string suggestedFileName)
         {
             var native = Application.Current?.Windows.FirstOrDefault()?.Handler?.PlatformView;

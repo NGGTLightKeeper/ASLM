@@ -106,6 +106,8 @@ namespace ASLM.Services
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
 
+        // Constructor
+
         public SettingsService(
             EngineInstaller engineInstaller,
             ModuleInstaller moduleInstaller,
@@ -115,6 +117,9 @@ namespace ASLM.Services
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
         }
+
+
+        // Categories & grouping
 
         /// <summary>
         /// Returns the top-level group that owns the specified category.
@@ -134,6 +139,7 @@ namespace ASLM.Services
         /// </summary>
         public List<SettingsCategory> CreateOrderedCategories(IReadOnlyList<ModuleConfig> loadedModules)
         {
+            // Built-in ASLM categories always appear first in the sidebar.
             var categories = new List<SettingsCategory>
             {
                 new(
@@ -167,12 +173,13 @@ namespace ASLM.Services
                 new(
                     "aslm-personalization",
                     "Personalization",
-                    "Theme mode and custom theme settings.",
+                    "Theme mode, language, and custom theme settings.",
                     SettingsCategoryKind.Personalization,
                     null,
                     false)
             };
 
+            // Module categories follow, sorted by name and limited to modules with visible settings.
             categories.AddRange(
                 loadedModules
                     .Where(module => module.Settings.Any(ShouldDisplaySetting))
@@ -188,13 +195,23 @@ namespace ASLM.Services
             return categories;
         }
 
+
+        // Discovery
+
+        /// <summary>
+        /// Discovers installed modules and returns their configuration snapshots for the settings page.
+        /// </summary>
         public Task<List<ModuleConfig>> DiscoverModulesAsync() => _moduleInstaller.DiscoverModulesAsync();
+
+
+        // Port validation
 
         /// <summary>
         /// Validates the port draft values and returns parsed integers when valid.
         /// </summary>
         public static PortParseResult TryParsePorts(string officialDraft, string thirdPartyDraft)
         {
+            // Official port range: 1024–65000.
             if (!int.TryParse(officialDraft, NumberStyles.Integer, CultureInfo.InvariantCulture, out var officialPort) ||
                 officialPort < 1024 ||
                 officialPort > 65000)
@@ -206,6 +223,7 @@ namespace ASLM.Services
                 };
             }
 
+            // Third-party port range: 1024–64000.
             if (!int.TryParse(thirdPartyDraft, NumberStyles.Integer, CultureInfo.InvariantCulture, out var thirdPartyPort) ||
                 thirdPartyPort < 1024 ||
                 thirdPartyPort > 64000)
@@ -217,6 +235,7 @@ namespace ASLM.Services
                 };
             }
 
+            // Reserved ranges must not overlap (official +100, third-party +1000).
             var officialPortEnd = officialPort + 100;
             var thirdPartyPortEnd = thirdPartyPort + 1000;
             if (officialPort < thirdPartyPortEnd && thirdPartyPort < officialPortEnd)
@@ -237,6 +256,9 @@ namespace ASLM.Services
                 ErrorMessage = string.Empty
             };
         }
+
+
+        // Profile & update validation
 
         /// <summary>
         /// Validates one display name draft and returns trimmed value.
@@ -280,6 +302,9 @@ namespace ASLM.Services
             return true;
         }
 
+
+        // Save messaging
+
         /// <summary>
         /// Builds the save confirmation message, including deferred runtime updates when present.
         /// </summary>
@@ -302,6 +327,9 @@ namespace ASLM.Services
             var preview = string.Join("\n", deferredSettings.Take(5));
             return $"Settings saved. Some module settings could not be applied immediately and will be retried on next module start.\n\n{preview}";
         }
+
+
+        // ASLM drafts & persistence
 
         /// <summary>
         /// Builds editable ASLM draft values from persisted app data and runtime API-state.
@@ -398,6 +426,9 @@ namespace ASLM.Services
                     defaultConsoles.ShowIndividualModuleConsoles));
         }
 
+
+        // Unsaved change detection
+
         /// <summary>
         /// Checks whether account display-name draft differs from baseline.
         /// </summary>
@@ -451,9 +482,18 @@ namespace ASLM.Services
             HasUnsavedConsoleChanges(consoleDraft, consoleBaseline) ||
             HasUnsavedUpdateChanges(updateDraft, updateBaseline);
 
+
+        // Runtime & module control
+
+        /// <summary>
+        /// Returns the effective runtime value for one module setting without reloading from disk.
+        /// </summary>
         public object? GetResolvedSettingValue(ModuleConfig module, ModuleSetting setting) =>
             _moduleRunner.GetResolvedSettingValue(module, setting);
 
+        /// <summary>
+        /// Stops every running module process before applying settings that require a clean slate.
+        /// </summary>
         public Task StopAllModulesAsync() => Task.Run(() => _moduleRunner.StopAllModulesAsync());
 
         /// <summary>
@@ -461,6 +501,7 @@ namespace ASLM.Services
         /// </summary>
         public async Task RestartModuleAsync(ModuleConfig module)
         {
+            // Reload manifest so restart uses the latest on-disk settings and commands.
             var freshConfig = await Task.Run(() => _moduleInstaller.LoadModuleConfig(module.SourcePath));
             if (freshConfig != null)
             {
@@ -474,6 +515,9 @@ namespace ASLM.Services
             var restartLog = new Progress<string>(message => Debug.WriteLine($"[Restart] {message}"));
             _ = Task.Run(() => _moduleRunner.ExecuteRunAsync(module, restartLog, CancellationToken.None));
         }
+
+
+        // Self-update
 
         /// <summary>
         /// Starts the launcher so it can detect the prepared update after the current app exits.
@@ -498,6 +542,7 @@ namespace ASLM.Services
                 return;
             }
 
+            // Fallback when breakaway process creation is unavailable.
             var startInfo = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = launcherPath,
@@ -544,6 +589,9 @@ namespace ASLM.Services
             return parentRoot ?? appDir;
         }
 
+
+        // Module display rules
+
         /// <summary>
         /// Restores every editable setting in the selected module back to its manifest default.
         /// </summary>
@@ -565,7 +613,8 @@ namespace ASLM.Services
         /// </summary>
         public static bool ShouldDisplaySetting(ModuleSetting setting) =>
             !string.Equals(setting.NormalizedType, "port", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase);
+            !string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(setting.NormalizedType, "locale", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Evaluates whether a setting should currently be visible based on its controlling toggle.
@@ -604,6 +653,9 @@ namespace ASLM.Services
                 !string.Equals(other.Key, setting.Key, StringComparison.OrdinalIgnoreCase) &&
                 IsGroupedUnder(setting.Key, other.Key) &&
                 ShouldDisplaySetting(other));
+
+
+        // Module validation & changes
 
         /// <summary>
         /// Validates the saved draft values for one loaded module.
@@ -656,6 +708,9 @@ namespace ASLM.Services
             return false;
         }
 
+
+        // Module load & save
+
         /// <summary>
         /// Loads one module's visible settings, optionally using live runtime getters.
         /// </summary>
@@ -670,12 +725,14 @@ namespace ASLM.Services
                 return;
             }
 
+            // Load from runtime getters or fall back to cached manifest values.
             var loaded = reloadRuntimeValues
                 ? await Task.WhenAll(settings.Select(setting => LoadSettingValueAsync(module, setting)))
                 : settings.Select(setting => new LoadedSetting(setting, GetFallbackValue(module, setting))).ToArray();
 
             UpdateSettingBaselines(module, loaded, baselines);
 
+            // Apply loaded values to editable settings only.
             foreach (var item in loaded)
             {
                 if (!item.Setting.IsAutomaticallyManaged || item.Setting.UseCustomValue)
@@ -695,6 +752,7 @@ namespace ASLM.Services
             var touchedModules = new HashSet<ModuleConfig>();
             var deferredSettings = new List<string>();
 
+            // Compare each setting against baseline and apply runtime set-exec when changed.
             foreach (var setting in module.Settings.Where(ShouldDisplaySetting))
             {
                 if (IsAutoDetectedAslmEngine(setting))
@@ -747,6 +805,7 @@ namespace ASLM.Services
                 }
             }
 
+            // Persist manifest changes for every module that had at least one edited setting.
             foreach (var touchedModule in touchedModules)
             {
                 await Task.Run(() => _moduleInstaller.SaveConfigAsync(touchedModule));
@@ -755,6 +814,9 @@ namespace ASLM.Services
             return new ModuleSaveResult(touchedModules, deferredSettings);
         }
 
+        /// <summary>
+        /// Loads one setting value from runtime get-exec or manifest fallback.
+        /// </summary>
         public async Task<LoadedSetting> LoadSettingValueAsync(ModuleConfig module, ModuleSetting setting)
         {
             if (IsAutoDetectedAslmEngine(setting))
@@ -787,6 +849,9 @@ namespace ASLM.Services
             }
         }
 
+
+        // Setting values & baselines
+
         /// <summary>
         /// Resolves the current draft value used for rendering and save comparison.
         /// </summary>
@@ -815,6 +880,9 @@ namespace ASLM.Services
                 ? _moduleRunner.GetResolvedSettingValue(module, setting) ?? currentValue
                 : currentValue;
 
+        /// <summary>
+        /// Refreshes per-setting baselines after a load pass so unsaved-change detection stays accurate.
+        /// </summary>
         public void UpdateSettingBaselines(
             ModuleConfig module,
             IEnumerable<LoadedSetting> loadedSettings,
@@ -831,6 +899,9 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Returns the stored baseline for one setting, or builds a snapshot from the current value.
+        /// </summary>
         public SettingBaseline GetSettingBaseline(
             ModuleConfig module,
             ModuleSetting setting,
@@ -846,8 +917,14 @@ namespace ASLM.Services
             return new SettingBaseline(setting.FormatValueForDisplay(effectiveValue), setting.UseCustomValue);
         }
 
+        /// <summary>
+        /// Stable identity key for one module setting within baseline dictionaries.
+        /// </summary>
         public static string GetSettingIdentity(ModuleConfig module, ModuleSetting setting) =>
             $"{module.Id}::{setting.Key}";
+
+
+        // Engine detection
 
         /// <summary>
         /// Detects whether an engine-style setting maps directly to an ASLM engine installation.
@@ -870,6 +947,9 @@ namespace ASLM.Services
         public bool IsAslmEngineInstalled(string engineId) =>
             _engineInstaller.GetEngineConfig(engineId) != null;
 
+
+        // Setting value validation
+
         /// <summary>
         /// Validates one setting value according to its declared manifest type.
         /// </summary>
@@ -885,6 +965,7 @@ namespace ASLM.Services
 
             var type = setting.NormalizedType;
 
+            // Numeric types.
             if (type is "int" or "integer" or "port")
             {
                 if (!int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
@@ -909,6 +990,7 @@ namespace ASLM.Services
                     return false;
                 }
             }
+            // Boolean and engine toggles.
             else if (type is "bool" or "engine")
             {
                 if (!bool.TryParse(rawValue, out _) && !string.Equals(rawValue, "true", StringComparison.OrdinalIgnoreCase) && !string.Equals(rawValue, "false", StringComparison.OrdinalIgnoreCase))
@@ -917,6 +999,7 @@ namespace ASLM.Services
                     return false;
                 }
             }
+            // Structured JSON payloads when the value looks like JSON.
             else if (type is "json" or "object" or "array")
             {
                 var trimmed = rawValue!.Trim();
@@ -937,6 +1020,12 @@ namespace ASLM.Services
             return true;
         }
 
+
+        // Setting visibility
+
+        /// <summary>
+        /// Finds the boolean toggle that controls whether <paramref name="setting"/> is visible.
+        /// </summary>
         private static ModuleSetting? FindControllingSetting(
             ModuleSetting setting,
             IReadOnlyList<ModuleSetting> allSettings,
@@ -949,10 +1038,16 @@ namespace ASLM.Services
                 .OrderByDescending(candidate => candidate.Key.Length)
                 .FirstOrDefault();
 
+        /// <summary>
+        /// Returns whether <paramref name="childKey"/> is grouped under <paramref name="parentKey"/> by naming convention.
+        /// </summary>
         private static bool IsGroupedUnder(string parentKey, string childKey) =>
             childKey.StartsWith(parentKey + "_", StringComparison.OrdinalIgnoreCase) ||
             childKey.StartsWith(parentKey + "-", StringComparison.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// Returns whether <paramref name="setting"/> acts as a visibility toggle for dependent settings.
+        /// </summary>
         private static bool IsVisibilityToggle(ModuleSetting setting, IReadOnlyDictionary<string, object?> valuesByKey)
         {
             if (!valuesByKey.TryGetValue(setting.Key, out var value))

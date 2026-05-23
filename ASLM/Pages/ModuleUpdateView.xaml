@@ -45,7 +45,8 @@
                            LineBreakMode="TailTruncation" />
                 </VerticalStackLayout>
 
-                <Button Grid.Column="1"
+                <Button x:Name="CloseButton"
+                        Grid.Column="1"
                         Text="&#x2715;"
                         FontSize="17"
                         WidthRequest="34"
@@ -73,7 +74,8 @@
                         <Grid ColumnDefinitions="*,*"
                               ColumnSpacing="8">
                             <VerticalStackLayout Spacing="4">
-                                <Label Text="Current version"
+                                <Label x:Name="CurrentVersionHeaderLabel"
+                                       Text="Current version"
                                        FontSize="13"
                                        TextColor="{DynamicResource LabelSecondary}" />
                                 <Label Text="{Binding CurrentVersionLabel, Source={x:Reference RootView}}"
@@ -84,7 +86,8 @@
 
                             <VerticalStackLayout Grid.Column="1"
                                                  Spacing="4">
-                                <Label Text="Selected target"
+                                <Label x:Name="SelectedTargetHeaderLabel"
+                                       Text="Selected target"
                                        FontSize="13"
                                        TextColor="{DynamicResource LabelSecondary}" />
                                 <Label Text="{Binding TargetVersionLabel, Source={x:Reference RootView}}"
@@ -103,11 +106,13 @@
                             Padding="0,8,0,0">
                         <VerticalStackLayout Spacing="8">
                             <VerticalStackLayout Spacing="4">
-                                <Label Text="Update source"
+                                <Label x:Name="UpdateSourceHeaderLabel"
+                                       Text="Update source"
                                        FontSize="16"
                                        FontAttributes="Bold"
                                        TextColor="{DynamicResource LabelPrimary}" />
-                                <Label Text="Preferences are saved automatically."
+                                <Label x:Name="PrefsAutoSavedLabel"
+                                       Text="Preferences are saved automatically."
                                        FontSize="13"
                                        TextColor="{DynamicResource LabelSecondary}" />
                             </VerticalStackLayout>
@@ -115,7 +120,8 @@
                             <Grid ColumnDefinitions="*,*"
                                   ColumnSpacing="12">
                                 <VerticalStackLayout Spacing="6">
-                                    <Label Text="Search mode"
+                                    <Label x:Name="SearchModeLabel"
+                                           Text="Search mode"
                                            FontSize="13"
                                            TextColor="{DynamicResource LabelSecondary}" />
                                     <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
@@ -138,7 +144,8 @@
                                 <VerticalStackLayout Grid.Column="1"
                                                      Spacing="6"
                                                      IsVisible="{Binding IsReleaseMode, Source={x:Reference RootView}}">
-                                    <Label Text="Release version"
+                                    <Label x:Name="ReleaseVersionLabel"
+                                           Text="Release version"
                                            FontSize="13"
                                            TextColor="{DynamicResource LabelSecondary}" />
                                     <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
@@ -162,7 +169,8 @@
                                 <VerticalStackLayout Grid.Column="1"
                                                      Spacing="6"
                                                      IsVisible="{Binding IsBranchMode, Source={x:Reference RootView}}">
-                                    <Label Text="Repository branch"
+                                    <Label x:Name="RepositoryBranchLabel"
+                                           Text="Repository branch"
                                            FontSize="12"
                                            TextColor="{DynamicResource LabelSecondary}" />
                                     <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
@@ -205,7 +213,8 @@
                                        LineBreakMode="TailTruncation" />
                             </VerticalStackLayout>
 
-                            <Label Grid.Row="1"
+                            <Label x:Name="OverallProgressLabel"
+                                   Grid.Row="1"
                                    Text="Overall progress"
                                    FontSize="10"
                                    TextColor="{DynamicResource LabelSecondary}"
@@ -251,7 +260,8 @@
                                    Color="{DynamicResource LabelPrimary}"
                                    VerticalOptions="Center" />
 
-                <Button Grid.Column="2"
+                <Button x:Name="CheckUpdatesButton"
+                        Grid.Column="2"
                         Text="Check updates"
                         HeightRequest="36"
                         MinimumHeightRequest="36"
@@ -262,7 +272,8 @@
                         IsEnabled="{Binding CanCheckUpdates, Source={x:Reference RootView}}"
                         Clicked="OnCheckUpdatesClicked" />
 
-                <Button Grid.Column="3"
+                <Button x:Name="InstallUpdateButton"
+                        Grid.Column="3"
                         Text="Install update"
                         HeightRequest="36"
                         MinimumHeightRequest="36"

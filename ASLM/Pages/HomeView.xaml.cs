@@ -11,13 +11,12 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
+using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
 
 namespace ASLM.Pages
 {
-    // Home dashboard view
-
     /// <summary>
     /// Reads semantic colors from the active app palette so presenter snapshots stay readable in light and dark themes.
     /// </summary>
@@ -29,6 +28,9 @@ namespace ASLM.Pages
         public static Color LabelSecondary =>
             Resolve("LabelSecondary", Color.FromArgb("#FF636366"));
 
+        /// <summary>
+        /// Resolves a semantic palette color from application resources.
+        /// </summary>
         private static Color Resolve(string key, Color fallback)
         {
             if (Application.Current?.Resources.TryGetValue(key, out var v) == true && v is Color c)
@@ -40,16 +42,18 @@ namespace ASLM.Pages
         }
     }
 
+
     /// <summary>
     /// Displays the main ASLM dashboard with live runtime metrics, module controls, and the managed process tree.
     /// </summary>
-    public partial class HomeView : ContentView, IHomeDashboardView
+    public partial class HomeView : ContentView, IHomeDashboardView, ILocalizable
     {
         private const double MinSummaryCardWidth = 400;
         private const double CompactBreakpoint = 1480;
 
         private readonly HomeDashboardPageViewModel _viewModel = new();
         private readonly HomeDashboardPresenter _presenter;
+        private readonly AppLocalizationService _localization;
         private IDispatcherTimer? _refreshTimer;
 
         /// <summary>
@@ -60,19 +64,40 @@ namespace ASLM.Pages
             ModuleRunner moduleRunner,
             ModuleConsoleStore consoleStore,
             ProcessSnapshotReader processSnapshots,
-            AppDataStore appData)
+            AppDataStore appData,
+            AppLocalizationService localization)
         {
             InitializeComponent();
 
             BindingContext = _viewModel;
+            _localization = localization;
 
             _presenter = new HomeDashboardPresenter(this, moduleInstaller, moduleRunner, consoleStore, processSnapshots, appData);
+
+            LocalizableAttach.Hook(this, _localization, this);
 
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
             SizeChanged += OnSizeChanged;
 
             UpdateResponsiveLayout();
+        }
+
+        /// <inheritdoc />
+        public void ApplyLocalization()
+        {
+            HomeTitleLabel.Text = L.Get(LocalizationKeys.Home_Title);
+            ManagedProcessesHeaderLabel.Text = L.Get(LocalizationKeys.Home_ManagedProcesses);
+            ColumnNameLabel.Text = L.Get(LocalizationKeys.Home_Column_Name);
+            ColumnCpuLabel.Text = L.Get(LocalizationKeys.Home_Column_Cpu);
+            ColumnGpuLabel.Text = L.Get(LocalizationKeys.Home_Column_Gpu);
+            ColumnRamLabel.Text = L.Get(LocalizationKeys.Home_Column_Ram);
+            ColumnDiskLabel.Text = L.Get(LocalizationKeys.Home_Column_Disk);
+            ColumnNetLabel.Text = L.Get(LocalizationKeys.Home_Column_Net);
+            ColumnDetailsLabel.Text = L.Get(LocalizationKeys.Home_Column_Details);
+            ModulesHeaderLabel.Text = L.Get(LocalizationKeys.Home_ModulesHeader);
+
+            _ = _presenter.RefreshAsync(forceModuleReload: false);
         }
 
         /// <summary>
@@ -90,6 +115,7 @@ namespace ASLM.Pages
         {
             return _presenter.RefreshAsync();
         }
+
 
         // Lifetime events
 
@@ -111,6 +137,7 @@ namespace ASLM.Pages
             _presenter.Deactivate();
         }
 
+
         // Layout events
 
         /// <summary>
@@ -120,6 +147,7 @@ namespace ASLM.Pages
         {
             UpdateResponsiveLayout();
         }
+
 
         // Rendering
 
@@ -147,6 +175,7 @@ namespace ASLM.Pages
                 static item => item.SourcePath,
                 static (target, source) => target.CopyFrom(source));
         }
+
 
         // Responsive layout
 
@@ -191,6 +220,7 @@ namespace ASLM.Pages
             }
         }
 
+
         // Timed refresh
 
         /// <summary>
@@ -229,6 +259,7 @@ namespace ASLM.Pages
             timer.Tick += OnRefreshTimerTick;
             return timer;
         }
+
 
         // Collection helpers
 
@@ -316,6 +347,9 @@ namespace ASLM.Pages
             }
         }
 
+        /// <summary>
+        /// Builds a key-to-index map for the current observable collection contents.
+        /// </summary>
         private static Dictionary<string, int> BuildIndex<T>(ObservableCollection<T> target, Func<T, string> keySelector)
             where T : class
         {
@@ -330,8 +364,6 @@ namespace ASLM.Pages
     }
 
 
-    // View contract
-
     /// <summary>
     /// Defines the rendering contract used by the home dashboard presenter.
     /// </summary>
@@ -343,8 +375,6 @@ namespace ASLM.Pages
         void Render(HomeDashboardState state);
     }
 
-
-    // Presenter
 
     /// <summary>
     /// Builds the home dashboard state, coordinates live refreshes, and handles module actions.
@@ -432,7 +462,7 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Reloads modules when needed, captures diagnostics, and rerenders the dashboard.
+        /// Reloads modules, captures diagnostics, and rerenders the dashboard using the default refresh policy.
         /// </summary>
         public Task RefreshAsync()
         {
@@ -442,6 +472,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Reloads modules when needed, captures diagnostics, and rerenders the dashboard.
         /// </summary>
+        /// <param name="forceModuleReload">When <see langword="true"/>, rediscover modules before sampling diagnostics.</param>
         public async Task RefreshAsync(bool forceModuleReload)
         {
             if (forceModuleReload)
@@ -511,15 +542,17 @@ namespace ASLM.Pages
             MainThread.BeginInvokeOnMainThread(() => _shell?.OpenConsoles());
         }
 
+
         // Console refresh triggers
 
         /// <summary>
-        /// Coalesces bursts of console-store changes into a single dashboard refresh.
+        /// Handles console-store change notifications; periodic refresh already keeps metrics current.
         /// </summary>
         private void OnConsoleStateChanged(object? sender, EventArgs e)
         {
             // Periodic one-second refreshes already keep the dashboard current.
         }
+
 
         // State construction
 
@@ -553,53 +586,62 @@ namespace ASLM.Pages
             var systemMetrics = new List<HomeSummaryMetricViewModel>
             {
                 CreatePercentMetric(
-                    "CPU",
+                    L.Get(LocalizationKeys.Home_Column_Cpu),
                     diagnostics.SystemUsage.CpuPercent,
-                    $"{Environment.ProcessorCount} logical cores")
+                    L.Get(LocalizationKeys.Home_Metric_Cpu_LogicalCores, Environment.ProcessorCount))
             };
 
             systemMetrics.AddRange(BuildGpuMetrics(diagnostics.GpuAdapters, useRuntimeValues: false));
             systemMetrics.AddRange(
             [
                 CreatePercentMetric(
-                    "RAM",
+                    L.Get(LocalizationKeys.Home_Column_Ram),
                     diagnostics.SystemUsage.MemoryPercent,
-                    $"{FormatBytes(diagnostics.SystemUsage.MemoryBytes)} / {FormatBytes(diagnostics.SystemUsage.MemoryTotalBytes)}"),
+                    L.Get(
+                        LocalizationKeys.Home_Metric_Ram_Usage,
+                        FormatBytes(diagnostics.SystemUsage.MemoryBytes),
+                        FormatBytes(diagnostics.SystemUsage.MemoryTotalBytes))),
                 CreatePercentMetric(
-                    "Disk",
+                    L.Get(LocalizationKeys.Home_Column_Disk),
                     diagnostics.SystemUsage.DiskBusyPercent,
-                    $"R {FormatRate(diagnostics.SystemUsage.DiskReadBytesPerSec)} - W {FormatRate(diagnostics.SystemUsage.DiskWriteBytesPerSec)}"),
+                    L.Get(
+                        LocalizationKeys.Home_Metric_Disk_Rw,
+                        FormatRate(diagnostics.SystemUsage.DiskReadBytesPerSec),
+                        FormatRate(diagnostics.SystemUsage.DiskWriteBytesPerSec))),
                 CreateInformationalMetric(
-                    "Network",
+                    L.Get(LocalizationKeys.Home_Metric_Network),
                     FormatRate(diagnostics.SystemUsage.NetworkReceiveBytesPerSec + diagnostics.SystemUsage.NetworkSendBytesPerSec),
-                    $"Rx {FormatRate(diagnostics.SystemUsage.NetworkReceiveBytesPerSec)} - Tx {FormatRate(diagnostics.SystemUsage.NetworkSendBytesPerSec)}",
+                    L.Get(
+                        LocalizationKeys.Home_Metric_Network_RxTx,
+                        FormatRate(diagnostics.SystemUsage.NetworkReceiveBytesPerSec),
+                        FormatRate(diagnostics.SystemUsage.NetworkSendBytesPerSec)),
                     Color.FromArgb("#2264D2FF"))
             ]);
 
             var runtimeMetrics = new List<HomeSummaryMetricViewModel>
             {
                 CreatePercentMetric(
-                    "CPU",
+                    L.Get(LocalizationKeys.Home_Column_Cpu),
                     diagnostics.RuntimeUsage.CpuPercent,
-                    "Application host and managed subprocesses")
+                    L.Get(LocalizationKeys.Home_Metric_Cpu_RuntimeDetail))
             };
 
             runtimeMetrics.AddRange(BuildGpuMetrics(diagnostics.GpuAdapters, useRuntimeValues: true));
             runtimeMetrics.AddRange(
             [
                 CreatePercentMetric(
-                    "RAM",
+                    L.Get(LocalizationKeys.Home_Column_Ram),
                     diagnostics.RuntimeUsage.MemoryPercent,
-                    $"{FormatBytes(diagnostics.RuntimeUsage.MemoryBytes)} resident"),
+                    L.Get(LocalizationKeys.Home_Metric_Ram_Resident, FormatBytes(diagnostics.RuntimeUsage.MemoryBytes))),
                 CreateInformationalMetric(
-                    "Disk",
+                    L.Get(LocalizationKeys.Home_Column_Disk),
                     FormatRate(diagnostics.RuntimeUsage.DiskIoBytesPerSec),
-                    "Combined managed process I/O",
+                    L.Get(LocalizationKeys.Home_Metric_Disk_CombinedIo),
                     Color.FromArgb("#22FF9F0A")),
                 CreateInformationalMetric(
-                    "Network",
+                    L.Get(LocalizationKeys.Home_Metric_Network),
                     FormatConnectionCount(diagnostics.RuntimeUsage.ConnectionCount),
-                    "Open TCP and UDP endpoints in the ASLM tree",
+                    L.Get(LocalizationKeys.Home_Metric_Network_Endpoints),
                     Color.FromArgb("#2264D2FF"))
             ]);
 
@@ -608,61 +650,63 @@ namespace ASLM.Pages
                 new HomeSummaryCardViewModel
                 {
                     Key = "system",
-                    Title = "System",
-                    Subtitle = "Host machine load",
-                    StatusText = "Live",
+                    Title = L.Get(LocalizationKeys.Home_Card_System_Title),
+                    Subtitle = L.Get(LocalizationKeys.Home_Card_System_Subtitle),
+                    StatusText = L.Get(LocalizationKeys.Home_Card_System_Status),
                     AccentOverlayColor = Color.FromArgb("#220A84FF"),
-                    FooterText = $"Sampled at {updatedAt}",
+                    FooterText = L.Get(LocalizationKeys.Home_Card_System_SampledAt, updatedAt),
                     Metrics = systemMetrics
                 },
                 new HomeSummaryCardViewModel
                 {
                     Key = "runtime",
-                    Title = "ASLM Runtime",
-                    Subtitle = "App process and managed child tree",
-                    StatusText = $"PID {Environment.ProcessId}",
+                    Title = L.Get(LocalizationKeys.Home_Card_Runtime_Title),
+                    Subtitle = L.Get(LocalizationKeys.Home_Card_Runtime_Subtitle),
+                    StatusText = L.Get(LocalizationKeys.Home_Card_Runtime_StatusPid, Environment.ProcessId),
                     AccentOverlayColor = Color.FromArgb("#2232D74B"),
                     FooterText = diagnostics.ActiveProcessCount == 0
-                        ? "No managed child processes are currently active."
-                        : $"{diagnostics.ActiveProcessCount} live child processes inside the ASLM tree",
+                        ? L.Get(LocalizationKeys.Home_Card_Runtime_NoChildren)
+                        : L.Get(LocalizationKeys.Home_Card_Runtime_ChildCount, diagnostics.ActiveProcessCount),
                     Metrics = runtimeMetrics
                 },
                 new HomeSummaryCardViewModel
                 {
                     Key = "modules",
-                    Title = "Managed Modules",
-                    Subtitle = "Lifecycle and console activity",
-                    StatusText = $"{modules.Count} total",
+                    Title = L.Get(LocalizationKeys.Home_Card_Modules_Title),
+                    Subtitle = L.Get(LocalizationKeys.Home_Card_Modules_Subtitle),
+                    StatusText = L.Get(LocalizationKeys.Home_Card_Modules_StatusTotal, modules.Count),
                     AccentOverlayColor = Color.FromArgb("#22FF9F0A"),
                     FooterText = diagnostics.LastModuleActivityUtc.HasValue
-                        ? $"Last module activity {diagnostics.LastModuleActivityUtc.Value.ToLocalTime():HH:mm:ss}"
-                        : "No module activity recorded yet",
+                        ? L.Get(
+                            LocalizationKeys.Home_Card_Modules_LastActivity,
+                            diagnostics.LastModuleActivityUtc.Value.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture))
+                        : L.Get(LocalizationKeys.Home_Card_Modules_NoActivity),
                     Metrics =
                     [
                         CreateInformationalMetric(
-                            "Installed",
+                            L.Get(LocalizationKeys.Home_Metric_Installed),
                             modules.Count.ToString(CultureInfo.InvariantCulture),
-                            "Modules discovered on disk",
+                            L.Get(LocalizationKeys.Home_Metric_Installed_Detail),
                             Color.FromArgb("#2238383A")),
                         CreateInformationalMetric(
-                            "Running",
+                            L.Get(LocalizationKeys.Home_Metric_Running),
                             modules.Count(module => module.Status.Enabled).ToString(CultureInfo.InvariantCulture),
-                            "Modules marked enabled",
+                            L.Get(LocalizationKeys.Home_Metric_Running_Detail),
                             Color.FromArgb("#2232D74B")),
                         CreateInformationalMetric(
-                            "Processes",
+                            L.Get(LocalizationKeys.Home_Metric_Processes),
                             diagnostics.ActiveProcessCount.ToString(CultureInfo.InvariantCulture),
-                            "Live subprocesses managed by ASLM",
+                            L.Get(LocalizationKeys.Home_Metric_Processes_Detail),
                             Color.FromArgb("#220A84FF")),
                         CreateInformationalMetric(
-                            "Sessions",
+                            L.Get(LocalizationKeys.Home_Metric_Sessions),
                             totalSessionCount.ToString(CultureInfo.InvariantCulture),
-                            $"{activeSessionCount} active console sessions",
+                            L.Get(LocalizationKeys.Home_Metric_Sessions_Detail, activeSessionCount),
                             Color.FromArgb("#225E5CE6")),
                         CreateInformationalMetric(
-                            "Active",
+                            L.Get(LocalizationKeys.Home_Metric_Active),
                             diagnostics.ActiveModuleCount.ToString(CultureInfo.InvariantCulture),
-                            "Modules with live managed processes",
+                            L.Get(LocalizationKeys.Home_Metric_Active_Detail),
                             Color.FromArgb("#22FF9F0A"))
                     ]
                 }
@@ -687,8 +731,8 @@ namespace ASLM.Pages
                 var hasConsole = (moduleDiagnostics?.ConsoleSessionCount ?? 0) > 0;
 
                 var statusText = module.Status.Enabled
-                    ? "Running"
-                    : "Stopped";
+                    ? L.Get(LocalizationKeys.Home_Metric_Running)
+                    : L.Get(LocalizationKeys.Home_Module_Stopped);
 
                 var secondaryParts = new List<string> { statusText };
 
@@ -841,6 +885,7 @@ namespace ASLM.Pages
 
             return operationState;
         }
+
 
         // Module actions
 
@@ -1020,6 +1065,7 @@ namespace ASLM.Pages
             MainThread.BeginInvokeOnMainThread(() => _shell?.OpenConsoles(sourcePath));
         }
 
+
         // Formatting helpers
 
         /// <summary>
@@ -1049,7 +1095,7 @@ namespace ASLM.Pages
                 return new HomeSummaryMetricViewModel
                 {
                     Name = name,
-                    ValueText = "n/a",
+                    ValueText = L.Get(LocalizationKeys.Home_Metric_NotAvailable),
                     DetailText = detailText,
                     HasProgress = false,
                     ProgressValue = 0,
@@ -1093,9 +1139,9 @@ namespace ASLM.Pages
                 [
                     new HomeSummaryMetricViewModel
                     {
-                        Name = "GPU",
-                        ValueText = "n/a",
-                        DetailText = "GPU counters unavailable",
+                        Name = L.Get(LocalizationKeys.Home_Column_Gpu),
+                        ValueText = L.Get(LocalizationKeys.Home_Metric_NotAvailable),
+                        DetailText = L.Get(LocalizationKeys.Home_Metric_Gpu_Unavailable),
                         HasProgress = false,
                         AccentColor = Color.FromArgb("#225E5CE6")
                     }
@@ -1109,7 +1155,7 @@ namespace ASLM.Pages
                     ? adapter.RuntimePercent
                     : adapter.SystemPercent;
 
-                var label = $"GPU {adapter.AdapterIndex}";
+                var label = L.Get(LocalizationKeys.Home_Metric_Gpu_Index, adapter.AdapterIndex);
 
                 metrics.Add(CreatePercentMetric(label, value, adapter.Name));
             }
@@ -1131,21 +1177,21 @@ namespace ASLM.Pages
             };
 
             badges.Add(usage.GpuPercent.HasValue
-                ? CreateBadge($"GPU {usage.GpuPercent.Value:F1}%", Color.FromArgb("#225E5CE6"))
-                : CreateBadge("GPU n/a", Color.FromArgb("#2238383A")));
+                ? CreateBadge(L.Get(LocalizationKeys.Home_Badge_GpuPercentFormat, usage.GpuPercent.Value), Color.FromArgb("#225E5CE6"))
+                : CreateBadge(L.Get(LocalizationKeys.Home_Badge_GpuUnavailable), Color.FromArgb("#2238383A")));
 
-            badges.Add(CreateBadge($"RAM {FormatBytes(usage.MemoryBytes)}", Color.FromArgb("#2232D74B")));
-            badges.Add(CreateBadge($"Disk {FormatRate(usage.DiskIoBytesPerSec)}", Color.FromArgb("#22FF9F0A")));
-            badges.Add(CreateBadge($"Net {FormatConnectionCount(usage.ConnectionCount)}", Color.FromArgb("#2264D2FF")));
+            badges.Add(CreateBadge(L.Get(LocalizationKeys.Home_Badge_RamFormat, FormatBytes(usage.MemoryBytes)), Color.FromArgb("#2232D74B")));
+            badges.Add(CreateBadge(L.Get(LocalizationKeys.Home_Badge_DiskFormat, FormatRate(usage.DiskIoBytesPerSec)), Color.FromArgb("#22FF9F0A")));
+            badges.Add(CreateBadge(L.Get(LocalizationKeys.Home_Badge_NetFormat, FormatConnectionCount(usage.ConnectionCount)), Color.FromArgb("#2264D2FF")));
 
             if (processCount > 0)
             {
-                badges.Add(CreateBadge($"Processes {processCount}", Color.FromArgb("#220A84FF")));
+                badges.Add(CreateBadge(L.Get(LocalizationKeys.Home_Badge_ProcessesFormat, processCount), Color.FromArgb("#220A84FF")));
             }
 
             if (sessionCount > 0)
             {
-                badges.Add(CreateBadge($"Sess {sessionCount}", Color.FromArgb("#225E5CE6")));
+                badges.Add(CreateBadge(L.Get(LocalizationKeys.Home_Badge_SessionsFormat, sessionCount), Color.FromArgb("#225E5CE6")));
             }
 
             return badges;
@@ -1174,8 +1220,8 @@ namespace ASLM.Pages
             }
 
             return string.IsNullOrWhiteSpace(module.Author)
-                ? "Installed module"
-                : $"by {module.Author}";
+                ? L.Get(LocalizationKeys.Home_Module_InstalledDefault)
+                : L.Get(LocalizationKeys.Home_Module_ByAuthor, module.Author);
         }
 
         /// <summary>
@@ -1234,8 +1280,8 @@ namespace ASLM.Pages
         private static string FormatConnectionCount(int connectionCount)
         {
             return connectionCount == 1
-                ? "1 conn"
-                : $"{connectionCount} conn";
+                ? L.Get(LocalizationKeys.Home_Metric_ConnectionOne)
+                : L.Get(LocalizationKeys.Home_Metric_ConnectionManyFormat, connectionCount);
         }
 
         /// <summary>
@@ -1284,8 +1330,6 @@ namespace ASLM.Pages
     }
 
 
-    // Dashboard state
-
     /// <summary>
     /// Represents the full UI state required to render the home dashboard.
     /// </summary>
@@ -1306,6 +1350,7 @@ namespace ASLM.Pages
         /// </summary>
         public IReadOnlyList<HomeModuleCardViewModel> Modules { get; set; } = [];
     }
+
 
     /// <summary>
     /// Stores one fully prepared refresh payload before it is rendered on the UI thread.
@@ -1328,8 +1373,6 @@ namespace ASLM.Pages
         public HomeDashboardState State { get; set; } = new();
     }
 
-
-    // Page view model
 
     /// <summary>
     /// Exposes bindable dashboard state for the home page shell.
@@ -1378,9 +1421,21 @@ namespace ASLM.Pages
         /// </summary>
         private void SeedSummaryCards()
         {
-            SummaryCards.Add(CreateLoadingCard("system", "System", "Host machine load", "Loading"));
-            SummaryCards.Add(CreateLoadingCard("runtime", "ASLM Runtime", "App process and managed child tree", "Loading"));
-            SummaryCards.Add(CreateLoadingCard("modules", "Managed Modules", "Lifecycle and console activity", "Loading"));
+            SummaryCards.Add(CreateLoadingCard(
+                "system",
+                L.Get(LocalizationKeys.Home_Card_System_Title),
+                L.Get(LocalizationKeys.Home_Card_System_Subtitle),
+                L.Get(LocalizationKeys.Home_Status_Loading)));
+            SummaryCards.Add(CreateLoadingCard(
+                "runtime",
+                L.Get(LocalizationKeys.Home_Card_Runtime_Title),
+                L.Get(LocalizationKeys.Home_Card_Runtime_Subtitle),
+                L.Get(LocalizationKeys.Home_Status_Loading)));
+            SummaryCards.Add(CreateLoadingCard(
+                "modules",
+                L.Get(LocalizationKeys.Home_Card_Modules_Title),
+                L.Get(LocalizationKeys.Home_Card_Modules_Subtitle),
+                L.Get(LocalizationKeys.Home_Status_Loading)));
         }
 
         /// <summary>
@@ -1399,9 +1454,24 @@ namespace ASLM.Pages
                 StatusText = statusText,
                 Metrics =
                 [
-                    new HomeSummaryMetricViewModel { Name = "CPU", ValueText = "...", DetailText = "Waiting for sample" },
-                    new HomeSummaryMetricViewModel { Name = "RAM", ValueText = "...", DetailText = "Waiting for sample" },
-                    new HomeSummaryMetricViewModel { Name = "Disk", ValueText = "...", DetailText = "Waiting for sample" }
+                    new HomeSummaryMetricViewModel
+                    {
+                        Name = L.Get(LocalizationKeys.Home_Column_Cpu),
+                        ValueText = "...",
+                        DetailText = L.Get(LocalizationKeys.Home_Loading_WaitingSample)
+                    },
+                    new HomeSummaryMetricViewModel
+                    {
+                        Name = L.Get(LocalizationKeys.Home_Column_Ram),
+                        ValueText = "...",
+                        DetailText = L.Get(LocalizationKeys.Home_Loading_WaitingSample)
+                    },
+                    new HomeSummaryMetricViewModel
+                    {
+                        Name = L.Get(LocalizationKeys.Home_Column_Disk),
+                        ValueText = "...",
+                        DetailText = L.Get(LocalizationKeys.Home_Loading_WaitingSample)
+                    }
                 ]
             };
 
@@ -1420,8 +1490,6 @@ namespace ASLM.Pages
         }
     }
 
-
-    // Bindable view models
 
     /// <summary>
     /// Provides a small bindable base implementation for dashboard item models.
@@ -1445,6 +1513,7 @@ namespace ASLM.Pages
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
+
 
     /// <summary>
     /// Represents one summary card on the home dashboard.
@@ -1537,6 +1606,7 @@ namespace ASLM.Pages
         }
     }
 
+
     /// <summary>
     /// Represents one summary metric row inside a home dashboard card.
     /// </summary>
@@ -1573,6 +1643,7 @@ namespace ASLM.Pages
         public Color AccentColor { get; set; } = Color.FromArgb("#FF32D74B");
     }
 
+
     /// <summary>
     /// Represents one compact metric badge.
     /// </summary>
@@ -1588,6 +1659,7 @@ namespace ASLM.Pages
         /// </summary>
         public Color BackgroundColor { get; set; } = Color.FromArgb("#2238383A");
     }
+
 
     /// <summary>
     /// Represents one module row in the home dashboard.
@@ -1745,6 +1817,7 @@ namespace ASLM.Pages
             ConsoleCommand = source.ConsoleCommand;
         }
     }
+
 
     /// <summary>
     /// Represents one visible row of the managed process tree.
@@ -1915,8 +1988,6 @@ namespace ASLM.Pages
     }
 
 
-    // Presenter support state
-
     /// <summary>
     /// Tracks the busy state of one module action initiated from the home dashboard.
     /// </summary>
@@ -1940,7 +2011,7 @@ namespace ASLM.Pages
         public void StartLaunching()
         {
             IsBusy = true;
-            _busyText = "Launching";
+            _busyText = L.Get(LocalizationKeys.Home_Module_Launching);
         }
 
         /// <summary>
@@ -1949,7 +2020,7 @@ namespace ASLM.Pages
         public void StartStopping()
         {
             IsBusy = true;
-            _busyText = "Stopping";
+            _busyText = L.Get(LocalizationKeys.Home_Module_Stopping);
         }
 
         /// <summary>
@@ -1958,7 +2029,7 @@ namespace ASLM.Pages
         public void StartRestarting()
         {
             IsBusy = true;
-            _busyText = "Restarting";
+            _busyText = L.Get(LocalizationKeys.Modules_Restarting);
         }
 
         /// <summary>
@@ -1971,7 +2042,6 @@ namespace ASLM.Pages
         }
     }
 
-    // Diagnostics collector
 
     /// <summary>
     /// Captures live system and process diagnostics used by the home dashboard.
@@ -1995,6 +2065,9 @@ namespace ASLM.Pages
         private HashSet<int> _cachedConnectionProcessIds = new();
         private DateTimeOffset _cachedConnectionCountsUtc = DateTimeOffset.MinValue;
 
+        /// <summary>
+        /// Creates the diagnostics collector used by the home dashboard presenter.
+        /// </summary>
         public HomeDiagnosticsCollector(ProcessSnapshotReader processSnapshots)
         {
             _processSnapshots = processSnapshots;
@@ -2151,6 +2224,7 @@ namespace ASLM.Pages
             return _cachedConnectionCounts;
         }
 
+
         // Module diagnostics
 
         /// <summary>
@@ -2279,6 +2353,7 @@ namespace ASLM.Pages
                 CollectProcessBranch(childProcessId, childrenByParent, liveProcesses, results);
             }
         }
+
 
         // Tree construction
 
@@ -2506,6 +2581,7 @@ namespace ASLM.Pages
                 : $"{processCount} processes";
         }
 
+
         // Process sampling
 
         /// <summary>
@@ -2656,6 +2732,7 @@ namespace ASLM.Pages
                 ConnectionCount = connectionCount
             };
         }
+
 
         // System metrics
 
@@ -3115,6 +3192,7 @@ namespace ASLM.Pages
             }
         }
 
+
         // Process-tree helpers
 
         /// <summary>
@@ -3149,6 +3227,7 @@ namespace ASLM.Pages
 
             return descendants;
         }
+
 
         // Native helpers
 
@@ -3273,23 +3352,36 @@ namespace ASLM.Pages
             return ((ulong)fileTime.HighDateTime << 32) | fileTime.LowDateTime;
         }
 
+
         // Native interop
 
         private const uint ErrorSuccess = 0;
         private const uint ErrorInsufficientBuffer = 122;
 
+        /// <summary>
+        /// Reads cumulative system idle, kernel, and user times from the Windows kernel.
+        /// </summary>
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool GetSystemTimes(
             out FileTime idleTime,
             out FileTime kernelTime,
             out FileTime userTime);
 
+        /// <summary>
+        /// Reads the current global memory status for the host system.
+        /// </summary>
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         private static extern bool GlobalMemoryStatusEx([In, Out] MemoryStatusEx memoryStatus);
 
+        /// <summary>
+        /// Reads cumulative I/O counters for one process handle.
+        /// </summary>
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool GetProcessIoCounters(IntPtr hProcess, out IoCounters ioCounters);
 
+        /// <summary>
+        /// Queries the extended TCP owner table for one IP version.
+        /// </summary>
         [DllImport("iphlpapi.dll", SetLastError = true)]
         private static extern uint GetExtendedTcpTable(
             IntPtr tcpTable,
@@ -3299,6 +3391,9 @@ namespace ASLM.Pages
             TcpTableClass tableClass,
             uint reserved);
 
+        /// <summary>
+        /// Queries the extended UDP owner table for one IP version.
+        /// </summary>
         [DllImport("iphlpapi.dll", SetLastError = true)]
         private static extern uint GetExtendedUdpTable(
             IntPtr udpTable,
@@ -3397,8 +3492,6 @@ namespace ASLM.Pages
     }
 
 
-    // Diagnostics models
-
     /// <summary>
     /// Represents one complete diagnostics capture used to render the home dashboard.
     /// </summary>
@@ -3450,6 +3543,7 @@ namespace ASLM.Pages
         /// </summary>
         public DateTimeOffset? LastModuleActivityUtc { get; set; }
     }
+
 
     /// <summary>
     /// Represents one aggregate usage snapshot.
@@ -3519,6 +3613,7 @@ namespace ASLM.Pages
         public int ConnectionCount { get; set; }
     }
 
+
     /// <summary>
     /// Represents the diagnostics for one installed module.
     /// </summary>
@@ -3566,6 +3661,7 @@ namespace ASLM.Pages
         public int ConsoleSessionCount => ConsoleSnapshot?.Sessions.Count ?? 0;
     }
 
+
     /// <summary>
     /// Represents one live process inside the managed runtime tree.
     /// </summary>
@@ -3591,6 +3687,7 @@ namespace ASLM.Pages
         /// </summary>
         public HomeUsageSnapshot Usage { get; set; } = new();
     }
+
 
     /// <summary>
     /// Represents one GPU adapter with both system-wide and ASLM-runtime utilization.
@@ -3618,6 +3715,7 @@ namespace ASLM.Pages
         public double RuntimePercent { get; set; }
     }
 
+
     /// <summary>
     /// Stores raw GPU engine samples captured during one refresh.
     /// </summary>
@@ -3644,6 +3742,7 @@ namespace ASLM.Pages
         public double Utilization { get; set; }
     }
 
+
     /// <summary>
     /// Stores the GPU query results used for per-process and per-adapter aggregation.
     /// </summary>
@@ -3664,6 +3763,7 @@ namespace ASLM.Pages
         /// </summary>
         public IReadOnlyList<HomeGpuEngineSample> Samples { get; set; } = [];
     }
+
 
     /// <summary>
     /// Represents one tree node before it is flattened for display.
@@ -3731,6 +3831,7 @@ namespace ASLM.Pages
         public bool DefaultExpanded { get; set; }
     }
 
+
     /// <summary>
     /// Stores one raw per-process sample used to calculate CPU and I/O deltas.
     /// </summary>
@@ -3756,6 +3857,7 @@ namespace ASLM.Pages
         /// </summary>
         public ulong WriteTransferCount { get; set; }
     }
+
 
     /// <summary>
     /// Stores one raw system CPU sample used for delta-based utilization calculation.
@@ -3783,6 +3885,7 @@ namespace ASLM.Pages
         public ulong UserTime { get; set; }
     }
 
+
     /// <summary>
     /// Stores one raw network-interface sample used to calculate transfer rates.
     /// </summary>
@@ -3804,6 +3907,7 @@ namespace ASLM.Pages
         public long TotalSentBytes { get; set; }
     }
 
+
     /// <summary>
     /// Stores one host-memory snapshot used to build memory metrics.
     /// </summary>
@@ -3819,6 +3923,7 @@ namespace ASLM.Pages
         /// </summary>
         public long UsedPhysicalBytes { get; set; }
     }
+
 
     /// <summary>
     /// Stores one normalized disk-usage snapshot.
@@ -3840,6 +3945,7 @@ namespace ASLM.Pages
         /// </summary>
         public double WriteBytesPerSecond { get; set; }
     }
+
 
     /// <summary>
     /// Stores one normalized network-throughput snapshot.
