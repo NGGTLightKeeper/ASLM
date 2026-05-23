@@ -15,6 +15,12 @@ namespace ASLM.Services
 
         private const int CliTimeoutSeconds = 5;
 
+
+        // Platform checks
+
+        /// <summary>
+        /// Returns whether Docker CLI checks apply on the current operating system.
+        /// </summary>
         public bool IsCheckRequiredOnThisPlatform() => OperatingSystem.IsWindows();
 
         /// <summary>
@@ -30,11 +36,23 @@ namespace ASLM.Services
             return Task.Run(() => IsCliInstalledCore(ct), ct);
         }
 
+
+        // Install guide
+
+        /// <summary>
+        /// Opens the Docker installation documentation in the system browser.
+        /// </summary>
         public async Task OpenInstallGuideAsync()
         {
             await Launcher.Default.OpenAsync(new Uri(WindowsInstallUrl));
         }
 
+
+        // CLI probing
+
+        /// <summary>
+        /// Runs <c>docker --version</c> and returns whether the command succeeds.
+        /// </summary>
         private static bool IsCliInstalledCore(CancellationToken ct)
         {
             try
@@ -52,6 +70,9 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Starts one Docker CLI process and captures its exit code and output streams.
+        /// </summary>
         private static (int ExitCode, string Stdout, string Stderr) RunDocker(
             IReadOnlyList<string> args,
             CancellationToken ct)

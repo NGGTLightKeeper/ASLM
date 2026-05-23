@@ -14,6 +14,9 @@ namespace ASLM.Services
 
         private readonly SemaphoreSlim _semaphore;
 
+
+        // Initialization
+
         /// <summary>
         /// Creates the shared throttle.
         /// </summary>
@@ -21,6 +24,9 @@ namespace ASLM.Services
         {
             _semaphore = new SemaphoreSlim(DefaultMaxConcurrentStarts, DefaultMaxConcurrentStarts);
         }
+
+
+        // Launch slots
 
         /// <summary>
         /// Waits until a launch slot is available.

@@ -11,6 +11,9 @@ namespace ASLM.Services
         private string? _baseUrl;
         private int? _port;
 
+
+        // Listener state
+
         /// <summary>
         /// Records the listening interop server endpoint while the listener is active.
         /// </summary>

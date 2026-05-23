@@ -16,8 +16,6 @@ using WinUIVerticalAlignment = Microsoft.UI.Xaml.VerticalAlignment;
 
 namespace ASLM.Services
 {
-    // Native console output handler
-
     /// <summary>
     /// Maps <see cref="ConsoleOutputView"/> to a native WinUI text box with stable selection, sizing, and scrolling.
     /// </summary>
@@ -29,6 +27,8 @@ namespace ASLM.Services
     /// </remarks>
     public sealed class ConsoleOutputViewHandler : ViewHandler<ConsoleOutputView, TextBox>
     {
+        // Fields and constants
+
         private static readonly WinUIColor DarkConsoleSurfaceColor = WinUIColor.FromArgb(255, 10, 10, 12);
         private static readonly WinUIColor DarkConsoleTextColor = WinUIColor.FromArgb(255, 232, 232, 236);
         private static readonly WinUIColor DarkConsoleSelectionColor = WinUIColor.FromArgb(96, 42, 118, 255);
@@ -56,12 +56,18 @@ namespace ASLM.Services
         private bool _deferScrollAfterInteraction;
         private bool _suppressNativeTextChanged;
 
+
+        // Initialization
+
         /// <summary>
         /// Creates the handler instance for the native console host.
         /// </summary>
         public ConsoleOutputViewHandler() : base(Mapper)
         {
         }
+
+
+        // Handler lifecycle
 
         /// <summary>
         /// Creates the native WinUI text box used to render console output.
@@ -150,6 +156,12 @@ namespace ASLM.Services
             base.DisconnectHandler(platformView);
         }
 
+
+        // Theme
+
+        /// <summary>
+        /// Reapplies console colors when the app theme changes.
+        /// </summary>
         private void OnApplicationRequestedThemeChanged(object? sender, AppThemeChangedEventArgs e)
         {
             MainThread.BeginInvokeOnMainThread(() =>
@@ -176,6 +188,35 @@ namespace ASLM.Services
             textBox.SelectionHighlightColor = new WinUISolidColorBrush(selection);
             ApplyConsoleChrome(textBox, surface, text);
         }
+
+        /// <summary>
+        /// Applies text control resource brushes so hover and focus states match the console surface and text colors.
+        /// </summary>
+        private static void ApplyConsoleChrome(TextBox textBox, WinUIColor surfaceColor, WinUIColor textColor)
+        {
+            var surfaceBrush = new WinUISolidColorBrush(surfaceColor);
+            var textBrush = new WinUISolidColorBrush(textColor);
+            var transparentBrush = new WinUISolidColorBrush(WinUIColor.FromArgb(0, 0, 0, 0));
+
+            textBox.Resources["TextControlBackground"] = surfaceBrush;
+            textBox.Resources["TextControlBackgroundPointerOver"] = surfaceBrush;
+            textBox.Resources["TextControlBackgroundFocused"] = surfaceBrush;
+            textBox.Resources["TextControlBackgroundDisabled"] = surfaceBrush;
+            textBox.Resources["TextControlForeground"] = textBrush;
+            textBox.Resources["TextControlForegroundPointerOver"] = textBrush;
+            textBox.Resources["TextControlForegroundFocused"] = textBrush;
+            textBox.Resources["TextControlForegroundDisabled"] = textBrush;
+            textBox.Resources["TextControlBorderBrush"] = transparentBrush;
+            textBox.Resources["TextControlBorderBrushPointerOver"] = transparentBrush;
+            textBox.Resources["TextControlBorderBrushFocused"] = transparentBrush;
+            textBox.Resources["TextControlBorderBrushDisabled"] = transparentBrush;
+            textBox.Resources["TextControlHeaderForeground"] = textBrush;
+            textBox.Resources["TextControlHeaderForegroundFocused"] = textBrush;
+            textBox.Resources["TextControlPlaceholderForeground"] = textBrush;
+        }
+
+
+        // Platform events
 
         /// <summary>
         /// Refreshes the viewport after the native text box enters the visual tree.
@@ -244,27 +285,42 @@ namespace ASLM.Services
             _isNearBottom = IsNearBottom();
         }
 
+        /// <summary>
+        /// Marks the console as actively receiving pointer input.
+        /// </summary>
         private void OnPlatformViewPointerPressed(object sender, PointerRoutedEventArgs e)
         {
             _pointerDownOnConsole = true;
         }
 
+        /// <summary>
+        /// Clears pointer tracking and flushes any deferred scroll.
+        /// </summary>
         private void OnPlatformViewPointerEnded(object sender, PointerRoutedEventArgs e)
         {
             _pointerDownOnConsole = false;
             TryFlushDeferredScroll();
         }
 
+        /// <summary>
+        /// Clears pointer tracking when capture is lost and flushes any deferred scroll.
+        /// </summary>
         private void OnPlatformViewPointerCaptureLost(object sender, PointerRoutedEventArgs e)
         {
             _pointerDownOnConsole = false;
             TryFlushDeferredScroll();
         }
 
+        /// <summary>
+        /// Attempts to flush deferred scroll after the text selection changes.
+        /// </summary>
         private void OnPlatformViewSelectionChanged(object sender, RoutedEventArgs e)
         {
             TryFlushDeferredScroll();
         }
+
+
+        // Scroll and viewport
 
         /// <summary>
         /// Returns true while the user is dragging, holding pointer, or has an active text selection.
@@ -279,6 +335,9 @@ namespace ASLM.Services
             return _pointerDownOnConsole || PlatformView.SelectionLength > 0;
         }
 
+        /// <summary>
+        /// Runs a deferred scroll-to-end once pointer and selection no longer block autoscroll.
+        /// </summary>
         private void TryFlushDeferredScroll()
         {
             if (!_deferScrollAfterInteraction || !_pendingScrollToEnd || PlatformView == null)
@@ -548,31 +607,8 @@ namespace ASLM.Services
             }
         }
 
-        /// <summary>
-        /// Applies text control resource brushes so hover and focus states match the console surface and text colors.
-        /// </summary>
-        private static void ApplyConsoleChrome(TextBox textBox, WinUIColor surfaceColor, WinUIColor textColor)
-        {
-            var surfaceBrush = new WinUISolidColorBrush(surfaceColor);
-            var textBrush = new WinUISolidColorBrush(textColor);
-            var transparentBrush = new WinUISolidColorBrush(WinUIColor.FromArgb(0, 0, 0, 0));
 
-            textBox.Resources["TextControlBackground"] = surfaceBrush;
-            textBox.Resources["TextControlBackgroundPointerOver"] = surfaceBrush;
-            textBox.Resources["TextControlBackgroundFocused"] = surfaceBrush;
-            textBox.Resources["TextControlBackgroundDisabled"] = surfaceBrush;
-            textBox.Resources["TextControlForeground"] = textBrush;
-            textBox.Resources["TextControlForegroundPointerOver"] = textBrush;
-            textBox.Resources["TextControlForegroundFocused"] = textBrush;
-            textBox.Resources["TextControlForegroundDisabled"] = textBrush;
-            textBox.Resources["TextControlBorderBrush"] = transparentBrush;
-            textBox.Resources["TextControlBorderBrushPointerOver"] = transparentBrush;
-            textBox.Resources["TextControlBorderBrushFocused"] = transparentBrush;
-            textBox.Resources["TextControlBorderBrushDisabled"] = transparentBrush;
-            textBox.Resources["TextControlHeaderForeground"] = textBrush;
-            textBox.Resources["TextControlHeaderForegroundFocused"] = textBrush;
-            textBox.Resources["TextControlPlaceholderForeground"] = textBrush;
-        }
+        // Visual tree
 
         /// <summary>
         /// Recursively searches the WinUI visual tree for the first nested scroll viewer.
@@ -597,6 +633,9 @@ namespace ASLM.Services
 
             return null;
         }
+
+
+        // Native host
 
         /// <summary>
         /// Native console <see cref="TextBox"/> that caps how often mouse-move updates reach WinUI text selection during LMB drags.

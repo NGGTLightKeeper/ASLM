@@ -36,6 +36,12 @@ public sealed class ProcessSnapshotReader
         }
     }
 
+
+    // Snapshot capture
+
+    /// <summary>
+    /// Captures the current OS process table, or an empty list on non-Windows platforms.
+    /// </summary>
     private static IReadOnlyList<ProcessSnapshotEntry> CaptureSnapshot()
     {
 #if WINDOWS
@@ -75,6 +81,9 @@ public sealed class ProcessSnapshotReader
         return [];
 #endif
     }
+
+
+    // Win32 interop
 
     private const uint Th32csSnapProcess = 0x00000002;
     private static readonly IntPtr InvalidHandleValue = new(-1);

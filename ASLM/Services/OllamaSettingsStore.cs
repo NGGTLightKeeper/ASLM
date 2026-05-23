@@ -10,8 +10,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Ollama settings service
-
     /// <summary>
     /// Reads the managed Ollama account state and executes account commands against the ASLM runtime.
     /// </summary>
@@ -29,6 +27,9 @@ namespace ASLM.Services
         private bool _isSignedIn;
         private string _userName = string.Empty;
 
+
+        // Construction
+
         /// <summary>
         /// Initializes a new Ollama settings service instance.
         /// </summary>
@@ -43,6 +44,9 @@ namespace ASLM.Services
                 Timeout = TimeSpan.FromSeconds(2)
             };
         }
+
+
+        // Settings access
 
         /// <summary>
         /// Loads the cached managed Ollama settings without querying the runtime.
@@ -77,6 +81,9 @@ namespace ASLM.Services
             await TryRefreshSignInStateAsync(runtime.Port, ct);
             return BuildSettingsSnapshot(isCliAvailable: true);
         }
+
+
+        // Account actions
 
         /// <summary>
         /// Runs <c>ollama signin</c> using the ASLM-managed Ollama runtime.
@@ -124,6 +131,9 @@ namespace ASLM.Services
             return result;
         }
 
+
+        // Runtime lifecycle
+
         /// <summary>
         /// Stops the managed Ollama runtime started for the settings UI, if this service owns it.
         /// </summary>
@@ -159,6 +169,9 @@ namespace ASLM.Services
             }
         }
 
+
+        // Settings snapshot
+
         /// <summary>
         /// Builds the current settings snapshot from the cached managed sign-in state.
         /// </summary>
@@ -171,6 +184,9 @@ namespace ASLM.Services
                 UserName = isCliAvailable && _hasVerifiedSignInState && _isSignedIn ? _userName : string.Empty
             };
         }
+
+
+        // Managed runtime
 
         /// <summary>
         /// Ensures that the ASLM-managed Ollama runtime is reachable on the standard local Ollama port.
@@ -303,6 +319,9 @@ namespace ASLM.Services
             }
         }
 
+
+        // Account commands
+
         /// <summary>
         /// Runs one Ollama account command and captures its output for the settings UI.
         /// </summary>
@@ -378,6 +397,9 @@ namespace ASLM.Services
             }
         }
 
+
+        // Resolution and paths
+
         /// <summary>
         /// Resolves the local port used by the managed Ollama runtime.
         /// </summary>
@@ -399,6 +421,9 @@ namespace ASLM.Services
         /// </summary>
         private static string GetManagedModelsDirectory() =>
             Path.Combine(GetRootDirectory(), "Models", "ollama-service");
+
+
+        // Runtime probes
 
         /// <summary>
         /// Returns whether the managed Ollama HTTP endpoint is currently reachable.
@@ -435,6 +460,9 @@ namespace ASLM.Services
 
             return false;
         }
+
+
+        // API response parsing
 
         /// <summary>
         /// Parses the display name returned by Ollama for the current account.
@@ -501,6 +529,9 @@ namespace ASLM.Services
             return string.Empty;
         }
 
+
+        // Command results
+
         /// <summary>
         /// Returns the user-facing result used when the managed Ollama executable is unavailable.
         /// </summary>
@@ -512,6 +543,9 @@ namespace ASLM.Services
                 Message = "ASLM-managed Ollama is not installed. Install the internal Ollama engine first."
             };
         }
+
+
+        // Command output
 
         /// <summary>
         /// Reads one redirected process stream into a shared string builder.
@@ -544,6 +578,9 @@ namespace ASLM.Services
                     : $"{stdout}{Environment.NewLine}{stderr}";
         }
 
+
+        // URI and paths
+
         /// <summary>
         /// Builds one local managed Ollama API URI.
         /// </summary>
@@ -566,6 +603,9 @@ namespace ASLM.Services
             var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
             return Directory.GetParent(appDir)?.FullName ?? appDir;
         }
+
+
+        // Types
 
         /// <summary>
         /// Describes the currently resolved managed runtime endpoint.

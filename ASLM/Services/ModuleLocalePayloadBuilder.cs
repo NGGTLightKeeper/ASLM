@@ -7,8 +7,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Module host locale payload
-
     /// <summary>
     /// Builds a JSON snapshot of the host ASLM UI language for modules that declare a <c>locale</c> setting.
     /// The snapshot is delivered through the standard <c>setExec</c> integration (typically via a temp file path).
@@ -25,6 +23,9 @@ namespace ASLM.Services
             WriteIndented = false
         };
 
+
+        // Initialization
+
         /// <summary>
         /// Creates the payload builder.
         /// </summary>
@@ -33,6 +34,9 @@ namespace ASLM.Services
             _appData = appData;
             _logger = logger;
         }
+
+
+        // Payload build
 
         /// <summary>
         /// Serializes the active host language to a single-line JSON string.
@@ -57,6 +61,12 @@ namespace ASLM.Services
             }
         }
 
+
+        // Serialization DTO
+
+        /// <summary>
+        /// JSON shape delivered to modules through the locale setting integration.
+        /// </summary>
         private sealed class ModuleHostLocalePayloadDto
         {
             public string Language { get; set; } = "en";

@@ -8,8 +8,6 @@ using ASLM.Models;
 
 namespace ASLM.Services
 {
-    // Module installer
-
     /// <summary>
     /// Discovers module manifests and installs or refreshes module source files.
     /// </summary>
@@ -405,7 +403,8 @@ namespace ASLM.Services
             return Directory.GetParent(appDir)?.FullName ?? appDir;
         }
 
-        // Sync save
+
+        // Saving
 
         /// <summary>
         /// Saves a module manifest synchronously.
@@ -431,8 +430,6 @@ namespace ASLM.Services
             }
         }
 
-        // Async save
-
         /// <summary>
         /// Saves a module manifest asynchronously.
         /// </summary>
@@ -456,7 +453,8 @@ namespace ASLM.Services
             }
         }
 
-        // Temp file cleanup
+
+        // Temp cleanup
 
         /// <summary>
         /// Deletes a temporary file on a best-effort basis.
@@ -475,8 +473,6 @@ namespace ASLM.Services
                 // Ignore cleanup failures for temporary files.
             }
         }
-
-        // Temp directory cleanup
 
         /// <summary>
         /// Deletes a temporary directory on a best-effort basis.

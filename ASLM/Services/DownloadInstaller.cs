@@ -13,8 +13,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Download installation
-
     /// <summary>
     /// Resolves bridge install manifests and executes whitelisted install actions inside safe ASLM-managed directories.
     /// </summary>
@@ -34,6 +32,9 @@ namespace ASLM.Services
             PropertyNameCaseInsensitive = true,
             WriteIndented = false
         };
+
+
+        // Initialization
 
         /// <summary>
         /// Creates the download install service.
@@ -55,6 +56,9 @@ namespace ASLM.Services
             _notifications = notifications;
             _logger = logger;
         }
+
+
+        // Catalog install
 
         /// <summary>
         /// Installs one shared catalog item using the first module source that resolves a valid install manifest.
@@ -273,6 +277,9 @@ namespace ASLM.Services
             return new DownloadInstallResult(false, lastError);
         }
 
+
+        // Manifest execution
+
         /// <summary>
         /// Executes one install manifest action-by-action.
         /// </summary>
@@ -288,6 +295,7 @@ namespace ASLM.Services
 
             try
             {
+                // Execute each manifest action in order inside one shared temp workspace.
                 foreach (var action in manifest.Actions)
                 {
                     ct.ThrowIfCancellationRequested();
@@ -329,6 +337,9 @@ namespace ASLM.Services
                 context.TryCleanup();
             }
         }
+
+
+        // Action execution
 
         /// <summary>
         /// Downloads one remote file either into a managed target or into the temporary artifact store.
@@ -537,6 +548,9 @@ namespace ASLM.Services
                 ct,
                 environmentVariables?.ToDictionary(pair => pair.Key, pair => (string?)pair.Value, StringComparer.OrdinalIgnoreCase));
         }
+
+
+        // Ollama actions
 
         /// <summary>
         /// Pulls one Ollama model into a managed models directory by running a temporary local Ollama service.
@@ -870,6 +884,9 @@ namespace ASLM.Services
             response.EnsureSuccessStatusCode();
         }
 
+
+        // Process execution
+
         /// <summary>
         /// Runs one external process and forwards its output to the caller log.
         /// </summary>
@@ -958,6 +975,9 @@ namespace ASLM.Services
 
             return Environment.GetEnvironmentVariable(key) ?? string.Empty;
         }
+
+
+        // Target resolution
 
         /// <summary>
         /// Resolves the effective target reference for one action.
@@ -1113,6 +1133,9 @@ namespace ASLM.Services
             psi.Environment["PYTHONIOENCODING"] = "utf-8";
             psi.Environment["PYTHONUTF8"] = "1";
         }
+
+
+        // Path helpers
 
         /// <summary>
         /// Returns the application root directory above the deployed App folder.

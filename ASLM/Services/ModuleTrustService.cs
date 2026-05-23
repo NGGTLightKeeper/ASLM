@@ -9,8 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Module trust service
-
     /// <summary>
     /// Resolves module trust levels from the official catalog and a signed community-reviewed list.
     /// </summary>
@@ -181,11 +179,17 @@ namespace ASLM.Services
         }
 
 
-        // Matching helpers
+        // Matching
 
+        /// <summary>
+        /// Returns whether the manifest matches a built-in official module entry.
+        /// </summary>
         private static bool TryMatchOfficial(ModuleConfig config) =>
             OfficialModules.Any(entry => ModuleTrustIdentity.Matches(config, entry.Id, entry.Repo));
 
+        /// <summary>
+        /// Returns whether the manifest matches a cached community-reviewed entry.
+        /// </summary>
         private bool TryMatchReviewed(ModuleConfig config)
         {
             List<ReviewedModuleTrustEntry> snapshot;
@@ -200,6 +204,9 @@ namespace ASLM.Services
 
         // Configuration
 
+        /// <summary>
+        /// Loads the shipped trust-source JSON from <c>Data/App</c> when present.
+        /// </summary>
         private async Task<ModuleTrustSourceConfig?> LoadTrustSourceConfigAsync(CancellationToken ct)
         {
             var path = Path.Combine(GetRootDirectory(), "Data", "App", TrustSourceFileName);
@@ -217,9 +224,15 @@ namespace ASLM.Services
 
         // Cache
 
+        /// <summary>
+        /// Returns the on-disk path for the verified community-reviewed module cache.
+        /// </summary>
         private string GetReviewedCachePath() =>
             Path.Combine(GetRootDirectory(), "Data", "App", ReviewedCacheFileName);
 
+        /// <summary>
+        /// Restores the in-memory reviewed list from disk after signature verification.
+        /// </summary>
         private bool TryLoadVerifiedCache(out List<ReviewedModuleTrustEntry> modules)
         {
             modules = [];
@@ -232,6 +245,10 @@ namespace ASLM.Services
 
             try
             {
+                /*
+                 * Deserialize the cache wrapper, normalize the payload, and re-verify the RSA
+                 * signature before exposing any module entries to trust resolution.
+                 */
                 var json = File.ReadAllText(path);
                 var cache = JsonSerializer.Deserialize<ReviewedModulesCacheDocument>(json, _jsonOptions);
                 if (cache?.Payload == null)
@@ -274,6 +291,9 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Persists a verified signed payload and its signature for offline startup.
+        /// </summary>
         private async Task SaveVerifiedCacheAsync(SignedReviewedModulesPayload payload, string signature, CancellationToken ct)
         {
             var document = new ReviewedModulesCacheDocument
@@ -290,8 +310,11 @@ namespace ASLM.Services
         }
 
 
-        // Signature verification (RSA PKCS#1 v1.5 + SHA-256 over canonical unsigned JSON)
+        // Signature verification
 
+        /// <summary>
+        /// Parses and normalizes a signed community-reviewed list JSON document.
+        /// </summary>
         private bool TryParseSignedPayload(string json, out SignedReviewedModulesPayload payload)
         {
             payload = null!;
@@ -320,10 +343,17 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Verifies an RSA PKCS#1 v1.5 + SHA-256 signature over canonical unsigned JSON.
+        /// </summary>
         private bool TryVerifySignature(SignedReviewedModulesPayload payload, string publicKeyBase64)
         {
             try
             {
+                /*
+                 * Hash the compact JSON body (signature field excluded) and verify it against the
+                 * configured subject public key and detached Base64 signature bytes.
+                 */
                 var publicKeyBytes = Convert.FromBase64String(publicKeyBase64);
                 var signatureBytes = Convert.FromBase64String(payload.Signature);
                 var canonicalBytes = Encoding.UTF8.GetBytes(
@@ -347,6 +377,9 @@ namespace ASLM.Services
 
         // Refresh policy
 
+        /// <summary>
+        /// Returns whether the configured refresh interval has elapsed since the last remote fetch.
+        /// </summary>
         private bool ShouldRefreshRemoteList(ModuleTrustSourceConfig source)
         {
             if (_lastRemoteRefresh == DateTime.MinValue)
@@ -361,6 +394,9 @@ namespace ASLM.Services
 
         // Paths
 
+        /// <summary>
+        /// Returns the application root directory above the deployed app folder.
+        /// </summary>
         private static string GetRootDirectory()
         {
             var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);

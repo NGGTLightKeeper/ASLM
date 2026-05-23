@@ -14,8 +14,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // ASLM API reverse proxy
-
     /// <summary>
     /// Hosts a local path-mounted reverse proxy for module endpoints declared in <c>Data/App/ASLM_Ports.json</c>.
     /// </summary>

@@ -7,8 +7,6 @@ using ASLM.Resources.Strings;
 
 namespace ASLM.Services
 {
-    // Host app localization
-
     /// <summary>
     /// Exposes the active UI language for ASLM, applies culture to RESX resources,
     /// and notifies <see cref="ILocalizable"/> views when the language changes.
@@ -49,6 +47,9 @@ namespace ASLM.Services
             "nl",
         ];
 
+
+        // Supported languages
+
         /// <summary>
         /// Languages available in personalization settings, sorted by English name.
         /// </summary>
@@ -58,10 +59,16 @@ namespace ASLM.Services
                 .OrderBy(option => option.EnglishName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
+
+        // Events
+
         /// <summary>
         /// Raised after <see cref="ApplyCulture"/> updates thread culture and resources.
         /// </summary>
         public event EventHandler? CultureChanged;
+
+
+        // Initialization
 
         /// <summary>
         /// Creates the localization service.
@@ -70,6 +77,9 @@ namespace ASLM.Services
         {
             _appData = appData;
         }
+
+
+        // Culture application
 
         /// <summary>
         /// Returns the normalized language code from persisted personalization.
@@ -104,6 +114,9 @@ namespace ASLM.Services
             return true;
         }
 
+
+        // String lookup
+
         /// <summary>
         /// Returns a localized string for the given resource key.
         /// </summary>
@@ -125,6 +138,9 @@ namespace ASLM.Services
             var format = GetString(key);
             return args.Length == 0 ? format : string.Format(format, args);
         }
+
+
+        // View registration
 
         /// <summary>
         /// Registers a view that should refresh when the active culture changes.
@@ -163,6 +179,9 @@ namespace ASLM.Services
             }
         }
 
+
+        // Display names
+
         /// <summary>
         /// Returns the native display name for a language code, or the code itself when unknown.
         /// </summary>
@@ -193,6 +212,12 @@ namespace ASLM.Services
             return label;
         }
 
+
+        // Culture helpers
+
+        /// <summary>
+        /// Returns the English culture name for one language code.
+        /// </summary>
         private static string GetCultureEnglishName(string languageCode)
         {
             try
@@ -205,6 +230,9 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Returns the native culture name for one language code.
+        /// </summary>
         private static string GetCultureNativeName(string languageCode)
         {
             try
@@ -217,6 +245,9 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Creates a <see cref="CultureInfo"/> for one supported language code, falling back to English.
+        /// </summary>
         private static CultureInfo CreateCulture(string language)
         {
             try
@@ -235,6 +266,9 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Applies RTL or LTR flow direction to the active application page.
+        /// </summary>
         private static void ApplyFlowDirection(CultureInfo culture)
         {
             var isRtl = RtlLanguageCodes.Contains(culture.Name) ||
@@ -249,6 +283,12 @@ namespace ASLM.Services
             }
         }
 
+
+        // View refresh
+
+        /// <summary>
+        /// Refreshes every registered localizable view after the culture changes.
+        /// </summary>
         private void NotifyLocalizableViews()
         {
             List<ILocalizable> targets;
@@ -279,6 +319,9 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Removes dead weak references from the registered view list.
+        /// </summary>
         private void PruneLocalizableViews()
         {
             _localizableViews.RemoveAll(reference => !reference.TryGetTarget(out _));

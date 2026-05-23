@@ -36,6 +36,9 @@ namespace ASLM.Services
         private readonly ModuleStartThrottle _startThrottle;
         private readonly ILogger<ModuleLaunchCoordinator> _logger;
 
+
+        // Initialization
+
         /// <summary>
         /// Creates the coordinator.
         /// </summary>
@@ -50,6 +53,9 @@ namespace ASLM.Services
             _startThrottle = startThrottle;
             _logger = logger;
         }
+
+
+        // Launch orchestration
 
         /// <summary>
         /// Resolves a module by stable id and starts it when it is not already running.
@@ -68,6 +74,7 @@ namespace ASLM.Services
             List<ModuleConfig> matches;
             try
             {
+                // Discover installed modules and match by stable id.
                 var modules = await _installer.DiscoverModulesAsync();
                 matches = modules
                     .Where(m => string.Equals(m.Id, trimmedId, StringComparison.OrdinalIgnoreCase))
@@ -93,6 +100,7 @@ namespace ASLM.Services
                     matches[0].SourcePath);
             }
 
+            // Serialize launch attempts with the shared start throttle.
             await _startThrottle.WaitAsync(ct);
             try
             {
@@ -104,6 +112,12 @@ namespace ASLM.Services
             }
         }
 
+
+        // Core launch
+
+        /// <summary>
+        /// Reloads the manifest, runs first-run when needed, enables the module, and starts run commands.
+        /// </summary>
         private async Task<ModuleLaunchResult> LaunchOrEnsureRunningCoreAsync(
             ModuleConfig discovered,
             IProgress<string>? log,
@@ -111,6 +125,7 @@ namespace ASLM.Services
         {
             var moduleLog = log ?? new Progress<string>(_ => { });
 
+            // Reload the manifest from disk so launch uses the latest config.
             var fresh = await _installer.LoadModuleConfig(discovered.SourcePath);
             if (fresh == null)
             {
@@ -136,6 +151,7 @@ namespace ASLM.Services
 
             if (!fresh.Status.FirstRunCompleted)
             {
+                // Run setup once before the module can be enabled for normal operation.
                 var setupSuccess = await Task.Run(
                     () => _runner.ExecuteFirstRunAsync(fresh, moduleLog, ct),
                     ct);
@@ -155,6 +171,7 @@ namespace ASLM.Services
             fresh.Status.Enabled = true;
             await _installer.SaveConfigAsync(fresh);
 
+            // Start run commands on a background thread so the caller can return immediately.
             _ = Task.Run(
                 () => _runner.ExecuteRunAsync(fresh, moduleLog, CancellationToken.None),
                 CancellationToken.None);

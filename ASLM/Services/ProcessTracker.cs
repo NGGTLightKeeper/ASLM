@@ -7,8 +7,6 @@ using Microsoft.Win32.SafeHandles;
 
 namespace ASLM.Services
 {
-    // Process tracker
-
     /// <summary>
     /// Groups ASLM and its child processes into one Windows Job Object.
     /// </summary>

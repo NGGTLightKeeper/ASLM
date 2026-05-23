@@ -18,6 +18,7 @@ namespace ASLM.Services
         public static bool IsWindowsAppDarkMode()
         {
 #if WINDOWS
+            // Registry read
             try
             {
                 using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");

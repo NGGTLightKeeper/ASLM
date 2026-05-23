@@ -27,6 +27,9 @@ namespace ASLM.Services
         private readonly Dictionary<string, CacheEntry<List<GitHubBranchInfo>>> _branchCache =
             new(StringComparer.OrdinalIgnoreCase);
 
+
+        // Initialization
+
         /// <summary>
         /// Creates the GitHub client with the headers required by the REST API.
         /// </summary>
@@ -36,6 +39,9 @@ namespace ASLM.Services
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             _httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
         }
+
+
+        // Release metadata
 
         /// <summary>
         /// Returns the most recent release allowed by the requested channel.
@@ -77,6 +83,9 @@ namespace ASLM.Services
             return filtered;
         }
 
+
+        // Branch metadata
+
         /// <summary>
         /// Returns all repository branch names with their current commit SHA.
         /// </summary>
@@ -94,6 +103,9 @@ namespace ASLM.Services
                 fetch: async cancellationToken => await FetchBranchesAsync(repo, cancellationToken),
                 ct);
         }
+
+
+        // Downloads
 
         /// <summary>
         /// Downloads one URL to the requested file path with throttled progress.
@@ -346,6 +358,9 @@ namespace ASLM.Services
         public long Size { get; set; }
     }
 
+    /// <summary>
+    /// Minimal GitHub branch payload used while paging the branches API.
+    /// </summary>
     internal sealed class GitHubBranchPayload
     {
         [JsonPropertyName("name")]
@@ -355,6 +370,9 @@ namespace ASLM.Services
         public GitHubBranchCommitPayload? Commit { get; set; }
     }
 
+    /// <summary>
+    /// Commit reference embedded in one GitHub branch payload.
+    /// </summary>
     internal sealed class GitHubBranchCommitPayload
     {
         [JsonPropertyName("sha")]

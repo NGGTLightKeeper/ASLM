@@ -6,8 +6,6 @@ using ASLM.Models;
 
 namespace ASLM.Services
 {
-    // Port manager
-
     /// <summary>
     /// Allocates and persists per-module ports inside the configured application ranges.
     /// </summary>

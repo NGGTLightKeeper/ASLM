@@ -12,6 +12,9 @@ namespace ASLM.Services
         private readonly object _gate = new();
         private readonly Dictionary<string, SampleState> _states = new(StringComparer.OrdinalIgnoreCase);
 
+
+        // Sampling
+
         /// <summary>
         /// Clears all samples for one operation so the next report starts a fresh speed window.
         /// </summary>
@@ -73,20 +76,12 @@ namespace ASLM.Services
             }
         }
 
-        private sealed class SampleState
-        {
-            public SampleState(DateTimeOffset lastAt, long lastBytes, double smoothedBytesPerSecond)
-            {
-                LastAt = lastAt;
-                LastBytes = lastBytes;
-                SmoothedBytesPerSecond = smoothedBytesPerSecond;
-            }
 
-            public DateTimeOffset LastAt { get; set; }
-            public long LastBytes { get; set; }
-            public double SmoothedBytesPerSecond { get; set; }
-        }
+        // Speed formatting
 
+        /// <summary>
+        /// Formats one smoothed bytes-per-second estimate for notification detail text.
+        /// </summary>
         private static string FormatSpeed(double bytesPerSecond)
         {
             if (double.IsNaN(bytesPerSecond) || double.IsInfinity(bytesPerSecond) || bytesPerSecond <= 0)
@@ -110,6 +105,23 @@ namespace ASLM.Services
             }
 
             return $"{bytesPerSecond:F0} B/s";
+        }
+
+        /// <summary>
+        /// Stores the last sample used to smooth transfer speed for one download operation.
+        /// </summary>
+        private sealed class SampleState
+        {
+            public SampleState(DateTimeOffset lastAt, long lastBytes, double smoothedBytesPerSecond)
+            {
+                LastAt = lastAt;
+                LastBytes = lastBytes;
+                SmoothedBytesPerSecond = smoothedBytesPerSecond;
+            }
+
+            public DateTimeOffset LastAt { get; set; }
+            public long LastBytes { get; set; }
+            public double SmoothedBytesPerSecond { get; set; }
         }
     }
 }

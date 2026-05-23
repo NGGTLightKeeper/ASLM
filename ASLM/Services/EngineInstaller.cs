@@ -9,8 +9,6 @@ using ASLM.Models;
 
 namespace ASLM.Services
 {
-    // Engine installer
-
     /// <summary>
     /// Discovers, validates, and installs engine runtimes from <c>ASLM_Engine.json</c> manifests.
     /// </summary>
@@ -756,8 +754,6 @@ namespace ASLM.Services
 
             return args;
         }
-
-        // Command join
 
         /// <summary>
         /// Rebuilds an argument string from parsed tokens.

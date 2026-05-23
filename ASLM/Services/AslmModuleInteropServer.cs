@@ -9,8 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Module interop JSON server
-
     /// <summary>
     /// Hosts a local JSON HTTP API that exposes module registry data and coordinates module starts.
     /// </summary>
@@ -49,6 +47,9 @@ namespace ASLM.Services
         /// </summary>
         public event EventHandler? StateChanged;
 
+
+        // Initialization
+
         /// <summary>
         /// Creates the module interop server.
         /// </summary>
@@ -69,6 +70,9 @@ namespace ASLM.Services
             _interopHostState = interopHostState;
             _logger = logger;
         }
+
+
+        // State access
 
         /// <summary>
         /// Gets whether the JSON server is currently listening.
@@ -120,6 +124,9 @@ namespace ASLM.Services
                 }
             }
         }
+
+
+        // Server lifecycle
 
         /// <summary>
         /// Reserves the interop port in the shared map and starts the JSON listener. This host service is always enabled.
@@ -202,13 +209,19 @@ namespace ASLM.Services
                 }
                 catch
                 {
-                    // Best-effort shutdown.
+                    // Listener shutdown is best-effort; active requests are allowed to finish independently.
                 }
             }
 
             RaiseStateChanged();
         }
 
+
+        // Request loop
+
+        /// <summary>
+        /// Accepts incoming requests until the listener is stopped or cancelled.
+        /// </summary>
         private async Task RunListenerLoopAsync(HttpListener listener, CancellationToken ct)
         {
             while (!ct.IsCancellationRequested && listener.IsListening)
@@ -236,16 +249,21 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Dispatches one interop request to a registry or module-start handler.
+        /// </summary>
         private async Task HandleContextAsync(HttpListenerContext context)
         {
             try
             {
+                // Only loopback clients may call the interop API.
                 if (!IsLoopback(context.Request))
                 {
                     await WriteJsonAsync(context, 403, new ErrorEnvelope("forbidden", "Only loopback clients are allowed."), CancellationToken.None);
                     return;
                 }
 
+                // Dispatch known GET and POST routes.
                 var path = NormalizePath(context.Request.Url?.AbsolutePath ?? "/");
                 if (string.Equals(context.Request.HttpMethod, "GET", StringComparison.OrdinalIgnoreCase) &&
                     path.Equals("/v1/registry", StringComparison.OrdinalIgnoreCase))
@@ -270,6 +288,12 @@ namespace ASLM.Services
             }
         }
 
+
+        // Registry endpoint
+
+        /// <summary>
+        /// Returns installed and running module snapshots for GET /v1/registry.
+        /// </summary>
         private async Task HandleRegistryGetAsync(HttpListenerContext context)
         {
             var installed = await BuildInstalledModulesAsync();
@@ -289,6 +313,9 @@ namespace ASLM.Services
             await WriteJsonAsync(context, 200, payload, CancellationToken.None);
         }
 
+        /// <summary>
+        /// Builds the installed-module list grouped by stable module id.
+        /// </summary>
         private async Task<List<InstalledModuleDto>> BuildInstalledModulesAsync()
         {
             var modules = await _moduleInstaller.DiscoverModulesAsync();
@@ -296,6 +323,7 @@ namespace ASLM.Services
                 .GroupBy(m => m.Id, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
+            // Group installed manifests by id and emit one row per instance.
             var list = new List<InstalledModuleDto>();
             foreach (var group in byId.OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase))
             {
@@ -319,14 +347,22 @@ namespace ASLM.Services
             return list;
         }
 
+
+        // Module start endpoint
+
+        /// <summary>
+        /// Starts or ensures running state for modules requested by POST /v1/modules/start.
+        /// </summary>
         private async Task HandleModulesStartPostAsync(HttpListenerContext context)
         {
+            // Require a JSON request body.
             if (!context.Request.HasEntityBody)
             {
                 await WriteJsonAsync(context, 400, new ErrorEnvelope("bad_request", "JSON body is required."), CancellationToken.None);
                 return;
             }
 
+            // Deserialize the POST body.
             StartModulesRequest? body;
             try
             {
@@ -340,6 +376,7 @@ namespace ASLM.Services
                 return;
             }
 
+            // Validate caller and target module ids.
             if (body == null || string.IsNullOrWhiteSpace(body.CallerModuleId))
             {
                 await WriteJsonAsync(context, 400, new ErrorEnvelope("bad_request", "callerModuleId is required."), CancellationToken.None);
@@ -352,6 +389,7 @@ namespace ASLM.Services
                 return;
             }
 
+            // The caller module must already be running.
             var callerId = body.CallerModuleId.Trim();
             var running = _moduleRunner.GetRunningModulesSnapshot();
             if (!running.Any(m => string.Equals(m.Id, callerId, StringComparison.OrdinalIgnoreCase)))
@@ -364,6 +402,7 @@ namespace ASLM.Services
                 return;
             }
 
+            // Launch or ensure each requested module is running.
             var results = new List<StartModuleItemResult>();
             foreach (var rawId in body.ModuleIds)
             {
@@ -383,6 +422,9 @@ namespace ASLM.Services
             await WriteJsonAsync(context, 200, new StartModulesResponse(results), CancellationToken.None);
         }
 
+        /// <summary>
+        /// Maps a coordinator launch status to the interop JSON status string.
+        /// </summary>
         private static (string status, string? message) MapLaunchStatus(ModuleLaunchStatus status, string? message)
         {
             return status switch
@@ -397,12 +439,21 @@ namespace ASLM.Services
             };
         }
 
+
+        // Shared helpers
+
+        /// <summary>
+        /// Returns whether the request originated from the loopback interface.
+        /// </summary>
         private static bool IsLoopback(HttpListenerRequest request)
         {
             var remote = request.RemoteEndPoint?.Address;
             return remote != null && IPAddress.IsLoopback(remote);
         }
 
+        /// <summary>
+        /// Normalizes an absolute path for route comparison.
+        /// </summary>
         private static string NormalizePath(string path)
         {
             var trimmed = path.Trim();
@@ -414,6 +465,9 @@ namespace ASLM.Services
             return trimmed.Length == 0 ? "/" : trimmed;
         }
 
+        /// <summary>
+        /// Writes a JSON response and closes the listener context.
+        /// </summary>
         private async Task WriteJsonAsync<T>(HttpListenerContext context, int statusCode, T payload, CancellationToken ct)
         {
             var json = JsonSerializer.Serialize(payload, _jsonWriteOptions);
@@ -425,8 +479,14 @@ namespace ASLM.Services
             context.Response.Close();
         }
 
+        /// <summary>
+        /// Notifies subscribers that listener state changed.
+        /// </summary>
         private void RaiseStateChanged() => StateChanged?.Invoke(this, EventArgs.Empty);
 
+        /// <summary>
+        /// Clears listener fields after stop or failed start.
+        /// </summary>
         private void CleanupListener()
         {
             _listener = null;
@@ -436,6 +496,9 @@ namespace ASLM.Services
             _listenerTask = null;
         }
 
+        /// <summary>
+        /// Reserves or returns the interop port from the shared port map.
+        /// </summary>
         private int GetAssignedPort()
         {
             return _ports.GetOrAssignInternalServicePort(
@@ -443,7 +506,13 @@ namespace ASLM.Services
                 PortRegistry.AslmModuleInteropPortKey);
         }
 
+        /// <summary>
+        /// Builds the loopback root URL for one assigned port.
+        /// </summary>
         private static string BuildBaseUrl(int port) => $"http://127.0.0.1:{port}/";
+
+
+        // Disposal
 
         /// <inheritdoc />
         public void Dispose()
@@ -457,13 +526,25 @@ namespace ASLM.Services
             StopAsync().GetAwaiter().GetResult();
         }
 
+
+        // JSON DTOs
+
+        /// <summary>
+        /// Standard error envelope returned by the interop API.
+        /// </summary>
         private sealed record ErrorEnvelope(string Code, string Message);
 
+        /// <summary>
+        /// Registry payload for GET /v1/registry.
+        /// </summary>
         private sealed record RegistryResponse(
             string InteropBaseUrl,
             List<InstalledModuleDto> InstalledModules,
             List<RunningModuleDto> RunningModules);
 
+        /// <summary>
+        /// One installed module instance exposed in the registry response.
+        /// </summary>
         private sealed record InstalledModuleDto(
             string Id,
             string Name,
@@ -475,16 +556,28 @@ namespace ASLM.Services
             bool HasMultipleInstances,
             string InstanceFolder);
 
+        /// <summary>
+        /// One running module instance exposed in the registry response.
+        /// </summary>
         private sealed record RunningModuleDto(
             string Id,
             string Name,
             string InstanceFolder,
             string SourcePath);
 
+        /// <summary>
+        /// Request body for POST /v1/modules/start.
+        /// </summary>
         private sealed record StartModulesRequest(string? CallerModuleId, List<string>? ModuleIds);
 
+        /// <summary>
+        /// Per-module result returned by POST /v1/modules/start.
+        /// </summary>
         private sealed record StartModuleItemResult(string ModuleId, string Status, string? Message);
 
+        /// <summary>
+        /// Response body for POST /v1/modules/start.
+        /// </summary>
         private sealed record StartModulesResponse(List<StartModuleItemResult> Results);
     }
 }

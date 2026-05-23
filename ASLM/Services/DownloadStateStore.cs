@@ -7,8 +7,9 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Download catalog state
-    // Persist shared resource installation state
+    /// <summary>
+    /// Persists shared download catalog installation state to disk.
+    /// </summary>
     public class DownloadStateStore
     {
         private readonly string _filePath;
@@ -23,8 +24,12 @@ namespace ASLM.Services
 
         private DownloadCatalogStateFile? _state;
 
+
         // Initialization
-        // Build the state service and resolve the storage path
+
+        /// <summary>
+        /// Creates the state store and resolves the on-disk storage path.
+        /// </summary>
         public DownloadStateStore(ILogger<DownloadStateStore> logger)
         {
             _logger = logger;
@@ -33,8 +38,12 @@ namespace ASLM.Services
             _filePath = Path.Combine(rootDir, "Data", "App", "ASLM_Downloads.json");
         }
 
+
         // State access
-        // Return the persisted state for one resource
+
+        /// <summary>
+        /// Returns the persisted state for one resource.
+        /// </summary>
         public DownloadCatalogResourceState? GetResourceState(string resourceKey)
         {
             if (string.IsNullOrWhiteSpace(resourceKey))
@@ -51,8 +60,12 @@ namespace ASLM.Services
             }
         }
 
+
         // State writes
-        // Mark one resource as installed and persist the change
+
+        /// <summary>
+        /// Marks one resource as installed and persists the change.
+        /// </summary>
         public async Task MarkInstalledAsync(string resourceKey, string version, string providerModuleId)
         {
             if (string.IsNullOrWhiteSpace(resourceKey))
@@ -75,7 +88,9 @@ namespace ASLM.Services
             await SaveAsync();
         }
 
-        // Mark one resource as removed and persist the change
+        /// <summary>
+        /// Marks one resource as removed and persists the change.
+        /// </summary>
         public async Task MarkUninstalledAsync(string resourceKey)
         {
             if (string.IsNullOrWhiteSpace(resourceKey))
@@ -100,7 +115,10 @@ namespace ASLM.Services
 
 
         // Loading and saving
-        // Load the persisted state on first access
+
+        /// <summary>
+        /// Loads the persisted state on first access.
+        /// </summary>
         private DownloadCatalogStateFile EnsureLoaded()
         {
             if (_state != null)
@@ -110,7 +128,7 @@ namespace ASLM.Services
 
             try
             {
-                // Read the existing file only once and normalize it before reuse
+                // Deserialize the on-disk snapshot once, then normalize it for callers.
                 if (File.Exists(_filePath))
                 {
                     var json = File.ReadAllText(_filePath);
@@ -128,12 +146,15 @@ namespace ASLM.Services
                 _logger.LogError(ex, "Failed to load download catalog state from {FilePath}. Falling back to defaults.", _filePath);
             }
 
+            // Fall back to an empty catalog when the file is missing or unreadable.
             _state = new DownloadCatalogStateFile();
             _state.Normalize();
             return _state;
         }
 
-        // Persist the current state snapshot to disk
+        /// <summary>
+        /// Persists the current state snapshot to disk.
+        /// </summary>
         private async Task SaveAsync()
         {
             DownloadCatalogStateFile snapshot;
@@ -145,7 +166,7 @@ namespace ASLM.Services
 
             try
             {
-                // Ensure the state directory exists before writing the serialized file
+                // Ensure the state directory exists before writing the serialized file.
                 var directory = Path.GetDirectoryName(_filePath);
                 if (!string.IsNullOrWhiteSpace(directory))
                 {
@@ -163,7 +184,10 @@ namespace ASLM.Services
 
 
         // Path helpers
-        // Resolve the application root directory
+
+        /// <summary>
+        /// Resolves the application root directory.
+        /// </summary>
         private static string GetRootDirectory()
         {
             var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);

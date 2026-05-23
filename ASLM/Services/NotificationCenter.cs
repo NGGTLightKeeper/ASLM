@@ -39,6 +39,8 @@ namespace ASLM.Services
     /// </summary>
     public sealed class NotificationCenter
     {
+        // Fields
+
         private const string NotificationsFileName = "ASLM_Notifications.json";
         private const int MaxPersistedNotifications = 200;
 
@@ -56,6 +58,9 @@ namespace ASLM.Services
         private bool _isInitialized;
         private readonly DownloadTransferSpeedEstimator _downloadTransferSpeedEstimator = new();
 
+
+        // Initialization
+
         /// <summary>
         /// Creates the notification service and resolves its persistence file path.
         /// </summary>
@@ -64,6 +69,23 @@ namespace ASLM.Services
             _readOnlyNotifications = new ReadOnlyObservableCollection<AppNotification>(_notifications);
             _filePath = Path.Combine(GetRootDirectory(), "Data", "App", NotificationsFileName);
         }
+
+        /// <summary>
+        /// Loads persisted notifications once during application startup.
+        /// </summary>
+        public async Task InitializeAsync()
+        {
+            if (_isInitialized)
+            {
+                return;
+            }
+
+            await LoadAsync();
+            _isInitialized = true;
+        }
+
+
+        // Events
 
         /// <summary>
         /// Raised when notification counts or filter projections may have changed.
@@ -80,24 +102,16 @@ namespace ASLM.Services
         /// </summary>
         public event EventHandler<UpdateNotificationActionEventArgs>? UpdateNotificationActionRequested;
 
+
+        // Public surface
+
         /// <summary>
         /// Gets the live notification collection sorted by newest update first.
         /// </summary>
         public ReadOnlyObservableCollection<AppNotification> Notifications => _readOnlyNotifications;
 
-        /// <summary>
-        /// Loads persisted notifications once during application startup.
-        /// </summary>
-        public async Task InitializeAsync()
-        {
-            if (_isInitialized)
-            {
-                return;
-            }
 
-            await LoadAsync();
-            _isInitialized = true;
-        }
+        // Update notifications
 
         /// <summary>
         /// Publishes a notification for one newly discovered update candidate.
@@ -162,6 +176,9 @@ namespace ASLM.Services
             });
         }
 
+
+        // System toasts
+
         /// <summary>
         /// Publishes a short-lived system toast without adding it to the persisted notification list.
         /// </summary>
@@ -188,6 +205,9 @@ namespace ASLM.Services
                 NotificationPublished?.Invoke(this, notification);
             });
         }
+
+
+        // Download notifications
 
         /// <summary>
         /// Starts or refreshes a download notification on the UI thread and waits until it is inserted
@@ -307,91 +327,6 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Removes one notification from the visible list.
-        /// </summary>
-        public void Dismiss(AppNotification notification)
-        {
-            RunOnMainThread(() =>
-            {
-                _notifications.Remove(notification);
-                RaiseNotificationsChanged();
-                QueueSave(0);
-            });
-        }
-
-        /// <summary>
-        /// Clears all persisted notifications at once.
-        /// </summary>
-        public void DismissAll()
-        {
-            RunOnMainThread(() =>
-            {
-                _notifications.Clear();
-                RaiseNotificationsChanged();
-                QueueSave(0);
-            });
-        }
-
-        /// <summary>
-        /// Builds a stable operation key for download notifications.
-        /// </summary>
-        public static string BuildOperationKey(string sourceKind, string sourceId)
-        {
-            return $"{sourceKind.Trim().ToLowerInvariant()}:{sourceId.Trim().ToLowerInvariant()}";
-        }
-
-        /// <summary>
-        /// Loads persisted notifications from disk and restores their progress state.
-        /// </summary>
-        private async Task LoadAsync()
-        {
-            try
-            {
-                if (!File.Exists(_filePath))
-                {
-                    return;
-                }
-
-                var json = await File.ReadAllTextAsync(_filePath);
-                if (string.IsNullOrWhiteSpace(json))
-                {
-                    return;
-                }
-
-                var store = JsonSerializer.Deserialize<NotificationStore>(json, _jsonOptions) ?? new NotificationStore();
-                foreach (var item in store.Notifications
-                             .Where(item => !string.IsNullOrWhiteSpace(item.Id))
-                             .OrderByDescending(item => item.UpdatedAt)
-                             .Take(MaxPersistedNotifications))
-                {
-                    _notifications.Add(new AppNotification(
-                        item.Id,
-                        item.Category,
-                        item.Severity,
-                        item.Title,
-                        item.Message,
-                        item.SourceKind,
-                        item.SourceId,
-                        item.CreatedAt,
-                        item.UpdatedAt,
-                        item.IsInProgress,
-                        item.ProgressFraction,
-                        item.HasProgress,
-                        item.StatusText,
-                        item.DetailText,
-                        item.OffersUpdateActions,
-                        item.SuppressToastAutoDismiss));
-                }
-
-                RaiseNotificationsChanged();
-            }
-            catch
-            {
-                _notifications.Clear();
-            }
-        }
-
-        /// <summary>
         /// Finishes a download notification with the requested severity and status text.
         /// </summary>
         private void FinishDownload(
@@ -424,6 +359,49 @@ namespace ASLM.Services
                 NotificationPublished?.Invoke(this, notification);
             });
         }
+
+
+        // Notification list
+
+        /// <summary>
+        /// Removes one notification from the visible list.
+        /// </summary>
+        public void Dismiss(AppNotification notification)
+        {
+            RunOnMainThread(() =>
+            {
+                _notifications.Remove(notification);
+                RaiseNotificationsChanged();
+                QueueSave(0);
+            });
+        }
+
+        /// <summary>
+        /// Clears all persisted notifications at once.
+        /// </summary>
+        public void DismissAll()
+        {
+            RunOnMainThread(() =>
+            {
+                _notifications.Clear();
+                RaiseNotificationsChanged();
+                QueueSave(0);
+            });
+        }
+
+
+        // Public helpers
+
+        /// <summary>
+        /// Builds a stable operation key for download notifications.
+        /// </summary>
+        public static string BuildOperationKey(string sourceKind, string sourceId)
+        {
+            return $"{sourceKind.Trim().ToLowerInvariant()}:{sourceId.Trim().ToLowerInvariant()}";
+        }
+
+
+        // Upsert and ordering
 
         /// <summary>
         /// Inserts or updates one notification on the UI thread.
@@ -471,6 +449,7 @@ namespace ASLM.Services
             bool showToastForNew,
             Action<AppNotification>? afterUpdate = null)
         {
+            // Resolve an existing row or create one at the head of the list.
             var notification = FindNotification(id);
             var isNew = notification == null;
             if (notification == null)
@@ -479,6 +458,7 @@ namespace ASLM.Services
                 _notifications.Insert(0, notification);
             }
 
+            // Refresh visible text and let callers attach category-specific state.
             notification.UpdateContent(
                 severity,
                 title,
@@ -486,6 +466,8 @@ namespace ASLM.Services
                 statusText,
                 detailText);
             afterUpdate?.Invoke(notification);
+
+            // Re-sort, cap persisted size, notify listeners, and debounce disk write.
             Resort(notification);
             TrimOldNotifications();
             RaiseNotificationsChanged();
@@ -535,6 +517,7 @@ namespace ASLM.Services
                 targetIndex++;
             }
 
+            // Already in newest-first position for this UpdatedAt.
             if (targetIndex == currentIndex)
             {
                 return;
@@ -551,6 +534,63 @@ namespace ASLM.Services
             while (_notifications.Count > MaxPersistedNotifications)
             {
                 _notifications.RemoveAt(_notifications.Count - 1);
+            }
+        }
+
+
+        // Persistence
+
+        /// <summary>
+        /// Loads persisted notifications from disk and restores their progress state.
+        /// </summary>
+        private async Task LoadAsync()
+        {
+            try
+            {
+                // Nothing to restore on first run.
+                if (!File.Exists(_filePath))
+                {
+                    return;
+                }
+
+                var json = await File.ReadAllTextAsync(_filePath);
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    return;
+                }
+
+                // Deserialize the snapshot and rebuild the in-memory collection.
+                var store = JsonSerializer.Deserialize<NotificationStore>(json, _jsonOptions) ?? new NotificationStore();
+                foreach (var item in store.Notifications
+                             .Where(item => !string.IsNullOrWhiteSpace(item.Id))
+                             .OrderByDescending(item => item.UpdatedAt)
+                             .Take(MaxPersistedNotifications))
+                {
+                    _notifications.Add(new AppNotification(
+                        item.Id,
+                        item.Category,
+                        item.Severity,
+                        item.Title,
+                        item.Message,
+                        item.SourceKind,
+                        item.SourceId,
+                        item.CreatedAt,
+                        item.UpdatedAt,
+                        item.IsInProgress,
+                        item.ProgressFraction,
+                        item.HasProgress,
+                        item.StatusText,
+                        item.DetailText,
+                        item.OffersUpdateActions,
+                        item.SuppressToastAutoDismiss));
+                }
+
+                RaiseNotificationsChanged();
+            }
+            catch
+            {
+                // Corrupt or incompatible file: start with an empty list rather than partial state.
+                _notifications.Clear();
             }
         }
 
@@ -631,6 +671,9 @@ namespace ASLM.Services
             };
         }
 
+
+        // Threading and change notification
+
         /// <summary>
         /// Runs one notification mutation on the MAUI UI thread.
         /// </summary>
@@ -652,6 +695,9 @@ namespace ASLM.Services
         {
             NotificationsChanged?.Invoke(this, EventArgs.Empty);
         }
+
+
+        // Identifiers and formatting
 
         /// <summary>
         /// Builds a stable notification id for one update candidate.
@@ -700,6 +746,9 @@ namespace ASLM.Services
             var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
             return Directory.GetParent(appDir)?.FullName ?? appDir;
         }
+
+
+        // Persistence models
 
         /// <summary>
         /// Represents the persisted notifications file.

@@ -9,8 +9,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
 {
-    // Module runner
-
     /// <summary>
     /// Executes module setup, runtime, and settings commands and tracks their processes.
     /// </summary>
@@ -934,13 +932,25 @@ namespace ASLM.Services
             }
         }
 
+
+        // Host-managed settings
+
+        /// <summary>
+        /// Returns whether one setting type is owned by the host rather than module commands.
+        /// </summary>
         private static bool IsHostManagedSetting(string normalizedType) =>
             string.Equals(normalizedType, "theme", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(normalizedType, "locale", StringComparison.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// Returns whether the setting value is delivered through a host-generated payload file.
+        /// </summary>
         private static bool UsesHostFilePayload(string normalizedType) =>
             IsHostManagedSetting(normalizedType);
 
+        /// <summary>
+        /// Returns the temp-file prefix used for one host-managed payload type.
+        /// </summary>
         private static string GetHostPayloadFilePrefix(string normalizedType) =>
             string.Equals(normalizedType, "locale", StringComparison.OrdinalIgnoreCase)
                 ? "aslm_locale"
@@ -1305,8 +1315,6 @@ namespace ASLM.Services
             return args;
         }
 
-        // Argument join
-
         /// <summary>
         /// Rebuilds an argument string from parsed arguments.
         /// </summary>
@@ -1316,8 +1324,6 @@ namespace ASLM.Services
         {
             return string.Join(" ", args.Select(a => a.Contains(' ') ? $"\"{a}\"" : a));
         }
-
-        // Engine key parsing
 
         /// <summary>
         /// Wraps one argument in double quotes for Windows process command lines (temp paths, user profiles with spaces).
