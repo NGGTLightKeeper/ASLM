@@ -204,6 +204,7 @@ namespace ASLM.Pages
             _notifications.UpdateNotificationActionRequested += OnUpdateNotificationActionRequested;
             _apiServer.StateChanged += OnApiServerStateChanged;
             _moduleInstaller.ModulesChanged += OnModulesChanged;
+            _ports.PortsRedistributed += OnPortsRedistributed;
             ThemeService.PaletteApplied += OnAppPaletteApplied;
             _shellEventsHooked = true;
         }
@@ -222,6 +223,7 @@ namespace ASLM.Pages
             _notifications.UpdateNotificationActionRequested -= OnUpdateNotificationActionRequested;
             _apiServer.StateChanged -= OnApiServerStateChanged;
             _moduleInstaller.ModulesChanged -= OnModulesChanged;
+            _ports.PortsRedistributed -= OnPortsRedistributed;
             ThemeService.PaletteApplied -= OnAppPaletteApplied;
             _shellEventsHooked = false;
         }
@@ -340,6 +342,14 @@ namespace ASLM.Pages
             {
                 NavigateTo(HomeButton);
             }
+            else if (_activeModule is { HasPage: true, Status.Enabled: true } activeModule && Browser.IsVisible)
+            {
+                var url = _ports.GetModuleUrl(activeModule);
+                if (!ModuleBrowserUrlsMatch(_moduleBrowserExpectedUrl, url))
+                {
+                    NavigateModuleBrowser(url);
+                }
+            }
 
             if (_modulesView is ModulesView modulesView)
             {
@@ -376,6 +386,22 @@ namespace ASLM.Pages
         internal void OnModuleStateChanged()
         {
             _ = RefreshModulesAsync();
+        }
+
+        /// <summary>
+        /// Reloads the embedded module browser when the shared port map changes.
+        /// </summary>
+        private void OnPortsRedistributed(object? sender, EventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (_activeModule is not { HasPage: true } activeModule || !Browser.IsVisible)
+                {
+                    return;
+                }
+
+                NavigateModuleBrowser(_ports.GetModuleUrl(activeModule));
+            });
         }
 
 
@@ -991,6 +1017,7 @@ namespace ASLM.Pages
         private void NavigateTo(Button navButton)
         {
             _activeModule = null;
+            ClearModuleBrowserNavigationTarget();
             Browser.IsVisible = false;
 
             // Clear active styling from both fixed shell buttons and dynamic module buttons.
@@ -1300,11 +1327,17 @@ namespace ASLM.Pages
         /// </summary>
         private void ActivateModulePage(ModuleConfig module)
         {
-            _activeModule = module;
-            var url = _ports.GetModuleUrl(module);
+            var resolved = ResolveModuleConfig(module);
+            if (resolved == null)
+            {
+                return;
+            }
+
+            _activeModule = resolved;
+            var url = _ports.GetModuleUrl(resolved);
 
             ContentArea.Content = null;
-            Browser.Source = url;
+            NavigateModuleBrowser(url);
             Browser.IsVisible = true;
 
             // Clear active styling from shell buttons before highlighting the module page button.
@@ -1322,7 +1355,7 @@ namespace ASLM.Pages
                     continue;
                 }
 
-                if (button.ClassId == "PAGE" && button.AutomationId == module.Id)
+                if (button.ClassId == "PAGE" && button.AutomationId == resolved.Id)
                 {
                     ApplyShellNavActiveStyle(button);
                     continue;
@@ -1368,11 +1401,166 @@ namespace ASLM.Pages
         }
 
 
-#if WINDOWS
-
         // Module WebView
 
+        private string? _moduleBrowserUrl;
+        private string? _moduleBrowserExpectedUrl;
+        private int _moduleBrowserNavigationSequence;
+#if WINDOWS
+        private string? _pendingModuleBrowserUrl;
         private Microsoft.UI.Xaml.Controls.WebView2? _moduleWebView2;
+        private bool _moduleWebViewNavigationHooked;
+#endif
+
+        /// <summary>
+        /// Returns the latest discovered module matching <paramref name="module"/>.
+        /// </summary>
+        private ModuleConfig? ResolveModuleConfig(ModuleConfig module)
+        {
+            if (string.IsNullOrWhiteSpace(module.Id))
+            {
+                return module;
+            }
+
+            return _allModules.FirstOrDefault(candidate =>
+                       string.Equals(candidate.Id, module.Id, StringComparison.OrdinalIgnoreCase))
+                   ?? module;
+        }
+
+        /// <summary>
+        /// Clears the module browser target so handler re-creation cannot restore a stale page.
+        /// </summary>
+        private void ClearModuleBrowserNavigationTarget()
+        {
+            Interlocked.Increment(ref _moduleBrowserNavigationSequence);
+            _moduleBrowserExpectedUrl = null;
+            _moduleBrowserUrl = null;
+#if WINDOWS
+            _pendingModuleBrowserUrl = null;
+#endif
+            Browser.Source = null;
+        }
+
+        /// <summary>
+        /// Compares two local module base URLs by scheme, host, and port.
+        /// </summary>
+        private static bool ModuleBrowserUrlsMatch(string? actual, string? expected)
+        {
+            if (string.IsNullOrWhiteSpace(actual) || string.IsNullOrWhiteSpace(expected))
+            {
+                return false;
+            }
+
+            if (!Uri.TryCreate(actual, UriKind.Absolute, out var actualUri) ||
+                !Uri.TryCreate(expected, UriKind.Absolute, out var expectedUri))
+            {
+                return string.Equals(
+                    actual.TrimEnd('/'),
+                    expected.TrimEnd('/'),
+                    StringComparison.OrdinalIgnoreCase);
+            }
+
+            return actualUri.Scheme == expectedUri.Scheme &&
+                   actualUri.Host.Equals(expectedUri.Host, StringComparison.OrdinalIgnoreCase) &&
+                   actualUri.Port == expectedUri.Port;
+        }
+
+        /// <summary>
+        /// Navigates the shared module browser to one local module URL.
+        /// </summary>
+        private void NavigateModuleBrowser(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return;
+            }
+
+            var sequence = Interlocked.Increment(ref _moduleBrowserNavigationSequence);
+            _moduleBrowserExpectedUrl = url;
+            MainThread.BeginInvokeOnMainThread(() => ApplyModuleBrowserNavigation(sequence, url));
+        }
+
+        /// <summary>
+        /// Applies one module-browser navigation on the UI thread.
+        /// </summary>
+        private void ApplyModuleBrowserNavigation(int sequence, string url)
+        {
+            if (sequence != _moduleBrowserNavigationSequence ||
+                !string.Equals(_moduleBrowserExpectedUrl, url, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            _moduleBrowserUrl = url;
+            Browser.Source = new UrlWebViewSource { Url = url };
+
+#if WINDOWS
+            _pendingModuleBrowserUrl = url;
+
+            if (_moduleWebView2?.CoreWebView2 is not Microsoft.Web.WebView2.Core.CoreWebView2 core)
+            {
+                return;
+            }
+
+            _pendingModuleBrowserUrl = null;
+            WireModuleWebViewNavigation(core);
+
+            if (ModuleBrowserUrlsMatch(core.Source, url))
+            {
+                return;
+            }
+
+            core.Stop();
+            core.Navigate(url);
+#endif
+        }
+
+#if WINDOWS
+
+        /// <summary>
+        /// Subscribes to WebView2 navigation completion so stale async loads can be corrected.
+        /// </summary>
+        private void WireModuleWebViewNavigation(Microsoft.Web.WebView2.Core.CoreWebView2 core)
+        {
+            if (_moduleWebViewNavigationHooked)
+            {
+                return;
+            }
+
+            core.NavigationCompleted += OnModuleBrowserNavigationCompleted;
+            _moduleWebViewNavigationHooked = true;
+        }
+
+        /// <summary>
+        /// Re-navigates when an older in-flight request finishes after a newer module was selected.
+        /// </summary>
+        private void OnModuleBrowserNavigationCompleted(
+            object? sender,
+            Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
+        {
+            if (!e.IsSuccess || !Browser.IsVisible)
+            {
+                return;
+            }
+
+            var expected = _moduleBrowserExpectedUrl;
+            var actual = _moduleWebView2?.CoreWebView2?.Source;
+            if (string.IsNullOrWhiteSpace(expected) || ModuleBrowserUrlsMatch(actual, expected))
+            {
+                return;
+            }
+
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (string.IsNullOrWhiteSpace(_moduleBrowserExpectedUrl) ||
+                    !Browser.IsVisible)
+                {
+                    return;
+                }
+
+                ApplyModuleBrowserNavigation(_moduleBrowserNavigationSequence, _moduleBrowserExpectedUrl);
+            });
+        }
 
         /// <summary>
         /// Wires the native WebView2 once the MAUI handler attaches so module pages can receive drag-and-drop.
@@ -1389,6 +1577,12 @@ namespace ASLM.Pages
             _moduleWebView2 = native;
             _moduleWebView2.CoreWebView2Initialized += OnModuleWebViewCoreInitialized;
             ApplyModuleWebViewDropTarget(_moduleWebView2);
+
+            var targetUrl = _moduleBrowserExpectedUrl ?? _pendingModuleBrowserUrl ?? _moduleBrowserUrl;
+            if (!string.IsNullOrWhiteSpace(targetUrl))
+            {
+                ApplyModuleBrowserNavigation(_moduleBrowserNavigationSequence, targetUrl);
+            }
         }
 
         /// <summary>
@@ -1399,6 +1593,19 @@ namespace ASLM.Pages
             Microsoft.UI.Xaml.Controls.CoreWebView2InitializedEventArgs e)
         {
             ApplyModuleWebViewDropTarget(sender);
+
+            if (sender.CoreWebView2 is not Microsoft.Web.WebView2.Core.CoreWebView2 core)
+            {
+                return;
+            }
+
+            WireModuleWebViewNavigation(core);
+
+            var targetUrl = _moduleBrowserExpectedUrl ?? _pendingModuleBrowserUrl ?? _moduleBrowserUrl;
+            if (!string.IsNullOrWhiteSpace(targetUrl))
+            {
+                ApplyModuleBrowserNavigation(_moduleBrowserNavigationSequence, targetUrl);
+            }
         }
 
         /// <summary>
@@ -1411,8 +1618,14 @@ namespace ASLM.Pages
                 return;
             }
 
+            if (_moduleWebView2.CoreWebView2 is Microsoft.Web.WebView2.Core.CoreWebView2 core)
+            {
+                core.NavigationCompleted -= OnModuleBrowserNavigationCompleted;
+            }
+
             _moduleWebView2.CoreWebView2Initialized -= OnModuleWebViewCoreInitialized;
             _moduleWebView2 = null;
+            _moduleWebViewNavigationHooked = false;
         }
 
         /// <summary>

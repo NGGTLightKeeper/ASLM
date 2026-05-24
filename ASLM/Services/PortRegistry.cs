@@ -265,16 +265,52 @@ namespace ASLM.Services
         // Module URL
 
         /// <summary>
+        /// Returns the port-map key that should back a module WebView page.
+        /// Prefers explicit UI listen ports over legacy <c>port</c>/<c>http</c> keys.
+        /// </summary>
+        public static string ResolveModulePagePortKey(ModuleConfig module)
+        {
+            var portKeys = module.Settings?
+                .Where(setting => setting.Type.Equals("port", StringComparison.OrdinalIgnoreCase))
+                .Select(setting => setting.Key)
+                .Where(key => !string.IsNullOrWhiteSpace(key))
+                .ToList() ?? [];
+
+            if (portKeys.Count == 0)
+            {
+                return "http";
+            }
+
+            foreach (var preferred in new[] { "ui-port", "http", "port" })
+            {
+                var match = portKeys.FirstOrDefault(key =>
+                    key.Equals(preferred, StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+
+            return portKeys[0];
+        }
+
+        /// <summary>
         /// Returns the base HTTP URL for a module page.
         /// </summary>
         public string GetModuleUrl(ModuleConfig module)
         {
             var ports = GetOrAssignPorts(module);
-            var port = ports.ContainsKey("port")
-                ? ports["port"]
-                : ports.ContainsKey("http")
-                    ? ports["http"]
-                    : ports.Values.FirstOrDefault();
+            var portKey = ResolveModulePagePortKey(module);
+
+            if (!ports.TryGetValue(portKey, out var port) || port <= 0)
+            {
+                port = ports.Values.FirstOrDefault(value => value > 0);
+            }
+
+            if (port <= 0)
+            {
+                throw new InvalidOperationException($"No port assigned for module '{module.Id}'.");
+            }
 
             return $"http://127.0.0.1:{port}/";
         }
