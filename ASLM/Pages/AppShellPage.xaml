@@ -94,6 +94,7 @@
 
             <!-- WebView (visible when a module page is selected) -->
             <WebView x:Name="Browser"
+                     FlowDirection="LeftToRight"
                      IsVisible="False"
                      HandlerChanged="Browser_HandlerChanged"
                      Navigating="Browser_Navigating" />
