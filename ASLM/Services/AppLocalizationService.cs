@@ -292,7 +292,20 @@ namespace ASLM.Services
             }
 
             page.FlowDirection = flow;
+            ResetEmbeddedWebViewsOnPage(page);
 
+            // Shell RTL is applied before the visual tree finishes updating; run again on the UI queue.
+            if (flow == FlowDirection.RightToLeft)
+            {
+                MainThread.BeginInvokeOnMainThread(() => ResetEmbeddedWebViewsOnPage(page));
+            }
+        }
+
+        /// <summary>
+        /// Walks the active page and pins every embedded <see cref="WebView"/> to LTR.
+        /// </summary>
+        private static void ResetEmbeddedWebViewsOnPage(Page page)
+        {
             if (page is ContentPage contentPage && contentPage.Content is Element pageRoot)
             {
                 ResetEmbeddedWebViewsToLeftToRight(pageRoot);
@@ -321,6 +334,10 @@ namespace ASLM.Services
                         if (child is Element element)
                         {
                             ResetEmbeddedWebViewsToLeftToRight(element);
+                        }
+                        else if (child is WebView childWebView)
+                        {
+                            childWebView.FlowDirection = FlowDirection.LeftToRight;
                         }
                     }
 

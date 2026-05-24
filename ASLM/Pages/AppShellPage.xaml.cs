@@ -139,6 +139,8 @@ namespace ASLM.Pages
 
             ApplyAslmApiNavigationState();
             ApplyConsoleNavigationState();
+
+            _localization.CultureChanged += OnLocalizationCultureChanged;
         }
 
 
@@ -175,6 +177,7 @@ namespace ASLM.Pages
             NavigateTo(HomeButton);
             ApplyAslmApiNavigationState();
             ApplyConsoleNavigationState();
+            ScheduleEnsureModuleBrowserLeftToRight();
             _ = StartEnabledModulesAsync();
             _ = CheckStartupUpdatesAsync();
         }
@@ -184,6 +187,7 @@ namespace ASLM.Pages
         /// </summary>
         private void OnPageUnloaded(object? sender, EventArgs e)
         {
+            _localization.CultureChanged -= OnLocalizationCultureChanged;
             UnhookShellEvents();
 #if WINDOWS
             ReleaseModuleWebViewDropTarget();
@@ -1337,9 +1341,10 @@ namespace ASLM.Pages
             var url = _ports.GetModuleUrl(resolved);
 
             ContentArea.Content = null;
-            Browser.FlowDirection = FlowDirection.LeftToRight;
+            EnsureModuleBrowserLeftToRight();
             NavigateModuleBrowser(url);
             Browser.IsVisible = true;
+            ScheduleEnsureModuleBrowserLeftToRight();
 
             // Clear active styling from shell buttons before highlighting the module page button.
             foreach (var button in _navButtons)
@@ -1403,6 +1408,35 @@ namespace ASLM.Pages
 
 
         // Module WebView
+
+        /// <summary>
+        /// Reapplies LTR on the module browser after shell RTL layout runs.
+        /// </summary>
+        private void OnLocalizationCultureChanged(object? sender, EventArgs e) =>
+            ScheduleEnsureModuleBrowserLeftToRight();
+
+        /// <summary>
+        /// Schedules a post-layout pass that pins the module WebView to LTR.
+        /// </summary>
+        private void ScheduleEnsureModuleBrowserLeftToRight()
+        {
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(0), EnsureModuleBrowserLeftToRight);
+        }
+
+        /// <summary>
+        /// Keeps the embedded module browser in LTR at the MAUI and WinUI layers.
+        /// </summary>
+        private void EnsureModuleBrowserLeftToRight()
+        {
+            Browser.FlowDirection = FlowDirection.LeftToRight;
+
+#if WINDOWS
+            if (Browser.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.WebView2 native)
+            {
+                native.FlowDirection = Microsoft.UI.Xaml.FlowDirection.LeftToRight;
+            }
+#endif
+        }
 
         private string? _moduleBrowserUrl;
         private string? _moduleBrowserExpectedUrl;
@@ -1578,6 +1612,7 @@ namespace ASLM.Pages
             _moduleWebView2 = native;
             _moduleWebView2.CoreWebView2Initialized += OnModuleWebViewCoreInitialized;
             ApplyModuleWebViewDropTarget(_moduleWebView2);
+            EnsureModuleBrowserLeftToRight();
 
             var targetUrl = _moduleBrowserExpectedUrl ?? _pendingModuleBrowserUrl ?? _moduleBrowserUrl;
             if (!string.IsNullOrWhiteSpace(targetUrl))
@@ -1594,6 +1629,7 @@ namespace ASLM.Pages
             Microsoft.UI.Xaml.Controls.CoreWebView2InitializedEventArgs e)
         {
             ApplyModuleWebViewDropTarget(sender);
+            EnsureModuleBrowserLeftToRight();
 
             if (sender.CoreWebView2 is not Microsoft.Web.WebView2.Core.CoreWebView2 core)
             {
