@@ -94,7 +94,6 @@ namespace ASLM
             var app = builder.Build();
             var localization = app.Services.GetRequiredService<AppLocalizationService>();
             Localization.L.Initialize(localization);
-            localization.ApplyCulture();
             return app;
         }
     }
