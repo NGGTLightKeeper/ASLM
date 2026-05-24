@@ -1799,7 +1799,10 @@ namespace ASLM.Pages
             try
             {
                 var launchLog = new Progress<string>(message => Debug.WriteLine($"[Launch] {message}"));
-                var result = await _launchCoordinator.LaunchOrEnsureRunningAsync(_config.Id, launchLog, CancellationToken.None);
+                var result = await _launchCoordinator.LaunchOrEnsureRunningBySourcePathAsync(
+                    _config.SourcePath,
+                    launchLog,
+                    CancellationToken.None);
 
                 if (result.EffectiveConfig != null &&
                     string.Equals(result.EffectiveConfig.SourcePath, _config.SourcePath, StringComparison.OrdinalIgnoreCase))
@@ -1870,7 +1873,22 @@ namespace ASLM.Pages
                 await Task.Delay(1000);
 
                 var restartLog = new Progress<string>(message => Debug.WriteLine($"[Restart] {message}"));
-                _ = Task.Run(() => _runner.ExecuteRunAsync(_config, restartLog, CancellationToken.None));
+                var restartResult = await _launchCoordinator.LaunchOrEnsureRunningBySourcePathAsync(
+                    _config.SourcePath,
+                    restartLog,
+                    CancellationToken.None);
+
+                if (restartResult.EffectiveConfig != null &&
+                    string.Equals(restartResult.EffectiveConfig.SourcePath, _config.SourcePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    _config.Status.Enabled = restartResult.EffectiveConfig.Status.Enabled;
+                }
+
+                if (restartResult.Status is ModuleLaunchStatus.Started or ModuleLaunchStatus.AlreadyRunning)
+                {
+                    NotifyStateChanged();
+                    _onStateChanged?.Invoke();
+                }
             }
             finally
             {

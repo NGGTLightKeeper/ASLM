@@ -100,11 +100,45 @@ namespace ASLM.Services
                     matches[0].SourcePath);
             }
 
-            // Serialize launch attempts with the shared start throttle.
+            return await LaunchOrEnsureRunningBySourcePathAsync(matches[0].SourcePath, log, ct);
+        }
+
+        /// <summary>
+        /// Starts one installed module identified by its manifest path.
+        /// </summary>
+        public async Task<ModuleLaunchResult> LaunchOrEnsureRunningBySourcePathAsync(
+            string moduleSourcePath,
+            IProgress<string>? log,
+            CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(moduleSourcePath))
+            {
+                return new ModuleLaunchResult(ModuleLaunchStatus.Error, "moduleSourcePath is required.", null);
+            }
+
+            ModuleConfig? discovered;
+            try
+            {
+                discovered = await _installer.LoadModuleConfig(moduleSourcePath.Trim());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load module manifest from {SourcePath}.", moduleSourcePath);
+                return new ModuleLaunchResult(ModuleLaunchStatus.Error, ex.Message, null);
+            }
+
+            if (discovered == null)
+            {
+                return new ModuleLaunchResult(
+                    ModuleLaunchStatus.NotFound,
+                    $"Manifest at '{moduleSourcePath}' could not be loaded.",
+                    null);
+            }
+
             await _startThrottle.WaitAsync(ct);
             try
             {
-                return await LaunchOrEnsureRunningCoreAsync(matches[0], log, ct);
+                return await LaunchOrEnsureRunningCoreAsync(discovered, log, ct);
             }
             finally
             {

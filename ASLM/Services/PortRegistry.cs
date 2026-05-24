@@ -344,7 +344,7 @@ namespace ASLM.Services
             {
                 EnsureLoaded();
 
-                var activeSet = new HashSet<string>(activeModuleIds);
+                var activeSet = new HashSet<string>(activeModuleIds, StringComparer.OrdinalIgnoreCase);
                 var orphanedIds = _portMap.Keys
                     .Where(id => !activeSet.Contains(id) && !IsInternalServiceId(id))
                     .ToList();
@@ -385,10 +385,36 @@ namespace ASLM.Services
                 return;
             }
 
-            var activeModuleIds = Directory.GetDirectories(modulesRoot)
-                .Select(Path.GetFileName)
-                .OfType<string>();
-            CleanupOrphanedPorts(activeModuleIds);
+            CleanupOrphanedPorts(DiscoverInstalledModuleIds(modulesRoot));
+        }
+
+        /// <summary>
+        /// Reads stable module ids from installed manifests under <paramref name="modulesRoot"/>.
+        /// </summary>
+        private static IEnumerable<string> DiscoverInstalledModuleIds(string modulesRoot)
+        {
+            foreach (var jsonFile in Directory.EnumerateFiles(modulesRoot, "ASLM_Module.json", SearchOption.AllDirectories))
+            {
+                string? moduleId = null;
+                try
+                {
+                    using var stream = File.OpenRead(jsonFile);
+                    using var document = JsonDocument.Parse(stream);
+                    if (document.RootElement.TryGetProperty("id", out var idProperty))
+                    {
+                        moduleId = idProperty.GetString()?.Trim();
+                    }
+                }
+                catch
+                {
+                    // Skip unreadable manifests during best-effort orphan cleanup.
+                }
+
+                if (!string.IsNullOrWhiteSpace(moduleId))
+                {
+                    yield return moduleId;
+                }
+            }
         }
 
 
