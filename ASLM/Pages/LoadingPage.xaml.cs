@@ -101,6 +101,7 @@ namespace ASLM.Pages
             if (Window != null)
             {
                 Window.Page = nextPage;
+                _localization.SyncFlowDirection();
             }
         }
     }

@@ -845,6 +845,7 @@ namespace ASLM.Pages
                 {
                     var mainPage = _services.GetRequiredService<AppShellPage>();
                     Application.Current.Windows[0].Page = mainPage;
+                    _localization.SyncFlowDirection();
                 }
             }
             catch (Exception ex)

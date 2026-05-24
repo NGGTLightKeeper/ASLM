@@ -1,0 +1,231 @@
+{
+    "fileVersion": 1,
+    "id": "aslm-nodejs-example",
+    "name": "Example Node.js Module",
+    "description": "Reference ASLM Node.js module: Express WebView UI, typed settings (getExec/setExec), downloads bridge (stdio JSON), host theme/locale snapshots, module interop HTTP client, and host-managed nodejs-runtime venv.",
+    "version": "1.0.0",
+    "author": "NEXTGGTECH",
+    "type": "ui",
+    "category": [
+        "developer-tools"
+    ],
+    "hasPage": true,
+    "icon": "icon.png",
+    "sidebarIcon": "sidebar_icon.png",
+    "source": {
+        "type": "github",
+        "repo": "NEXTGGTECH/ASLM-NodeJS-Example-Module"
+    },
+    "update": {
+        "mode": "release",
+        "channel": "release",
+        "branch": "main",
+        "preserve": [
+            "Settings/settings.json",
+            "Settings/host_theme.json",
+            "Settings/host_locale.json"
+        ],
+        "runFirstRunAfterUpdate": true
+    },
+    "dependencies": {
+        "engines": [
+            {
+                "id": "nodejs-runtime",
+                "libraries": [
+                    "express"
+                ]
+            }
+        ]
+    },
+    "commands": {
+        "firstRun": [
+            {
+                "name": "Initialize settings.json",
+                "description": "Creates Settings/settings.json from manifest defaults (first install or after update).",
+                "engine": "nodejs-runtime",
+                "exec": "main.js first_run"
+            }
+        ],
+        "run": [
+            {
+                "name": "Express WebView server",
+                "description": "Binds to ui-port and serves App/ for the ASLM module page (ASLM_UI_PORT).",
+                "engine": "nodejs-runtime",
+                "exec": "main.js runserver"
+            }
+        ]
+    },
+    "settings": [
+        {
+            "key": "ui-port",
+            "name": "HTTP listen port",
+            "description": "TCP port for main.js runserver. Type port: ASLM reserves the port, injects ASLM_UI_PORT, and passes the numeric value to setExec.",
+            "type": "port",
+            "default": 20200,
+            "engine": "nodejs-runtime",
+            "getExec": "main.js get_setting --key ui-port",
+            "setExec": "main.js set_setting --key ui-port --value {value}"
+        },
+        {
+            "key": "greeting",
+            "name": "Dashboard banner text",
+            "description": "Plain string stored in settings.json and exported as ASLM_GREETING when the module runs. Use for module title or build label in your UI.",
+            "type": "string",
+            "default": "Example Node.js Module — ASLM reference UI",
+            "engine": "nodejs-runtime",
+            "getExec": "main.js get_setting --key greeting",
+            "setExec": "main.js set_setting --key greeting --value {value}"
+        },
+        {
+            "key": "show-debug-info",
+            "name": "Expose runtime diagnostics",
+            "description": "Type bool: when true, the dashboard shows ASLM_* environment variables, HTTP exchange logs, and raw JSON snapshots (intended for module authors).",
+            "type": "bool",
+            "default": true,
+            "engine": "nodejs-runtime",
+            "getExec": "main.js get_setting --key show-debug-info",
+            "setExec": "main.js set_setting --key show-debug-info --value {value}"
+        },
+        {
+            "key": "counter-start",
+            "name": "Auto-refresh interval (ms)",
+            "description": "Type int: base period in milliseconds for UI polling (e.g. module interop registry refresh). The dashboard default timer uses 10000 ms when this value is 10000.",
+            "type": "int",
+            "default": 10000,
+            "engine": "nodejs-runtime",
+            "getExec": "main.js get_setting --key counter-start",
+            "setExec": "main.js set_setting --key counter-start --value {value}"
+        },
+        {
+            "key": "ratio",
+            "name": "Log sampling rate",
+            "description": "Type number (float): fraction between 0 and 1 for sampling verbose logs in custom bridge/interop code (1.0 = log every event, 0.25 = one in four).",
+            "type": "number",
+            "default": 0.25,
+            "engine": "nodejs-runtime",
+            "getExec": "main.js get_setting --key ratio",
+            "setExec": "main.js set_setting --key ratio --value {value}"
+        },
+        {
+            "key": "api-key-demo",
+            "name": "Outbound API token",
+            "description": "Type password: secret for Authorization headers in sample HTTP clients. Masked in ASLM settings UI; redacted in GET /api/settings (shows *** when set).",
+            "type": "password",
+            "default": "sk-1234-5678-9012-3456-7890",
+            "engine": "nodejs-runtime",
+            "getExec": "main.js get_setting --key api-key-demo",
+            "setExec": "main.js set_setting --key api-key-demo --value {value}"
+        },
+        {
+            "key": "log-level",
+            "name": "Node.js log level",
+            "description": "Type select: controls console output verbosity in main.js subcommands. Allowed: basic (INFO), debug (DEBUG), trace (DEBUG + verbose output).",
+            "type": "select",
+            "default": "debug",
+            "allowedValues": [
+                "basic",
+                "debug",
+                "trace"
+            ],
+            "engine": "nodejs-runtime",
+            "getExec": "main.js get_setting --key log-level",
+            "setExec": "main.js set_setting --key log-level --value {value}"
+        },
+        {
+            "key": "nodejs-runtime",
+            "name": "nodejs-runtime engine",
+            "description": "Type engine: read-only mirror of whether ASLM installed the nodejs-runtime engine for this module. false if the engine package is missing.",
+            "type": "engine",
+            "default": true,
+            "engine": "nodejs-runtime",
+            "getExec": "main.js get_setting --key nodejs-runtime",
+            "setExec": "main.js set_setting --key nodejs-runtime --value {value}"
+        },
+        {
+            "key": "nodejs-runtime_path",
+            "name": "Node.js executable (engine path)",
+            "description": "Type path: absolute path to node.exe in the engine runtime directory. ASLM manages the value; override via Custom Value only when debugging.",
+            "type": "path",
+            "default": null,
+            "engine": "nodejs-runtime",
+            "getExec": "main.js get_setting --key nodejs-runtime_path",
+            "setExec": "main.js set_setting --key nodejs-runtime_path --value {value}"
+        },
+        {
+            "key": "nodejs-runtime_data",
+            "name": "Engine data directory",
+            "description": "Type data: writable per-engine data root (Data/nodejs-runtime/ under the module). Use for caches, SQLite DBs, or bridge download targets (targetRef).",
+            "type": "data",
+            "default": null,
+            "engine": "nodejs-runtime",
+            "getExec": "main.js get_setting --key nodejs-runtime_data",
+            "setExec": "main.js set_setting --key nodejs-runtime_data --value {value}"
+        },
+        {
+            "key": "nodejs-runtime_models",
+            "name": "Engine models directory",
+            "description": "Type models: optional Models/nodejs-runtime/ path for ML weights or large artifacts. ASLM creates the directory; same contract as data but semantically for models.",
+            "type": "models",
+            "default": null,
+            "engine": "nodejs-runtime",
+            "getExec": "main.js get_setting --key nodejs-runtime_models",
+            "setExec": "main.js set_setting --key nodejs-runtime_models --value {value}"
+        },
+        {
+            "key": "aslm-host-theme",
+            "name": "Host theme snapshot",
+            "description": "Type theme: host-only. ASLM writes JSON (appearance, theme, colors) and calls apply_aslm_host_theme --file {path}. Persist to Settings/host_theme.json and map colors.* to CSS.",
+            "type": "theme",
+            "engine": "nodejs-runtime",
+            "setExec": "main.js apply_aslm_host_theme --file {value}"
+        },
+        {
+            "key": "aslm-host-locale",
+            "name": "Host locale snapshot",
+            "description": "Type locale: host-only. ASLM writes JSON (language, displayName) and calls apply_aslm_locale --file {path}. Load Settings/host_locale.json to localize module UI.",
+            "type": "locale",
+            "engine": "nodejs-runtime",
+            "setExec": "main.js apply_aslm_locale --file {value}"
+        }
+    ],
+    "downloadsBridge": {
+        "protocolVersion": 1,
+        "engine": "nodejs-runtime",
+        "entryPoint": "main.js downloads_bridge",
+        "operations": [
+            "list_categories",
+            "list_items",
+            "describe_item",
+            "resolve_install",
+            "resolve_uninstall"
+        ],
+        "categories": [
+            {
+                "id": "example-catalog",
+                "title": "Node.js reference artifacts",
+                "description": "Sample entries that document downloads bridge v1 operations. resolve_install returns step templates (download_file, extract_zip, npm_package) without downloading in this reference module.",
+                "groupKey": "nodejs-reference",
+                "targetRef": "example_data",
+                "sortOrder": 10
+            }
+        ],
+        "targets": {
+            "example_data": {
+                "root": "Data",
+                "relative": "example-downloads",
+                "description": "Install root: <module>/Data/example-downloads/ — used as targetRef in installManifest/uninstallManifest from this bridge."
+            }
+        }
+    },
+    "moduleInterop": {
+        "protocolVersion": 1,
+        "client": {
+            "enabled": true
+        }
+    },
+    "status": {
+        "installed": false,
+        "enabled": false,
+        "firstRunCompleted": false
+    }
+}

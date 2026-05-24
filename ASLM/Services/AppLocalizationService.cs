@@ -88,6 +88,13 @@ namespace ASLM.Services
             AppPersonalizationConfig.NormalizeLanguage(_appData.Data.Personalization.Language);
 
         /// <summary>
+        /// Reapplies RTL/LTR on the active window page.
+        /// Call after replacing <see cref="Window.Page"/> so the new root page inherits flow direction.
+        /// </summary>
+        public void SyncFlowDirection() =>
+            ApplyFlowDirection(CultureInfo.CurrentUICulture);
+
+        /// <summary>
         /// Applies the persisted language to UI culture and RESX resources.
         /// </summary>
         /// <returns>True when the culture actually changed.</returns>

@@ -62,6 +62,7 @@ namespace ASLM.Pages
         public HomeView(
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
+            ModuleLaunchCoordinator launchCoordinator,
             ModuleConsoleStore consoleStore,
             ProcessSnapshotReader processSnapshots,
             AppDataStore appData,
@@ -72,7 +73,14 @@ namespace ASLM.Pages
             BindingContext = _viewModel;
             _localization = localization;
 
-            _presenter = new HomeDashboardPresenter(this, moduleInstaller, moduleRunner, consoleStore, processSnapshots, appData);
+            _presenter = new HomeDashboardPresenter(
+                this,
+                moduleInstaller,
+                moduleRunner,
+                launchCoordinator,
+                consoleStore,
+                processSnapshots,
+                appData);
 
             LocalizableAttach.Hook(this, _localization, this);
 
@@ -384,6 +392,7 @@ namespace ASLM.Pages
         private readonly IHomeDashboardView _view;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
+        private readonly ModuleLaunchCoordinator _launchCoordinator;
         private readonly ModuleConsoleStore _consoleStore;
         private readonly AppDataStore _appData;
         private readonly HomeDiagnosticsCollector _diagnosticsCollector;
@@ -412,6 +421,7 @@ namespace ASLM.Pages
             IHomeDashboardView view,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
+            ModuleLaunchCoordinator launchCoordinator,
             ModuleConsoleStore consoleStore,
             ProcessSnapshotReader processSnapshots,
             AppDataStore appData)
@@ -419,6 +429,7 @@ namespace ASLM.Pages
             _view = view;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
+            _launchCoordinator = launchCoordinator;
             _consoleStore = consoleStore;
             _appData = appData;
             _diagnosticsCollector = new HomeDiagnosticsCollector(processSnapshots);
@@ -905,36 +916,15 @@ namespace ASLM.Pages
 
             try
             {
-                var module = await ReloadModuleAsync(sourcePath);
-                if (module == null)
+                var launchLog = new Progress<string>(message => Debug.WriteLine($"[Launch] {message}"));
+                var result = await _launchCoordinator.LaunchOrEnsureRunningBySourcePathAsync(
+                    sourcePath,
+                    launchLog,
+                    CancellationToken.None);
+
+                if (result.EffectiveConfig != null)
                 {
-                    return;
-                }
-
-                if (!module.Status.FirstRunCompleted)
-                {
-                    var setupLog = new Progress<string>(message => Debug.WriteLine($"[Setup:{module.Name}] {message}"));
-                    var setupSuccess = await Task.Run(() =>
-                        _moduleRunner.ExecuteFirstRunAsync(module, setupLog, CancellationToken.None));
-
-                    if (!setupSuccess)
-                    {
-                        return;
-                    }
-
-                    module.Status.FirstRunCompleted = true;
-                    await Task.Run(() => _moduleInstaller.SaveConfigAsync(module));
-                }
-
-                module.Status.Enabled = true;
-                await Task.Run(() => _moduleInstaller.SaveConfigAsync(module));
-                _consoleStore.EnsureModule(module);
-                _consoleStore.UpdateModuleEnabledState(module.SourcePath, true);
-
-                if (module.Commands.Run.Count > 0)
-                {
-                    var launchLog = new Progress<string>(message => Debug.WriteLine($"[Launch:{module.Name}] {message}"));
-                    _ = Task.Run(() => _moduleRunner.ExecuteRunAsync(module, launchLog, CancellationToken.None));
+                    await ReloadModuleAsync(result.EffectiveConfig.SourcePath);
                 }
             }
             finally
@@ -995,26 +985,19 @@ namespace ASLM.Pages
 
             try
             {
-                var module = await ReloadModuleAsync(sourcePath);
-                if (module == null)
-                {
-                    return;
-                }
-
                 await Task.Run(() => _moduleRunner.StopModuleAsync(sourcePath));
                 await Task.Delay(1000);
 
-                module.Status.Enabled = true;
-                await Task.Run(() => _moduleInstaller.SaveConfigAsync(module));
-                _consoleStore.EnsureModule(module);
-                _consoleStore.UpdateModuleEnabledState(module.SourcePath, true);
+                var restartLog = new Progress<string>(message => Debug.WriteLine($"[Restart] {message}"));
+                var result = await _launchCoordinator.LaunchOrEnsureRunningBySourcePathAsync(
+                    sourcePath,
+                    restartLog,
+                    CancellationToken.None);
 
-                if (module.Commands.Run.Count > 0)
+                if (result.EffectiveConfig != null)
                 {
-                    var restartLog = new Progress<string>(message => Debug.WriteLine($"[Restart:{module.Name}] {message}"));
-                    _ = Task.Run(() => _moduleRunner.ExecuteRunAsync(module, restartLog, CancellationToken.None));
+                    await ReloadModuleAsync(result.EffectiveConfig.SourcePath);
                 }
-
             }
             finally
             {
