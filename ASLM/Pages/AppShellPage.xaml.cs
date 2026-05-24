@@ -1337,6 +1337,7 @@ namespace ASLM.Pages
             var url = _ports.GetModuleUrl(resolved);
 
             ContentArea.Content = null;
+            Browser.FlowDirection = FlowDirection.LeftToRight;
             NavigateModuleBrowser(url);
             Browser.IsVisible = true;
 

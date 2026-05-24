@@ -4,6 +4,7 @@ using System.Globalization;
 using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Resources.Strings;
+using Microsoft.Maui.Controls;
 
 namespace ASLM.Services
 {
@@ -275,6 +276,7 @@ namespace ASLM.Services
 
         /// <summary>
         /// Applies RTL or LTR flow direction to the active application page.
+        /// Embedded <see cref="WebView"/> controls stay LTR because module UIs manage direction themselves.
         /// </summary>
         private static void ApplyFlowDirection(CultureInfo culture)
         {
@@ -284,9 +286,57 @@ namespace ASLM.Services
 
             var flow = isRtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
             var page = Application.Current?.Windows.FirstOrDefault()?.Page;
-            if (page != null)
+            if (page == null)
             {
-                page.FlowDirection = flow;
+                return;
+            }
+
+            page.FlowDirection = flow;
+
+            if (page is ContentPage contentPage && contentPage.Content is Element pageRoot)
+            {
+                ResetEmbeddedWebViewsToLeftToRight(pageRoot);
+            }
+            else if (page is Element pageElement)
+            {
+                ResetEmbeddedWebViewsToLeftToRight(pageElement);
+            }
+        }
+
+        /// <summary>
+        /// Keeps host-embedded WebViews in LTR so module pages are not mirrored by shell RTL layout.
+        /// </summary>
+        private static void ResetEmbeddedWebViewsToLeftToRight(Element root)
+        {
+            if (root is WebView webView)
+            {
+                webView.FlowDirection = FlowDirection.LeftToRight;
+            }
+
+            switch (root)
+            {
+                case Layout layout:
+                    foreach (var child in layout.Children)
+                    {
+                        if (child is Element element)
+                        {
+                            ResetEmbeddedWebViewsToLeftToRight(element);
+                        }
+                    }
+
+                    break;
+
+                case ContentView contentView when contentView.Content is Element content:
+                    ResetEmbeddedWebViewsToLeftToRight(content);
+                    break;
+
+                case ScrollView scrollView when scrollView.Content is Element scrollContent:
+                    ResetEmbeddedWebViewsToLeftToRight(scrollContent);
+                    break;
+
+                case Border border when border.Content is Element borderContent:
+                    ResetEmbeddedWebViewsToLeftToRight(borderContent);
+                    break;
             }
         }
 
