@@ -9,6 +9,7 @@ using System.Windows.Input;
 using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
+using Microsoft.Maui.Controls;
 
 namespace ASLM.Pages
 {
@@ -25,6 +26,7 @@ namespace ASLM.Pages
         private readonly AppLocalizationService _localization;
         private AppShellPage? _shell;
         private int _gridSpan = 1;
+        private ImageSource _moreIconSource = null!;
 
 
         // View data
@@ -36,6 +38,24 @@ namespace ASLM.Pages
 
 
         // Layout state
+
+        /// <summary>
+        /// Gets the theme-tinted more-menu glyph for module cards.
+        /// </summary>
+        public ImageSource MoreIconSource
+        {
+            get => _moreIconSource;
+            private set
+            {
+                if (_moreIconSource == value)
+                {
+                    return;
+                }
+
+                _moreIconSource = value;
+                OnPropertyChanged();
+            }
+        }
 
         /// <summary>
         /// Gets or sets the number of columns used by the responsive grid.
@@ -75,8 +95,10 @@ namespace ASLM.Pages
             BindingContext = this;
             DashboardView.HandlerChanged += OnDashboardViewHandlerChanged;
             Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
             SizeChanged += OnSizeChanged;
             LocalizableAttach.Hook(this, _localization, this);
+            RefreshMoreIconChrome();
         }
 
         /// <inheritdoc />
@@ -277,7 +299,53 @@ namespace ASLM.Pages
         /// </summary>
         private void OnLoaded(object? sender, EventArgs e)
         {
+            ThemeService.PaletteApplied -= OnPaletteAppliedForMoreIcon;
+            ThemeService.PaletteApplied += OnPaletteAppliedForMoreIcon;
+            if (Application.Current is { } app)
+            {
+                app.RequestedThemeChanged -= OnApplicationRequestedThemeChanged;
+                app.RequestedThemeChanged += OnApplicationRequestedThemeChanged;
+            }
+
+            RefreshMoreIconChrome();
             DisableDashboardItemTransitions();
+        }
+
+        /// <summary>
+        /// Unsubscribes from theme events when the view leaves the visual tree.
+        /// </summary>
+        private void OnUnloaded(object? sender, EventArgs e)
+        {
+            ThemeService.PaletteApplied -= OnPaletteAppliedForMoreIcon;
+            if (Application.Current is { } app)
+            {
+                app.RequestedThemeChanged -= OnApplicationRequestedThemeChanged;
+            }
+        }
+
+        /// <summary>
+        /// Refreshes the more-menu icon after a custom palette is applied.
+        /// </summary>
+        private void OnPaletteAppliedForMoreIcon()
+        {
+            MainThread.BeginInvokeOnMainThread(RefreshMoreIconChrome);
+        }
+
+        /// <summary>
+        /// Refreshes the more-menu icon when the application theme changes.
+        /// </summary>
+        private void OnApplicationRequestedThemeChanged(object? sender, AppThemeChangedEventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(RefreshMoreIconChrome);
+        }
+
+        /// <summary>
+        /// Recomputes the tinted more-menu icon for the current palette.
+        /// </summary>
+        private void RefreshMoreIconChrome()
+        {
+            var iconTint = IconTintHelper.ResolvePaletteColor("LabelPrimary");
+            MoreIconSource = PackagedIconTintCache.Get("icon_more.png", iconTint);
         }
 
         /// <summary>

@@ -3,6 +3,7 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ASLM.Pages.NotificationsView"
+             x:Name="RootView"
              BackgroundColor="Transparent">
 
     <Grid>
@@ -203,7 +204,7 @@
                                             <Border.GestureRecognizers>
                                                 <TapGestureRecognizer Tapped="OnDismissClicked" />
                                             </Border.GestureRecognizers>
-                                            <Image Source="icon_delete.png"
+                                            <Image Source="{Binding DismissIconSource, Source={x:Reference RootView}}"
                                                    Aspect="AspectFit"
                                                    HorizontalOptions="Center"
                                                    VerticalOptions="Center" />
