@@ -440,21 +440,6 @@
                                                         HeightRequest="32"
                                                         WidthRequest="32"
                                                         Padding="8"
-                                                        IsVisible="{Binding IsRunningAndIdle}">
-                                                    <Border.GestureRecognizers>
-                                                        <TapGestureRecognizer Command="{Binding ManageCommand}" />
-                                                    </Border.GestureRecognizers>
-                                                    <Image Source="icon_modules.png"
-                                                           WidthRequest="16"
-                                                           HeightRequest="16"
-                                                           Aspect="AspectFit" />
-                                                </Border>
-                                                <Border Background="{SolidColorBrush {DynamicResource SystemGray3}}"
-                                                        StrokeThickness="0"
-                                                        StrokeShape="RoundRectangle 4"
-                                                        HeightRequest="32"
-                                                        WidthRequest="32"
-                                                        Padding="8"
                                                         IsVisible="{Binding CanOpenConsole}">
                                                     <Border.GestureRecognizers>
                                                         <TapGestureRecognizer Command="{Binding ConsoleCommand}" />
@@ -479,20 +464,6 @@
                                                         <TapGestureRecognizer Command="{Binding LaunchCommand}" />
                                                     </Border.GestureRecognizers>
                                                     <Image Source="icon_play.png"
-                                                           WidthRequest="16"
-                                                           HeightRequest="16"
-                                                           Aspect="AspectFit" />
-                                                </Border>
-                                                <Border Background="{SolidColorBrush {DynamicResource SystemGray4}}"
-                                                        StrokeThickness="0"
-                                                        StrokeShape="RoundRectangle 4"
-                                                        HeightRequest="32"
-                                                        WidthRequest="32"
-                                                        Padding="8">
-                                                    <Border.GestureRecognizers>
-                                                        <TapGestureRecognizer Command="{Binding ManageCommand}" />
-                                                    </Border.GestureRecognizers>
-                                                    <Image Source="icon_modules.png"
                                                            WidthRequest="16"
                                                            HeightRequest="16"
                                                            Aspect="AspectFit" />

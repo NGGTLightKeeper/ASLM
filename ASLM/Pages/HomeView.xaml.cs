@@ -765,7 +765,6 @@ namespace ASLM.Pages
                     LaunchCommand = new Command(async () => await LaunchModuleAsync(module.SourcePath)),
                     StopCommand = new Command(async () => await StopModuleAsync(module.SourcePath)),
                     RestartCommand = new Command(async () => await RestartModuleAsync(module.SourcePath)),
-                    ManageCommand = new Command(() => OpenModules(module.SourcePath)),
                     ConsoleCommand = new Command(() => OpenModuleConsole(module.SourcePath))
                 });
             }
@@ -1030,14 +1029,6 @@ namespace ASLM.Pages
             }
 
             return module;
-        }
-
-        /// <summary>
-        /// Opens the full modules page and scrolls the requested module into view.
-        /// </summary>
-        private void OpenModules(string sourcePath)
-        {
-            MainThread.BeginInvokeOnMainThread(() => _shell?.OpenModules(sourcePath));
         }
 
         /// <summary>
@@ -1660,7 +1651,6 @@ namespace ASLM.Pages
         private ICommand _launchCommand = new Command(() => { });
         private ICommand _stopCommand = new Command(() => { });
         private ICommand _restartCommand = new Command(() => { });
-        private ICommand _manageCommand = new Command(() => { });
         private ICommand _consoleCommand = new Command(() => { });
 
         /// <summary>
@@ -1763,15 +1753,6 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Gets or sets the module-management navigation command.
-        /// </summary>
-        public ICommand ManageCommand
-        {
-            get => _manageCommand;
-            set => SetProperty(ref _manageCommand, value);
-        }
-
-        /// <summary>
         /// Gets or sets the console-navigation command.
         /// </summary>
         public ICommand ConsoleCommand
@@ -1796,7 +1777,6 @@ namespace ASLM.Pages
             LaunchCommand = source.LaunchCommand;
             StopCommand = source.StopCommand;
             RestartCommand = source.RestartCommand;
-            ManageCommand = source.ManageCommand;
             ConsoleCommand = source.ConsoleCommand;
         }
     }
