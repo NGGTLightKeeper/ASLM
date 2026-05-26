@@ -2,7 +2,9 @@
 
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:services="clr-namespace:ASLM.Services"
              x:Class="ASLM.Pages.SetupWizardPage"
+             x:Name="RootView"
              Title="ASLM Setup"
              BackgroundColor="{DynamicResource BackgroundPrimary}">
 
@@ -203,17 +205,20 @@
                                  HeightRequest="4"
                                  Margin="0,0,0,8" />
 
-                    <!-- Selectable log area -->
-                    <ScrollView x:Name="LogScroll" Grid.Row="5" IsVisible="False">
-                        <Editor x:Name="LogEditor"
-                                FontSize="12"
-                                FontFamily="Consolas"
-                                TextColor="{DynamicResource LabelPrimary}"
-                                BackgroundColor="{DynamicResource BackgroundSecondary}"
-                                IsReadOnly="True"
-                                AutoSize="TextChanges"
-                                Margin="0,8,0,0" />
-                    </ScrollView>
+                    <Border Grid.Row="5"
+                            BackgroundColor="{DynamicResource BackgroundSecondary}"
+                            Stroke="{DynamicResource Separator}"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="8"
+                            IsVisible="{Binding IsInstallLogVisible, Source={x:Reference RootView}}"
+                            Margin="0,8,0,0">
+                        <services:ConsoleOutputView x:Name="InstallLogConsole"
+                                                    Text="{Binding InstallLogText, Source={x:Reference RootView}}"
+                                                    SessionKey="{Binding InstallLogSessionKey, Source={x:Reference RootView}}"
+                                                    HorizontalOptions="Fill"
+                                                    VerticalOptions="Fill" />
+                    </Border>
                 </Grid>
             </Grid>
 

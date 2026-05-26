@@ -1,6 +1,8 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using ASLM.Localization;
 using ASLM.Models;
@@ -11,7 +13,7 @@ namespace ASLM.Pages
     /// <summary>
     /// Guides the first-run flow from profile setup through module installation.
     /// </summary>
-    public partial class SetupWizardPage : ContentPage, ILocalizable
+    public partial class SetupWizardPage : ContentPage, ILocalizable, INotifyPropertyChanged
     {
         private const int TotalSteps = 3;
 
@@ -33,10 +35,12 @@ namespace ASLM.Pages
         private bool _pendingFastSetup;
         private CancellationTokenSource? _cts;
         private bool _logVisible;
+        private string _installLogSessionKey = string.Empty;
         private bool _moduleListLoaded;
         private readonly object _logLock = new();
         private int _logFlushQueued;
         private int _logFlushRequested;
+        private int _installLogLayoutRefreshQueued;
 
         private long _lastDownloadedBytes;
         private DateTime _lastSpeedUpdate = DateTime.UtcNow;
@@ -67,6 +71,7 @@ namespace ASLM.Pages
             _services = services;
 
             InitializeComponent();
+            BindingContext = this;
             LocalizableAttach.Hook(this, _localization, this);
 
             // Reuse the saved profile name when available, otherwise fall back to the Windows user name.
@@ -397,7 +402,36 @@ namespace ASLM.Pages
         }
 
 
-        // Log toggle
+        // Install log (bound console host)
+
+        /// <summary>
+        /// Raised when an install-log bindable property changes.
+        /// </summary>
+        public new event PropertyChangedEventHandler? PropertyChanged;
+
+        /// <summary>
+        /// Gets whether the installation log panel is visible.
+        /// </summary>
+        public bool IsInstallLogVisible => _logVisible;
+
+        /// <summary>
+        /// Gets the installation log text rendered by <see cref="ConsoleOutputView"/>.
+        /// </summary>
+        public string InstallLogText
+        {
+            get
+            {
+                lock (_logLock)
+                {
+                    return _logBuffer.ToString();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the session key used to reset console scroll position for a new install run.
+        /// </summary>
+        public string InstallLogSessionKey => _installLogSessionKey;
 
         /// <summary>
         /// Shows or hides the installation log panel.
@@ -405,10 +439,40 @@ namespace ASLM.Pages
         private void OnToggleLogClicked(object? sender, EventArgs e)
         {
             _logVisible = !_logVisible;
-            LogScroll.IsVisible = _logVisible;
+            OnPropertyChanged(nameof(IsInstallLogVisible));
             ToggleLogButton.Text = _logVisible
                 ? L.Get(LocalizationKeys.SetupWizard_HideLog)
                 : L.Get(LocalizationKeys.SetupWizard_ShowLog);
+            QueueInstallLogLayoutRefresh();
+        }
+
+        /// <summary>
+        /// Schedules layout refresh passes so the native console host measures like <see cref="ConsolesView"/>.
+        /// </summary>
+        private void QueueInstallLogLayoutRefresh()
+        {
+            RefreshInstallLogLayout();
+
+            if (Dispatcher == null || Interlocked.Exchange(ref _installLogLayoutRefreshQueued, 1) == 1)
+            {
+                return;
+            }
+
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(16), RefreshInstallLogLayout);
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(48), () =>
+            {
+                RefreshInstallLogLayout();
+                Interlocked.Exchange(ref _installLogLayoutRefreshQueued, 0);
+            });
+        }
+
+        /// <summary>
+        /// Invalidates the install panel and console host after log visibility or text changes.
+        /// </summary>
+        private void RefreshInstallLogLayout()
+        {
+            InstallPanel.InvalidateMeasure();
+            InstallLogConsole.InvalidateMeasure();
         }
 
 
@@ -453,6 +517,16 @@ namespace ASLM.Pages
             InstallPanel.IsVisible = true;
             ToggleLogButton.IsVisible = true;
             StepLabel.Text = L.Get(LocalizationKeys.SetupWizard_Installing);
+
+            lock (_logLock)
+            {
+                _logBuffer.Clear();
+            }
+
+            _installLogSessionKey = $"setup-install-{DateTime.UtcNow.Ticks}";
+            OnPropertyChanged(nameof(InstallLogSessionKey));
+            OnPropertyChanged(nameof(InstallLogText));
+            QueueInstallLogLayoutRefresh();
 
             _cts = new CancellationTokenSource();
             var logProgress = new InlineProgress<string>(AddLog);
@@ -859,7 +933,7 @@ namespace ASLM.Pages
         // Logging
 
         /// <summary>
-        /// Appends one log line and keeps the scroll view pinned to the bottom.
+        /// Appends one log line; batched flushes push updates through install-log bindings.
         /// </summary>
         private void AddLog(string message)
         {
@@ -889,16 +963,10 @@ namespace ASLM.Pages
                     Interlocked.Exchange(ref _logFlushRequested, 0);
                     await Task.Delay(75);
 
-                    string text;
-                    lock (_logLock)
-                    {
-                        text = _logBuffer.ToString();
-                    }
-
                     await MainThread.InvokeOnMainThreadAsync(() =>
                     {
-                        LogEditor.Text = text;
-                        _ = ScrollLogToEndAsync();
+                        OnPropertyChanged(nameof(InstallLogText));
+                        QueueInstallLogLayoutRefresh();
                     });
                 }
                 while (Interlocked.CompareExchange(ref _logFlushRequested, 0, 0) == 1);
@@ -914,23 +982,13 @@ namespace ASLM.Pages
             }
         }
 
-        /// <summary>
-        /// Scrolls the setup log without blocking the streaming flush loop.
-        /// </summary>
-        private async Task ScrollLogToEndAsync()
-        {
-            try
-            {
-                await LogScroll.ScrollToAsync(0, LogScroll.ContentSize.Height, false);
-            }
-            catch
-            {
-                // Best-effort scroll only; log streaming must keep flowing even if WinUI skips a scroll pass.
-            }
-        }
-
-
         // Helpers
+
+        /// <summary>
+        /// Raises a bindable install-log property change notification.
+        /// </summary>
+        protected new void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         /// <summary>
         /// Finds a named color resource with a defensive fallback when the key is absent.
