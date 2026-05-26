@@ -1,6 +1,7 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
 using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Handlers;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
@@ -29,13 +30,9 @@ namespace ASLM.Services
     {
         // Fields and constants
 
-        private static readonly WinUIColor DarkConsoleSurfaceColor = WinUIColor.FromArgb(255, 10, 10, 12);
-        private static readonly WinUIColor DarkConsoleTextColor = WinUIColor.FromArgb(255, 232, 232, 236);
-        private static readonly WinUIColor DarkConsoleSelectionColor = WinUIColor.FromArgb(96, 42, 118, 255);
-
-        private static readonly WinUIColor LightConsoleSurfaceColor = WinUIColor.FromArgb(255, 240, 240, 240);
-        private static readonly WinUIColor LightConsoleTextColor = WinUIColor.FromArgb(255, 0, 0, 0);
-        private static readonly WinUIColor LightConsoleSelectionColor = WinUIColor.FromArgb(96, 0, 122, 255);
+        private const string ConsoleSurfaceColorKey = "BackgroundSecondary";
+        private const string ConsoleTextColorKey = "LabelPrimary";
+        private const string ConsoleSelectionColorKey = "SystemBlueOverlay";
 
         public static readonly IPropertyMapper<ConsoleOutputView, ConsoleOutputViewHandler> Mapper =
             new PropertyMapper<ConsoleOutputView, ConsoleOutputViewHandler>(ViewHandler.ViewMapper)
@@ -111,6 +108,9 @@ namespace ASLM.Services
                 app.RequestedThemeChanged += OnApplicationRequestedThemeChanged;
             }
 
+            ThemeService.PaletteApplied -= OnPaletteApplied;
+            ThemeService.PaletteApplied += OnPaletteApplied;
+
             ApplyConsoleTheme(platformView);
 
             platformView.Loaded += OnPlatformViewLoaded;
@@ -138,6 +138,8 @@ namespace ASLM.Services
                 app.RequestedThemeChanged -= OnApplicationRequestedThemeChanged;
             }
 
+            ThemeService.PaletteApplied -= OnPaletteApplied;
+
             platformView.Loaded -= OnPlatformViewLoaded;
             platformView.SizeChanged -= OnPlatformViewSizeChanged;
             platformView.TextChanged -= OnPlatformViewTextChanged;
@@ -160,9 +162,25 @@ namespace ASLM.Services
         // Theme
 
         /// <summary>
-        /// Reapplies console colors when the app theme changes.
+        /// Reapplies console colors when the OS appearance changes.
         /// </summary>
         private void OnApplicationRequestedThemeChanged(object? sender, AppThemeChangedEventArgs e)
+        {
+            RefreshConsoleTheme();
+        }
+
+        /// <summary>
+        /// Reapplies console colors after <see cref="ThemeService"/> rewrites the active palette.
+        /// </summary>
+        private void OnPaletteApplied()
+        {
+            RefreshConsoleTheme();
+        }
+
+        /// <summary>
+        /// Reapplies console colors on the UI thread.
+        /// </summary>
+        private void RefreshConsoleTheme()
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
@@ -174,20 +192,47 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Applies console surface, text, selection, and WinUI text control chrome for the current app theme.
+        /// Applies console surface, text, selection, and WinUI text control chrome from the active ASLM palette.
         /// </summary>
         private static void ApplyConsoleTheme(TextBox textBox)
         {
-            var isLight = Microsoft.Maui.Controls.Application.Current?.RequestedTheme == AppTheme.Light;
-            var surface = isLight ? LightConsoleSurfaceColor : DarkConsoleSurfaceColor;
-            var text = isLight ? LightConsoleTextColor : DarkConsoleTextColor;
-            var selection = isLight ? LightConsoleSelectionColor : DarkConsoleSelectionColor;
+            var surface = ToWinUiColor(ResolveThemeColor(ConsoleSurfaceColorKey));
+            var text = ToWinUiColor(ResolveThemeColor(ConsoleTextColorKey));
+            var selection = ToWinUiColor(ResolveThemeColor(ConsoleSelectionColorKey));
 
             textBox.Background = new WinUISolidColorBrush(surface);
             textBox.Foreground = new WinUISolidColorBrush(text);
             textBox.SelectionHighlightColor = new WinUISolidColorBrush(selection);
             ApplyConsoleChrome(textBox, surface, text);
         }
+
+        /// <summary>
+        /// Resolves a palette color from <see cref="Application.Current"/> resources, falling back to <see cref="ThemePaletteResolver"/>.
+        /// </summary>
+        private static Color ResolveThemeColor(string key)
+        {
+            if (Microsoft.Maui.Controls.Application.Current?.Resources.TryGetValue(key, out var value) == true &&
+                value is Color resourceColor)
+            {
+                return resourceColor;
+            }
+
+            var isDark = Microsoft.Maui.Controls.Application.Current?.RequestedTheme != AppTheme.Light;
+            var palette = isDark
+                ? ThemePaletteResolver.BuildDarkPalette()
+                : ThemePaletteResolver.BuildLightPalette();
+            return palette.TryGetValue(key, out var paletteColor) ? paletteColor : Colors.Transparent;
+        }
+
+        /// <summary>
+        /// Converts a MAUI color into the WinUI color type used by the native text box.
+        /// </summary>
+        private static WinUIColor ToWinUiColor(Color color) =>
+            WinUIColor.FromArgb(
+                (byte)Math.Clamp(color.Alpha * 255f, 0, 255),
+                (byte)Math.Clamp(color.Red * 255f, 0, 255),
+                (byte)Math.Clamp(color.Green * 255f, 0, 255),
+                (byte)Math.Clamp(color.Blue * 255f, 0, 255));
 
         /// <summary>
         /// Applies text control resource brushes so hover and focus states match the console surface and text colors.

@@ -16,6 +16,7 @@ namespace ASLM.Pages
     {
         private const double PanelExpandedWidth = 240;
         private const double PanelCollapsedWidth = 48;
+        private const double SidebarIconLogicalSize = 20;
 
         private const string IconMenu = "icon_menu.png";
         private const string IconHome = "icon_home.png";
@@ -59,7 +60,7 @@ namespace ASLM.Pages
 
         private Button? _activeNavButton;
         private Button[] _navButtons = [];
-        private CancellationTokenSource? _pageButtonLayoutCts;
+        private CancellationTokenSource? _sidebarButtonLayoutCts;
         private readonly SemaphoreSlim _moduleRefreshLock = new(1, 1);
         private bool _shellEventsHooked;
         private int _moduleRefreshQueued;
@@ -112,14 +113,13 @@ namespace ASLM.Pages
             _navButtons = [HomeButton, ConsolesButton, ModulesButton, AslmApiButton, NotificationsButton, DownloadsButton, SettingsButton];
 
             // Hook alignment updates once so WinUI buttons keep the same content layout.
-            CollapseButton.HandlerChanged += (sender, _) => UpdateButtonAlignment((Button)sender!);
+            CollapseButton.HandlerChanged += OnSidebarButtonHandlerChanged;
             foreach (var button in _navButtons)
             {
-                button.HandlerChanged += (sender, _) => UpdateButtonAlignment((Button)sender!);
+                button.HandlerChanged += OnSidebarButtonHandlerChanged;
             }
 
             // Assign all static sidebar icons up front.
-            CollapseButton.ImageSource = IconMenu;
             HomeButton.ImageSource = IconHome;
             ConsolesButton.ImageSource = IconConsole;
             ModulesButton.ImageSource = IconModules;
@@ -130,12 +130,8 @@ namespace ASLM.Pages
 
             ApplySidebarButtonIconFromPalette(CollapseButton, "LabelPrimary");
 
-            // Initialize button labels and image layout based on the current sidebar width.
-            foreach (var button in _navButtons)
-            {
-                button.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, 14);
-                button.Text = _panelExpanded ? GetButtonLabel(button) : string.Empty;
-            }
+            ApplySidebarButtonLayout();
+            ScheduleSidebarButtonLayoutRefresh();
 
             ApplyAslmApiNavigationState();
             ApplyConsoleNavigationState();
@@ -173,6 +169,7 @@ namespace ASLM.Pages
             }
 
             _hasLoaded = true;
+            ScheduleSidebarButtonLayoutRefresh();
             await RefreshModulesAsync();
             NavigateTo(HomeButton);
             ApplyAslmApiNavigationState();
@@ -237,7 +234,8 @@ namespace ASLM.Pages
         /// </summary>
         private void OnAppPaletteApplied()
         {
-            ApplySidebarButtonIconFromPalette(CollapseButton, "LabelPrimary");
+            ApplySidebarButtonLayout();
+            ScheduleSidebarButtonLayoutRefresh();
 
             foreach (var button in _navButtons)
             {
@@ -463,34 +461,8 @@ namespace ASLM.Pages
                 targetWidth);
 
             animation.Commit(this, "SidebarAnimation", 16, 150, Easing.CubicOut);
-            UpdateButtonAlignment(CollapseButton);
-
-            var spacing = _panelExpanded ? 14 : 0;
-
-            // Update the fixed shell navigation buttons first.
-            foreach (var button in _navButtons)
-            {
-                button.Text = _panelExpanded ? GetButtonLabel(button) : string.Empty;
-                button.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, spacing);
-                button.HorizontalOptions = LayoutOptions.Fill;
-                UpdateButtonAlignment(button);
-            }
-
-            // Apply the same visual rules to dynamically created module page buttons.
-            foreach (var child in ModulePagePanel.Children)
-            {
-                if (child is not Button button)
-                {
-                    continue;
-                }
-
-                button.Text = _panelExpanded && button.BindingContext is ModuleConfig module
-                    ? module.Name
-                    : string.Empty;
-                button.ContentLayout = new Button.ButtonContentLayout(Button.ButtonContentLayout.ImagePosition.Left, spacing);
-                button.HorizontalOptions = LayoutOptions.Fill;
-                UpdateButtonAlignment(button);
-            }
+            ApplySidebarButtonLayout();
+            ScheduleSidebarButtonLayoutRefresh();
         }
 
 
@@ -1177,19 +1149,7 @@ namespace ASLM.Pages
         public void ApplyLocalization()
         {
             Title = L.Get(LocalizationKeys.AppShell_Title);
-
-            foreach (var button in _navButtons)
-            {
-                button.Text = _panelExpanded ? GetButtonLabel(button) : string.Empty;
-            }
-
-            foreach (var child in ModulePagePanel.Children)
-            {
-                if (child is Button moduleButton && moduleButton.BindingContext is ModuleConfig module)
-                {
-                    moduleButton.Text = _panelExpanded ? module.Name : string.Empty;
-                }
-            }
+            ApplySidebarButtonLayout();
         }
 
         /// <summary>
@@ -1277,28 +1237,36 @@ namespace ASLM.Pages
 
                 var capturedModule = module;
                 button.Clicked += (_, _) => ActivateModulePage(capturedModule);
-                button.HandlerChanged += (sender, _) => UpdateButtonAlignment((Button)sender!);
+                button.HandlerChanged += OnSidebarButtonHandlerChanged;
                 ModulePagePanel.Children.Add(button);
                 ApplyShellNavInactiveStyle(button);
             }
 
-            _pageButtonLayoutCts?.Cancel();
-            _pageButtonLayoutCts?.Dispose();
-            _pageButtonLayoutCts = new CancellationTokenSource();
-            _ = RefreshPageButtonLayoutAsync(_pageButtonLayoutCts.Token);
+            ScheduleSidebarButtonLayoutRefresh();
         }
 
         /// <summary>
-        /// Re-applies page button layout after image-backed buttons finish their first native measure.
+        /// Schedules deferred sidebar layout passes until image-backed buttons finish their first native measure.
         /// </summary>
-        private async Task RefreshPageButtonLayoutAsync(CancellationToken ct)
+        private void ScheduleSidebarButtonLayoutRefresh()
+        {
+            _sidebarButtonLayoutCts?.Cancel();
+            _sidebarButtonLayoutCts?.Dispose();
+            _sidebarButtonLayoutCts = new CancellationTokenSource();
+            _ = RefreshSidebarButtonLayoutAsync(_sidebarButtonLayoutCts.Token);
+        }
+
+        /// <summary>
+        /// Re-applies sidebar button layout after image-backed buttons finish their first native measure.
+        /// </summary>
+        private async Task RefreshSidebarButtonLayoutAsync(CancellationToken ct)
         {
             try
             {
                 foreach (var delay in new[] { 16, 80, 160, 320 })
                 {
                     await Task.Delay(delay, ct);
-                    Dispatcher.Dispatch(ApplyPageButtonLayout);
+                    Dispatcher.Dispatch(ApplySidebarButtonLayout);
                 }
             }
             catch (OperationCanceledException)
@@ -1307,21 +1275,60 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Applies text/icon spacing and native alignment to all dynamic module page buttons.
+        /// Applies text/icon spacing and native alignment to every sidebar button, including the collapse toggle.
         /// </summary>
-        private void ApplyPageButtonLayout()
+        private void ApplySidebarButtonLayout()
         {
             var spacing = _panelExpanded ? 14 : 0;
+
+            CollapseButton.Text = string.Empty;
+            CollapseButton.ContentLayout = new Button.ButtonContentLayout(
+                Button.ButtonContentLayout.ImagePosition.Left,
+                0);
+            CollapseButton.HorizontalOptions = LayoutOptions.Fill;
+            UpdateButtonAlignment(CollapseButton);
+            ApplySidebarButtonIconFromPalette(CollapseButton, "LabelPrimary");
+
+            foreach (var button in _navButtons)
+            {
+                button.Text = _panelExpanded ? GetButtonLabel(button) : string.Empty;
+                button.ContentLayout = new Button.ButtonContentLayout(
+                    Button.ButtonContentLayout.ImagePosition.Left,
+                    spacing);
+                button.HorizontalOptions = LayoutOptions.Fill;
+                UpdateButtonAlignment(button);
+            }
+
             foreach (var child in ModulePagePanel.Children)
             {
-                if (child is Button button)
+                if (child is not Button button)
                 {
-                    button.ContentLayout = new Button.ButtonContentLayout(
-                        Button.ButtonContentLayout.ImagePosition.Left,
-                        spacing);
-                    UpdateButtonAlignment(button);
+                    continue;
                 }
+
+                button.Text = _panelExpanded && button.BindingContext is ModuleConfig module
+                    ? module.Name
+                    : string.Empty;
+                button.ContentLayout = new Button.ButtonContentLayout(
+                    Button.ButtonContentLayout.ImagePosition.Left,
+                    spacing);
+                button.HorizontalOptions = LayoutOptions.Fill;
+                UpdateButtonAlignment(button);
             }
+        }
+
+        /// <summary>
+        /// Re-applies sidebar layout once the native button handler is attached.
+        /// </summary>
+        private void OnSidebarButtonHandlerChanged(object? sender, EventArgs e)
+        {
+            if (sender is not Button button || button.Handler is null)
+            {
+                return;
+            }
+
+            UpdateButtonAlignment(button);
+            Dispatcher.Dispatch(ApplySidebarButtonLayout);
         }
 
         // Module page activation
@@ -1720,9 +1727,33 @@ namespace ASLM.Pages
             if (button.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Button nativeButton)
             {
                 nativeButton.HorizontalContentAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Left;
+                ConstrainSidebarIconSize(nativeButton);
             }
 #endif
         }
+
+#if WINDOWS
+        /// <summary>
+        /// Pins the WinUI image inside a sidebar button to the logical icon size (avoids stretch on first wide layout).
+        /// </summary>
+        private static void ConstrainSidebarIconSize(Microsoft.UI.Xaml.DependencyObject root)
+        {
+            var childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(root);
+            for (var i = 0; i < childCount; i++)
+            {
+                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(root, i);
+                if (child is Microsoft.UI.Xaml.Controls.Image image)
+                {
+                    image.Width = SidebarIconLogicalSize;
+                    image.Height = SidebarIconLogicalSize;
+                    image.Stretch = Microsoft.UI.Xaml.Media.Stretch.Uniform;
+                    return;
+                }
+
+                ConstrainSidebarIconSize(child);
+            }
+        }
+#endif
 
         /// <summary>
         /// Applies inactive sidebar styling to one navigation button.

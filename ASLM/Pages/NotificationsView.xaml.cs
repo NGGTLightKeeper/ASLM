@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using ASLM.Localization;
 using ASLM.Models;
 using ASLM.Services;
+using Microsoft.Maui.Controls;
 using Microsoft.Maui.Graphics;
 
 namespace ASLM.Pages
@@ -26,6 +27,7 @@ namespace ASLM.Pages
 
         private Rect _lastAnchorBounds;
         private bool _popupPositioningActive;
+        private ImageSource _dismissIconSource = null!;
 
 
         // Events
@@ -56,6 +58,7 @@ namespace ASLM.Pages
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
             LocalizableAttach.Hook(this, _localization, this);
+            RefreshDismissIconChrome();
         }
 
 
@@ -116,6 +119,24 @@ namespace ASLM.Pages
         /// </summary>
         public bool HasAnyNotifications => _notifications.Notifications.Count > 0;
 
+        /// <summary>
+        /// Gets the theme-tinted dismiss glyph for notification rows.
+        /// </summary>
+        public ImageSource DismissIconSource
+        {
+            get => _dismissIconSource;
+            private set
+            {
+                if (_dismissIconSource == value)
+                {
+                    return;
+                }
+
+                _dismissIconSource = value;
+                OnPropertyChanged();
+            }
+        }
+
 
         // Public API
 
@@ -148,6 +169,15 @@ namespace ASLM.Pages
         /// </summary>
         private void OnLoaded(object? sender, EventArgs e)
         {
+            ThemeService.PaletteApplied -= OnPaletteAppliedForDismissIcon;
+            ThemeService.PaletteApplied += OnPaletteAppliedForDismissIcon;
+            if (Application.Current is { } app)
+            {
+                app.RequestedThemeChanged -= OnApplicationRequestedThemeChanged;
+                app.RequestedThemeChanged += OnApplicationRequestedThemeChanged;
+            }
+
+            RefreshDismissIconChrome();
             _notifications.NotificationsChanged -= OnNotificationsChanged;
             _notifications.NotificationsChanged += OnNotificationsChanged;
             SizeChanged -= OnHostSizeChanged;
@@ -160,9 +190,40 @@ namespace ASLM.Pages
         /// </summary>
         private void OnUnloaded(object? sender, EventArgs e)
         {
+            ThemeService.PaletteApplied -= OnPaletteAppliedForDismissIcon;
+            if (Application.Current is { } app)
+            {
+                app.RequestedThemeChanged -= OnApplicationRequestedThemeChanged;
+            }
+
             _notifications.NotificationsChanged -= OnNotificationsChanged;
             SizeChanged -= OnHostSizeChanged;
             _popupPositioningActive = false;
+        }
+
+        /// <summary>
+        /// Refreshes the dismiss icon after a custom palette is applied.
+        /// </summary>
+        private void OnPaletteAppliedForDismissIcon()
+        {
+            MainThread.BeginInvokeOnMainThread(RefreshDismissIconChrome);
+        }
+
+        /// <summary>
+        /// Refreshes the dismiss icon when the application theme changes.
+        /// </summary>
+        private void OnApplicationRequestedThemeChanged(object? sender, AppThemeChangedEventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(RefreshDismissIconChrome);
+        }
+
+        /// <summary>
+        /// Recomputes the tinted dismiss icon for the current palette.
+        /// </summary>
+        private void RefreshDismissIconChrome()
+        {
+            var iconTint = IconTintHelper.ResolvePaletteColor("LabelPrimary");
+            DismissIconSource = PackagedIconTintCache.Get("icon_delete.png", iconTint);
         }
 
 
