@@ -3,7 +3,7 @@
     "id": "aslm-chat",
     "name": "ASLM Chat",
     "description": "ASLM Chat Module",
-    "version": "0.6.0.31",
+    "version": "0.7.1.8",
     "author": "NGGT-ASLM",
     "type": "ui",
     "category": [
@@ -86,6 +86,17 @@
             "engine": "python-runtime",
             "getExec": "main.py get_setting --key api-port",
             "setExec": "main.py set_setting --key api-port --value {value}"
+        },
+        {
+            "key": "oda-daemon-port",
+            "name": "ODA Daemon Port",
+            "description": "Port the ODA sandbox daemon listens on",
+            "type": "port",
+            "default": 20002,
+            "engine": "python-runtime",
+            "getExec": "main.py get_setting --key oda-daemon-port",
+            "setExec": "main.py set_setting --key oda-daemon-port --value {value}",
+            "value": 20002
         },
         {
             "key": "aslm-host-theme",
@@ -180,7 +191,7 @@
             "name": "Ollama Port",
             "description": "Port that the local Ollama service listens on",
             "type": "port",
-            "default": 30002,
+            "default": 20003,
             "engine": "python-runtime",
             "getExec": "main.py get_setting --key ollama-service_port",
             "setExec": "main.py set_setting --key ollama-service_port --value {value}"
@@ -295,6 +306,12 @@
                 "relative": "ollama-service",
                 "description": "Managed Ollama model storage inside ASLM."
             }
+        }
+    },
+    "moduleInterop": {
+        "protocolVersion": 1,
+        "client": {
+            "enabled": true
         }
     },
     "status": {
