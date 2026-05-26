@@ -251,8 +251,8 @@ namespace ASLM.Services
         {
             return LoadPortMap()
                 .SelectMany(module => module.Value.Select(host => CreateHostInfo(module.Key, host.Key, host.Value, null)))
-                .OrderBy(static host => host.Port)
-                .ThenBy(static host => host.ModuleId, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(static host => host.ModuleId, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(static host => host.Port)
                 .ThenBy(static host => host.HostKey, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
@@ -1341,9 +1341,7 @@ namespace ASLM.Services
             }
             else
             {
-                foreach (var module in portMap
-                             .OrderBy(static pair => pair.Value.Values.DefaultIfEmpty(int.MaxValue).Min())
-                             .ThenBy(static pair => pair.Key, StringComparer.OrdinalIgnoreCase))
+                foreach (var module in portMap.OrderBy(static pair => pair.Key, StringComparer.OrdinalIgnoreCase))
                 {
                     body.Append("<section>");
                     AppendModuleHeading(body, module.Key, moduleStates);

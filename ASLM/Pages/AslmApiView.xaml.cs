@@ -235,9 +235,11 @@ namespace ASLM.Pages
             var activeKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             var orderedHosts = hosts
-                .OrderBy(static host => host.Port)
-                .ThenBy(static host => host.ModuleId)
-                .ThenBy(static host => host.HostKey)
+                .OrderBy(
+                    host => ResolveModuleDisplayState(host.ModuleId, moduleStates).Name,
+                    StringComparer.OrdinalIgnoreCase)
+                .ThenBy(static host => host.Port)
+                .ThenBy(static host => host.HostKey, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             for (var desiredIndex = 0; desiredIndex < orderedHosts.Count; desiredIndex++)
@@ -306,7 +308,7 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Keeps the displayed host list sorted by port without recreating existing row views.
+        /// Keeps the displayed host list sorted by module name and port without recreating existing row views.
         /// </summary>
         private void MoveHostRowIfNeeded(AslmApiHostViewModel row, int desiredIndex)
         {
@@ -367,6 +369,11 @@ namespace ASLM.Pages
                 foreach (var row in Hosts)
                 {
                     row.UpdateModuleState(ResolveModuleDisplayState(row.ModuleId, _moduleDisplayStates));
+                }
+
+                if (Hosts.Count > 0)
+                {
+                    SynchronizeHostRows(_apiServer.GetHosts(), _moduleDisplayStates);
                 }
             });
         }
