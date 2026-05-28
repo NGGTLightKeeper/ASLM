@@ -1,0 +1,44 @@
+{{- /*
+  Renders deduplicated children of a sidebar branch.
+  Subsections (.Sections) first, then leaf pages (.Pages) not already listed.
+  Branch bundles often appear in both collections in Hugo — never render twice.
+*/ -}}
+{{- $node := .node -}}
+{{- $current := .current -}}
+{{- $depth := .depth -}}
+{{- $maxDepth := .maxDepth -}}
+{{- $sidebarIcons := .sidebarIcons -}}
+{{- $sortByWeight := .sortByWeight | default false -}}
+{{- $seen := dict -}}
+
+{{- if $sortByWeight -}}
+    {{- range $node.Sections.ByWeight -}}
+        {{- $key := .RelPermalink -}}
+        {{- if not (index $seen $key) -}}
+            {{- $seen = merge $seen (dict $key true) -}}
+            {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" $depth "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons "sortByWeight" $sortByWeight) -}}
+        {{- end -}}
+    {{- end -}}
+    {{- range $node.Pages.ByWeight -}}
+        {{- $key := .RelPermalink -}}
+        {{- if not (index $seen $key) -}}
+            {{- $seen = merge $seen (dict $key true) -}}
+            {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" $depth "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons "sortByWeight" $sortByWeight) -}}
+        {{- end -}}
+    {{- end -}}
+{{- else -}}
+    {{- range $node.Sections.ByTitle -}}
+        {{- $key := .RelPermalink -}}
+        {{- if not (index $seen $key) -}}
+            {{- $seen = merge $seen (dict $key true) -}}
+            {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" $depth "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons "sortByWeight" $sortByWeight) -}}
+        {{- end -}}
+    {{- end -}}
+    {{- range $node.Pages.ByTitle -}}
+        {{- $key := .RelPermalink -}}
+        {{- if not (index $seen $key) -}}
+            {{- $seen = merge $seen (dict $key true) -}}
+            {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" $depth "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons "sortByWeight" $sortByWeight) -}}
+        {{- end -}}
+    {{- end -}}
+{{- end -}}
