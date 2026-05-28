@@ -29,6 +29,20 @@
 	</PropertyGroup>
 	
 	<Import Project="..\ASLM.Build.props" />
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="ASLM.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="Tests\**" />
+		<None Remove="Tests\**" />
+		<Content Remove="Tests\**" />
+		<EmbeddedResource Remove="Tests\**" />
+		<MauiXaml Remove="Tests\**" />
+	</ItemGroup>
+
+	<Import Project="ASLM.Test.targets" Condition="Exists('ASLM.Test.targets')" />
 	
 	<PropertyGroup>
 		<OutputPath>$(ASLMBuildOutputRoot)App\</OutputPath>
