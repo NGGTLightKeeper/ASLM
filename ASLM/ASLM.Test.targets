@@ -1,0 +1,20 @@
+<Project>
+
+	<PropertyGroup>
+		<ASLMTestsProjectPath Condition="'$(ASLMTestsProjectPath)' == ''">$(MSBuildProjectDirectory)\Tests\ASLM.Tests.csproj</ASLMTestsProjectPath>
+		<SkipUnitTestsOnBuild Condition="'$(SkipUnitTestsOnBuild)' == ''">false</SkipUnitTestsOnBuild>
+	</PropertyGroup>
+
+	<!-- TargetFrameworks triggers an outer + inner Build; run tests only on the inner (per-TFM) build. -->
+	<Target Name="RunAslmUnitTestsAfterBuild"
+	        AfterTargets="Build"
+	        Condition="'$(SkipUnitTestsOnBuild)' != 'true'
+	                 and Exists('$(ASLMTestsProjectPath)')
+	                 and ('$(TargetFrameworks)' == '' or '$(TargetFramework)' != '')">
+		<Message Importance="high" Text="Running ASLM unit tests ($(Configuration))..." />
+		<Exec Command="dotnet test &quot;$(ASLMTestsProjectPath)&quot; -c $(Configuration) -v minimal --no-restore /p:SkipUnitTestsOnBuild=true"
+		      WorkingDirectory="$(MSBuildProjectDirectory)"
+		      EnvironmentVariables="DOTNET_CLI_UI_LANGUAGE=en" />
+	</Target>
+
+</Project>

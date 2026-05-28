@@ -1,5 +1,8 @@
 <Solution>
   <Project Path="ASLM/ASLM.csproj" />
+  <Project Path="ASLM/Tests/ASLM.Tests.csproj">
+    <BuildDependency Project="ASLM/ASLM.csproj" />
+  </Project>
   <Project Path="Installer/Installer/Installer.csproj">
     <BuildDependency Project="ASLM/ASLM.csproj" />
     <BuildDependency Project="Launcher/Launcher.csproj" />

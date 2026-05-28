@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+		<RootNamespace>ASLM.Tests</RootNamespace>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+		<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+
+		<ASLMTestLayoutRoot>$(MSBuildProjectDirectory)\_layout_root\</ASLMTestLayoutRoot>
+		<OutputPath>$(ASLMTestLayoutRoot)App\</OutputPath>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+
+		<UseMaui>false</UseMaui>
+		<EnableDefaultMauiItems>false</EnableDefaultMauiItems>
+
+		<ASLMRepoRoot>$(MSBuildThisFileDirectory)..\..\</ASLMRepoRoot>
+		<ASLMAppOutputDir>$(ASLMRepoRoot)Build\$(Configuration)\ASLM-windows-amd64\App\</ASLMAppOutputDir>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="coverlet.collector" Version="6.0.4">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="FluentAssertions" Version="8.8.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.20" />
+		<PackageReference Include="Moq" Version="4.20.72" />
+		<PackageReference Include="xunit" Version="2.9.3" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="3.1.4">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="ASLM">
+			<HintPath>$(ASLMAppOutputDir)ASLM.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="Xunit" />
+	</ItemGroup>
+
+	<Target Name="BuildAslmApp" BeforeTargets="BeforeBuild">
+		<MSBuild Projects="$(MSBuildThisFileDirectory)..\ASLM.csproj"
+		         Targets="Build"
+		         Properties="Configuration=$(Configuration);SkipUnitTestsOnBuild=true" />
+	</Target>
+
+	<Target Name="CopyAslmRuntime" AfterTargets="Build">
+		<ItemGroup>
+			<_AslmRuntime Include="$(ASLMAppOutputDir)*.dll" />
+		</ItemGroup>
+		<Copy SourceFiles="@(_AslmRuntime)"
+		      DestinationFolder="$(OutputPath)"
+		      SkipUnchangedFiles="true" />
+	</Target>
+
+</Project>
