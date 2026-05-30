@@ -57,9 +57,9 @@ namespace ASLM.Services
                 return modules;
             }
 
-            // Materialize the manifest list once before fan-out deserialization.
-            var jsonFiles = await Task.Run(() => Directory
-                .EnumerateFiles(modulesRoot, "ASLM_Module.json", SearchOption.AllDirectories)
+            // Only root manifests (Modules/{folder}/ASLM_Module.json) are installed modules.
+            var jsonFiles = await Task.Run(() => ModuleManifestDiscovery
+                .EnumerateInstalledManifests(modulesRoot)
                 .ToList());
 
             var tasks = jsonFiles.Select(LoadModuleConfig);
@@ -87,6 +87,14 @@ namespace ASLM.Services
         {
             if (!File.Exists(jsonFile))
             {
+                return null;
+            }
+
+            var modulesRoot = Path.Combine(GetRootDirectory(), "Modules");
+            if (ModuleManifestDiscovery.IsPathUnderDirectory(modulesRoot, jsonFile) &&
+                !ModuleManifestDiscovery.IsInstalledModuleManifest(modulesRoot, jsonFile))
+            {
+                Debug.WriteLine($"Ignoring nested module manifest: {jsonFile}");
                 return null;
             }
 
