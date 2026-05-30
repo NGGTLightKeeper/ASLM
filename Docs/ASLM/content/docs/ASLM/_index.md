@@ -1,6 +1,8 @@
 ---
 title: "ASLM"
 draft: false
+icon: "developer_board"
+weight: 100
 ---
 
 C# sources for the MAUI host (`ASLM/ASLM/`), **Launcher**, **Patcher**, **Installer**, and related tooling.
@@ -26,4 +28,4 @@ Reference pages share the same outline:
 | `#### \`signature\`` | One section per method with **Purpose** and steps |
 | `## Related` | Cross-links |
 
-Sidebar order is **alphabetical** (subsections before sibling pages). [Patch Notes](../PatchNotes/) keep their own order.
+Top-level sections under [Documentation](../) use **`weight`** in each section’s `_index.md` (lower first). Inside **ASLM**, the sidebar is **alphabetical** (subsections before sibling pages). [Patch Notes](../PatchNotes/) use **`weight`** as well.

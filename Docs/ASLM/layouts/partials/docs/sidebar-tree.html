@@ -1,24 +1,19 @@
 {{- /*
   Recursive sidebar node. Expects dict:
-    node, current, depth, maxDepth, sidebarIcons, sortByWeight (optional)
+    node, current, depth, maxDepth, sidebarIcons
 */ -}}
 {{- $node := .node -}}
 {{- $current := .current -}}
 {{- $depth := .depth -}}
 {{- $maxDepth := .maxDepth -}}
 {{- $sidebarIcons := .sidebarIcons -}}
-{{- $sortByWeight := .sortByWeight | default false -}}
-{{- if not $sortByWeight -}}
-    {{- if or (eq $node.Section "PatchNotes") (strings.HasPrefix $node.File.Dir "docs/PatchNotes/") (eq $node.File.Dir "docs/PatchNotes") -}}
-        {{- $sortByWeight = true -}}
-    {{- end -}}
-{{- end -}}
+{{- $sortByWeight := eq (partial "docs/sidebar-sort-weight.html" (dict "node" $node)) "true" -}}
 {{- $hasChildren := or $node.Sections $node.Pages -}}
 {{- $active := in $current.RelPermalink $node.RelPermalink -}}
 {{- $canNest := lt $depth $maxDepth -}}
 {{- $noIconClass := "" -}}
 {{- if not $sidebarIcons }}{{ $noIconClass = "no-icon" }}{{ end -}}
-{{- $childDict := dict "node" $node "current" $current "depth" (add $depth 1) "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons "sortByWeight" $sortByWeight -}}
+{{- $childDict := dict "node" $node "current" $current "depth" (add $depth 1) "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons -}}
 
 {{- if and $hasChildren $canNest -}}
 <li class="sidebar-dropdown{{ if gt $depth 0 }} nested{{ end }}{{ if $noIconClass }} {{ $noIconClass }}{{ end }}{{ if $active }} current active{{ end }}">
@@ -51,7 +46,7 @@
                     {{- $key := .RelPermalink -}}
                     {{- if not (index $seen $key) -}}
                         {{- $seen = merge $seen (dict $key true) -}}
-                        {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" (add $depth 1) "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons "sortByWeight" $sortByWeight) -}}
+                        {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" (add $depth 1) "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons) -}}
                     {{- end -}}
                 {{- end -}}
                 {{- range $node.Pages.ByWeight -}}
@@ -69,7 +64,7 @@
                     {{- $key := .RelPermalink -}}
                     {{- if not (index $seen $key) -}}
                         {{- $seen = merge $seen (dict $key true) -}}
-                        {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" (add $depth 1) "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons "sortByWeight" $sortByWeight) -}}
+                        {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" (add $depth 1) "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons) -}}
                     {{- end -}}
                 {{- end -}}
                 {{- range $node.Pages.ByTitle -}}

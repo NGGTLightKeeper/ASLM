@@ -8,7 +8,7 @@
 {{- $depth := .depth -}}
 {{- $maxDepth := .maxDepth -}}
 {{- $sidebarIcons := .sidebarIcons -}}
-{{- $sortByWeight := .sortByWeight | default false -}}
+{{- $sortByWeight := eq (partial "docs/sidebar-sort-weight.html" (dict "node" $node)) "true" -}}
 {{- $seen := dict -}}
 
 {{- if $sortByWeight -}}
@@ -16,14 +16,14 @@
         {{- $key := .RelPermalink -}}
         {{- if not (index $seen $key) -}}
             {{- $seen = merge $seen (dict $key true) -}}
-            {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" $depth "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons "sortByWeight" $sortByWeight) -}}
+            {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" $depth "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons) -}}
         {{- end -}}
     {{- end -}}
     {{- range $node.Pages.ByWeight -}}
         {{- $key := .RelPermalink -}}
         {{- if not (index $seen $key) -}}
             {{- $seen = merge $seen (dict $key true) -}}
-            {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" $depth "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons "sortByWeight" $sortByWeight) -}}
+            {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" $depth "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons) -}}
         {{- end -}}
     {{- end -}}
 {{- else -}}
@@ -31,14 +31,14 @@
         {{- $key := .RelPermalink -}}
         {{- if not (index $seen $key) -}}
             {{- $seen = merge $seen (dict $key true) -}}
-            {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" $depth "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons "sortByWeight" $sortByWeight) -}}
+            {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" $depth "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons) -}}
         {{- end -}}
     {{- end -}}
     {{- range $node.Pages.ByTitle -}}
         {{- $key := .RelPermalink -}}
         {{- if not (index $seen $key) -}}
             {{- $seen = merge $seen (dict $key true) -}}
-            {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" $depth "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons "sortByWeight" $sortByWeight) -}}
+            {{- partial "docs/sidebar-tree.html" (dict "node" . "current" $current "depth" $depth "maxDepth" $maxDepth "sidebarIcons" $sidebarIcons) -}}
         {{- end -}}
     {{- end -}}
 {{- end -}}
