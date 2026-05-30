@@ -1,4 +1,5 @@
 ---
+# File name: YYYYMMDDHHmm-Short-Title.md (date prefix drives sidebar/list order, newest first)
 title: "{{ replace .Name "-" " " | title }}"
 date: {{ .Date }}
 draft: true

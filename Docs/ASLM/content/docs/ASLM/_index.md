@@ -28,4 +28,4 @@ Reference pages share the same outline:
 | `#### \`signature\`` | One section per method with **Purpose** and steps |
 | `## Related` | Cross-links |
 
-Top-level sections under [Documentation](../) use **`weight`** in each section’s `_index.md` (lower first). Inside **ASLM**, the sidebar is **alphabetical** (subsections before sibling pages). [Patch Notes](../PatchNotes/) use **`weight`** as well.
+Top-level sections under [Documentation](../) use **`weight`** in each section’s `_index.md` (lower first). Inside **ASLM**, the sidebar is **alphabetical** (subsections before sibling pages). [Patch Notes](../PatchNotes/) are ordered by the **`YYYYMMDDHHmm`** prefix in each file name (newest first).

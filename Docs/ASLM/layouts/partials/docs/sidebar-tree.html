@@ -7,7 +7,8 @@
 {{- $depth := .depth -}}
 {{- $maxDepth := .maxDepth -}}
 {{- $sidebarIcons := .sidebarIcons -}}
-{{- $sortByWeight := eq (partial "docs/sidebar-sort-weight.html" (dict "node" $node)) "true" -}}
+{{- $patchNotesBranch := eq (partial "docs/is-patchnotes-branch.html" (dict "node" $node) | strings.TrimSpace) "true" -}}
+{{- $sortMode := partial "docs/sidebar-sort-mode.html" (dict "node" $node) | strings.TrimSpace -}}
 {{- $hasChildren := or $node.Sections $node.Pages -}}
 {{- $active := in $current.RelPermalink $node.RelPermalink -}}
 {{- $canNest := lt $depth $maxDepth -}}
@@ -39,9 +40,20 @@
     </button>
     <div class="sidebar-submenu{{ if $active }} d-block{{ end }}">
         <ul>
-            {{- /* At max depth: subsections recurse; leaf pages are flat links (deduplicated). */ -}}
             {{- $seen := dict -}}
-            {{- if $sortByWeight -}}
+            {{- if $patchNotesBranch -}}
+                {{- $sortedPages := partial "docs/sort-patchnotes-pages.html" $node.Pages -}}
+                {{- range $sortedPages -}}
+                    {{- $key := .RelPermalink -}}
+                    {{- if not (index $seen $key) -}}
+                        {{- $seen = merge $seen (dict $key true) -}}
+                        {{- $childActive := in $current.RelPermalink .RelPermalink -}}
+                        <li class="{{ if $childActive }}current {{ end }}{{ if $noIconClass }} {{ $noIconClass }}{{ end }}">
+                            <a class="sidebar-nested-link" href="{{ .Permalink }}">{{ .Title }}</a>
+                        </li>
+                    {{- end -}}
+                {{- end -}}
+            {{- else if eq $sortMode "root-weight" -}}
                 {{- range $node.Sections.ByWeight -}}
                     {{- $key := .RelPermalink -}}
                     {{- if not (index $seen $key) -}}
