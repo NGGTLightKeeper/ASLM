@@ -1206,7 +1206,15 @@ namespace ASLM.Services
                 return url;
             }
 
-            return route.ToMirrorPath(NormalizeBackendPath(url), query: string.Empty, fragment: string.Empty);
+            var fragmentIndex = url.IndexOf('#');
+            var fragment = fragmentIndex >= 0 ? url[fragmentIndex..] : string.Empty;
+            var beforeFragment = fragmentIndex >= 0 ? url[..fragmentIndex] : url;
+
+            var queryIndex = beforeFragment.IndexOf('?');
+            var query = queryIndex >= 0 ? beforeFragment[queryIndex..] : string.Empty;
+            var path = queryIndex >= 0 ? beforeFragment[..queryIndex] : beforeFragment;
+
+            return route.ToMirrorPath(NormalizeBackendPath(path), query, fragment);
         }
 
         /// <summary>
