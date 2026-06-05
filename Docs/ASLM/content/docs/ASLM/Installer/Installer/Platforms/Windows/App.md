@@ -5,7 +5,7 @@ draft: false
 
 ## Class `App`
 
-`Installer/Installer/Platforms/Windows/App.xaml` + `App.xaml.cs` — namespace **`ASLM.Installer.WinUI`**.
+`ASLM/Installer/Installer/Platforms/Windows/App.xaml` + `App.xaml.cs` — namespace **`ASLM.Installer.WinUI`**.
 
 **`public partial class App : MauiWinUIApplication`** — Windows WinUI host for the MAUI installer.
 

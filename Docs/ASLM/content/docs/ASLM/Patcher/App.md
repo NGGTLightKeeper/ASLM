@@ -5,7 +5,7 @@ draft: false
 
 ## Class `App`
 
-`Patcher/App.xaml` + `App.xaml.cs` — MAUI **`Application`** for the patcher.
+`ASLM/Patcher/App.xaml` + `App.xaml.cs` — MAUI **`Application`** for the patcher.
 
 ---
 

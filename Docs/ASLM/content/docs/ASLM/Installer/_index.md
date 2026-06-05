@@ -3,7 +3,7 @@ title: "Installer"
 draft: false
 ---
 
-The **Installer** solution (`Installer/`) ships a Windows setup experience for ASLM. It consists of two projects:
+The **Installer** solution (`ASLM/Installer/`) ships a Windows setup experience for ASLM. It consists of two projects:
 
 | Project | Output | Role |
 | --- | --- | --- |
@@ -23,10 +23,10 @@ The **Installer** solution (`Installer/`) ships a Windows setup experience for A
 | Input | Source |
 | --- | --- |
 | `aslm-payload.zip` | Zipped ASLM build output (`Build/{Configuration}/ASLM-{os}-{arch}/`), excluding `Installer` and `.aslm-update` |
-| `legal-documents.json` | Generated from `Installer/Legal/*.md` at build |
+| `legal-documents.json` | Generated from `ASLM/Installer/Legal/*.md` at build |
 | `installer-ui.zip` | Published MAUI installer output (bootstrapper embed) |
 
-Legal source files live in `Installer/Legal/` (EULA, privacy, license). They are not duplicated in this documentation site.
+Legal source files live in `ASLM/Installer/Legal/` (EULA, privacy, license). They are not duplicated in this documentation site.
 
 ## Related distribution components
 

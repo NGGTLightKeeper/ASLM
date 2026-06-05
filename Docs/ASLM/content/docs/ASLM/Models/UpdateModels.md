@@ -44,7 +44,7 @@ In-memory available update (not persisted as-is):
 
 ## Class `PendingAppUpdate`
 
-Written to **`.aslm-update/pending.json`** for the [Patcher](../../Patcher/Program/):
+Written to **`.aslm-update/pending.json`** for the [Patcher](../PatcherProgram/):
 
 | Property | JSON |
 | --- | --- |

@@ -142,7 +142,7 @@ internal static class Program
 
         var resources = string.Join(", ", assembly.GetManifestResourceNames());
         throw new InvalidOperationException(
-            $"The installer bootstrapper does not contain {resourceName}. Build Installer/Installer-Bootstrapper in Visual Studio first. Embedded resources: {resources}");
+            $"The installer bootstrapper does not contain {resourceName}. Build ASLM/Installer/Installer-Bootstrapper in Visual Studio first. Embedded resources: {resources}");
     }
 
 

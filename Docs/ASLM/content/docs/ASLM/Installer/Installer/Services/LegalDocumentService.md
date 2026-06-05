@@ -5,7 +5,7 @@ draft: false
 
 ## Class `LegalDocumentService`
 
-`Installer/Installer/Services/LegalDocumentService.cs` — **`public sealed`** — loads build-generated legal bundle from app assets.
+`ASLM/Installer/Installer/Services/LegalDocumentService.cs` — **`public sealed`** — loads build-generated legal bundle from app assets.
 
 ### Constant
 
@@ -27,7 +27,7 @@ draft: false
 | 3 | If null or empty → `InvalidOperationException("Installer legal documents are missing or empty.")` |
 | 4 | Return list |
 
-JSON is generated at build from `Installer/Legal/*.md` (`GenerateInstallerLegalDocuments` in `Installer.csproj`).
+JSON is generated at build from `ASLM/Installer/Legal/*.md` (`GenerateInstallerLegalDocuments` in `Installer.csproj`).
 
 ---
 

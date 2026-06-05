@@ -5,7 +5,7 @@ draft: false
 
 ## Class `MainPage`
 
-`Installer/Installer/MainPage.xaml` + `MainPage.xaml.cs` — **`public partial ContentPage`** — installer wizard (legal → path → confirm → install).
+`ASLM/Installer/Installer/MainPage.xaml` + `MainPage.xaml.cs` — **`public partial ContentPage`** — installer wizard (legal → path → confirm → install).
 
 Constructs its own **`InstallerService`** / **`LegalDocumentService`** instances (also registered in [MauiProgram](MauiProgram/) for DI elsewhere).
 

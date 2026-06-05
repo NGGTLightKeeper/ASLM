@@ -5,7 +5,7 @@ draft: false
 
 ## File `ASLM.Test.targets`
 
-`ASLM/ASLM.Test.targets` — MSBuild import from the main [ASLM](ASLM/) project. Runs unit tests after a successful app build.
+`ASLM/ASLM.Test.targets` — MSBuild import from the main [MauiProgram](MauiProgram/) project. Runs unit tests after a successful app build.
 
 ---
 

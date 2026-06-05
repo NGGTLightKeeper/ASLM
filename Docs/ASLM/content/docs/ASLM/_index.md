@@ -5,14 +5,24 @@ icon: "developer_board"
 weight: 100
 ---
 
-C# sources for the MAUI host (`ASLM/ASLM/`), **Launcher**, **Patcher**, **Installer**, and related tooling.
+C# sources for the MAUI host (`ASLM/`), **Launcher**, **Patcher**, **Installer**, and related tooling.
 
 | Section | Doc |
 | --- | --- |
 | [Launcher](Launcher/) | Root `ASLM.exe` entry and patcher handoff |
 | [Patcher](Patcher/) | Self-update UI and `PatcherRunner` |
 | [Installer](Installer/) | Bootstrapper + MAUI setup wizard |
-| [ASLM host](ASLM/) | MAUI app — [Pages](ASLM/Pages/), [Services](ASLM/Services/), [Models](ASLM/Models/), [Tests](ASLM/Tests/), and supporting areas |
+| [App](App/) | Application host, window, shutdown |
+| [MauiProgram](MauiProgram/) | DI registration and startup |
+| [GlobalUsings](GlobalUsings/) | Project-wide usings |
+| [Localization](Localization/) | UI string access and refresh hooks |
+| [Models](Models/) | JSON manifests and persisted DTOs |
+| [Platforms](Platforms/) | Windows WinUI host and packaging |
+| [Resources](Resources/) | RESX strings, styles, images |
+| [Pages](Pages/) | MAUI UI — shell, overlays, first-run wizard |
+| [Services](Services/) | Host singletons — persistence, modules, theme, updates |
+| [Tests](Tests/) | xUnit project — service unit tests |
+| [ASLM.Test.targets](ASLM.Test.targets) | Runs `dotnet test` after main app build |
 
 ---
 

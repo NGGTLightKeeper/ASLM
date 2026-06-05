@@ -3,7 +3,7 @@ title: "Launcher"
 draft: false
 ---
 
-The **Launcher** is a small .NET console project (`Launcher/`) that ships as **`ASLM.exe`** at the install root. It is the user-facing entry point: it either starts the MAUI host under `App/ASLM.exe` or hands control to the **Patcher** when a self-update is pending.
+The **Launcher** is a small .NET console project (`ASLM/Launcher/`) that ships as **`ASLM.exe`** at the install root. It is the user-facing entry point: it either starts the MAUI host under `App/ASLM.exe` or hands control to the **Patcher** when a self-update is pending.
 
 ## Role in the distribution layout
 
@@ -25,7 +25,7 @@ In **Debug** builds, the launcher project also copies `Data/`, `Engines/`, `Modu
 
 ## Related documentation
 
-- [Program](Program/) — launcher implementation (`Launcher/Program.cs`)
+- [Program](Program/) — launcher implementation (`ASLM/Launcher/Program.cs`)
 
 ## Related host behavior
 

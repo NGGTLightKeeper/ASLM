@@ -5,7 +5,7 @@ draft: false
 
 ## Class `InstallerService`
 
-`Installer/Installer/Services/InstallerService.cs` — **`public sealed`** — extracts **`aslm-payload.zip`**, writes **`install-manifest.json`**, optional shortcuts.
+`ASLM/Installer/Installer/Services/InstallerService.cs` — **`public sealed`** — extracts **`aslm-payload.zip`**, writes **`install-manifest.json`**, optional shortcuts.
 
 Records at file bottom: `InstallOptions`, `AcceptedLegalDocument`, `InstallManifest`, `InstallProgress`, `InstallPathValidation`.
 

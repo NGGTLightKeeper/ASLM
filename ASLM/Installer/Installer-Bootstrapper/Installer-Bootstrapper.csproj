@@ -16,15 +16,15 @@
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 	</PropertyGroup>
 
-	<Import Project="..\..\ASLM.Build.props" />
+	<Import Project="..\..\..\ASLM.Build.props" />
 	<Import Project="..\Build\Installer.Build.targets" />
 
 	<PropertyGroup>
-		<ASLMRepoRoot>$(MSBuildThisFileDirectory)..\..\</ASLMRepoRoot>
+		<ASLMRepoRoot>$(MSBuildThisFileDirectory)..\..\..\</ASLMRepoRoot>
 		<ASLMBootstrapperPublishRoot>$(MSBuildProjectDirectory)\obj\$(Configuration)\bootstrapped-publish\</ASLMBootstrapperPublishRoot>
 		<ASLMBootstrapperFinalFile>$(ASLMRepoRoot)Build\$(Configuration)\ASLM-Installer-$(ASLMBuildOs)-$(ASLMBuildArch).exe</ASLMBootstrapperFinalFile>
-		<ASLMInstallerOutputRoot>$(MSBuildThisFileDirectory)..\..\Build\$(Configuration)\ASLM-Installer-$(ASLMBuildOs)-$(ASLMBuildArch)\</ASLMInstallerOutputRoot>
-		<ASLMPayloadSourceRoot>$(MSBuildThisFileDirectory)..\..\Build\$(Configuration)\ASLM-$(ASLMBuildOs)-$(ASLMBuildArch)\</ASLMPayloadSourceRoot>
+		<ASLMInstallerOutputRoot>$(MSBuildThisFileDirectory)..\..\..\Build\$(Configuration)\ASLM-Installer-$(ASLMBuildOs)-$(ASLMBuildArch)\</ASLMInstallerOutputRoot>
+		<ASLMPayloadSourceRoot>$(MSBuildThisFileDirectory)..\..\..\Build\$(Configuration)\ASLM-$(ASLMBuildOs)-$(ASLMBuildArch)\</ASLMPayloadSourceRoot>
 		<ASLMInstallerProject>$(MSBuildThisFileDirectory)..\Installer\Installer.csproj</ASLMInstallerProject>
 		<ASLMPayloadFile>$(MSBuildThisFileDirectory)..\Installer\Resources\Raw\aslm-payload.zip</ASLMPayloadFile>
 		<ASLMBootstrapperResourceDir>$(MSBuildProjectDirectory)\Resources\</ASLMBootstrapperResourceDir>
@@ -53,17 +53,17 @@
 		         Targets="Build"
 		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework)" />
 
-		<MSBuild Projects="$(ASLMRepoRoot)Patcher\Patcher.csproj"
+		<MSBuild Projects="$(ASLMRepoRoot)ASLM\Patcher\Patcher.csproj"
 		         Targets="Restore"
 		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework)" />
-		<MSBuild Projects="$(ASLMRepoRoot)Patcher\Patcher.csproj"
+		<MSBuild Projects="$(ASLMRepoRoot)ASLM\Patcher\Patcher.csproj"
 		         Targets="Build"
 		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework)" />
 
-		<MSBuild Projects="$(ASLMRepoRoot)Launcher\Launcher.csproj"
+		<MSBuild Projects="$(ASLMRepoRoot)ASLM\Launcher\Launcher.csproj"
 		         Targets="Restore"
 		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerLauncherTargetFramework)" />
-		<MSBuild Projects="$(ASLMRepoRoot)Launcher\Launcher.csproj"
+		<MSBuild Projects="$(ASLMRepoRoot)ASLM\Launcher\Launcher.csproj"
 		         Targets="Build"
 		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerLauncherTargetFramework)" />
 
@@ -92,8 +92,8 @@
 	</Target>
 
 	<Target Name="ValidateInstallerBootstrapperResources" BeforeTargets="BeforeBuild" DependsOnTargets="PrepareBootstrapperResources">
-		<Error Condition="!Exists('Resources\installer-ui.zip')" Text="installer-ui.zip was not found. Build Installer/Installer-Bootstrapper so MSBuild can publish the MAUI installer UI before embedding it." />
-		<Error Condition="!Exists('Resources\aslm-payload.zip')" Text="aslm-payload.zip was not found. Build Installer/Installer-Bootstrapper so MSBuild can pack the ASLM payload before embedding it." />
+		<Error Condition="!Exists('Resources\installer-ui.zip')" Text="installer-ui.zip was not found. Build ASLM/Installer/Installer-Bootstrapper so MSBuild can publish the MAUI installer UI before embedding it." />
+		<Error Condition="!Exists('Resources\aslm-payload.zip')" Text="aslm-payload.zip was not found. Build ASLM/Installer/Installer-Bootstrapper so MSBuild can pack the ASLM payload before embedding it." />
 	</Target>
 
 	<Target Name="CopyBootstrapperExecutableToBuild" AfterTargets="Publish" Condition="'$(ASLMSkipBootstrapperFinalCopy)' != 'true'">

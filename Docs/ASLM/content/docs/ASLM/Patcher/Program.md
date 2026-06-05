@@ -5,7 +5,7 @@ draft: false
 
 ## Overview
 
-`Patcher/Program.cs` — **`PatcherRunner`** (`internal static`) and **`PatcherProgress`** (`internal sealed record`). No `Main` method; MAUI hosts the process and [MainPage](MainPage/) calls `PatcherRunner.RunAsync`.
+`ASLM/Patcher/Program.cs` — **`PatcherRunner`** (`internal static`) and **`PatcherProgress`** (`internal sealed record`). No `Main` method; MAUI hosts the process and [MainPage](MainPage/) calls `PatcherRunner.RunAsync`.
 
 ---
 
@@ -192,4 +192,4 @@ JSON model for `pending.json`.
 ## Related
 
 - [MainPage](MainPage/) — calls `RunAsync`
-- Host: [UpdateManager](../../ASLM/ASLM/Services/UpdateManager/)
+- Host: [UpdateManager](../../Services/UpdateManager/)

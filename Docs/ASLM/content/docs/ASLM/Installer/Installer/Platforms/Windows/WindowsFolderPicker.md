@@ -5,7 +5,7 @@ draft: false
 
 ## Class `WindowsFolderPicker`
 
-`Installer/Installer/Platforms/Windows/WindowsFolderPicker.cs` — **`internal static`** — native folder picker via COM **`IFileOpenDialog`** (not WinRT).
+`ASLM/Installer/Installer/Platforms/Windows/WindowsFolderPicker.cs` — **`internal static`** — native folder picker via COM **`IFileOpenDialog`** (not WinRT).
 
 ---
 

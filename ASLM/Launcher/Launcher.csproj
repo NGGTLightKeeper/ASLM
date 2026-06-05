@@ -10,51 +10,51 @@
 		<AssemblyName>ASLM</AssemblyName>
 	</PropertyGroup>
 	
-	<Import Project="..\ASLM.Build.props" />
+	<Import Project="..\..\ASLM.Build.props" />
 
 	<PropertyGroup>
 		<OutputPath>$(ASLMBuildOutputRoot)</OutputPath>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(Configuration)' == 'Debug'">
-		<Content Include="..\Data\**\*.*">
+		<Content Include="..\..\Data\**\*.*">
 			<Link>Data\%(RecursiveDir)%(Filename)%(Extension)</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 
-		<Content Include="..\Engines\**\*.*">
+		<Content Include="..\..\Engines\**\*.*">
 			<Link>Engines\%(RecursiveDir)%(Filename)%(Extension)</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 
-		<Content Include="..\Models\**\*.*">
+		<Content Include="..\..\Models\**\*.*">
 			<Link>Models\%(RecursiveDir)%(Filename)%(Extension)</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		
-		<Content Include="..\Modules\**\*.*">
+		<Content Include="..\..\Modules\**\*.*">
 			<Link>Modules\%(RecursiveDir)%(Filename)%(Extension)</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>
 	
 	<ItemGroup Condition="'$(Configuration)' == 'Release'">
-		<Content Include="..\Data\**\*.*">
+		<Content Include="..\..\Data\**\*.*">
 			<Link>Data\%(RecursiveDir)%(Filename)%(Extension)</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		
-		<Content Include="..\Engines\**\ASLM_Engine.json">
+		<Content Include="..\..\Engines\**\ASLM_Engine.json">
 			<Link>Engines\%(RecursiveDir)%(Filename)%(Extension)</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 
-		<Content Include="..\Models\**\ASLM_Model.json">
+		<Content Include="..\..\Models\**\ASLM_Model.json">
 			<Link>Models\%(RecursiveDir)%(Filename)%(Extension)</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 
-		<Content Include="..\Modules\**\ASLM_Module.json">
+		<Content Include="..\..\Modules\**\ASLM_Module.json">
 			<Link>Modules\%(RecursiveDir)%(Filename)%(Extension)</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>

@@ -3,7 +3,7 @@ title: "Installer-Bootstrapper"
 draft: false
 ---
 
-Console-free **WinExe** bootstrapper (`Installer/Installer-Bootstrapper/`) that produces the distributable **`ASLM-Installer.exe`**.
+Console-free **WinExe** bootstrapper (`ASLM/Installer/Installer-Bootstrapper/`) that produces the distributable **`ASLM-Installer.exe`**.
 
 At runtime it does not install files itself; it only unpacks embedded resources and starts the MAUI installer UI.
 
@@ -14,7 +14,7 @@ At runtime it does not install files itself; it only unpacks embedded resources 
 | `installer-ui.zip` | Published `ASLM-Installer.exe` and dependencies |
 | `aslm-payload.zip` | Full ASLM install tree to extract in the wizard |
 
-Both are embedded via `EmbeddedResource` in `Installer-Bootstrapper.csproj` and produced by MSBuild targets in `Installer/Build/Installer.Build.targets`.
+Both are embedded via `EmbeddedResource` in `Installer-Bootstrapper.csproj` and produced by MSBuild targets in `ASLM/Installer/Build/Installer.Build.targets`.
 
 ## Environment variable
 
@@ -26,4 +26,4 @@ Command-line arguments are forwarded to the UI process (quoted when needed).
 
 ## Implementation
 
-- [Program](Program/) — `Installer/Installer-Bootstrapper/Program.cs`
+- [Program](Program/) — `ASLM/Installer/Installer-Bootstrapper/Program.cs`

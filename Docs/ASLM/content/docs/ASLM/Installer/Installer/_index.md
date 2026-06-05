@@ -3,7 +3,7 @@ title: "Installer (MAUI)"
 draft: false
 ---
 
-**.NET MAUI** Windows wizard (`Installer/Installer/`, assembly **`ASLM-Installer`**). Presents legal documents, install location, confirmation, and progress, then delegates file work to **`InstallerService`**.
+**.NET MAUI** Windows wizard (`ASLM/Installer/Installer/`, assembly **`ASLM-Installer`**). Presents legal documents, install location, confirmation, and progress, then delegates file work to **`InstallerService`**.
 
 ## Wizard steps (dynamic)
 

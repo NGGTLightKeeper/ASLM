@@ -5,7 +5,7 @@ draft: false
 
 ## Class `App`
 
-`Patcher/Platforms/Windows/App.xaml` + `App.xaml.cs` — namespace **`ASLM.Patcher.WinUI`**.
+`ASLM/Patcher/Platforms/Windows/App.xaml` + `App.xaml.cs` — namespace **`ASLM.Patcher.WinUI`**.
 
 **`partial class App : MauiWinUIApplication`** — Windows WinUI host for the MAUI patcher.
 

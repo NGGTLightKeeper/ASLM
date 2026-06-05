@@ -5,7 +5,7 @@ draft: false
 
 ## Class `MainPage`
 
-`Patcher/MainPage.xaml` + `MainPage.xaml.cs` — **`partial ContentPage`** showing live patch status.
+`ASLM/Patcher/MainPage.xaml` + `MainPage.xaml.cs` — **`partial ContentPage`** showing live patch status.
 
 ---
 

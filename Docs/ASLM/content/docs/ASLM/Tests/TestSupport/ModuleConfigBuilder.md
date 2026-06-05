@@ -5,7 +5,7 @@ draft: false
 
 ## Class `ModuleConfigBuilder`
 
-`ASLM/Tests/TestSupport/ModuleConfigBuilder.cs` — **`public static`** — builds minimal valid [ModuleConfig](../../../Models/ModuleConfig/) instances for port/console tests.
+`ASLM/Tests/TestSupport/ModuleConfigBuilder.cs` — **`public static`** — builds minimal valid [ModuleConfig](../../Models/ModuleConfig/) instances for port/console tests.
 
 ---
 
@@ -18,7 +18,7 @@ draft: false
 | --- | --- |
 | 1 | New `ModuleConfig` with id, name, version `1.0.0`, type `web`, GitHub source, run command |
 | 2 | `SourcePath` under `{layout}/Modules/{id}/ASLM_Module.json` |
-| 3 | Default `http` port [ModuleSetting](../../../Models/ModuleConfig/) |
+| 3 | Default `http` port [ModuleSetting](../../Models/ModuleConfig/) |
 | 4 | `Normalize()`; optional `configure(module)` |
 | 5 | Return module |
 
@@ -26,5 +26,5 @@ draft: false
 
 ## Related
 
-- [ModuleConfig](../../../Models/ModuleConfig/)
+- [ModuleConfig](../../Models/ModuleConfig/)
 - [PortRegistryTests](../../Services/PortRegistryTests/)

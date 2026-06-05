@@ -3,7 +3,7 @@ title: "Patcher"
 draft: false
 ---
 
-The **Patcher** is a standalone **.NET MAUI** Windows app (`Patcher/`) that applies a staged ASLM self-update while the main host is not running. It shows a fixed-size status window, runs file replacement on a background thread, then restarts **`ASLM.exe`** (the launcher) at the install root.
+The **Patcher** is a standalone **.NET MAUI** Windows app (`ASLM/Patcher/`) that applies a staged ASLM self-update while the main host is not running. It shows a fixed-size status window, runs file replacement on a background thread, then restarts **`ASLM.exe`** (the launcher) at the install root.
 
 ## Why a separate process
 

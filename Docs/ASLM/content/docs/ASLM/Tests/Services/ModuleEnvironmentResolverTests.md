@@ -5,9 +5,9 @@ draft: false
 
 ## Class `ModuleEnvironmentResolverTests`
 
-`ASLM/Tests/Services/ModuleEnvironmentResolverTests.cs` — [ModuleEnvironmentResolver](../../../Services/ModuleEnvironmentResolver/).
+`ASLM/Tests/Services/ModuleEnvironmentResolverTests.cs` — [ModuleEnvironmentResolver](../../Services/ModuleEnvironmentResolver/).
 
-**Helpers:** [AslmFileSystemLayout](../TestSupport/AslmFileSystemLayout/), [ModuleConfigBuilder](../TestSupport/ModuleConfigBuilder/), [EngineInstaller](../../../Services/EngineInstaller/).
+**Helpers:** [AslmFileSystemLayout](../TestSupport/AslmFileSystemLayout/), [ModuleConfigBuilder](../TestSupport/ModuleConfigBuilder/), [EngineInstaller](../../Services/EngineInstaller/).
 
 ---
 
@@ -61,5 +61,5 @@ draft: false
 
 ## Related
 
-- [ModuleEnvironmentResolver](../../../Services/ModuleEnvironmentResolver/)
-- [EngineConfig](../../../Models/EngineConfig/)
+- [ModuleEnvironmentResolver](../../Services/ModuleEnvironmentResolver/)
+- [EngineConfig](../../Models/EngineConfig/)

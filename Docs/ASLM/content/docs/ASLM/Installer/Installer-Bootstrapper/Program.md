@@ -5,7 +5,7 @@ draft: false
 
 ## Class `Program`
 
-`Installer/Installer-Bootstrapper/Program.cs` — namespace **`ASLM.Installer.Bootstrapper`** — **`internal static`** — single-file bootstrapper entry.
+`ASLM/Installer/Installer-Bootstrapper/Program.cs` — namespace **`ASLM.Installer.Bootstrapper`** — **`internal static`** — single-file bootstrapper entry.
 
 ---
 

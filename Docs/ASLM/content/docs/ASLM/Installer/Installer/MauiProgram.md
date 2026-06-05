@@ -5,7 +5,7 @@ draft: false
 
 ## Class `MauiProgram`
 
-`Installer/Installer/MauiProgram.cs` — **`public static`** MAUI host for the standalone installer.
+`ASLM/Installer/Installer/MauiProgram.cs` — **`public static`** MAUI host for the standalone installer.
 
 ---
 

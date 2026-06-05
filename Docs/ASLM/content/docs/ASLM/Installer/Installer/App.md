@@ -5,7 +5,7 @@ draft: false
 
 ## Class `App`
 
-`Installer/Installer/App.xaml` + `App.xaml.cs` — **`public partial class App : Application`**. Theme brushes in `App.xaml` (dark palette aligned with host).
+`ASLM/Installer/Installer/App.xaml` + `App.xaml.cs` — **`public partial class App : Application`**. Theme brushes in `App.xaml` (dark palette aligned with host).
 
 ---
 

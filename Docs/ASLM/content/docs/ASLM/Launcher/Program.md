@@ -5,7 +5,7 @@ draft: false
 
 ## Class `Program`
 
-`Launcher/Program.cs` — **`internal static`** entry point. Assembly name **`ASLM`** (`Launcher.csproj` → `ASLM.exe` at install root).
+`ASLM/Launcher/Program.cs` — **`internal static`** entry point. Assembly name **`ASLM`** (`Launcher.csproj` → `ASLM.exe` at install root).
 
 ---
 
@@ -53,7 +53,7 @@ draft: false
 | 3 | Ignore `ArgumentException` (process already exited) |
 | 4 | Log other exceptions; stop after first matching pair |
 
-Used when [SettingsService](../ASLM/ASLM/Services/SettingsService/) starts the launcher with `--wait-process`.
+Used when [SettingsService](../Services/SettingsService/) starts the launcher with `--wait-process`.
 
 ---
 
@@ -108,4 +108,4 @@ Creates directories and copies all files with `overwrite: true` so the live `Pat
 
 - [Launcher _index](_index/)
 - [Patcher Program](../Patcher/Program/)
-- [UpdateManager](../ASLM/ASLM/Services/UpdateManager/)
+- [UpdateManager](../Services/UpdateManager/)

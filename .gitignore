@@ -79,10 +79,10 @@ venv/
 !ASLM_*.json
 *.csproj.user
 Launcher.log
-Installer/Installer/Resources/Raw/aslm-payload.zip
-Installer/Installer/Resources/Raw/legal-documents.json
-Installer/Installer-Bootstrapper/Resources/installer-ui.zip
-Installer/Installer-Bootstrapper/Resources/aslm-payload.zip
+ASLM/Installer/Installer/Resources/Raw/aslm-payload.zip
+ASLM/Installer/Installer/Resources/Raw/legal-documents.json
+ASLM/Installer/Installer-Bootstrapper/Resources/installer-ui.zip
+ASLM/Installer/Installer-Bootstrapper/Resources/aslm-payload.zip
 ASLM/Tests/_layout_root
 
 # Hugo documentation (Docs/ASLM)

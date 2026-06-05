@@ -5,7 +5,7 @@ draft: false
 
 ## Class `MauiProgram`
 
-`Patcher/MauiProgram.cs` — **`public static`** MAUI host bootstrap.
+`ASLM/Patcher/MauiProgram.cs` — **`public static`** MAUI host bootstrap.
 
 ---
 
