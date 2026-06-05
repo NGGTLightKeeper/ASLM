@@ -393,7 +393,7 @@ namespace ASLM.Services
         /// </summary>
         private static IEnumerable<string> DiscoverInstalledModuleIds(string modulesRoot)
         {
-            foreach (var jsonFile in Directory.EnumerateFiles(modulesRoot, "ASLM_Module.json", SearchOption.AllDirectories))
+            foreach (var jsonFile in ModuleManifestDiscovery.EnumerateInstalledManifests(modulesRoot))
             {
                 string? moduleId = null;
                 try
