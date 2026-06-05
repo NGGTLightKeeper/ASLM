@@ -4,16 +4,14 @@
     <BuildDependency Project="ASLM/ASLM.csproj" />
   </Project>
   <Project Path="ASLM/Installer/Installer/Installer.csproj">
-    <BuildDependency Project="ASLM/ASLM.csproj" />
+    <Build Solution="Debug|Any CPU" Project="false" />
     <BuildDependency Project="ASLM/Launcher/Launcher.csproj" />
-    <BuildDependency Project="ASLM/Patcher/Patcher.csproj" />
   </Project>
   <Project Path="ASLM/Installer/Installer-Bootstrapper/Installer-Bootstrapper.csproj">
+    <Build Solution="Debug|Any CPU" Project="false" />
     <BuildDependency Project="ASLM/Installer/Installer/Installer.csproj" />
   </Project>
-  <Project Path="ASLM/Patcher/Patcher.csproj">
-    <BuildDependency Project="ASLM/ASLM.csproj" />
-  </Project>
+  <Project Path="ASLM/Patcher/Patcher.csproj" />
   <Project Path="ASLM/Launcher/Launcher.csproj" Id="ea771c0c-e673-4e08-9116-326070460555">
     <BuildDependency Project="ASLM/ASLM.csproj" />
     <BuildDependency Project="ASLM/Patcher/Patcher.csproj" />
