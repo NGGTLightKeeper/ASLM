@@ -47,10 +47,14 @@
 		<Using Include="Xunit" />
 	</ItemGroup>
 
+	<Target Name="CleanTestLayout" BeforeTargets="BuildAslmApp">
+		<RemoveDir Directories="$(OutputPath)" />
+	</Target>
+
 	<Target Name="BuildAslmApp" BeforeTargets="BeforeBuild">
 		<MSBuild Projects="$(MSBuildThisFileDirectory)..\ASLM.csproj"
 		         Targets="Build"
-		         Properties="Configuration=$(Configuration);SkipUnitTestsOnBuild=true" />
+		         Properties="Configuration=$(Configuration);SkipUnitTestsOnBuild=true;SelfContained=false" />
 	</Target>
 
 	<Target Name="CopyAslmRuntime" AfterTargets="Build">
