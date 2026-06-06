@@ -8,29 +8,46 @@ using System.Text.Json;
 namespace ASLM.Installer;
 
 /// <summary>
-/// Installs the embedded ASLM payload to the selected directory.
+/// Installs the embedded ASLM payload using the dual-location strategy:
+/// the Launcher and the payload archive go into the shared installation directory
+/// chosen by the user, while the application itself (App\, Patcher\, Data\, …)
+/// is installed into the current user's per-user application directory.
 /// </summary>
 public sealed class InstallerService
 {
     private const string PayloadFileName = "aslm-payload.zip";
+    private const string BaseArchiveFileName = "aslm-base.zip";
     private const string PayloadEnvironmentVariable = "ASLM_INSTALLER_PAYLOAD_PATH";
     private const string LauncherExeName = "ASLM.exe";
     private const string ManifestFileName = "install-manifest.json";
+    private const string AppName = "ASLM";
 
     // Default paths.
 
     /// <summary>
-    /// Returns the default parent directory for an ASLM installation.
+    /// Returns the default parent directory for the shared ASLM installation.
     /// </summary>
     public string GetDefaultInstallBasePath()
     {
         return Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
     }
 
+    /// <summary>
+    /// Returns the per-user application directory where the ASLM application will be installed.
+    /// This path is fixed and not configurable by the user.
+    /// </summary>
+    public string GetUserAppDir()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            AppName);
+    }
+
+
     // Path validation.
 
     /// <summary>
-    /// Validates and normalizes the selected install target.
+    /// Validates and normalizes the selected shared installation directory.
     /// </summary>
     public InstallPathValidation ValidateInstallPath(string basePath, string folderName)
     {
@@ -86,8 +103,16 @@ public sealed class InstallerService
     // Installation workflow.
 
     /// <summary>
-    /// Extracts ASLM, writes metadata, creates requested shortcuts, and returns the manifest.
+    /// Installs ASLM using the dual-location strategy and returns the install manifest.
     /// </summary>
+    /// <remarks>
+    /// Three things happen:
+    /// 1. The Launcher executable is placed in the shared installation directory.
+    /// 2. The payload archive (aslm-base.zip) is placed next to the Launcher so that
+    ///    additional users who run the Launcher can bootstrap their own application copy.
+    /// 3. Everything else (App\, Patcher\, Data\, Engines\, Models\, Modules\) is placed
+    ///    in the current user's per-user application directory (%LOCALAPPDATA%\ASLM).
+    /// </remarks>
     public async Task<InstallManifest> InstallAsync(
         InstallOptions options,
         IProgress<InstallProgress> progress,
@@ -99,41 +124,50 @@ public sealed class InstallerService
             throw new InvalidOperationException(validation.Message);
         }
 
-        var installPath = validation.InstallPath;
-        var parentPath = Path.GetDirectoryName(installPath)
-            ?? throw new InvalidOperationException("Unable to resolve the installation parent directory.");
+        var sharedInstallDir = validation.InstallPath;
+        var userAppDir = GetUserAppDir();
         var stagingPath = CreateStagingPath();
 
-        progress.Report(new InstallProgress("Preparing installation directory...", 0));
-        Directory.CreateDirectory(parentPath);
+        progress.Report(new InstallProgress("Preparing installation directories...", 0));
+        Directory.CreateDirectory(Path.GetDirectoryName(sharedInstallDir)!);
         Directory.CreateDirectory(stagingPath);
 
         try
         {
-            // Extract into a temp location first, so a failed payload write does not leave a partial install.
+            // Extract the full payload into a temporary staging directory.
             cancellationToken.ThrowIfCancellationRequested();
-            await ExtractPayloadAsync(stagingPath, progress, cancellationToken);
+            await ExtractPayloadToStagingAsync(stagingPath, progress, cancellationToken);
 
-            // Promote the staged tree into the final install directory.
             cancellationToken.ThrowIfCancellationRequested();
-            progress.Report(new InstallProgress("Finalizing files...", 88));
+            progress.Report(new InstallProgress("Installing launcher...", 88));
 
-            if (Directory.Exists(installPath))
+            // Place the Launcher in the shared installation directory.
+            Directory.CreateDirectory(sharedInstallDir);
+            var launcherSource = Path.Combine(stagingPath, LauncherExeName);
+            var launcherDest = Path.Combine(sharedInstallDir, LauncherExeName);
+            if (File.Exists(launcherSource))
             {
-                Directory.Delete(installPath, recursive: true);
+                File.Copy(launcherSource, launcherDest, overwrite: true);
             }
 
-            MoveStagingDirectory(stagingPath, installPath);
+            // Copy the payload archive next to the Launcher for per-user bootstrapping.
+            progress.Report(new InstallProgress("Copying payload archive...", 90));
+            CopyPayloadArchive(sharedInstallDir);
 
-            // Persist install metadata and optional Windows shortcuts.
+            // Install the application content (everything except the root Launcher) per-user.
+            progress.Report(new InstallProgress("Installing application files...", 92));
+            InstallUserAppDir(stagingPath, userAppDir);
+
+            // Write the install manifest into the shared directory.
             var manifest = new InstallManifest(
-                App: "ASLM",
+                App: AppName,
                 Version: options.Version,
                 InstalledAtUtc: DateTimeOffset.UtcNow,
-                InstallPath: installPath,
+                SharedInstallPath: sharedInstallDir,
+                UserAppPath: userAppDir,
                 AcceptedDocuments: options.AcceptedDocuments);
 
-            await WriteManifestAsync(installPath, manifest, cancellationToken);
+            await WriteManifestAsync(sharedInstallDir, manifest, cancellationToken);
 
             if (options.CreateDesktopShortcut)
             {
@@ -141,7 +175,7 @@ public sealed class InstallerService
                 TryCreateShortcut(
                     Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
                     "ASLM.lnk",
-                    installPath);
+                    sharedInstallDir);
             }
 
             if (options.CreateStartMenuShortcut)
@@ -150,7 +184,7 @@ public sealed class InstallerService
                 TryCreateShortcut(
                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs"),
                     "ASLM.lnk",
-                    installPath);
+                    sharedInstallDir);
             }
 
             progress.Report(new InstallProgress("ASLM has been installed.", 100));
@@ -161,14 +195,18 @@ public sealed class InstallerService
             TryDeleteDirectory(stagingPath);
             throw;
         }
+        finally
+        {
+            TryDeleteDirectory(stagingPath);
+        }
     }
 
     /// <summary>
-    /// Starts ASLM from an installed directory.
+    /// Starts ASLM from the shared installation directory.
     /// </summary>
-    public void Launch(string installPath)
+    public void Launch(string sharedInstallPath)
     {
-        var launcherPath = Path.Combine(installPath, LauncherExeName);
+        var launcherPath = Path.Combine(sharedInstallPath, LauncherExeName);
         if (!File.Exists(launcherPath))
         {
             throw new FileNotFoundException("ASLM launcher was not found.", launcherPath);
@@ -177,7 +215,7 @@ public sealed class InstallerService
         Process.Start(new ProcessStartInfo
         {
             FileName = launcherPath,
-            WorkingDirectory = installPath,
+            WorkingDirectory = sharedInstallPath,
             UseShellExecute = true
         });
     }
@@ -186,10 +224,10 @@ public sealed class InstallerService
     // Payload extraction.
 
     /// <summary>
-    /// Extracts the ASLM payload archive into the target directory.
+    /// Extracts the full ASLM payload archive into a temporary staging directory.
     /// </summary>
-    private static async Task ExtractPayloadAsync(
-        string targetPath,
+    private static async Task ExtractPayloadToStagingAsync(
+        string stagingPath,
         IProgress<InstallProgress> progress,
         CancellationToken cancellationToken)
     {
@@ -208,10 +246,10 @@ public sealed class InstallerService
             cancellationToken.ThrowIfCancellationRequested();
 
             var entry = entries[index];
-            var destinationPath = Path.GetFullPath(Path.Combine(targetPath, entry.FullName));
-            if (!IsChildPath(targetPath, destinationPath))
+            var destinationPath = Path.GetFullPath(Path.Combine(stagingPath, entry.FullName));
+            if (!IsChildPath(stagingPath, destinationPath))
             {
-                throw new InvalidOperationException($"Package entry tries to write outside the installation directory: {entry.FullName}");
+                throw new InvalidOperationException($"Package entry tries to write outside the staging directory: {entry.FullName}");
             }
 
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
@@ -220,14 +258,14 @@ public sealed class InstallerService
             await using var destination = File.Create(destinationPath);
             await source.CopyToAsync(destination, cancellationToken);
 
-            // Map archive progress into the installer wizard range.
+            // Map archive progress into the installer wizard range (4–86 %).
             var percent = 6 + (int)Math.Round((index + 1d) / entries.Count * 80d);
             progress.Report(new InstallProgress($"Extracting {entry.FullName}", percent));
         }
     }
 
     /// <summary>
-    /// Opens the payload from the bootstrapper environment, local files, or packaged assets.
+    /// Opens the payload from the bootstrapper environment variable, local files, or packaged assets.
     /// </summary>
     private static async Task<Stream> OpenPayloadStreamAsync()
     {
@@ -262,7 +300,33 @@ public sealed class InstallerService
     }
 
     /// <summary>
-    /// Adds one normalized payload candidate path if it is available.
+    /// Returns the filesystem path to the payload archive, or null if it cannot be resolved.
+    /// </summary>
+    private static string? ResolvePayloadArchivePath()
+    {
+        var environmentPath = Environment.GetEnvironmentVariable(PayloadEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(environmentPath) && File.Exists(environmentPath))
+        {
+            return environmentPath;
+        }
+
+        var localPath = Path.Combine(AppContext.BaseDirectory, PayloadFileName);
+        if (File.Exists(localPath))
+        {
+            return localPath;
+        }
+
+        var cwdPath = Path.Combine(Environment.CurrentDirectory, PayloadFileName);
+        if (File.Exists(cwdPath))
+        {
+            return cwdPath;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Adds one normalized payload candidate path if it is not already present in the list.
     /// </summary>
     private static void AddCandidate(List<string> candidates, string? path)
     {
@@ -279,7 +343,7 @@ public sealed class InstallerService
     }
 
     /// <summary>
-    /// Builds an error that includes all filesystem locations checked for the payload.
+    /// Builds an error that lists all filesystem locations checked for the payload.
     /// </summary>
     private static FileNotFoundException CreatePayloadMissingException(IReadOnlyList<string> candidates)
     {
@@ -290,6 +354,66 @@ public sealed class InstallerService
         return new FileNotFoundException(
             $"ASLM payload archive was not found. Build ASLM/Installer/Installer-Bootstrapper in Visual Studio so {PayloadFileName} is generated and included.{Environment.NewLine}{searchedPaths}",
             PayloadFileName);
+    }
+
+
+    // Dual-location file placement.
+
+    /// <summary>
+    /// Copies the original payload archive to the shared installation directory as aslm-base.zip,
+    /// enabling the Launcher to bootstrap new users without re-running the installer.
+    /// </summary>
+    private static void CopyPayloadArchive(string sharedInstallDir)
+    {
+        var sourcePath = ResolvePayloadArchivePath();
+        if (sourcePath == null)
+        {
+            // Not fatal: the Launcher will still work for the installing user.
+            // Additional users simply won't be able to auto-bootstrap.
+            return;
+        }
+
+        var destPath = Path.Combine(sharedInstallDir, BaseArchiveFileName);
+        File.Copy(sourcePath, destPath, overwrite: true);
+    }
+
+    /// <summary>
+    /// Copies all staging content except the root-level Launcher executable into the
+    /// per-user application directory.
+    /// </summary>
+    private static void InstallUserAppDir(string stagingPath, string userAppDir)
+    {
+        Directory.CreateDirectory(userAppDir);
+
+        foreach (var dirPath in Directory.EnumerateDirectories(stagingPath, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(stagingPath, dirPath);
+            Directory.CreateDirectory(Path.Combine(userAppDir, relative));
+        }
+
+        foreach (var filePath in Directory.EnumerateFiles(stagingPath, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(stagingPath, filePath);
+
+            // Skip the root-level Launcher — it belongs in the shared install directory.
+            if (IsRootLauncherFile(relative))
+            {
+                continue;
+            }
+
+            var destFile = Path.Combine(userAppDir, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
+            File.Copy(filePath, destFile, overwrite: true);
+        }
+    }
+
+    /// <summary>
+    /// Returns true when the relative path represents the root-level Launcher executable.
+    /// </summary>
+    private static bool IsRootLauncherFile(string relativePath)
+    {
+        var normalized = relativePath.Replace('\\', '/').Trim('/');
+        return string.Equals(normalized, LauncherExeName, StringComparison.OrdinalIgnoreCase);
     }
 
 
@@ -307,57 +431,17 @@ public sealed class InstallerService
             Guid.NewGuid().ToString("N"));
     }
 
-    /// <summary>
-    /// Moves extracted files to the final install path, copying when direct move is unavailable.
-    /// </summary>
-    private static void MoveStagingDirectory(string stagingPath, string installPath)
-    {
-        try
-        {
-            Directory.Move(stagingPath, installPath);
-        }
-        catch (IOException)
-        {
-            // Fall back to a full copy when a cross-volume move is not supported.
-            CopyDirectory(stagingPath, installPath);
-            Directory.Delete(stagingPath, recursive: true);
-        }
-    }
-
-    /// <summary>
-    /// Copies a complete directory tree into the destination path.
-    /// </summary>
-    private static void CopyDirectory(string sourcePath, string destinationPath)
-    {
-        Directory.CreateDirectory(destinationPath);
-
-        foreach (var directoryPath in Directory.EnumerateDirectories(sourcePath, "*", SearchOption.AllDirectories))
-        {
-            var relativePath = Path.GetRelativePath(sourcePath, directoryPath);
-            Directory.CreateDirectory(Path.Combine(destinationPath, relativePath));
-        }
-
-        foreach (var filePath in Directory.EnumerateFiles(sourcePath, "*", SearchOption.AllDirectories))
-        {
-            var relativePath = Path.GetRelativePath(sourcePath, filePath);
-            var destinationFilePath = Path.Combine(destinationPath, relativePath);
-            Directory.CreateDirectory(Path.GetDirectoryName(destinationFilePath)!);
-            File.Copy(filePath, destinationFilePath, overwrite: true);
-        }
-    }
-
-
     // Metadata persistence.
 
     /// <summary>
-    /// Writes the install manifest into the installed ASLM directory.
+    /// Writes the install manifest into the shared installation directory.
     /// </summary>
     private static async Task WriteManifestAsync(
-        string installPath,
+        string sharedInstallDir,
         InstallManifest manifest,
         CancellationToken cancellationToken)
     {
-        var manifestPath = Path.Combine(installPath, ManifestFileName);
+        var manifestPath = Path.Combine(sharedInstallDir, ManifestFileName);
 
         await using var stream = File.Create(manifestPath);
         await JsonSerializer.SerializeAsync(stream, manifest, JsonOptions.Default, cancellationToken);
@@ -369,11 +453,11 @@ public sealed class InstallerService
     /// <summary>
     /// Creates a Windows shortcut without failing an otherwise successful installation.
     /// </summary>
-    private static void TryCreateShortcut(string folderPath, string shortcutFileName, string installPath)
+    private static void TryCreateShortcut(string folderPath, string shortcutFileName, string sharedInstallDir)
     {
         try
         {
-            CreateShortcut(folderPath, shortcutFileName, installPath);
+            CreateShortcut(folderPath, shortcutFileName, sharedInstallDir);
         }
         catch
         {
@@ -382,13 +466,13 @@ public sealed class InstallerService
     }
 
     /// <summary>
-    /// Creates a Windows shell shortcut for the installed ASLM launcher.
+    /// Creates a Windows shell shortcut that points to the Launcher in the shared install directory.
     /// </summary>
-    private static void CreateShortcut(string folderPath, string shortcutFileName, string installPath)
+    private static void CreateShortcut(string folderPath, string shortcutFileName, string sharedInstallDir)
     {
         Directory.CreateDirectory(folderPath);
 
-        var launcherPath = Path.Combine(installPath, LauncherExeName);
+        var launcherPath = Path.Combine(sharedInstallDir, LauncherExeName);
         var shortcutPath = Path.Combine(folderPath, shortcutFileName);
         if (!File.Exists(launcherPath))
         {
@@ -411,7 +495,7 @@ public sealed class InstallerService
 
         var shortcutType = shortcut!.GetType();
         shortcutType.InvokeMember("TargetPath", BindingFlags.SetProperty, null, shortcut, [launcherPath]);
-        shortcutType.InvokeMember("WorkingDirectory", BindingFlags.SetProperty, null, shortcut, [installPath]);
+        shortcutType.InvokeMember("WorkingDirectory", BindingFlags.SetProperty, null, shortcut, [sharedInstallDir]);
         shortcutType.InvokeMember("Description", BindingFlags.SetProperty, null, shortcut, ["ASLM"]);
         shortcutType.InvokeMember("IconLocation", BindingFlags.SetProperty, null, shortcut, [$"{launcherPath},0"]);
         shortcutType.InvokeMember("Save", BindingFlags.InvokeMethod, null, shortcut, []);
@@ -482,11 +566,18 @@ public sealed record AcceptedLegalDocument(
 /// <summary>
 /// Describes the completed ASLM installation.
 /// </summary>
+/// <param name="SharedInstallPath">
+/// Directory containing the Launcher executable and the payload archive (shared across OS users).
+/// </param>
+/// <param name="UserAppPath">
+/// Per-user directory containing the application, Patcher and data folders.
+/// </param>
 public sealed record InstallManifest(
     string App,
     string Version,
     DateTimeOffset InstalledAtUtc,
-    string InstallPath,
+    string SharedInstallPath,
+    string UserAppPath,
     IReadOnlyList<AcceptedLegalDocument> AcceptedDocuments);
 
 /// <summary>
