@@ -395,7 +395,7 @@ Creates one host info object for the ASLM UI and web index.
 
 #### `private static string BuildHostRouteKey(string hostKey)`
 
-**Purpose:** Builds the public route key used for one port-map host.
+**Purpose:** Builds the public route key used for one port-map host. Delegates to `PortRegistry.BuildHostRouteKey`.
 
 ---
 

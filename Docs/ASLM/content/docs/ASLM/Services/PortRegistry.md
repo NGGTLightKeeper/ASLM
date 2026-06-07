@@ -66,6 +66,30 @@ Internal owners use id prefix **`__`**.
 
 ---
 
+#### `public IReadOnlyDictionary<string, int>? TryGetAssignedPorts(string ownerId)`
+
+**Purpose:** Returns a read-only copy of all assigned port keys for one owner, or `null` when no assignment exists. Does not allocate new ports.
+
+---
+
+#### `public string? TryGetModulePageUrl(ModuleConfig module)`
+
+**Purpose:** Returns the loopback root URL for the primary WebView port of a module, or `null` when no assignment exists. Does not allocate new ports.
+
+---
+
+#### `public static string BuildLoopbackUrl(int port)`
+
+**Purpose:** Builds a loopback root URL for the given port number.
+
+---
+
+#### `public static string BuildHostRouteKey(string hostKey)`
+
+**Purpose:** Converts a port-map host key to the URL route segment used by the ASLM API mirror. Strips known suffixes (`-port`, `_port`, ` port`) from the key.
+
+---
+
 #### `public int? TryGetPort(string moduleId, string portKey = "port")`
 
 **Purpose:** Lookup with fallback to **`http`**, then first assigned port.
