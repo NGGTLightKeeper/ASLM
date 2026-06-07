@@ -1664,20 +1664,8 @@ namespace ASLM.Services
         /// <summary>
         /// Builds the public route key used for one port-map host.
         /// </summary>
-        private static string BuildHostRouteKey(string hostKey)
-        {
-            var value = (hostKey ?? string.Empty).Trim();
-            foreach (var suffix in new[] { "-port", "_port", " port" })
-            {
-                if (value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) &&
-                    value.Length > suffix.Length)
-                {
-                    return value[..^suffix.Length];
-                }
-            }
-
-            return value;
-        }
+        private static string BuildHostRouteKey(string hostKey) =>
+            PortRegistry.BuildHostRouteKey(hostKey);
 
         /// <summary>
         /// Returns whether a path is already mounted under a mirror route prefix.

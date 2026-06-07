@@ -16,6 +16,7 @@ namespace ASLM.Services
     {
         private readonly AppDataStore _appData;
         private readonly PortRegistry _ports;
+        private readonly AslmApiServer _apiServer;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly ModuleLaunchCoordinator _launchCoordinator;
@@ -56,6 +57,7 @@ namespace ASLM.Services
         public AslmModuleInteropServer(
             AppDataStore appData,
             PortRegistry ports,
+            AslmApiServer apiServer,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
             ModuleLaunchCoordinator launchCoordinator,
@@ -64,6 +66,7 @@ namespace ASLM.Services
         {
             _appData = appData;
             _ports = ports;
+            _apiServer = apiServer;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             _launchCoordinator = launchCoordinator;
@@ -272,6 +275,13 @@ namespace ASLM.Services
                     return;
                 }
 
+                if (string.Equals(context.Request.HttpMethod, "GET", StringComparison.OrdinalIgnoreCase) &&
+                    path.Equals("/v1/ports", StringComparison.OrdinalIgnoreCase))
+                {
+                    await HandlePortsGetAsync(context);
+                    return;
+                }
+
                 if (string.Equals(context.Request.HttpMethod, "POST", StringComparison.OrdinalIgnoreCase) &&
                     path.Equals("/v1/modules/start", StringComparison.OrdinalIgnoreCase))
                 {
@@ -293,24 +303,77 @@ namespace ASLM.Services
 
         /// <summary>
         /// Returns installed and running module snapshots for GET /v1/registry.
+        /// Also includes ASLM API state and per-module port/host information for running modules.
         /// </summary>
         private async Task HandleRegistryGetAsync(HttpListenerContext context)
         {
             var installed = await BuildInstalledModulesAsync();
-            var running = _moduleRunner.GetRunningModulesSnapshot()
-                .Select(static snapshot => new RunningModuleDto(
-                    snapshot.Id,
-                    snapshot.Name,
-                    Path.GetFileName(Path.GetDirectoryName(snapshot.SourcePath)) ?? string.Empty,
-                    snapshot.SourcePath))
-                .ToList();
+            var aslmApi = BuildAslmApiResponseDto();
+            var running = BuildRunningModulesResponseDtos();
 
             var payload = new RegistryResponse(
                 BaseUrl.TrimEnd('/') + "/",
+                aslmApi,
                 installed,
                 running);
 
             await WriteJsonAsync(context, 200, payload, CancellationToken.None);
+        }
+
+        // Ports endpoint
+
+        /// <summary>
+        /// Returns ASLM API state and per-module port/host information for GET /v1/ports.
+        /// Omits the installed-modules list for a lighter-weight response.
+        /// </summary>
+        private async Task HandlePortsGetAsync(HttpListenerContext context)
+        {
+            var aslmApi = BuildAslmApiResponseDto();
+            var running = BuildRunningModulesResponseDtos();
+
+            var payload = new PortsResponse(aslmApi, running);
+
+            await WriteJsonAsync(context, 200, payload, CancellationToken.None);
+        }
+
+        // Ports / host builder helpers
+
+        /// <summary>
+        /// Builds the ASLM API status block for interop responses.
+        /// </summary>
+        private AslmApiResponseDto BuildAslmApiResponseDto()
+        {
+            var apiEnabled = _appData.Data.Api.ServerEnabled;
+            var apiPort = _ports.TryGetInternalServicePort(PortRegistry.AslmApiServiceId, PortRegistry.AslmApiPortKey);
+            var dto = ModuleInteropPortsBuilder.BuildAslmApiDto(apiEnabled, apiPort, _apiServer.IsRunning);
+            return new AslmApiResponseDto(dto.Enabled, dto.Running, dto.Port, dto.BaseUrl);
+        }
+
+        /// <summary>
+        /// Builds the running-modules list with port and host data.
+        /// </summary>
+        private List<RunningModuleDto> BuildRunningModulesResponseDtos()
+        {
+            var apiEnabled = _appData.Data.Api.ServerEnabled;
+            var apiPort = _ports.TryGetInternalServicePort(PortRegistry.AslmApiServiceId, PortRegistry.AslmApiPortKey);
+            var mirrorBase = ModuleInteropPortsBuilder.ResolveMirrorBaseUrl(apiEnabled, apiPort);
+
+            return _moduleRunner.GetRunningModuleConfigs()
+                .Select(module =>
+                {
+                    var portDto = ModuleInteropPortsBuilder.BuildRunningModulePorts(module, _ports, mirrorBase);
+                    var hosts = portDto.Hosts
+                        .Select(static h => new ModuleHostDto(h.HostKey, h.RouteKey, h.Port, h.TargetUrl, h.MirrorUrl))
+                        .ToList();
+                    return new RunningModuleDto(
+                        portDto.Id,
+                        portDto.Name,
+                        portDto.InstanceFolder,
+                        portDto.SourcePath,
+                        portDto.PageUrl,
+                        hosts);
+                })
+                .ToList();
         }
 
         /// <summary>
@@ -539,8 +602,25 @@ namespace ASLM.Services
         /// </summary>
         private sealed record RegistryResponse(
             string InteropBaseUrl,
+            AslmApiResponseDto AslmApi,
             List<InstalledModuleDto> InstalledModules,
             List<RunningModuleDto> RunningModules);
+
+        /// <summary>
+        /// Ports-only payload for GET /v1/ports.
+        /// </summary>
+        private sealed record PortsResponse(
+            AslmApiResponseDto AslmApi,
+            List<RunningModuleDto> RunningModules);
+
+        /// <summary>
+        /// ASLM API mirror server state included in interop responses.
+        /// </summary>
+        private sealed record AslmApiResponseDto(
+            bool Enabled,
+            bool? Running,
+            int? Port,
+            string? BaseUrl);
 
         /// <summary>
         /// One installed module instance exposed in the registry response.
@@ -557,13 +637,25 @@ namespace ASLM.Services
             string InstanceFolder);
 
         /// <summary>
-        /// One running module instance exposed in the registry response.
+        /// One running module instance with port and host information.
         /// </summary>
         private sealed record RunningModuleDto(
             string Id,
             string Name,
             string InstanceFolder,
-            string SourcePath);
+            string SourcePath,
+            string? PageUrl,
+            List<ModuleHostDto> Hosts);
+
+        /// <summary>
+        /// One port-map host entry for a running module.
+        /// </summary>
+        private sealed record ModuleHostDto(
+            string HostKey,
+            string RouteKey,
+            int Port,
+            string TargetUrl,
+            string? MirrorUrl);
 
         /// <summary>
         /// Request body for POST /v1/modules/start.

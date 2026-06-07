@@ -262,6 +262,67 @@ namespace ASLM.Services
             }
         }
 
+        // Read-only port access
+
+        /// <summary>
+        /// Returns a read-only copy of all assigned port keys for one owner, or <c>null</c> when no assignment exists.
+        /// Does not allocate new ports.
+        /// </summary>
+        public IReadOnlyDictionary<string, int>? TryGetAssignedPorts(string ownerId)
+        {
+            lock (_lock)
+            {
+                EnsureLoaded();
+                return _portMap.TryGetValue(ownerId, out var existing)
+                    ? new Dictionary<string, int>(existing)
+                    : null;
+            }
+        }
+
+        /// <summary>
+        /// Returns the loopback root URL for the primary WebView port of a module, or <c>null</c> when no
+        /// assignment exists. Does not allocate new ports.
+        /// </summary>
+        public string? TryGetModulePageUrl(ModuleConfig module)
+        {
+            var ports = TryGetAssignedPorts(module.Id);
+            if (ports == null || ports.Count == 0)
+                return null;
+
+            var portKey = ResolveModulePagePortKey(module);
+            if (!ports.TryGetValue(portKey, out var port) || port <= 0)
+            {
+                port = ports.Values.FirstOrDefault(v => v > 0);
+            }
+
+            return port > 0 ? BuildLoopbackUrl(port) : null;
+        }
+
+        /// <summary>
+        /// Builds a loopback root URL for the given port number.
+        /// </summary>
+        public static string BuildLoopbackUrl(int port) => $"http://127.0.0.1:{port}/";
+
+        /// <summary>
+        /// Converts a port-map host key to the URL route segment used by the ASLM API mirror.
+        /// Strips known suffixes (<c>-port</c>, <c>_port</c>, <c> port</c>) from the key.
+        /// </summary>
+        public static string BuildHostRouteKey(string hostKey)
+        {
+            var value = (hostKey ?? string.Empty).Trim();
+            foreach (var suffix in new[] { "-port", "_port", " port" })
+            {
+                if (value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) &&
+                    value.Length > suffix.Length)
+                {
+                    return value[..^suffix.Length];
+                }
+            }
+
+            return value;
+        }
+
+
         // Module URL
 
         /// <summary>

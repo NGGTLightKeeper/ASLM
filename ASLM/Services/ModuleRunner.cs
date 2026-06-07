@@ -324,6 +324,41 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Returns the module configurations for instances that currently have tracked live processes.
+        /// The returned configs are the same snapshots stored at process launch time.
+        /// </summary>
+        public IReadOnlyList<ModuleConfig> GetRunningModuleConfigs()
+        {
+            lock (_processLock)
+            {
+                var results = new List<ModuleConfig>();
+
+                foreach (var pair in _runningProcesses)
+                {
+                    var hasLiveProcess = pair.Value.Any(static process =>
+                    {
+                        try
+                        {
+                            return !process.HasExited;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    });
+
+                    if (!hasLiveProcess)
+                        continue;
+
+                    if (_runningModules.TryGetValue(pair.Key, out var module))
+                        results.Add(module);
+                }
+
+                return results;
+            }
+        }
+
+        /// <summary>
         /// Restarts currently running modules after the shared port map changes.
         /// </summary>
         private void OnPortsRedistributed(object? sender, EventArgs e)
