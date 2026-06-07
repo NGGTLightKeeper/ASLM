@@ -1143,8 +1143,7 @@ namespace ASLM.Pages
                 return;
             }
 
-            var canShowRestart = hasChanges &&
-                (HasPendingRestartChanges() || HasUnsavedPersonalizationChanges());
+            var canShowRestart = hasChanges && HasPendingRestartChanges();
 
             SaveAndRestartButton.IsEnabled = canInteract && canShowRestart;
             SaveAndRestartButton.Text = L.Get(LocalizationKeys.Settings_SaveAndRestart);
@@ -1163,6 +1162,7 @@ namespace ASLM.Pages
         /// Checks whether any pending edit has a restart path, regardless of the visible category.
         /// </summary>
         private bool HasPendingRestartChanges() =>
+            HasUnsavedPersonalizationChanges() ||
             HasUnsavedAslmSettingsChanges() ||
             GetModulesWithUnsavedChanges().Any(CanRestartModule);
 
@@ -1701,9 +1701,7 @@ namespace ASLM.Pages
                     _updateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_Restarting);
                 }
 
-                await _settingsService.StopAllModulesAsync();
-                await Task.Run(SettingsService.StartLauncherForSelfUpdate);
-                Application.Current?.Quit();
+                await RestartApplicationThroughLauncherAsync();
             }
             catch (Exception ex)
             {
@@ -2477,7 +2475,7 @@ namespace ASLM.Pages
                 var hadPersonalizationChanges = HasUnsavedPersonalizationChanges();
                 if (hadPersonalizationChanges)
                 {
-                    await SavePersonalizationAsync();
+                    await SavePersonalizationAsync(applyImmediately: !restartAfterSave);
                 }
 
                 var hadAppRestartChanges = HasUnsavedAslmSettingsChanges();
@@ -2550,14 +2548,23 @@ namespace ASLM.Pages
                     await ShowSuccessAsync(successMessage);
                 }
 
-                if (restartAfterSave && await RestartChangedTargetsAsync(hadAppRestartChanges, touchedModules))
+                if (restartAfterSave && hadPersonalizationChanges)
                 {
+                    try
+                    {
+                        await RestartApplicationThroughLauncherAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        await ShowErrorAsync(L.Get(LocalizationKeys.Settings_UpdateStatus_RestartFailed, ex.Message));
+                    }
+
                     return;
                 }
 
-                if (restartAfterSave && hadPersonalizationChanges)
+                if (restartAfterSave && await RestartChangedTargetsAsync(hadAppRestartChanges, touchedModules))
                 {
-                    await RestartModulesForHostPersonalizationAsync(touchedModules);
+                    return;
                 }
             }
             finally
@@ -2588,36 +2595,14 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Restarts enabled modules that declare host-managed theme or locale settings and were not already restarted.
+        /// Stops modules, starts the launcher with process wait, and exits so ASLM relaunches cleanly.
         /// </summary>
-        private async Task RestartModulesForHostPersonalizationAsync(IEnumerable<ModuleConfig> alreadyRestarted)
+        private async Task RestartApplicationThroughLauncherAsync()
         {
-            var skip = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var module in alreadyRestarted)
-            {
-                if (!string.IsNullOrWhiteSpace(module.SourcePath))
-                {
-                    skip.Add(module.SourcePath);
-                }
-            }
-
-            foreach (var module in _loadedModules.Where(m =>
-                         ModuleDeclaresHostPersonalizationSync(m) &&
-                         CanRestartModule(m) &&
-                         !string.IsNullOrWhiteSpace(m.SourcePath) &&
-                         !skip.Contains(m.SourcePath)))
-            {
-                await _settingsService.RestartModuleAsync(module);
-            }
+            await _settingsService.StopAllModulesAsync();
+            await Task.Run(SettingsService.StartLauncherForApplicationRestart);
+            Application.Current?.Quit();
         }
-
-        /// <summary>
-        /// Returns whether a module exposes theme or locale settings that require a host restart.
-        /// </summary>
-        private static bool ModuleDeclaresHostPersonalizationSync(ModuleConfig module) =>
-            module.Settings?.Any(setting =>
-                string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(setting.NormalizedType, "locale", StringComparison.OrdinalIgnoreCase)) == true;
 
         /// <summary>
         /// Restarts the application startup chain so app-level changes take effect.
@@ -4158,9 +4143,9 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Persists the personalization draft to app data and applies the new theme.
+        /// Persists the personalization draft to app data and optionally applies the new theme immediately.
         /// </summary>
-        private async Task SavePersonalizationAsync()
+        private async Task SavePersonalizationAsync(bool applyImmediately = true)
         {
             var languageChanged = !string.Equals(
                 _personalizationBaseline.Language,
@@ -4195,6 +4180,11 @@ namespace ASLM.Pages
                 Language = _personalizationDraft.Language,
                 CustomThemeId = _personalizationDraft.CustomThemeId
             };
+
+            if (!applyImmediately)
+            {
+                return;
+            }
 
             // Apply the saved theme and palette without waiting for restart.
             _themeService.ApplyFromSettings();

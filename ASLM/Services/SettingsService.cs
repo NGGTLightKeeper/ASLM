@@ -517,14 +517,14 @@ namespace ASLM.Services
         }
 
 
-        // Self-update
+        // Application restart
 
         /// <summary>
-        /// Starts the launcher so it can detect the prepared update after the current app exits.
+        /// Starts the launcher so it can relaunch ASLM after the current process exits.
         /// </summary>
-        public static void StartLauncherForSelfUpdate()
+        public static void StartLauncherForApplicationRestart()
         {
-            var root = ResolveRootForSelfUpdate();
+            var root = ResolveInstallRoot();
             var launcherPath = Path.Combine(root, "ASLM.exe");
             if (!File.Exists(launcherPath))
             {
@@ -563,9 +563,14 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Resolves the ASLM root folder that contains the pending update manifest.
+        /// Starts the launcher so it can detect the prepared update after the current app exits.
         /// </summary>
-        public static string ResolveRootForSelfUpdate()
+        public static void StartLauncherForSelfUpdate() => StartLauncherForApplicationRestart();
+
+        /// <summary>
+        /// Resolves the ASLM install root used for launcher restarts and self-updates.
+        /// </summary>
+        public static string ResolveInstallRoot()
         {
             var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(
                 Path.DirectorySeparatorChar,
