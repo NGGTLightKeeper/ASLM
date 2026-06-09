@@ -96,7 +96,16 @@ Persisted “update available” snapshot for module cards.
 | Property | JSON |
 | --- | --- |
 | `Engines` | `engines` — [ModuleEngineDependency](#moduleenginedependency) |
+| `Modules` | `modules` — [ModuleModuleDependency](#modulemoduledependency) |
 | `Models` | `models` — required model category strings |
+
+---
+
+## `ModuleModuleDependency`
+
+| Property | JSON |
+| --- | --- |
+| `Id` | `id` — stable identifier of the required module |
 
 ---
 

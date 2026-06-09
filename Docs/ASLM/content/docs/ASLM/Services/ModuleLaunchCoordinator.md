@@ -91,8 +91,22 @@ Types in same file: **`ModuleLaunchStatus`**, **`ModuleLaunchResult`**, **`Modul
 3. Empty `Commands.Run` → **`NoRunCommands`** with fresh config.
 4. If `SourcePath` in **`GetRunningModuleSourcePaths()`** → **`AlreadyRunning`**.
 5. If `!FirstRunCompleted` → **`ExecuteFirstRunAsync`** on thread pool; failure → **`FirstRunFailed`**; else set flag and **`SaveConfigAsync`**.
-6. Set `Status.Enabled = true`, **`SaveConfigAsync`**.
-7. Fire-and-forget **`ExecuteRunAsync`** (no cancellation) → **`Started`**.
+6. Call **`EnsureDependencyModulesRunningAsync`**; return failure if dependency startup fails.
+7. Set `Status.Enabled = true`, **`SaveConfigAsync`**.
+8. Fire-and-forget **`ExecuteRunAsync`** (no cancellation) → **`Started`**.
+
+---
+
+#### `private async Task<ModuleLaunchResult?> EnsureDependencyModulesRunningAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct)`
+
+**Purpose:** Ensures every declared module dependency is running before the dependent module starts.
+
+**Steps:**
+
+1. Iterate over `Dependencies.Modules`.
+2. Discover module matching the dependency `id`.
+3. Calls **`LaunchOrEnsureRunningCoreAsync`** recursively for each dependency.
+4. Returns `null` on success or an error `ModuleLaunchResult` on failure.
 
 ---
 

@@ -15,15 +15,15 @@ Implements **`IDisposable`**. Subscribes to **`PortRegistry.PortsRedistributed`*
 
 ## Public methods — construction and setup
 
-#### `public ModuleRunner(EngineInstaller engineInstaller, ModuleEnvironmentResolver environmentResolver, PortRegistry ports, ProcessTracker processTracker, ModuleConsoleStore consoleStore, ProcessSnapshotReader processSnapshots, ModuleThemePayloadBuilder themePayloadBuilder, ModuleLocalePayloadBuilder localePayloadBuilder, ModuleInteropHostState interopHostState, ILogger<ModuleRunner> logger)`
+#### `public ModuleRunner(EngineInstaller engineInstaller, ModuleEnvironmentResolver environmentResolver, PortRegistry ports, ProcessTracker processTracker, ModuleConsoleStore consoleStore, ProcessSnapshotReader processSnapshots, ModuleThemePayloadBuilder themePayloadBuilder, ModuleLocalePayloadBuilder localePayloadBuilder, ModuleInteropHostState interopHostState, IServiceProvider serviceProvider, ILogger<ModuleRunner> logger)`
 
-**Purpose:** Creates the runner and wires port redistribution restarts.
+**Purpose:** Creates the runner, stores optional services resolver, and wires port redistribution restarts.
 
 ---
 
-#### `public async Task<bool> ExecuteFirstRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct)`
+#### `public async Task<bool> ExecuteFirstRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct, bool skipModuleDependencies = false)`
 
-**Purpose:** Installs engine dependencies, synchronizes declared settings, runs **`Commands.FirstRun`** (non-tracked). Sets **`FirstRunCompleted`** on success.
+**Purpose:** Ensures module dependencies have completed first-run (unless `skipModuleDependencies` is true), installs engine dependencies, synchronizes declared settings, runs **`Commands.FirstRun`** (non-tracked). Sets **`FirstRunCompleted`** on success.
 
 ---
 

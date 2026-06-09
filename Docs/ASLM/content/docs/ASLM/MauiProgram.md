@@ -24,7 +24,7 @@ draft: false
 
 ### Singleton services
 
-`AppDataStore`, `DockerService`, `EngineInstaller`, `ModuleEnvironmentResolver`, `ModuleTrustService`, `ModuleInstaller`, `ModuleConsoleStore`, `ProcessSnapshotReader`, `ProcessTracker`, `ModuleThemePayloadBuilder`, `ModuleLocalePayloadBuilder`, `AppLocalizationService`, `ModuleInteropHostState`, `ModuleStartThrottle`, `PortRegistry`, `ModuleRunner`, `ModuleDownloadBridge`, `DownloadStateStore`, `DownloadCatalog`, `DownloadInstaller`, `NotificationCenter`, `OllamaSettingsStore`, `GitHubUpdateClient`, `UpdateManager`, `UpdateScheduler`, `ModuleLaunchCoordinator`, `AslmModuleInteropServer`, `AslmApiServer`, `SettingsService`, `CustomThemesStore`, `ThemeService`.
+`AppDataStore`, `DockerService`, `EngineInstaller`, `ModuleEnvironmentResolver`, `ModuleTrustService`, `ModuleInstaller`, `ModuleConsoleStore`, `ProcessSnapshotReader`, `ProcessTracker`, `ModuleThemePayloadBuilder`, `ModuleLocalePayloadBuilder`, `AppLocalizationService`, `ModuleInteropHostState`, `ModuleStartThrottle`, `PortRegistry`, `ModuleRunner`, `ModuleDependencyService`, `ModuleDownloadBridge`, `DownloadStateStore`, `DownloadCatalog`, `DownloadInstaller`, `NotificationCenter`, `OllamaSettingsStore`, `GitHubUpdateClient`, `UpdateManager`, `UpdateScheduler`, `ModuleLaunchCoordinator`, `AslmModuleInteropServer`, `AslmApiServer`, `SettingsService`, `CustomThemesStore`, `ThemeService`.
 
 ### Transient UI
 
