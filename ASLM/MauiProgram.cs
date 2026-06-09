@@ -60,6 +60,7 @@ namespace ASLM
             builder.Services.AddSingleton<ModuleStartThrottle>();
             builder.Services.AddSingleton<PortRegistry>();
             builder.Services.AddSingleton<ModuleRunner>();
+            builder.Services.AddSingleton<ModuleDependencyService>();
             builder.Services.AddSingleton<ModuleDownloadBridge>();
             builder.Services.AddSingleton<DownloadStateStore>();
             builder.Services.AddSingleton<DownloadCatalog>();

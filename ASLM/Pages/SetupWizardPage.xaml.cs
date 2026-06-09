@@ -531,11 +531,25 @@ namespace ASLM.Pages
             _cts = new CancellationTokenSource();
             var logProgress = new InlineProgress<string>(AddLog);
 
+            List<ModuleConfig> catalog;
+            try
+            {
+                catalog = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync(), _cts.Token);
+            }
+            catch (Exception ex)
+            {
+                AddLog($"Failed to load module catalog: {ex.Message}");
+                ConfigureRetryAndSkipButtons();
+                return;
+            }
+
+            var installModules = ModuleDependencyResolver.ExpandInstallOrder(selectedModules, catalog);
+
             var totalSteps = 0;
             var completedSteps = 0;
             var hasFailures = false;
 
-            var requiredEngineIds = selectedModules
+            var requiredEngineIds = installModules
                 .SelectMany(module => module.Dependencies.Engines)
                 .Select(engine => engine.Id)
                 .Distinct()
@@ -543,7 +557,7 @@ namespace ASLM.Pages
 
             var allEngines = await Task.Run(() => _engineInstaller.DiscoverEngines(), _cts.Token);
             totalSteps += requiredEngineIds.Count;
-            totalSteps += selectedModules.Sum(GetModuleInstallStepCount);
+            totalSteps += installModules.Sum(GetModuleInstallStepCount);
 
             // Reset rolling download metrics before the first transfer begins.
             ResetDownloadMetrics();
@@ -616,9 +630,17 @@ namespace ASLM.Pages
                     ResetFileProgress();
                 }
 
-                // Install each selected module either through the update-aware pipeline or the legacy download flow.
-                foreach (var module in selectedModules)
+                // Install each selected module (and declared module dependencies) either through the update-aware pipeline or the legacy download flow.
+                foreach (var module in installModules)
                 {
+                    if (module.Status.FirstRunCompleted)
+                    {
+                        AddLog($"[OK] {module.Name} already set up.");
+                        completedSteps += GetModuleInstallStepCount(module);
+                        UpdateOverallProgress(completedSteps, totalSteps);
+                        continue;
+                    }
+
                     if (ShouldUseConfiguredUpdateInstall(module))
                     {
                         UpdateInstallStatus($"Installing {module.Name}...");

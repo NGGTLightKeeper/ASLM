@@ -202,6 +202,12 @@ namespace ASLM.Services
                 await _installer.SaveConfigAsync(fresh);
             }
 
+            var dependencyFailure = await EnsureDependencyModulesRunningAsync(fresh, moduleLog, ct);
+            if (dependencyFailure != null)
+            {
+                return dependencyFailure;
+            }
+
             fresh.Status.Enabled = true;
             await _installer.SaveConfigAsync(fresh);
 
@@ -211,6 +217,75 @@ namespace ASLM.Services
                 CancellationToken.None);
 
             return new ModuleLaunchResult(ModuleLaunchStatus.Started, null, fresh);
+        }
+
+        /// <summary>
+        /// Ensures every declared module dependency is running before the dependent module starts.
+        /// </summary>
+        private async Task<ModuleLaunchResult?> EnsureDependencyModulesRunningAsync(
+            ModuleConfig module,
+            IProgress<string> log,
+            CancellationToken ct)
+        {
+            foreach (var dependency in module.Dependencies.Modules)
+            {
+                var dependencyId = dependency.Id?.Trim();
+                if (string.IsNullOrEmpty(dependencyId))
+                {
+                    continue;
+                }
+
+                if (string.Equals(dependencyId, module.Id, StringComparison.OrdinalIgnoreCase))
+                {
+                    return new ModuleLaunchResult(
+                        ModuleLaunchStatus.Error,
+                        $"Module '{module.Name}' declares a dependency on itself.",
+                        module);
+                }
+
+                List<ModuleConfig> matches;
+                try
+                {
+                    var modules = await _installer.DiscoverModulesAsync();
+                    matches = modules
+                        .Where(candidate => string.Equals(candidate.Id, dependencyId, StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(candidate => candidate.SourcePath, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Module discovery failed while launching dependency '{ModuleId}'.", dependencyId);
+                    return new ModuleLaunchResult(ModuleLaunchStatus.Error, ex.Message, module);
+                }
+
+                if (matches.Count == 0)
+                {
+                    return new ModuleLaunchResult(
+                        ModuleLaunchStatus.NotFound,
+                        $"Required module dependency '{dependencyId}' was not found.",
+                        module);
+                }
+
+                if (matches.Count > 1)
+                {
+                    _logger.LogWarning(
+                        "Multiple installed modules share dependency id '{ModuleId}'; using manifest at {SourcePath}.",
+                        dependencyId,
+                        matches[0].SourcePath);
+                }
+
+                log.Report($"[Deps] Ensuring dependency module '{matches[0].Name}' is running...");
+                var result = await LaunchOrEnsureRunningCoreAsync(matches[0], log, ct);
+                if (result.Status is ModuleLaunchStatus.Started or ModuleLaunchStatus.AlreadyRunning)
+                {
+                    continue;
+                }
+
+                var message = result.Message ?? $"Dependency module '{dependencyId}' could not be started.";
+                return new ModuleLaunchResult(result.Status, message, module);
+            }
+
+            return null;
         }
     }
 }
