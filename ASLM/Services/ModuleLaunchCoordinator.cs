@@ -198,6 +198,7 @@ namespace ASLM.Services
                         fresh);
                 }
 
+                fresh.Status.Installed = true;
                 fresh.Status.FirstRunCompleted = true;
                 await _installer.SaveConfigAsync(fresh);
             }

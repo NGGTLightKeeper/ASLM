@@ -119,6 +119,7 @@ namespace ASLM.Services
             if (module.Commands.FirstRun.Count == 0)
             {
                 moduleLog.Report("No first-run commands defined.");
+                module.Status.Installed = true;
                 module.Status.FirstRunCompleted = true;
                 return true;
             }
@@ -139,6 +140,7 @@ namespace ASLM.Services
                 }
             }
 
+            module.Status.Installed = true;
             module.Status.FirstRunCompleted = true;
             return true;
         }

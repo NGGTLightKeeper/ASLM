@@ -711,7 +711,10 @@ namespace ASLM.Pages
         {
             if (reloadModules || _loadedModules.Count == 0)
             {
-                _loadedModules = await _settingsService.DiscoverModulesAsync();
+                var discovered = await _settingsService.DiscoverModulesAsync();
+                _loadedModules = discovered
+                    .Where(SettingsService.IsModuleEligibleForSettings)
+                    .ToList();
                 _runtimeLoadedModuleIds.Clear();
                 _settingBaselines.Clear();
             }

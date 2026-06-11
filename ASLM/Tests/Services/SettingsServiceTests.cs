@@ -158,4 +158,102 @@ public sealed class SettingsServiceTests
 
         SettingsService.GetGroupForCategory(moduleCategory).Should().Be(SettingsCategoryGroup.Modules);
     }
+
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, true)]
+    public void IsModuleEligibleForSettings_requires_installed_first_run_and_displayable_settings(
+        bool installed,
+        bool firstRunCompleted,
+        bool expected)
+    {
+        var module = ModuleConfigBuilder.Create(configure: module =>
+        {
+            module.Status.Installed = installed;
+            module.Status.FirstRunCompleted = firstRunCompleted;
+            module.Settings =
+            [
+                new ModuleSetting
+                {
+                    Key = "flag",
+                    Type = "text",
+                    Default = "false"
+                }
+            ];
+        });
+
+        SettingsService.IsModuleEligibleForSettings(module).Should().Be(expected);
+    }
+
+    [Fact]
+    public void IsModuleEligibleForSettings_excludes_modules_without_displayable_settings()
+    {
+        var module = ModuleConfigBuilder.Create(configure: module =>
+        {
+            module.Status.Installed = true;
+            module.Status.FirstRunCompleted = true;
+            module.Settings =
+            [
+                new ModuleSetting
+                {
+                    Key = "http",
+                    Type = "port",
+                    Default = "0"
+                }
+            ];
+        });
+
+        SettingsService.IsModuleEligibleForSettings(module).Should().BeFalse();
+    }
+
+    [Fact]
+    public void CreateOrderedCategories_includes_only_eligible_modules()
+    {
+        var eligible = ModuleConfigBuilder.Create(
+            id: "ready-module",
+            name: "Ready Module",
+            configure: module =>
+            {
+                module.Status.Installed = true;
+                module.Status.FirstRunCompleted = true;
+                module.Settings =
+                [
+                    new ModuleSetting
+                    {
+                        Key = "flag",
+                        Type = "text",
+                        Default = "false"
+                    }
+                ];
+            });
+
+        var stub = ModuleConfigBuilder.Create(
+            id: "stub-module",
+            name: "Stub Module",
+            configure: module =>
+            {
+                module.Status.Installed = false;
+                module.Status.FirstRunCompleted = false;
+                module.Settings =
+                [
+                    new ModuleSetting
+                    {
+                        Key = "flag",
+                        Type = "text",
+                        Default = "false"
+                    }
+                ];
+            });
+
+        var service = new SettingsService(null!, null!, null!);
+        var categories = service.CreateOrderedCategories([eligible, stub]);
+
+        categories
+            .Where(category => category.Kind == SettingsCategoryKind.Module)
+            .Select(category => category.Module!.Id)
+            .Should()
+            .Equal("ready-module");
+    }
 }

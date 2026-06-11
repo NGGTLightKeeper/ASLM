@@ -109,6 +109,7 @@ namespace ASLM.Services
                         return false;
                     }
 
+                    dependencyModule.Status.Installed = true;
                     dependencyModule.Status.FirstRunCompleted = true;
                     await _installer.SaveConfigAsync(dependencyModule);
                 }

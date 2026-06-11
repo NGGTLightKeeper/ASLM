@@ -123,9 +123,6 @@ namespace ASLM.Services
                 }
 
                 config.SourcePath = jsonFile;
-
-                // The presence of the manifest means the module is installed on disk.
-                config.Status.Installed = true;
                 return config;
             }
             catch (Exception ex)

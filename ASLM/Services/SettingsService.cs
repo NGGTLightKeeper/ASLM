@@ -135,6 +135,14 @@ namespace ASLM.Services
         public static string GetModuleRuntimeKey(ModuleConfig module) => module.SourcePath;
 
         /// <summary>
+        /// Returns whether one module should appear in the settings sidebar.
+        /// </summary>
+        public static bool IsModuleEligibleForSettings(ModuleConfig module) =>
+            module.Status.Installed &&
+            module.Status.FirstRunCompleted &&
+            module.Settings.Any(ShouldDisplaySetting);
+
+        /// <summary>
         /// Builds the ordered category list with ASLM categories first and modules after them.
         /// </summary>
         public List<SettingsCategory> CreateOrderedCategories(IReadOnlyList<ModuleConfig> loadedModules)
@@ -182,7 +190,7 @@ namespace ASLM.Services
             // Module categories follow, sorted by name and limited to modules with visible settings.
             categories.AddRange(
                 loadedModules
-                    .Where(module => module.Settings.Any(ShouldDisplaySetting))
+                    .Where(IsModuleEligibleForSettings)
                     .OrderBy(module => module.Name, StringComparer.OrdinalIgnoreCase)
                     .Select(module => new SettingsCategory(
                         $"module::{module.Id}",
