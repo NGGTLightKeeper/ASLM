@@ -856,8 +856,12 @@ namespace ASLM.Services
                 return null;
             }
 
-            var installed = ResolveInstalledModuleReleaseTag(module);
-            return ReleaseTagOrdering.AreEquivalentVersionReferences(resolved.ReleaseTag, installed) ? null : resolved;
+            if (!ShouldOfferReleaseInstallCandidate(module, resolved.ReleaseTag))
+            {
+                return null;
+            }
+
+            return resolved;
         }
 
         /// <summary>
@@ -1160,9 +1164,41 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Returns whether the module manifest records a successful remote source install.
+        /// </summary>
+        internal static bool HasRecordedRemoteSourceInstall(ModuleConfig module)
+        {
+            if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase))
+            {
+                return !string.IsNullOrWhiteSpace(module.Update.InstalledCommitSha);
+            }
+
+            return !string.IsNullOrWhiteSpace(module.Update.InstalledReleaseTag);
+        }
+
+        /// <summary>
+        /// Returns whether a resolved release install candidate should be offered for download.
+        /// </summary>
+        internal static bool ShouldOfferReleaseInstallCandidate(ModuleConfig module, string resolvedReleaseTag)
+        {
+            if (string.IsNullOrWhiteSpace(resolvedReleaseTag))
+            {
+                return false;
+            }
+
+            if (!HasRecordedRemoteSourceInstall(module))
+            {
+                return true;
+            }
+
+            var installed = ResolveInstalledModuleReleaseTag(module);
+            return !ReleaseTagOrdering.AreEquivalentVersionReferences(resolvedReleaseTag, installed);
+        }
+
+        /// <summary>
         /// Returns whether the install candidate already matches the local installation (no file work needed).
         /// </summary>
-        private static bool IsModuleAlreadyAtInstallTarget(ModuleConfig module, UpdateCandidate candidate)
+        internal static bool IsModuleAlreadyAtInstallTarget(ModuleConfig module, UpdateCandidate candidate)
         {
             if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(candidate.Mode, "branch", StringComparison.OrdinalIgnoreCase))
@@ -1180,6 +1216,11 @@ namespace ASLM.Services
             }
 
             if (string.IsNullOrWhiteSpace(candidate.ReleaseTag))
+            {
+                return false;
+            }
+
+            if (!HasRecordedRemoteSourceInstall(module))
             {
                 return false;
             }

@@ -2107,6 +2107,11 @@ namespace ASLM.Pages
                 return null;
             }
 
+            if (!UpdateManager.HasRecordedRemoteSourceInstall(_config))
+            {
+                return _selectedReleaseOption;
+            }
+
             var installedRef = !string.IsNullOrWhiteSpace(_config.Update.InstalledReleaseTag)
                 ? _config.Update.InstalledReleaseTag
                 : (_config.Status.InstalledVersion ?? _config.Version);
