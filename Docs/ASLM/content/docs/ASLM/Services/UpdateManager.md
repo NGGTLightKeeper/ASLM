@@ -200,9 +200,46 @@ Saves one module manifest after update preferences changed in UI.
 
 ---
 
-#### `private static bool IsModuleAlreadyAtInstallTarget(ModuleConfig module, UpdateCandidate candidate)`
+#### `internal static bool HasRecordedRemoteSourceInstall(ModuleConfig module)`
 
-**Purpose:** ---
+**Purpose:** Returns whether the module manifest records a successful remote source install.
+
+**Parameters:**
+
+- `module`: The `ModuleConfig` to check.
+
+**Returns:** `true` if a remote source install is recorded; otherwise, `false`.
+
+**Example:**
+
+```csharp
+bool hasInstall = UpdateManager.HasRecordedRemoteSourceInstall(module);
+```
+
+---
+
+#### `internal static bool ShouldOfferReleaseInstallCandidate(ModuleConfig module, string resolvedReleaseTag)`
+
+**Purpose:** Returns whether a resolved release install candidate should be offered for download.
+
+**Parameters:**
+
+- `module`: The `ModuleConfig` to evaluate.
+- `resolvedReleaseTag`: The resolved release tag.
+
+**Returns:** `true` if the candidate should be offered; otherwise, `false`.
+
+**Example:**
+
+```csharp
+bool shouldOffer = UpdateManager.ShouldOfferReleaseInstallCandidate(module, "0.7.1.8");
+```
+
+---
+
+#### `internal static bool IsModuleAlreadyAtInstallTarget(ModuleConfig module, UpdateCandidate candidate)`
+
+**Purpose:** Returns whether the install candidate already matches the local installation (no file work needed).
 
 #### `private static string ResolveCurrentAppDisplayVersion()`
 
