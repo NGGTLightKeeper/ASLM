@@ -141,6 +141,40 @@ draft: false
 
 ---
 
+#### `public void IsModuleEligibleForSettings_requires_installed_first_run_and_displayable_settings(bool installed, bool firstRunCompleted, bool expected)`
+
+**Purpose:** The `IsModuleEligibleForSettings` check correctly uses the installed and first-run completion flags, verifying that the combination of these states matches the expected eligibility.
+
+| Step | Action |
+| --- | --- |
+| 1 | Create a module configuring `Installed`, `FirstRunCompleted`, and adding a setting that displays. |
+| 2 | `IsModuleEligibleForSettings` → `expected` |
+
+---
+
+#### `public void IsModuleEligibleForSettings_excludes_modules_without_displayable_settings()`
+
+**Purpose:** Ensure that a module is deemed ineligible if it lacks any settings that can be displayed, even if it is installed and has completed its first run.
+
+| Step | Action |
+| --- | --- |
+| 1 | Create a module that is installed and has completed first-run, but whose settings are automatically hidden (e.g., `Type = "port"`). |
+| 2 | `IsModuleEligibleForSettings` → `false` |
+
+---
+
+#### `public void CreateOrderedCategories_includes_only_eligible_modules()`
+
+**Purpose:** Ensure `CreateOrderedCategories` filters out modules that are not eligible for the settings UI.
+
+| Step | Action |
+| --- | --- |
+| 1 | Create one eligible module and one ineligible module. |
+| 2 | Call `CreateOrderedCategories` with both modules. |
+| 3 | Assert that only the eligible module is included in the resulting categories. |
+
+---
+
 ## Related
 
 - [SettingsService](../../Services/SettingsService/)

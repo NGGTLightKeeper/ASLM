@@ -37,7 +37,7 @@ Uses **`DownloadProgress`** from [Models/DownloadProgress](../Models/DownloadPro
 
 #### `public async Task<ModuleConfig?> LoadModuleConfig(string jsonFile)`
 
-**Purpose:** Reads one manifest: deserialize with indented JSON (nulls omitted), **`Normalize()`**, **`HasDeclaredUpdateConfig`** from raw JSON **`update`** property, default **`FileVersion`** to **1**, skip unsupported versions. Sets **`SourcePath`**, **`Status.Installed = true`**. Returns **`null`** on missing file, parse errors, or unsupported **`fileVersion`**.
+**Purpose:** Reads one manifest: deserialize with indented JSON (nulls omitted), **`Normalize()`**, **`HasDeclaredUpdateConfig`** from raw JSON **`update`** property, default **`FileVersion`** to **1**, skip unsupported versions. Sets **`SourcePath`**. Returns **`null`** on missing file, parse errors, or unsupported **`fileVersion`**.
 
 ---
 

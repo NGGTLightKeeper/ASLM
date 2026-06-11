@@ -90,7 +90,7 @@ Types in same file: **`ModuleLaunchStatus`**, **`ModuleLaunchResult`**, **`Modul
 2. Reload manifest from `discovered.SourcePath`; null → **`NotFound`**.
 3. Empty `Commands.Run` → **`NoRunCommands`** with fresh config.
 4. If `SourcePath` in **`GetRunningModuleSourcePaths()`** → **`AlreadyRunning`**.
-5. If `!FirstRunCompleted` → **`ExecuteFirstRunAsync`** on thread pool; failure → **`FirstRunFailed`**; else set flag and **`SaveConfigAsync`**.
+5. If `!FirstRunCompleted` → **`ExecuteFirstRunAsync`** on thread pool; failure → **`FirstRunFailed`**; else set **`Installed`**, **`FirstRunCompleted`** flags and **`SaveConfigAsync`**.
 6. Set `Status.Enabled = true`, **`SaveConfigAsync`**.
 7. Fire-and-forget **`ExecuteRunAsync`** (no cancellation) → **`Started`**.
 
