@@ -40,6 +40,8 @@ namespace ASLM.Pages
         private CancellationTokenSource? _logSyncCts;
         private int _logSyncQueued;
         private int _logSyncRequested;
+        private int _updateLogLayoutRefreshQueued;
+        private string _updateLogSessionKey = string.Empty;
 
 
         // Events
@@ -274,7 +276,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Gets the session key passed to the native log host so changing the module resets scroll position.
         /// </summary>
-        public string UpdateLogSessionKey => _module?.SourcePath ?? string.Empty;
+        public string UpdateLogSessionKey => _updateLogSessionKey;
 
 
         // Overlay opening
@@ -293,6 +295,7 @@ namespace ASLM.Pages
 
             _mode = mode;
             selectedModule.ResetCompletedUpdateSession();
+            BeginUpdateLogSession();
             UpdateDialogSize();
             RaiseDialogProperties();
             SyncPickerSelections();
@@ -417,28 +420,51 @@ namespace ASLM.Pages
         /// </summary>
         private void OnModulePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            var propertyName = e.PropertyName;
+
+            if (propertyName == nameof(ModuleViewModel.UpdateLogText) ||
+                propertyName == nameof(ModuleViewModel.HasUpdateLog))
+            {
+                QueueLogViewSync();
+                return;
+            }
+
+            if (IsActivityOnlyProperty(propertyName))
+            {
+                RaiseActivityProperties();
+                return;
+            }
+
             RaiseModuleProperties();
-            if (ShouldSyncPickerSelection(e.PropertyName))
+
+            if (ShouldSyncPickerSelection(propertyName))
             {
                 SyncPickerSelections();
             }
 
-            if (e.PropertyName == nameof(ModuleViewModel.BranchOptions))
+            if (propertyName == nameof(ModuleViewModel.BranchOptions))
             {
                 QueueBranchPickerResyncAfterListChange();
             }
 
-            if (e.PropertyName == nameof(ModuleViewModel.IsBranchMode) && IsBranchMode)
+            if (propertyName == nameof(ModuleViewModel.IsBranchMode) && IsBranchMode)
             {
                 QueueBranchPickerResyncAfterListChange();
                 _ = ResyncBranchPickerAfterBranchUiShownAsync();
             }
+        }
 
-            if (e.PropertyName == nameof(ModuleViewModel.UpdateLogText) ||
-                e.PropertyName == nameof(ModuleViewModel.HasUpdateLog))
-            {
-                QueueLogViewSync();
-            }
+        /// <summary>
+        /// Returns whether the changed module property only affects the activity section.
+        /// </summary>
+        private static bool IsActivityOnlyProperty(string? propertyName)
+        {
+            return propertyName == nameof(ModuleViewModel.UpdateActivityStatus) ||
+                   propertyName == nameof(ModuleViewModel.UpdateOverallProgress) ||
+                   propertyName == nameof(ModuleViewModel.UpdateFileProgress) ||
+                   propertyName == nameof(ModuleViewModel.HasUpdateProgress) ||
+                   propertyName == nameof(ModuleViewModel.UpdateDownloadDetail) ||
+                   propertyName == nameof(ModuleViewModel.HasUpdateDownloadDetail);
         }
 
         /// <summary>
@@ -531,6 +557,7 @@ namespace ASLM.Pages
 
             if (announceInLog)
             {
+                BeginUpdateLogSession();
                 module.AppendUpdateLog(L.Get(LocalizationKeys.ModuleUpdate_Log_CheckingFormat, module.Name));
             }
 
@@ -632,10 +659,12 @@ namespace ASLM.Pages
                 return;
             }
 
+            BeginUpdateLogSession();
             module.ResetUpdateSession(clearLog: true);
             module.SetUpdateActivityStatus(L.Get(LocalizationKeys.ModuleUpdate_Log_InstallingFormat, module.Name));
             RaiseActivityProperties();
             module.AppendUpdateLog(L.Get(LocalizationKeys.ModuleUpdate_Log_StartingFormat, module.Name));
+            QueueUpdateLogLayoutRefresh();
 
             var success = await module.ApplyUpdateAsync();
 
@@ -720,6 +749,44 @@ namespace ASLM.Pages
         // Logging
 
         /// <summary>
+        /// Starts a fresh native console session so the log host pins to the latest output.
+        /// </summary>
+        private void BeginUpdateLogSession()
+        {
+            _updateLogSessionKey = $"{_module?.SourcePath}|{DateTime.UtcNow.Ticks}";
+            OnPropertyChanged(nameof(UpdateLogSessionKey));
+        }
+
+        /// <summary>
+        /// Schedules layout refresh passes so the native console host measures like SetupWizard.
+        /// </summary>
+        private void QueueUpdateLogLayoutRefresh()
+        {
+            RefreshUpdateLogLayout();
+
+            if (Dispatcher == null || Interlocked.Exchange(ref _updateLogLayoutRefreshQueued, 1) == 1)
+            {
+                return;
+            }
+
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(16), RefreshUpdateLogLayout);
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(48), () =>
+            {
+                RefreshUpdateLogLayout();
+                Interlocked.Exchange(ref _updateLogLayoutRefreshQueued, 0);
+            });
+        }
+
+        /// <summary>
+        /// Invalidates the log panel and console host after log visibility or text changes.
+        /// </summary>
+        private void RefreshUpdateLogLayout()
+        {
+            UpdateLogPanel.InvalidateMeasure();
+            UpdateLogConsole.InvalidateMeasure();
+        }
+
+        /// <summary>
         /// Pushes the latest log text through bindings so the native log host can refresh immediately.
         /// </summary>
         private void SyncLogView()
@@ -731,8 +798,8 @@ namespace ASLM.Pages
 
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                OnPropertyChanged(nameof(LogText));
-                OnPropertyChanged(nameof(HasLog));
+                RaiseLogProperties();
+                QueueUpdateLogLayoutRefresh();
             });
         }
 
@@ -770,7 +837,8 @@ namespace ASLM.Pages
                             return;
                         }
 
-                        OnPropertyChanged(nameof(LogText));
+                        RaiseLogProperties();
+                        QueueUpdateLogLayoutRefresh();
                     });
                 }
                 while (!ct.IsCancellationRequested &&
@@ -994,6 +1062,8 @@ namespace ASLM.Pages
             OnPropertyChanged(nameof(DialogSubtitle));
             RaiseModuleProperties();
             RaiseActivityProperties();
+            RaiseLogProperties();
+            OnPropertyChanged(nameof(UpdateLogSessionKey));
         }
 
         /// <summary>
@@ -1017,7 +1087,6 @@ namespace ASLM.Pages
             OnPropertyChanged(nameof(ShowInstallAction));
             OnPropertyChanged(nameof(IsBusy));
             RaiseActivityProperties();
-            OnPropertyChanged(nameof(UpdateLogSessionKey));
         }
 
         /// <summary>
@@ -1032,9 +1101,16 @@ namespace ASLM.Pages
             OnPropertyChanged(nameof(FileProgress));
             OnPropertyChanged(nameof(DownloadDetail));
             OnPropertyChanged(nameof(HasDownloadDetail));
+            OnPropertyChanged(nameof(CanInstallUpdate));
+        }
+
+        /// <summary>
+        /// Raises log bindings consumed by the native console host.
+        /// </summary>
+        private void RaiseLogProperties()
+        {
             OnPropertyChanged(nameof(LogText));
             OnPropertyChanged(nameof(HasLog));
-            OnPropertyChanged(nameof(CanInstallUpdate));
         }
 
 
