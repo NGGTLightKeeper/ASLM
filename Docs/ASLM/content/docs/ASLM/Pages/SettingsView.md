@@ -70,7 +70,7 @@ Style resource keys: `FooterButtonStyleKey`, `FooterPrimaryButtonStyleKey`, `Foo
 | `SettingsScroll` / `SettingsContentContainer` | Right pane scroll host |
 | `AslmSettingsContainer` | Profile + ports (account/ASLM categories) |
 | `UserProfileSection` | `UsernameEntry` |
-| `PortsSection` | `OfficialPortEntry`, `ThirdPartyPortEntry`, `PortErrorLabel` |
+| `PortsSection` | `ModulePortEntry`, `PortErrorLabel` |
 | `ModuleSettingsContainer` | Dynamic module / updates / personalization / Ollama content |
 | `EmptyCategoryState` / `EmptyCategoryLabel` | No settings placeholder |
 | `DefaultButton` | `OnDefaultClicked` |
@@ -704,7 +704,7 @@ Lightweight switch used instead of native `Switch` for consistent sizing.
 
 ---
 
-#### `private string GetCurrentOfficialPortDraft()` / `GetCurrentThirdPartyPortDraft()`
+#### `private string GetCurrentPortStartDraft()`
 
 **Purpose:** Reads ports from visible entries or cached drafts.
 

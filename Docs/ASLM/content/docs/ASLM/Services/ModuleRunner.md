@@ -29,7 +29,7 @@ Implements **`IDisposable`**. Subscribes to **`PortRegistry.PortsRedistributed`*
 
 #### `public async Task<bool> ExecuteRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct)`
 
-**Purpose:** Synchronizes settings, starts each **`Commands.Run`** entry in background with **`trackProcess: true`**.
+**Purpose:** Allocates and ensures ports are available, synchronizes settings, and starts each **`Commands.Run`** entry in background with **`trackProcess: true`**.
 
 ---
 
