@@ -21,9 +21,8 @@ namespace ASLM.Services
     public enum SettingsCategoryKind
     {
         Aslm,
-        AslmProfile,
+        Accounts,
         Updates,
-        Ollama,
         Module,
         Personalization
     }
@@ -65,7 +64,6 @@ namespace ASLM.Services
     public sealed record UpdateBaseline(
         bool CheckEnabled,
         bool AutoUpdateEnabled,
-        string AutoCheckPeriodHours,
         string AppChannel,
         string ModuleDefaultMode,
         string ModuleDefaultChannel);
@@ -163,17 +161,10 @@ namespace ASLM.Services
                     null,
                     true),
                 new(
-                    "aslm-ollama",
-                    "Ollama",
-                    "Ollama account sign-in and sign-out controls.",
-                    SettingsCategoryKind.Ollama,
-                    null,
-                    false),
-                new(
-                    "aslm-account",
-                    "Account",
-                    "Display name used by ASLM and shared with modules.",
-                    SettingsCategoryKind.AslmProfile,
+                    "aslm-accounts",
+                    "Accounts",
+                    "ASLM display name, GitHub and Ollama sign-in.",
+                    SettingsCategoryKind.Accounts,
                     null,
                     false),
                 new(
@@ -263,17 +254,8 @@ namespace ASLM.Services
             settings = new AppUpdateSettings();
             errorMessage = string.Empty;
 
-            if (!int.TryParse(draft.AutoCheckPeriodHours, NumberStyles.Integer, CultureInfo.InvariantCulture, out var periodHours) ||
-                periodHours < 1 ||
-                periodHours > 720)
-            {
-                errorMessage = "Auto-check period must be between 1 and 720 hours.";
-                return false;
-            }
-
             settings.CheckEnabled = draft.CheckEnabled;
             settings.AutoUpdateEnabled = draft.AutoUpdateEnabled;
-            settings.AutoCheckPeriodHours = periodHours;
             settings.AppChannel = draft.AppChannel;
             settings.ModuleDefaultMode = draft.ModuleDefaultMode;
             settings.ModuleDefaultChannel = draft.ModuleDefaultChannel;
@@ -329,7 +311,6 @@ namespace ASLM.Services
                 new UpdateBaseline(
                     appData.Data.Updates.CheckEnabled,
                     appData.Data.Updates.AutoUpdateEnabled,
-                    appData.Data.Updates.AutoCheckPeriodHours.ToString(CultureInfo.InvariantCulture),
                     appData.Data.Updates.AppChannel,
                     appData.Data.Updates.ModuleDefaultMode,
                     appData.Data.Updates.ModuleDefaultChannel));
@@ -383,7 +364,6 @@ namespace ASLM.Services
             return new UpdateBaseline(
                 defaults.CheckEnabled,
                 defaults.AutoUpdateEnabled,
-                defaults.AutoCheckPeriodHours.ToString(CultureInfo.InvariantCulture),
                 defaults.AppChannel,
                 defaults.ModuleDefaultMode,
                 defaults.ModuleDefaultChannel);
@@ -441,7 +421,6 @@ namespace ASLM.Services
         public static bool HasUnsavedUpdateChanges(UpdateBaseline draft, UpdateBaseline baseline) =>
             draft.CheckEnabled != baseline.CheckEnabled ||
             draft.AutoUpdateEnabled != baseline.AutoUpdateEnabled ||
-            !string.Equals(draft.AutoCheckPeriodHours, baseline.AutoCheckPeriodHours, StringComparison.Ordinal) ||
             !string.Equals(draft.AppChannel, baseline.AppChannel, StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(draft.ModuleDefaultMode, baseline.ModuleDefaultMode, StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(draft.ModuleDefaultChannel, baseline.ModuleDefaultChannel, StringComparison.OrdinalIgnoreCase);

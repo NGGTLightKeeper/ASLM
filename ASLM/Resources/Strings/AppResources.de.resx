@@ -827,6 +827,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>Von ASLM verwendeter und mit Modulen geteilter Anzeigename</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>Konten</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>ASLM-Anzeigename, GitHub- und Ollama-Anmeldung</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>ASLM-Konto</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>GitHub-Konto</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Ollama-Konto</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>Nicht verbunden</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>Verbinden Sie sich, um das API-Limit von 60 auf 5.000 Anfragen pro Stunde zu erhöhen</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>Verbunden</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>Verbunden als {0}</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>Verbinden</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>Trennen</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>Verbindung wird hergestellt…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... oder github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>GitHub-Token einfügen</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>GitHub sollte sich mit einer vorausgefüllten Gültigkeit von einem Jahr geöffnet haben. Lassen Sie die Berechtigungen für öffentliche Update-Prüfungen auf dem Standardwert, erstellen Sie den Token und fügen Sie ihn hier ein.</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>GitHub-Konto</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>Melden Sie sich mit einem persönlichen Zugriffstoken an, um das höhere GitHub-API-Limit zu nutzen.</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>Verbindung fehlgeschlagen: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>Modulspezifische Konfiguration</value>
   </data>

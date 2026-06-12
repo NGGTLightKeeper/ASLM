@@ -44,20 +44,20 @@ public sealed class SettingsServiceTests
     }
 
     [Fact]
-    public void TryValidateAndBuildUpdateSettings_rejects_invalid_period()
+    public void TryValidateAndBuildUpdateSettings_normalizes_fixed_check_period()
     {
         var draft = new UpdateBaseline(
             true,
             false,
-            "0",
-            "stable",
-            "manual",
-            "main");
+            "release",
+            "release",
+            "release");
 
-        var success = SettingsService.TryValidateAndBuildUpdateSettings(draft, out _, out var error);
+        var success = SettingsService.TryValidateAndBuildUpdateSettings(draft, out var settings, out var error);
 
-        success.Should().BeFalse();
-        error.Should().Contain("720");
+        success.Should().BeTrue();
+        error.Should().BeEmpty();
+        settings.AutoCheckPeriodHours.Should().Be(1);
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public sealed class SettingsServiceTests
         store.Data.User.Name.Should().Be("Bob");
         store.Data.Ports.ModulesStart.Should().Be(22000);
         store.Data.Consoles.ShowCompletedProcesses.Should().BeTrue();
-        store.Data.Updates.AutoCheckPeriodHours.Should().Be(12);
+        store.Data.Updates.AutoCheckPeriodHours.Should().Be(1);
     }
 
     [Fact]

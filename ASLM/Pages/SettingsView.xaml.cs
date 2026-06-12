@@ -51,6 +51,8 @@ namespace ASLM.Pages
         private readonly SettingsService _settingsService;
         private readonly AppLocalizationService _localization;
         private readonly OllamaSettingsStore _ollamaSettings;
+        private readonly GitHubAccountStore _githubAccountStore;
+        private readonly GitHubUpdateClient _githubUpdateClient;
         private readonly UpdateManager _updateManager;
         private readonly AslmApiServer _apiServer;
         private readonly NotificationCenter _notifications;
@@ -65,10 +67,11 @@ namespace ASLM.Pages
         private SettingsCategory? _activeCategory;
         private AslmBaseline _aslmBaseline = new(string.Empty, string.Empty, true);
         private ConsoleBaseline _consoleBaseline = new(true, true, true);
-        private UpdateBaseline _updateBaseline = new(true, false, "24", "release", "release", "release");
+        private UpdateBaseline _updateBaseline = new(true, false, "release", "release", "release");
         private ConsoleBaseline _consoleDraft = new(true, true, true);
-        private UpdateBaseline _updateDraft = new(true, false, "24", "release", "release", "release");
+        private UpdateBaseline _updateDraft = new(true, false, "release", "release", "release");
         private OllamaPersistentSettings _ollamaDraft = new();
+        private GitHubAccountState _githubDraft = new();
         private string _userNameDraft = string.Empty;
         private string _portStartDraft = string.Empty;
         private bool _apiServerEnabledDraft = true;
@@ -78,13 +81,15 @@ namespace ASLM.Pages
         private bool _isSaving;
         private bool _isOllamaAccountActionRunning;
         private bool _isOllamaMetadataRefreshRunning;
+        private bool _isGitHubAccountActionRunning;
         private int _actionButtonUpdateQueued;
         private string _ollamaAccountAction = string.Empty;
         private Button? _ollamaAccountButton;
         private Label? _ollamaAccountStatusLabel;
+        private Button? _githubAccountButton;
+        private Label? _githubAccountStatusLabel;
         private CompactToggle? _checkUpdatesToggle;
         private CompactToggle? _autoUpdatesToggle;
-        private Entry? _updatePeriodEntry;
         private Picker? _appUpdateChannelPicker;
         private Picker? _moduleUpdateModePicker;
         private Picker? _moduleUpdateChannelPicker;
@@ -355,6 +360,8 @@ namespace ASLM.Pages
             SettingsService settingsService,
             AppLocalizationService localization,
             OllamaSettingsStore ollamaSettings,
+            GitHubAccountStore githubAccountStore,
+            GitHubUpdateClient githubUpdateClient,
             UpdateManager updateManager,
             AslmApiServer apiServer,
             NotificationCenter notifications,
@@ -365,6 +372,8 @@ namespace ASLM.Pages
             _settingsService = settingsService;
             _localization = localization;
             _ollamaSettings = ollamaSettings;
+            _githubAccountStore = githubAccountStore;
+            _githubUpdateClient = githubUpdateClient;
             _updateManager = updateManager;
             _apiServer = apiServer;
             _notifications = notifications;
@@ -552,9 +561,8 @@ namespace ASLM.Pages
             category.Kind switch
             {
                 SettingsCategoryKind.Aslm => L.Get(LocalizationKeys.Settings_Category_ASLM),
-                SettingsCategoryKind.AslmProfile => L.Get(LocalizationKeys.Settings_Category_Account),
+                SettingsCategoryKind.Accounts => L.Get(LocalizationKeys.Settings_Category_Accounts),
                 SettingsCategoryKind.Updates => L.Get(LocalizationKeys.Settings_Category_Updates),
-                SettingsCategoryKind.Ollama => L.Get(LocalizationKeys.Settings_Category_Ollama),
                 SettingsCategoryKind.Personalization => L.Get(LocalizationKeys.Settings_Category_Personalization),
                 SettingsCategoryKind.Module => category.Module?.Name ?? category.Title,
                 _ => category.Title
@@ -878,14 +886,11 @@ namespace ASLM.Pages
                 case SettingsCategoryKind.Aslm:
                     RenderAslmCategory();
                     break;
-                case SettingsCategoryKind.AslmProfile:
-                    RenderAccountCategory();
+                case SettingsCategoryKind.Accounts:
+                    RenderAccountsCategory();
                     break;
                 case SettingsCategoryKind.Updates:
                     RenderUpdatesCategory();
-                    break;
-                case SettingsCategoryKind.Ollama:
-                    RenderOllamaCategory();
                     break;
                 case SettingsCategoryKind.Module:
                     RenderModuleCategory(category.Module!);
@@ -1122,7 +1127,7 @@ namespace ASLM.Pages
         {
             var canInteract = !_isSaving && _activeCategory != null;
             var hasChanges = canInteract && HasAnyUnsavedChanges();
-            var canReset = _activeCategory is { Kind: not SettingsCategoryKind.Ollama };
+            var canReset = _activeCategory != null;
             DefaultButton.IsVisible = canReset;
             DefaultButton.IsEnabled = canInteract && canReset;
             DiscardButton.IsVisible = canReset && hasChanges;
@@ -1259,16 +1264,30 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Shows the account category while hiding module-specific content.
+        /// Shows the combined accounts category with ASLM, GitHub, and Ollama sections.
         /// </summary>
-        private void RenderAccountCategory()
+        private void RenderAccountsCategory()
         {
             ApplyAslmDraftsToControls();
             _settingMappings.Clear();
             ResetRenderedControlReferences();
-            PrepareCategorySurface(showAslmContainer: true, showModuleContainer: false, showEmptyState: false);
+            PrepareCategorySurface(showAslmContainer: true, showModuleContainer: true, showEmptyState: false);
             UserProfileSection.IsVisible = true;
             PortsSection.IsVisible = false;
+
+            var section = CreateModuleSectionBorder();
+            var content = new VerticalStackLayout { Spacing = 8 };
+
+            content.Children.Add(CreateGitHubAccountCard());
+            content.Children.Add(CreateOllamaAccountCard());
+
+            section.Content = content;
+            ModuleSettingsContainer.Children.Add(section);
+
+            _githubDraft = _githubAccountStore.GetState();
+            UpdateGitHubAccountActionControls();
+            UpdateOllamaAccountActionControls();
+            StartOllamaMetadataRefresh();
         }
 
         /// <summary>
@@ -1380,14 +1399,6 @@ namespace ASLM.Pages
                 L.Get(LocalizationKeys.Settings_AutoInstall_Description),
                 _autoUpdatesToggle.View));
 
-            _updatePeriodEntry = CreateTextEntry(_updateDraft.AutoCheckPeriodHours);
-            _updatePeriodEntry.Keyboard = Keyboard.Numeric;
-            _updatePeriodEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
-            content.Children.Add(CreateUpdateCard(
-                L.Get(LocalizationKeys.Settings_AutoCheckPeriod_Title),
-                L.Get(LocalizationKeys.Settings_AutoCheckPeriod_Description),
-                CreateFieldContainer(_updatePeriodEntry)));
-
             _appUpdateChannelPicker = CreatePicker(null, 13);
             _appUpdateChannelPicker.ItemsSource = new List<string> { "release", "pre-release" };
             _appUpdateChannelPicker.SelectedItem = _updateDraft.AppChannel;
@@ -1416,27 +1427,6 @@ namespace ASLM.Pages
                 CreateUpdatePickerContainer(_moduleUpdateChannelPicker)));
 
             content.Children.Add(CreateManualUpdateCard());
-        }
-
-        /// <summary>
-        /// Rebuilds the Ollama settings page using the current persistent draft values.
-        /// </summary>
-        private void RenderOllamaCategory()
-        {
-            _settingMappings.Clear();
-            ResetRenderedControlReferences();
-            PrepareCategorySurface(showAslmContainer: false, showModuleContainer: true, showEmptyState: false);
-
-            var section = CreateModuleSectionBorder();
-            var content = new VerticalStackLayout { Spacing = 8 };
-
-            content.Children.Add(CreateOllamaAccountCard());
-
-            section.Content = content;
-            ModuleSettingsContainer.Children.Add(section);
-
-            UpdateOllamaAccountActionControls();
-            StartOllamaMetadataRefresh();
         }
 
         /// <summary>
@@ -1743,7 +1733,50 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Builds the account card shown at the top of the Ollama category.
+        /// Builds the GitHub account card shown in the Accounts category.
+        /// </summary>
+        private Border CreateGitHubAccountCard()
+        {
+            var card = CreateSettingCardBorder();
+            var row = new Grid
+            {
+                ColumnSpacing = 16,
+                VerticalOptions = LayoutOptions.Center,
+                MinimumHeightRequest = 44
+            };
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+
+            var text = new VerticalStackLayout
+            {
+                Spacing = TitleDescriptionSpacing,
+                VerticalOptions = LayoutOptions.Center
+            };
+
+            var title = CreateCardTitle(L.Get(LocalizationKeys.Settings_GitHub_TokenTitle));
+            title.VerticalOptions = LayoutOptions.Center;
+            text.Children.Add(title);
+
+            _githubAccountStatusLabel = CreateSecondaryLabel(BuildGitHubAccountStatusText());
+            _githubAccountStatusLabel.LineBreakMode = LineBreakMode.TailTruncation;
+            _githubAccountStatusLabel.MaxLines = 2;
+            text.Children.Add(_githubAccountStatusLabel);
+
+            row.Children.Add(text);
+            Grid.SetColumn(text, 0);
+
+            _githubAccountButton = CreateInlineActionButton(
+                IsGitHubConnected() ? L.Get(LocalizationKeys.Settings_GitHub_Disconnect) : L.Get(LocalizationKeys.Settings_GitHub_Connect),
+                OnGitHubAccountButtonClicked);
+            row.Children.Add(_githubAccountButton);
+            Grid.SetColumn(_githubAccountButton, 1);
+
+            card.Content = row;
+            return card;
+        }
+
+        /// <summary>
+        /// Builds the Ollama account card shown in the Accounts category.
         /// </summary>
         private Border CreateOllamaAccountCard()
         {
@@ -2052,9 +2085,8 @@ namespace ASLM.Pages
             return _activeCategory.Kind switch
             {
                 SettingsCategoryKind.Aslm => HasUnsavedAslmSettingsChanges(),
-                SettingsCategoryKind.AslmProfile => HasUnsavedAccountChanges(),
+                SettingsCategoryKind.Accounts => HasUnsavedAccountChanges(),
                 SettingsCategoryKind.Updates => HasUnsavedUpdateChanges(),
-                SettingsCategoryKind.Ollama => false,
                 SettingsCategoryKind.Module => HasUnsavedModuleChanges(),
                 SettingsCategoryKind.Personalization => HasUnsavedPersonalizationChanges(),
                 _ => false
@@ -2212,14 +2244,12 @@ namespace ASLM.Pages
         private UpdateBaseline GetCurrentUpdateDraft() =>
             _checkUpdatesToggle != null &&
             _autoUpdatesToggle != null &&
-            _updatePeriodEntry != null &&
             _appUpdateChannelPicker != null &&
             _moduleUpdateModePicker != null &&
             _moduleUpdateChannelPicker != null
                 ? new UpdateBaseline(
                     _checkUpdatesToggle.IsToggled,
                     _autoUpdatesToggle.IsToggled,
-                    _updatePeriodEntry.Text?.Trim() ?? string.Empty,
                     _appUpdateChannelPicker.SelectedItem?.ToString() ?? "release",
                     _moduleUpdateModePicker.SelectedItem?.ToString() ?? "release",
                     _moduleUpdateChannelPicker.SelectedItem?.ToString() ?? "release")
@@ -2240,11 +2270,6 @@ namespace ASLM.Pages
             if (_autoUpdatesToggle != null)
             {
                 _autoUpdatesToggle.IsToggled = _updateDraft.AutoUpdateEnabled;
-            }
-
-            if (_updatePeriodEntry != null)
-            {
-                _updatePeriodEntry.Text = _updateDraft.AutoCheckPeriodHours;
             }
 
             if (_appUpdateChannelPicker != null)
@@ -2341,15 +2366,13 @@ namespace ASLM.Pages
                     PortErrorLabel.IsVisible = false;
                     RenderAslmCategory();
                     break;
-                case SettingsCategoryKind.AslmProfile:
+                case SettingsCategoryKind.Accounts:
                     _userNameDraft = Environment.UserName;
-                    RenderAccountCategory();
+                    RenderAccountsCategory();
                     break;
                 case SettingsCategoryKind.Updates:
                     ApplyUpdateDefaultsToControls();
                     RenderUpdatesCategory();
-                    break;
-                case SettingsCategoryKind.Ollama:
                     break;
                 case SettingsCategoryKind.Module:
                     SettingsService.ResetModuleToDefaults(_activeCategory.Module!);
@@ -2647,6 +2670,144 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Handles the GitHub account connect or disconnect button click.
+        /// </summary>
+        private async void OnGitHubAccountButtonClicked(object? sender, EventArgs e)
+        {
+            await ExecuteGitHubAccountActionAsync(connect: !IsGitHubConnected());
+        }
+
+        /// <summary>
+        /// Runs one GitHub account action and refreshes the account card state.
+        /// </summary>
+        private async Task ExecuteGitHubAccountActionAsync(bool connect)
+        {
+            if (_isGitHubAccountActionRunning)
+            {
+                return;
+            }
+
+            try
+            {
+                _isGitHubAccountActionRunning = true;
+                UpdateGitHubAccountActionControls();
+
+                if (connect)
+                {
+                    try
+                    {
+                        await Launcher.OpenAsync(GitHubAccountStore.BuildTokenCreationUrl());
+                    }
+                    catch (Exception ex)
+                    {
+                        await ShowErrorAsync(L.Get(LocalizationKeys.Settings_GitHub_ConnectFailed, ex.Message));
+                        return;
+                    }
+
+                    var token = await PromptForGitHubTokenAsync();
+                    if (string.IsNullOrWhiteSpace(token))
+                    {
+                        return;
+                    }
+
+                    var result = await _githubAccountStore.ConnectAsync(token);
+                    _githubDraft = result.State;
+
+                    if (!result.Success)
+                    {
+                        await ShowErrorAsync(L.Get(LocalizationKeys.Settings_GitHub_ConnectFailed, result.Message));
+                        return;
+                    }
+
+                    try
+                    {
+                        await _githubUpdateClient.RefreshRateLimitAsync(GitHubRequestSources.Manual);
+                    }
+                    catch
+                    {
+                        // Rate-limit refresh is best-effort after a successful connect.
+                    }
+                }
+                else
+                {
+                    var result = await _githubAccountStore.DisconnectAsync();
+                    _githubDraft = result.State;
+                }
+            }
+            finally
+            {
+                _isGitHubAccountActionRunning = false;
+                UpdateGitHubAccountActionControls();
+            }
+        }
+
+        /// <summary>
+        /// Returns whether the cached GitHub account state is connected.
+        /// </summary>
+        private bool IsGitHubConnected() => _githubDraft.IsConnected;
+
+        /// <summary>
+        /// Builds the GitHub account status line for the settings card.
+        /// </summary>
+        private string BuildGitHubAccountStatusText()
+        {
+            if (_isGitHubAccountActionRunning)
+            {
+                return L.Get(LocalizationKeys.Settings_GitHub_Connecting);
+            }
+
+            if (_githubDraft.IsConnected && !string.IsNullOrWhiteSpace(_githubDraft.UserName))
+            {
+                return L.Get(LocalizationKeys.Settings_GitHub_ConnectedAs, _githubDraft.UserName);
+            }
+
+            if (!string.IsNullOrWhiteSpace(_githubDraft.ErrorMessage))
+            {
+                return L.Get(LocalizationKeys.Settings_GitHub_ConnectFailed, _githubDraft.ErrorMessage);
+            }
+
+            return L.Get(LocalizationKeys.Settings_GitHub_NotConnectedHint);
+        }
+
+        /// <summary>
+        /// Refreshes the GitHub account card labels and action button state.
+        /// </summary>
+        private void UpdateGitHubAccountActionControls()
+        {
+            if (_githubAccountStatusLabel != null)
+            {
+                _githubAccountStatusLabel.Text = BuildGitHubAccountStatusText();
+            }
+
+            if (_githubAccountButton != null)
+            {
+                var isConnected = IsGitHubConnected();
+                _githubAccountButton.Text = _isGitHubAccountActionRunning
+                    ? L.Get(LocalizationKeys.Settings_GitHub_Connecting)
+                    : isConnected
+                        ? L.Get(LocalizationKeys.Settings_GitHub_Disconnect)
+                        : L.Get(LocalizationKeys.Settings_GitHub_Connect);
+                _githubAccountButton.IsEnabled = !_isGitHubAccountActionRunning;
+                ApplyOllamaAccountButtonState(_githubAccountButton, isConnected);
+            }
+        }
+
+        /// <summary>
+        /// Prompts the user to paste a GitHub personal access token after browser sign-in.
+        /// </summary>
+        private static Task<string?> PromptForGitHubTokenAsync() =>
+            Application.Current?.Windows.Count > 0
+                ? Application.Current.Windows[0].Page!.DisplayPromptAsync(
+                    L.Get(LocalizationKeys.Settings_GitHub_ConnectPrompt_Title),
+                    L.Get(LocalizationKeys.Settings_GitHub_ConnectPrompt_Message),
+                    L.Get(LocalizationKeys.Settings_GitHub_Connect),
+                    L.Get(LocalizationKeys.Common_Cancel),
+                    L.Get(LocalizationKeys.Settings_GitHub_TokenPlaceholder),
+                    maxLength: 256,
+                    keyboard: Keyboard.Text)
+                : Task.FromResult<string?>(null);
+
+        /// <summary>
         /// Handles the single Ollama account action button click.
         /// </summary>
         private async void OnOllamaAccountButtonClicked(object? sender, EventArgs e)
@@ -2776,7 +2937,7 @@ namespace ASLM.Pages
         /// </summary>
         private void StartOllamaMetadataRefresh()
         {
-            if (_activeCategory?.Kind != SettingsCategoryKind.Ollama)
+            if (_activeCategory?.Kind != SettingsCategoryKind.Accounts)
             {
                 return;
             }
@@ -2848,12 +3009,19 @@ namespace ASLM.Pages
             _ollamaAccountStatusLabel = null;
         }
 
+        private void ResetGitHubControlReferences()
+        {
+            _githubAccountButton = null;
+            _githubAccountStatusLabel = null;
+        }
+
         /// <summary>
         /// Clears all dynamic control references before rebuilding one category UI tree.
         /// </summary>
         private void ResetRenderedControlReferences()
         {
             ResetOllamaControlReferences();
+            ResetGitHubControlReferences();
             ResetUpdateControlReferences();
             ResetAslmApiControlReferences();
         }
@@ -2876,7 +3044,6 @@ namespace ASLM.Pages
         {
             _checkUpdatesToggle = null;
             _autoUpdatesToggle = null;
-            _updatePeriodEntry = null;
             _appUpdateChannelPicker = null;
             _moduleUpdateModePicker = null;
             _moduleUpdateChannelPicker = null;

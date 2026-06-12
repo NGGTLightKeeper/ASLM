@@ -827,6 +827,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>Tên hiển thị dùng bởi ASLM và chia sẻ với mô-đun</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>Tài khoản</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>Tên hiển thị ASLM, đăng nhập GitHub và Ollama</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>Tài khoản ASLM</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>Tài khoản GitHub</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Tài khoản Ollama</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>Chưa kết nối</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>Kết nối để tăng giới hạn API từ 60 lên 5.000 yêu cầu mỗi giờ</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>Đã kết nối</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>Đã kết nối với tư cách {0}</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>Kết nối</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>Ngắt kết nối</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>Đang kết nối…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... hoặc github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>Dán token GitHub</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>GitHub lẽ ra đã mở với thời hạn hiệu lực 1 năm được điền sẵn. Giữ quyền mặc định để kiểm tra cập nhật công khai, tạo token rồi dán vào đây.</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>Tài khoản GitHub</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>Đăng nhập bằng token truy cập cá nhân để dùng giới hạn API GitHub cao hơn.</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>Kết nối thất bại: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>Cấu hình riêng cho mô-đun</value>
   </data>

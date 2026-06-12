@@ -2,6 +2,7 @@
 
 using ASLM.Localization;
 using ASLM.Services;
+using Debug = System.Diagnostics.Debug;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ASLM.Pages
@@ -15,6 +16,7 @@ namespace ASLM.Pages
         private readonly LegalAcceptanceService _legalAcceptance;
         private readonly NotificationCenter _notifications;
         private readonly GitHubRateLimitStore _rateLimitStore;
+        private readonly GitHubAccountStore _githubAccountStore;
         private readonly GitHubUpdateClient _githubUpdateClient;
         private readonly UpdateScheduler _updateScheduler;
         private readonly AslmApiServer _apiServer;
@@ -37,6 +39,7 @@ namespace ASLM.Pages
             LegalAcceptanceService legalAcceptance,
             NotificationCenter notifications,
             GitHubRateLimitStore rateLimitStore,
+            GitHubAccountStore githubAccountStore,
             GitHubUpdateClient githubUpdateClient,
             UpdateScheduler updateScheduler,
             AslmApiServer apiServer,
@@ -52,6 +55,7 @@ namespace ASLM.Pages
             _legalAcceptance = legalAcceptance;
             _notifications = notifications;
             _rateLimitStore = rateLimitStore;
+            _githubAccountStore = githubAccountStore;
             _githubUpdateClient = githubUpdateClient;
             _updateScheduler = updateScheduler;
             _apiServer = apiServer;
@@ -97,7 +101,15 @@ namespace ASLM.Pages
             await Task.Run(() => _apiServer.StartIfEnabledAsync());
             await Task.Run(() => _moduleInteropServer.EnsureStartedAsync());
             await Task.Run(() => _rateLimitStore.InitializeAsync());
-            await Task.Run(() => _githubUpdateClient.RefreshRateLimitAsync());
+            await Task.Run(() => _githubAccountStore.InitializeAsync());
+            try
+            {
+                await Task.Run(() => _githubUpdateClient.RefreshRateLimitAsync());
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"GitHub rate-limit refresh failed during startup: {ex.Message}");
+            }
             await Task.Run(_updateScheduler.Start);
             _themeService.ApplyFromSettings();
 

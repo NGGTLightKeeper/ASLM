@@ -827,6 +827,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>ASLM 使用的顯示名稱，並與模組共用</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>帳戶</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>ASLM 顯示名稱、GitHub 與 Ollama 登入</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>ASLM 帳戶</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>GitHub 帳戶</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Ollama 帳戶</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>未連線</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>連線可將 API 上限從每小時 60 次提升至 5,000 次</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>已連線</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>已以 {0} 連線</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>連線</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>中斷連線</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>連線中…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... 或 github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>貼上 GitHub 權杖</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>GitHub 應已開啟並預填 1 年有效期限。公開更新檢查請保留預設權限，產生權杖後貼到這裡。</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>GitHub 帳戶</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>使用個人存取權杖登入以使用更高的 GitHub API 上限。</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>連線失敗：{0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>模組專屬設定</value>
   </data>

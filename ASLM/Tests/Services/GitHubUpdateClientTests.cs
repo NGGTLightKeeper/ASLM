@@ -39,7 +39,12 @@ public sealed class GitHubUpdateClientTests
 
     private static GitHubUpdateClient CreateClient()
     {
-        var store = new GitHubRateLimitStore(NullLogger<GitHubRateLimitStore>.Instance);
-        return new GitHubUpdateClient(store);
+        var appData = new AppDataStore(NullLogger<AppDataStore>.Instance);
+        var rateLimitStore = new GitHubRateLimitStore(NullLogger<GitHubRateLimitStore>.Instance);
+        var accountStore = new GitHubAccountStore(
+            appData,
+            rateLimitStore,
+            NullLogger<GitHubAccountStore>.Instance);
+        return new GitHubUpdateClient(rateLimitStore, accountStore);
     }
 }

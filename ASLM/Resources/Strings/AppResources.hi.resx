@@ -827,6 +827,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>ASLM और मॉड्यूलों के साथ साझा किया गया प्रदर्शन नाम</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>खाते</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>ASLM प्रदर्शन नाम, GitHub और Ollama साइन-इन</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>ASLM खाता</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>GitHub खाता</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Ollama खाता</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>कनेक्ट नहीं</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>API सीमा प्रति घंटे 60 से 5,000 अनुरोध तक बढ़ाने के लिए कनेक्ट करें</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>कनेक्टेड</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>{0} के रूप में कनेक्टेड</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>कनेक्ट करें</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>डिस्कनेक्ट करें</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>कनेक्ट हो रहा है…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... या github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>GitHub टोकन चिपकाएँ</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>GitHub एक वर्ष की समाप्ति के साथ खुलना चाहिए था। सार्वजनिक अपडेट जाँच के लिए अनुमतियाँ डिफ़ॉल्ट रखें, टोकन बनाएँ और यहाँ चिपकाएँ।</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>GitHub खाता</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>उच्च GitHub API सीमा के लिए व्यक्तिगत एक्सेस टोकन से साइन इन करें।</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>कनेक्शन विफल: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>मॉड्यूल-विशिष्ट कॉन्फ़िगरेशन</value>
   </data>

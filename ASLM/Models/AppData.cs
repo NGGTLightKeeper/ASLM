@@ -44,6 +44,10 @@ namespace ASLM.Models
         [JsonPropertyName("legal")]
         public AppLegalConfig Legal { get; set; } = new();
 
+        // Stores optional GitHub account credentials for authenticated API access.
+        [JsonPropertyName("github")]
+        public AppGitHubSettings GitHub { get; set; } = new();
+
         /// <summary>
         /// Restores nested objects after JSON deserialization.
         /// </summary>
@@ -76,6 +80,10 @@ namespace ASLM.Models
             // Recreate and normalize legal preferences when the section is absent.
             Legal ??= new();
             Legal.Normalize();
+
+            // Recreate and normalize GitHub account settings when the section is absent.
+            GitHub ??= new();
+            GitHub.Normalize();
         }
     }
 
@@ -247,7 +255,7 @@ namespace ASLM.Models
         /// </summary>
         public void Normalize()
         {
-            AutoCheckPeriodHours = Math.Clamp(AutoCheckPeriodHours <= 0 ? 24 : AutoCheckPeriodHours, 1, 720);
+            AutoCheckPeriodHours = 1;
             LastAutoCheckUtc = string.IsNullOrWhiteSpace(LastAutoCheckUtc) ? null : LastAutoCheckUtc;
             AppChannel = NormalizeChannel(AppChannel);
             InstalledReleaseTag = string.IsNullOrWhiteSpace(InstalledReleaseTag) ? null : InstalledReleaseTag.Trim();

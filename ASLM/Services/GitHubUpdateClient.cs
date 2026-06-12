@@ -18,6 +18,7 @@ namespace ASLM.Services
 
         private readonly HttpClient _httpClient = new();
         private readonly GitHubRateLimitStore _rateLimitStore;
+        private readonly GitHubAccountStore _githubAccountStore;
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
             PropertyNameCaseInsensitive = true
@@ -34,9 +35,10 @@ namespace ASLM.Services
         /// <summary>
         /// Creates the GitHub client with the headers required by the REST API.
         /// </summary>
-        public GitHubUpdateClient(GitHubRateLimitStore rateLimitStore)
+        public GitHubUpdateClient(GitHubRateLimitStore rateLimitStore, GitHubAccountStore githubAccountStore)
         {
             _rateLimitStore = rateLimitStore ?? throw new ArgumentNullException(nameof(rateLimitStore));
+            _githubAccountStore = githubAccountStore ?? throw new ArgumentNullException(nameof(githubAccountStore));
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("ASLM-Updater");
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             _httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
@@ -53,10 +55,14 @@ namespace ASLM.Services
             CancellationToken ct = default)
         {
             const string url = "https://api.github.com/rate_limit";
-            using var response = await _httpClient.GetAsync(url, ct);
+            using var request = CreateAuthorizedGetRequest(url);
+            using var response = await _httpClient.SendAsync(request, ct);
             ApplyRateLimitHeaders(response);
             _rateLimitStore.RecordRequest(url, GitHubRequestTypes.RateLimit, requestSource, (int)response.StatusCode);
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                return;
+            }
 
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             var payload = await JsonSerializer.DeserializeAsync<GitHubRateLimitPayload>(stream, _jsonOptions, ct);
@@ -153,7 +159,8 @@ namespace ASLM.Services
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
             log?.Report($"Downloading {url}");
 
-            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            using var request = CreateAuthorizedGetRequest(url);
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
             ApplyRateLimitHeaders(response);
             _rateLimitStore.RecordRequest(
                 url,
@@ -364,13 +371,36 @@ namespace ASLM.Services
             string requestSource,
             CancellationToken ct)
         {
-            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            using var request = CreateAuthorizedGetRequest(url);
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
             ApplyRateLimitHeaders(response);
             _rateLimitStore.RecordRequest(url, requestType, requestSource, (int)response.StatusCode);
             response.EnsureSuccessStatusCode();
 
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             return await JsonSerializer.DeserializeAsync<T>(stream, _jsonOptions, ct);
+        }
+
+        /// <summary>
+        /// Creates one authorized GET request for the GitHub REST API.
+        /// </summary>
+        private HttpRequestMessage CreateAuthorizedGetRequest(string url)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            ApplyAuthorizationHeader(request);
+            return request;
+        }
+
+        /// <summary>
+        /// Applies the persisted GitHub bearer token when one is configured.
+        /// </summary>
+        private void ApplyAuthorizationHeader(HttpRequestMessage request)
+        {
+            var token = _githubAccountStore.GetPersonalAccessToken();
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
         }
 
         /// <summary>

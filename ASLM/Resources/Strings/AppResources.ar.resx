@@ -827,6 +827,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>اسم العرض الذي يستخدمه ASLM ويشاركه مع الوحدات</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>الحسابات</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>اسم العرض في ASLM وتسجيل الدخول إلى GitHub وOllama</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>حساب ASLM</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>حساب GitHub</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>حساب Ollama</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>غير متصل</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>اتصل لرفع حد واجهة برمجة التطبيقات من 60 إلى 5000 طلب في الساعة</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>متصل</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>متصل باسم {0}</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>اتصال</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>قطع الاتصال</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>جارٍ الاتصال…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... أو github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>لصق رمز GitHub</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>يُفترض أن يكون GitHub قد فُتح مع تاريخ انتهاء مُسبق لمدة سنة واحدة. اترك الأذونات الافتراضية لفحوصات التحديثات العامة، أنشئ الرمز ثم الصقه هنا.</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>حساب GitHub</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>سجّل الدخول برمز وصول شخصي لاستخدام حد أعلى لواجهة برمجة تطبيقات GitHub.</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>فشل الاتصال: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>تهيئة خاصة بالوحدة</value>
   </data>

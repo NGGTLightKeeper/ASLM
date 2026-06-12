@@ -206,6 +206,21 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Updates the cached primary rate-limit budget based on authentication state.
+        /// </summary>
+        public void ApplyAuthenticatedLimitHint(bool isAuthenticated)
+        {
+            lock (_sync)
+            {
+                Data.KnownLimit = isAuthenticated ? 5000 : 60;
+                Data.KnownRemaining = Math.Min(Data.KnownRemaining, Data.KnownLimit);
+                Data.Normalize();
+            }
+
+            Save();
+        }
+
+        /// <summary>
         /// Saves the current GitHub usage data asynchronously.
         /// </summary>
         public async Task SaveAsync()
