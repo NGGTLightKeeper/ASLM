@@ -156,8 +156,7 @@ public sealed class ModuleInteropPortsBuilderTests
     {
         _ = new AslmFileSystemLayout();
         var appData = new AppDataStore(TestLoggerFactory.Create<AppDataStore>());
-        appData.Data.Ports.OfficialStart = 29000;
-        appData.Data.Ports.OfficialCount = 50;
+        appData.Data.Ports.ModulesStart = 29000;
         var portRegistry = new PortRegistry(appData);
         var module = ModuleConfigBuilder.Create(id: "running-mod");
 

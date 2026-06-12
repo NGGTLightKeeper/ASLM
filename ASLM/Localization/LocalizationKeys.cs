@@ -301,8 +301,8 @@ public static class LocalizationKeys
     public const string Settings_ModuleUpdateMode_Description = "Settings_ModuleUpdateMode_Description";
     public const string Settings_ModuleUpdateMode_Title = "Settings_ModuleUpdateMode_Title";
     public const string Settings_NoSettingsAvailable = "Settings_NoSettingsAvailable";
-    public const string Settings_OfficialPortDescription = "Settings_OfficialPortDescription";
-    public const string Settings_OfficialPortTitle = "Settings_OfficialPortTitle";
+    public const string Settings_ModulePortDescription = "Settings_ModulePortDescription";
+    public const string Settings_ModulePortTitle = "Settings_ModulePortTitle";
     public const string Settings_OllamaAccount_Title = "Settings_OllamaAccount_Title";
     public const string Settings_OllamaSignOut_Confirm = "Settings_OllamaSignOut_Confirm";
     public const string Settings_OllamaSignOut_Message = "Settings_OllamaSignOut_Message";
@@ -369,8 +369,6 @@ public static class LocalizationKeys
     public const string Settings_ThemeNew_DefaultName = "Settings_ThemeNew_DefaultName";
     public const string Settings_ThemeNew_PromptMessage = "Settings_ThemeNew_PromptMessage";
     public const string Settings_ThemeNew_PromptTitle = "Settings_ThemeNew_PromptTitle";
-    public const string Settings_ThirdPartyPortDescription = "Settings_ThirdPartyPortDescription";
-    public const string Settings_ThirdPartyPortTitle = "Settings_ThirdPartyPortTitle";
     public const string Settings_Title = "Settings_Title";
     public const string Settings_UpdateStatus_AslmAvailable = "Settings_UpdateStatus_AslmAvailable";
     public const string Settings_UpdateStatus_AslmAvailableStaged = "Settings_UpdateStatus_AslmAvailableStaged";
@@ -403,7 +401,7 @@ public static class LocalizationKeys
     public const string SetupWizard_InstallDocker = "SetupWizard_InstallDocker";
     public const string SetupWizard_Installing = "SetupWizard_Installing";
     public const string SetupWizard_Next_Install = "SetupWizard_Next_Install";
-    public const string SetupWizard_OfficialPortsLabel = "SetupWizard_OfficialPortsLabel";
+    public const string SetupWizard_ModulesPortLabel = "SetupWizard_ModulesPortLabel";
     public const string SetupWizard_OverallProgress = "SetupWizard_OverallProgress";
     public const string SetupWizard_PortAllocationTitle = "SetupWizard_PortAllocationTitle";
     public const string SetupWizard_Preparing = "SetupWizard_Preparing";
@@ -418,7 +416,6 @@ public static class LocalizationKeys
     public const string SetupWizard_Step_PortAllocation = "SetupWizard_Step_PortAllocation";
     public const string SetupWizard_Step_PortConfiguration = "SetupWizard_Step_PortConfiguration";
     public const string SetupWizard_Step_UserProfile = "SetupWizard_Step_UserProfile";
-    public const string SetupWizard_ThirdPartyPortsLabel = "SetupWizard_ThirdPartyPortsLabel";
     public const string SetupWizard_Title = "SetupWizard_Title";
     public const string SetupWizard_WelcomeSubtitle = "SetupWizard_WelcomeSubtitle";
     public const string SetupWizard_WelcomeTitle = "SetupWizard_WelcomeTitle";

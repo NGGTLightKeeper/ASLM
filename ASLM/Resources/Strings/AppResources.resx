@@ -906,11 +906,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>No settings are available</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>Starting point for official modules. 100 ports are reserved from this value</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>Starting port for all modules. Ports are allocated sequentially from this value</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>Official modules start port</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>Module start port</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Ollama Account</value>
@@ -1112,12 +1112,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>New Theme</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>Starting point for external modules. 1000 ports are reserved from this value</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>Third-party modules start port</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Settings</value>
   </data>
@@ -1197,7 +1191,7 @@
     <value>Fast Setup</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>Fast Setup uses your Windows username and default ports</value>
+    <value>Fast Setup uses your Windows username and default settings</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>Finish</value>
@@ -1214,8 +1208,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>Install</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>Official modules (100 ports)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>Module start port</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>Overall Progress</value>
@@ -1258,9 +1252,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>User Profile</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>Third-party modules (1000 ports)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>ASLM Setup</value>

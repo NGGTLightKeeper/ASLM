@@ -1,5 +1,7 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
+using System.Net;
+using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ASLM.Models;
@@ -16,6 +18,8 @@ namespace ASLM.Services
 
         // Port key used by the internal ASLM API mirror server.
         public const string AslmApiPortKey = "server-port";
+
+        private const int MaxPort = 65535;
 
         // Port-map owner used by the internal module interop JSON server.
         public const string AslmModuleInteropServiceId = "__aslm-module-interop";
@@ -119,7 +123,48 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Returns an official-pool port for an internal ASLM service and allocates it when needed.
+        /// Verifies all assigned ports for an owner are free on the system.
+        /// Reallocates any that are in use and persists the updated map.
+        /// Returns true when any port was changed.
+        /// </summary>
+        public bool EnsurePortsAvailable(string ownerId)
+        {
+            lock (_lock)
+            {
+                EnsureLoaded();
+
+                if (!_portMap.TryGetValue(ownerId, out var existing) || existing.Count == 0)
+                {
+                    return false;
+                }
+
+                var changed = false;
+                var usedPorts = new HashSet<int>(_portMap.Values.SelectMany(value => value.Values));
+
+                foreach (var portKey in existing.Keys.ToList())
+                {
+                    var port = existing[portKey];
+                    if (port > 0 && IsPortFreeOnSystem(port))
+                    {
+                        continue;
+                    }
+
+                    usedPorts.Remove(port);
+                    existing[portKey] = AllocatePort(ownerId, usedPorts);
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    SavePortMap();
+                }
+
+                return changed;
+            }
+        }
+
+        /// <summary>
+        /// Returns a shared-pool port for an internal ASLM service and allocates it when needed.
         /// </summary>
         public int GetOrAssignInternalServicePort(string serviceId, string portKey)
         {
@@ -138,8 +183,8 @@ namespace ASLM.Services
                     return port;
                 }
 
-                // Internal ASLM services use the same official range and still reserve the port
-                // in the shared runtime port map so modules cannot receive it later.
+                // Internal ASLM services use the same shared range and still reserve the port
+                // in the runtime port map so modules cannot receive it later.
                 port = AllocatePort(serviceId);
                 existing[portKey] = port;
                 SavePortMap();
@@ -482,18 +527,13 @@ namespace ASLM.Services
         // Port validation
 
         /// <summary>
-        /// Checks whether an assigned port is still valid for the current module ranges.
+        /// Checks whether an assigned port is still valid for the current start port.
         /// </summary>
         private bool IsPortValid(string ownerId, int port)
         {
-            var ports = _appData.Data.Ports;
-            var isOfficial = !ownerId.Contains('.');
+            var start = _appData.Data.Ports.ModulesStart;
 
-            var start = isOfficial ? ports.OfficialStart : ports.ThirdPartyStart;
-            var count = isOfficial ? ports.OfficialCount : ports.ThirdPartyCount;
-
-            // Accept ports inside the configured range for the module category.
-            if (port >= start && port < start + count)
+            if (port >= start && port <= MaxPort)
             {
                 return true;
             }
@@ -509,14 +549,10 @@ namespace ASLM.Services
         /// </summary>
         private int AllocatePort(string ownerId)
         {
-            var ports = _appData.Data.Ports;
-            var isOfficial = !ownerId.Contains('.');
-
-            var start = isOfficial ? ports.OfficialStart : ports.ThirdPartyStart;
-            var count = isOfficial ? ports.OfficialCount : ports.ThirdPartyCount;
+            var start = _appData.Data.Ports.ModulesStart;
             var usedPorts = new HashSet<int>(_portMap.Values.SelectMany(value => value.Values));
 
-            return AllocatePort(ownerId, usedPorts, start, count);
+            return AllocatePort(ownerId, usedPorts, start);
         }
 
         /// <summary>
@@ -524,23 +560,17 @@ namespace ASLM.Services
         /// </summary>
         private int AllocatePort(string ownerId, HashSet<int> usedPorts)
         {
-            var ports = _appData.Data.Ports;
-            var isOfficial = !ownerId.Contains('.');
-
-            var start = isOfficial ? ports.OfficialStart : ports.ThirdPartyStart;
-            var count = isOfficial ? ports.OfficialCount : ports.ThirdPartyCount;
-            return AllocatePort(ownerId, usedPorts, start, count);
+            var start = _appData.Data.Ports.ModulesStart;
+            return AllocatePort(ownerId, usedPorts, start);
         }
 
         /// <summary>
-        /// Allocates the next available port inside the requested range or deterministic fallback.
+        /// Allocates the next available port from the configured start or deterministic fallback.
         /// </summary>
-        private static int AllocatePort(string ownerId, HashSet<int> usedPorts, int start, int count)
+        private static int AllocatePort(string ownerId, HashSet<int> usedPorts, int start)
         {
-            // Try the configured range first so assignments stay predictable.
-            for (var offset = 0; offset < count; offset++)
+            for (var candidate = start; candidate <= MaxPort; candidate++)
             {
-                var candidate = start + offset;
                 if (!usedPorts.Contains(candidate))
                 {
                     usedPorts.Add(candidate);
@@ -548,7 +578,6 @@ namespace ASLM.Services
                 }
             }
 
-            // Fall back to a deterministic high range when the configured range is exhausted.
             const int fallbackStart = 40000;
             const int fallbackCount = 10000;
             var seed = (int)(uint)ownerId.GetHashCode();
@@ -564,6 +593,29 @@ namespace ASLM.Services
             }
 
             throw new InvalidOperationException("No ports are available in the configured or fallback ranges.");
+        }
+
+        /// <summary>
+        /// Checks whether a TCP port can be bound on loopback.
+        /// </summary>
+        private static bool IsPortFreeOnSystem(int port)
+        {
+            if (port <= 0 || port > MaxPort)
+            {
+                return false;
+            }
+
+            try
+            {
+                var listener = new TcpListener(IPAddress.Loopback, port);
+                listener.Start();
+                listener.Stop();
+                return true;
+            }
+            catch (SocketException)
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -591,7 +643,7 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Sorts internal and official owners before third-party owners during redistribution.
+        /// Sorts internal services before module owners during redistribution.
         /// </summary>
         private static int GetRedistributionOwnerRank(string ownerId)
         {
@@ -606,7 +658,7 @@ namespace ASLM.Services
                 return 1;
             }
 
-            return ownerId.Contains('.') ? 3 : 2;
+            return 2;
         }
 
         /// <summary>

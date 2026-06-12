@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -906,11 +906,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>Nessuna impostazione disponibile</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>Punto di partenza per i moduli ufficiali. Da questo valore sono riservate 100 porte</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>Porta iniziale per tutti i moduli. Le porte vengono assegnate in sequenza a partire da questo valore</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>Porta iniziale moduli ufficiali</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>Porta iniziale moduli</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Account Ollama</value>
@@ -1112,12 +1112,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>Nuovo tema</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>Punto di partenza per i moduli esterni. Da questo valore sono riservate 1000 porte</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>Porta iniziale moduli di terze parti</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Impostazioni</value>
   </data>
@@ -1197,7 +1191,7 @@
     <value>Configurazione rapida</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>La configurazione rapida usa il nome utente Windows e le porte predefinite</value>
+    <value>La configurazione rapida usa il nome utente Windows e le impostazioni predefinite</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>Fine</value>
@@ -1214,8 +1208,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>Installa</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>Moduli ufficiali (100 porte)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>Porta iniziale moduli</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>Avanzamento complessivo</value>
@@ -1258,9 +1252,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>Profilo utente</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>Moduli di terze parti (1000 porte)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>Configurazione ASLM</value>

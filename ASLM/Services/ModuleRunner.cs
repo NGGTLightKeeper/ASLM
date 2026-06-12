@@ -165,6 +165,9 @@ namespace ASLM.Services
                 return true;
             }
 
+            _ports.GetOrAssignPorts(module);
+            _ports.EnsurePortsAvailable(module.Id);
+
             await SynchronizeDeclaredModuleSettingsAsync(module, moduleLog, ct);
 
             moduleLog.Report($"Starting {module.Name}...");

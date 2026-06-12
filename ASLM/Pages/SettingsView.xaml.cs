@@ -63,15 +63,14 @@ namespace ASLM.Pages
         private List<ModuleConfig> _loadedModules = [];
         private List<SettingsCategory> _categories = [];
         private SettingsCategory? _activeCategory;
-        private AslmBaseline _aslmBaseline = new(string.Empty, string.Empty, string.Empty, true);
+        private AslmBaseline _aslmBaseline = new(string.Empty, string.Empty, true);
         private ConsoleBaseline _consoleBaseline = new(true, true, true);
         private UpdateBaseline _updateBaseline = new(true, false, "24", "release", "release", "release");
         private ConsoleBaseline _consoleDraft = new(true, true, true);
         private UpdateBaseline _updateDraft = new(true, false, "24", "release", "release", "release");
         private OllamaPersistentSettings _ollamaDraft = new();
         private string _userNameDraft = string.Empty;
-        private string _officialPortDraft = string.Empty;
-        private string _thirdPartyPortDraft = string.Empty;
+        private string _portStartDraft = string.Empty;
         private bool _apiServerEnabledDraft = true;
         private bool _hasLoaded;
         private bool _isRefreshingVisibility;
@@ -371,13 +370,11 @@ namespace ASLM.Pages
             InitializeComponent();
             LocalizableAttach.Hook(this, _localization, this);
             ApplyFlatEntryStyle(UsernameEntry);
-            ApplyFlatEntryStyle(OfficialPortEntry);
-            ApplyFlatEntryStyle(ThirdPartyPortEntry);
+            ApplyFlatEntryStyle(ModulePortEntry);
             ApplyScrollViewChrome(CategoryScroll, isSidebar: true);
             ApplyScrollViewChrome(SettingsScroll, isSidebar: false);
             UsernameEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
-            OfficialPortEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
-            ThirdPartyPortEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
+            ModulePortEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
             SizeChanged += OnViewSizeChanged;
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
@@ -527,10 +524,8 @@ namespace ASLM.Pages
             DisplayNameTitleLabel.Text = L.Get(LocalizationKeys.Settings_DisplayName);
             DisplayNameDescriptionLabel.Text = L.Get(LocalizationKeys.Settings_DisplayNameDescription);
             PortsGroupHeader.Text = L.Get(LocalizationKeys.Settings_Ports);
-            OfficialPortTitleLabel.Text = L.Get(LocalizationKeys.Settings_OfficialPortTitle);
-            OfficialPortDescriptionLabel.Text = L.Get(LocalizationKeys.Settings_OfficialPortDescription);
-            ThirdPartyPortTitleLabel.Text = L.Get(LocalizationKeys.Settings_ThirdPartyPortTitle);
-            ThirdPartyPortDescriptionLabel.Text = L.Get(LocalizationKeys.Settings_ThirdPartyPortDescription);
+            ModulePortTitleLabel.Text = L.Get(LocalizationKeys.Settings_ModulePortTitle);
+            ModulePortDescriptionLabel.Text = L.Get(LocalizationKeys.Settings_ModulePortDescription);
 
             DefaultButton.Text = L.Get(LocalizationKeys.Settings_LoadDefault);
             DiscardButton.Text = L.Get(LocalizationKeys.Settings_DiscardChanges);
@@ -675,10 +670,9 @@ namespace ASLM.Pages
         {
             var snapshot = SettingsService.BuildAslmDraftSnapshot(_appData, _apiServer.IsEnabled);
             _userNameDraft = snapshot.UserName;
-            _officialPortDraft = snapshot.OfficialPort;
-            _thirdPartyPortDraft = snapshot.ThirdPartyPort;
+            _portStartDraft = snapshot.PortStart;
             _apiServerEnabledDraft = snapshot.ApiServerEnabled;
-            _aslmBaseline = new AslmBaseline(_userNameDraft, _officialPortDraft, _thirdPartyPortDraft, _apiServerEnabledDraft);
+            _aslmBaseline = new AslmBaseline(_userNameDraft, _portStartDraft, _apiServerEnabledDraft);
             _consoleBaseline = snapshot.ConsoleBaseline;
             _consoleDraft = _consoleBaseline;
             _updateBaseline = snapshot.UpdateBaseline;
@@ -1826,8 +1820,7 @@ namespace ASLM.Pages
         private void ApplyAslmDraftsToControls()
         {
             UsernameEntry.Text = _userNameDraft;
-            OfficialPortEntry.Text = _officialPortDraft;
-            ThirdPartyPortEntry.Text = _thirdPartyPortDraft;
+            ModulePortEntry.Text = _portStartDraft;
         }
 
         /// <summary>
@@ -1918,8 +1911,7 @@ namespace ASLM.Pages
 
             if (PortsSection.IsVisible)
             {
-                _officialPortDraft = OfficialPortEntry.Text?.Trim() ?? string.Empty;
-                _thirdPartyPortDraft = ThirdPartyPortEntry.Text?.Trim() ?? string.Empty;
+                _portStartDraft = ModulePortEntry.Text?.Trim() ?? string.Empty;
             }
         }
 
@@ -2104,8 +2096,7 @@ namespace ASLM.Pages
         /// </summary>
         private bool HasUnsavedAslmSettingsChanges() =>
             SettingsService.HasUnsavedAslmSettingsChanges(
-                GetCurrentOfficialPortDraft(),
-                GetCurrentThirdPartyPortDraft(),
+                GetCurrentPortStartDraft(),
                 _apiServerEnabledDraft,
                 _consoleDraft,
                 GetCurrentUpdateDraft(),
@@ -2114,20 +2105,12 @@ namespace ASLM.Pages
                 _updateBaseline);
 
         /// <summary>
-        /// Reads the official port draft from visible controls when the ports section is shown.
+        /// Reads the module start port draft from visible controls when the ports section is shown.
         /// </summary>
-        private string GetCurrentOfficialPortDraft() =>
+        private string GetCurrentPortStartDraft() =>
             PortsSection.IsVisible
-                ? OfficialPortEntry.Text?.Trim() ?? string.Empty
-                : _officialPortDraft;
-
-        /// <summary>
-        /// Reads the third-party port draft from visible controls when the ports section is shown.
-        /// </summary>
-        private string GetCurrentThirdPartyPortDraft() =>
-            PortsSection.IsVisible
-                ? ThirdPartyPortEntry.Text?.Trim() ?? string.Empty
-                : _thirdPartyPortDraft;
+                ? ModulePortEntry.Text?.Trim() ?? string.Empty
+                : _portStartDraft;
 
         /// <summary>
         /// Determines whether the port draft differs from the saved baseline.
@@ -2135,8 +2118,7 @@ namespace ASLM.Pages
         private bool HasUnsavedPortChanges()
         {
             return SettingsService.HasUnsavedPortChanges(
-                GetCurrentOfficialPortDraft(),
-                GetCurrentThirdPartyPortDraft(),
+                GetCurrentPortStartDraft(),
                 _aslmBaseline);
         }
 
@@ -2305,14 +2287,13 @@ namespace ASLM.Pages
             SyncDraftValuesFromControls();
 
             var appliedAslmBuiltInDefaults = false;
-            (string OfficialPort, string ThirdPartyPort, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults)? aslmDefaultBuiltIns = null;
+            (string PortStart, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults)? aslmDefaultBuiltIns = null;
 
             switch (_activeCategory.Kind)
             {
                 case SettingsCategoryKind.Aslm:
                     aslmDefaultBuiltIns = SettingsService.BuildDefaultAslmDrafts();
-                    _officialPortDraft = aslmDefaultBuiltIns.Value.OfficialPort;
-                    _thirdPartyPortDraft = aslmDefaultBuiltIns.Value.ThirdPartyPort;
+                    _portStartDraft = aslmDefaultBuiltIns.Value.PortStart;
                     _apiServerEnabledDraft = aslmDefaultBuiltIns.Value.ApiServerEnabled;
                     _consoleDraft = aslmDefaultBuiltIns.Value.ConsoleDefaults;
                     appliedAslmBuiltInDefaults = true;
@@ -2346,8 +2327,7 @@ namespace ASLM.Pages
             // Re-assert defaults on drafts and controls so save detection matches the intended default state.
             if (appliedAslmBuiltInDefaults && aslmDefaultBuiltIns is { } builtIns)
             {
-                _officialPortDraft = builtIns.OfficialPort;
-                _thirdPartyPortDraft = builtIns.ThirdPartyPort;
+                _portStartDraft = builtIns.PortStart;
                 _apiServerEnabledDraft = builtIns.ApiServerEnabled;
                 _consoleDraft = builtIns.ConsoleDefaults;
                 ApplyAslmDraftsToControls();
@@ -2444,7 +2424,7 @@ namespace ASLM.Pages
                 }
                 _userNameDraft = validatedUserName;
 
-                var portResult = SettingsService.TryParsePorts(_officialPortDraft, _thirdPartyPortDraft);
+                var portResult = SettingsService.TryParsePortStart(_portStartDraft);
                 if (!portResult.Success)
                 {
                     if (_activeCategory.Kind == SettingsCategoryKind.Aslm)
@@ -2488,8 +2468,7 @@ namespace ASLM.Pages
                 SettingsService.ApplyDraftsToAppData(
                     _appData,
                     _userNameDraft,
-                    portResult.OfficialPort,
-                    portResult.ThirdPartyPort,
+                    portResult.ModulesStart,
                     _consoleDraft,
                     nextSettings);
                 await _appData.SaveAsync();
@@ -2501,8 +2480,7 @@ namespace ASLM.Pages
 
                 _aslmBaseline = new AslmBaseline(
                     _userNameDraft,
-                    _officialPortDraft,
-                    _thirdPartyPortDraft,
+                    _portStartDraft,
                     _apiServer.IsEnabled);
                 _apiServerEnabledDraft = _apiServer.IsEnabled;
                 _consoleBaseline = _consoleDraft;

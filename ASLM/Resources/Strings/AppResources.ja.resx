@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -906,11 +906,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>利用できる設定はありません</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>公式モジュールの開始ポート。この値から 100 ポートを予約します</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>すべてのモジュールの開始ポート。この値から順にポートが割り当てられます</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>公式モジュールの開始ポート</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>モジュール開始ポート</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Ollama アカウント</value>
@@ -1112,12 +1112,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>新しいテーマ</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>外部モジュールの開始ポート。この値から 1000 ポートを予約します</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>サードパーティモジュールの開始ポート</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>設定</value>
   </data>
@@ -1197,7 +1191,7 @@
     <value>クイックセットアップ</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>クイックセットアップでは Windows のユーザー名と既定のポートを使用します</value>
+    <value>クイックセットアップでは Windows のユーザー名と既定の設定を使用します</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>完了</value>
@@ -1214,8 +1208,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>インストール</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>公式モジュール（100 ポート）</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>モジュール開始ポート</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>全体の進捗</value>
@@ -1258,9 +1252,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>ユーザープロファイル</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>サードパーティモジュール（1000 ポート）</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>ASLM セットアップ</value>

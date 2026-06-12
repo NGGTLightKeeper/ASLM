@@ -1,5 +1,6 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ASLM.Models
@@ -50,6 +51,7 @@ namespace ASLM.Models
 
             // Recreate the ports section when it is missing from the persisted file.
             Ports ??= new();
+            Ports.Normalize();
 
             // Recreate and normalize the API server section when it is absent.
             Api ??= new();
@@ -108,7 +110,7 @@ namespace ASLM.Models
         /// </summary>
         public void Normalize()
         {
-            // The API port is allocated by PortRegistry from the official module pool.
+            // The API port is allocated by PortRegistry from the shared module port pool.
         }
     }
 
@@ -145,25 +147,38 @@ namespace ASLM.Models
     // Port allocation
 
     /// <summary>
-    /// Defines the port ranges reserved for official and third-party modules.
+    /// Defines the starting port for sequential module port allocation.
     /// </summary>
     public class AppPortConfig
     {
-        // First port in the range reserved for official modules.
-        [JsonPropertyName("officialStart")]
-        public int OfficialStart { get; set; } = 20000;
+        // First port used when allocating module and internal service listeners.
+        [JsonPropertyName("modulesStart")]
+        public int ModulesStart { get; set; } = 20000;
 
-        // Number of ports reserved for official modules.
-        [JsonPropertyName("officialCount")]
-        public int OfficialCount { get; set; } = 100;
+        // Captures legacy port fields during JSON load for one-time migration.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 
-        // First port in the range reserved for third-party modules.
-        [JsonPropertyName("thirdPartyStart")]
-        public int ThirdPartyStart { get; set; } = 21000;
+        /// <summary>
+        /// Migrates legacy official/third-party port settings and clamps the start port.
+        /// </summary>
+        public void Normalize()
+        {
+            if (ExtensionData != null)
+            {
+                if (!ExtensionData.ContainsKey("modulesStart") &&
+                    ExtensionData.TryGetValue("officialStart", out var officialStartElement) &&
+                    officialStartElement.TryGetInt32(out var officialStart) &&
+                    officialStart >= 1024)
+                {
+                    ModulesStart = officialStart;
+                }
 
-        // Number of ports reserved for third-party modules.
-        [JsonPropertyName("thirdPartyCount")]
-        public int ThirdPartyCount { get; set; } = 1000;
+                ExtensionData = null;
+            }
+
+            ModulesStart = Math.Clamp(ModulesStart, 1024, 65000);
+        }
     }
 
 

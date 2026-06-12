@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -906,11 +906,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>لا تتوفر إعدادات</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>نقطة البداية للوحدات الرسمية. يُحجز 100 منفذاً ابتداءً من هذه القيمة</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>منفذ البداية لجميع الوحدات. يتم تخصيص المنافذ بالتسلسل ابتداءً من هذه القيمة</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>منفذ بداية الوحدات الرسمية</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>منفذ بداية الوحدات</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>حساب Ollama</value>
@@ -1112,12 +1112,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>سمة جديدة</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>نقطة البداية للوحدات الخارجية. يُحجز 1000 منفذاً ابتداءً من هذه القيمة</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>منفذ بداية وحدات الطرف الثالث</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>الإعدادات</value>
   </data>
@@ -1197,7 +1191,7 @@
     <value>إعداد سريع</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>يستخدم الإعداد السريع اسم مستخدم Windows والمنافذ الافتراضية</value>
+    <value>يستخدم الإعداد السريع اسم مستخدم Windows والإعدادات الافتراضية</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>إنهاء</value>
@@ -1214,8 +1208,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>تثبيت</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>الوحدات الرسمية (100 منفذ)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>منفذ بداية الوحدات</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>التقدّم الإجمالي</value>
@@ -1258,9 +1252,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>ملف المستخدم</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>وحدات الطرف الثالث (1000 منفذ)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>إعداد ASLM</value>

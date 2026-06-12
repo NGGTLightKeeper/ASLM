@@ -2743,20 +2743,20 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на Starting point for official modules. 100 ports are reserved from this value.
+        ///   Ищет локализованную строку, похожую на Starting port for all modules. Ports are allocated sequentially from this value.
         /// </summary>
-        public static string Settings_OfficialPortDescription {
+        public static string Settings_ModulePortDescription {
             get {
-                return ResourceManager.GetString("Settings_OfficialPortDescription", resourceCulture);
+                return ResourceManager.GetString("Settings_ModulePortDescription", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на Official modules start port.
+        ///   Ищет локализованную строку, похожую на Module start port.
         /// </summary>
-        public static string Settings_OfficialPortTitle {
+        public static string Settings_ModulePortTitle {
             get {
-                return ResourceManager.GetString("Settings_OfficialPortTitle", resourceCulture);
+                return ResourceManager.GetString("Settings_ModulePortTitle", resourceCulture);
             }
         }
         
@@ -3357,24 +3357,6 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на Starting point for external modules. 1000 ports are reserved from this value.
-        /// </summary>
-        public static string Settings_ThirdPartyPortDescription {
-            get {
-                return ResourceManager.GetString("Settings_ThirdPartyPortDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Ищет локализованную строку, похожую на Third-party modules start port.
-        /// </summary>
-        public static string Settings_ThirdPartyPortTitle {
-            get {
-                return ResourceManager.GetString("Settings_ThirdPartyPortTitle", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Ищет локализованную строку, похожую на Settings.
         /// </summary>
         public static string Settings_Title {
@@ -3663,11 +3645,11 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на Official modules (100 ports).
+        ///   Ищет локализованную строку, похожую на Module start port.
         /// </summary>
-        public static string SetupWizard_OfficialPortsLabel {
+        public static string SetupWizard_ModulesPortLabel {
             get {
-                return ResourceManager.GetString("SetupWizard_OfficialPortsLabel", resourceCulture);
+                return ResourceManager.GetString("SetupWizard_ModulesPortLabel", resourceCulture);
             }
         }
         
@@ -3794,15 +3776,6 @@ namespace ASLM.Resources.Strings {
         public static string SetupWizard_StepFormat {
             get {
                 return ResourceManager.GetString("SetupWizard_StepFormat", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Ищет локализованную строку, похожую на Third-party modules (1000 ports).
-        /// </summary>
-        public static string SetupWizard_ThirdPartyPortsLabel {
-            get {
-                return ResourceManager.GetString("SetupWizard_ThirdPartyPortsLabel", resourceCulture);
             }
         }
         

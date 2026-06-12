@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -906,11 +906,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>사용 가능한 설정이 없습니다</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>공식 모듈의 시작점입니다. 이 값부터 100개의 포트가 예약됩니다</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>모든 모듈의 시작 포트입니다. 이 값부터 순서대로 포트가 할당됩니다</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>공식 모듈 시작 포트</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>모듈 시작 포트</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Ollama 계정</value>
@@ -1112,12 +1112,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>새 테마</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>외부 모듈의 시작점입니다. 이 값부터 1000개의 포트가 예약됩니다</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>타사 모듈 시작 포트</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>설정</value>
   </data>
@@ -1197,7 +1191,7 @@
     <value>빠른 설정</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>빠른 설정은 Windows 사용자 이름과 기본 포트를 사용합니다</value>
+    <value>빠른 설정은 Windows 사용자 이름과 기본 설정을 사용합니다</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>완료</value>
@@ -1214,8 +1208,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>설치</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>공식 모듈(포트 100개)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>모듈 시작 포트</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>전체 진행률</value>
@@ -1258,9 +1252,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>사용자 프로필</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>타사 모듈(포트 1000개)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>ASLM 설정</value>

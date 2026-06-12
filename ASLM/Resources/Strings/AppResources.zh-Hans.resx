@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -906,11 +906,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>没有可用的设置</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>官方模块的起始端口。从此值起保留 100 个端口</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>所有模块的起始端口。从此值起按顺序分配端口</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>官方模块起始端口</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>模块起始端口</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Ollama 账户</value>
@@ -1112,12 +1112,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>新建主题</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>外部模块的起始端口。从此值起保留 1000 个端口</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>第三方模块起始端口</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>设置</value>
   </data>
@@ -1197,7 +1191,7 @@
     <value>快速安装</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>快速安装将使用您的 Windows 用户名和默认端口</value>
+    <value>快速安装将使用您的 Windows 用户名和默认设置</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>完成</value>
@@ -1214,8 +1208,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>安装</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>官方模块（100 个端口）</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>模块起始端口</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>总体进度</value>
@@ -1258,9 +1252,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>用户配置文件</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>第三方模块（1000 个端口）</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>ASLM 安装</value>

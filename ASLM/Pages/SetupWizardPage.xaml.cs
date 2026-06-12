@@ -80,8 +80,7 @@ namespace ASLM.Pages
                 ? Environment.UserName
                 : existingName;
 
-            OfficialPortEntry.Text = _appData.Data.Ports.OfficialStart.ToString();
-            ThirdPartyPortEntry.Text = _appData.Data.Ports.ThirdPartyStart.ToString();
+            ModulePortEntry.Text = _appData.Data.Ports.ModulesStart.ToString();
 
             // Loaded is more reliable than OnAppearing for this WinUI startup flow.
             Loaded += OnLoaded;
@@ -126,8 +125,7 @@ namespace ASLM.Pages
         {
             _appData.Data.User.Name = Environment.UserName;
             var defaultPorts = new AppPortConfig();
-            _appData.Data.Ports.OfficialStart = defaultPorts.OfficialStart;
-            _appData.Data.Ports.ThirdPartyStart = defaultPorts.ThirdPartyStart;
+            _appData.Data.Ports.ModulesStart = defaultPorts.ModulesStart;
             await _appData.SaveAsync();
 
             _pendingFastSetup = true;
@@ -331,8 +329,7 @@ namespace ASLM.Pages
             DisplayNameTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_DisplayNameTitle);
             UsernameEntry.Placeholder = L.Get(LocalizationKeys.SetupWizard_DisplayNamePlaceholder);
             PortAllocationTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_PortAllocationTitle);
-            OfficialPortsLabel.Text = L.Get(LocalizationKeys.SetupWizard_OfficialPortsLabel);
-            ThirdPartyPortsLabel.Text = L.Get(LocalizationKeys.SetupWizard_ThirdPartyPortsLabel);
+            ModulePortLabel.Text = L.Get(LocalizationKeys.SetupWizard_ModulesPortLabel);
             InstallStatusLabel.Text = L.Get(LocalizationKeys.SetupWizard_Preparing);
             OverallProgressLabel.Text = L.Get(LocalizationKeys.SetupWizard_OverallProgress);
             BackButton.Text = L.Get(LocalizationKeys.Common_Back);
@@ -375,14 +372,13 @@ namespace ASLM.Pages
         // Port validation
 
         /// <summary>
-        /// Validates both persisted port ranges and reports overlap errors.
+        /// Validates the module start port draft.
         /// </summary>
         private bool ValidatePorts()
         {
             PortErrorLabel.IsVisible = false;
-            var portResult = SettingsService.TryParsePorts(
-                OfficialPortEntry.Text?.Trim() ?? string.Empty,
-                ThirdPartyPortEntry.Text?.Trim() ?? string.Empty);
+            var portResult = SettingsService.TryParsePortStart(
+                ModulePortEntry.Text?.Trim() ?? string.Empty);
             if (!portResult.Success)
             {
                 ShowPortError(portResult.ErrorMessage);
@@ -489,13 +485,11 @@ namespace ASLM.Pages
                 _appData.Data.User.Name = validatedUserName;
             }
 
-            var portResult = SettingsService.TryParsePorts(
-                OfficialPortEntry.Text?.Trim() ?? string.Empty,
-                ThirdPartyPortEntry.Text?.Trim() ?? string.Empty);
+            var portResult = SettingsService.TryParsePortStart(
+                ModulePortEntry.Text?.Trim() ?? string.Empty);
             if (portResult.Success)
             {
-                _appData.Data.Ports.OfficialStart = portResult.OfficialPort;
-                _appData.Data.Ports.ThirdPartyStart = portResult.ThirdPartyPort;
+                _appData.Data.Ports.ModulesStart = portResult.ModulesStart;
             }
 
             await _appData.SaveAsync();

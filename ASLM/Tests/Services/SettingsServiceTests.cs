@@ -9,19 +9,18 @@ namespace ASLM.Tests.Services;
 public sealed class SettingsServiceTests
 {
     [Theory]
-    [InlineData("20000", "30000", true)]
-    [InlineData("abc", "30000", false)]
-    [InlineData("20000", "99999", false)]
-    [InlineData("20050", "20000", false)]
-    public void TryParsePorts_validates_ranges_and_overlap(string official, string thirdParty, bool expectedSuccess)
+    [InlineData("20000", true)]
+    [InlineData("abc", false)]
+    [InlineData("99999", false)]
+    [InlineData("1023", false)]
+    public void TryParsePortStart_validates_range(string draft, bool expectedSuccess)
     {
-        var result = SettingsService.TryParsePorts(official, thirdParty);
+        var result = SettingsService.TryParsePortStart(draft);
 
         result.Success.Should().Be(expectedSuccess);
         if (expectedSuccess)
         {
-            result.OfficialPort.Should().Be(int.Parse(official));
-            result.ThirdPartyPort.Should().Be(int.Parse(thirdParty));
+            result.ModulesStart.Should().Be(int.Parse(draft));
         }
         else
         {
@@ -79,13 +78,12 @@ public sealed class SettingsServiceTests
         _ = new AslmFileSystemLayout();
         var store = new AppDataStore(TestLoggerFactory.Create<AppDataStore>());
         store.Data.User.Name = "Tester";
-        store.Data.Ports.OfficialStart = 21000;
-        store.Data.Ports.ThirdPartyStart = 31000;
+        store.Data.Ports.ModulesStart = 21000;
 
         var draft = SettingsService.BuildAslmDraftSnapshot(store, apiServerEnabled: true);
 
         draft.UserName.Should().Be("Tester");
-        draft.OfficialPort.Should().Be("21000");
+        draft.PortStart.Should().Be("21000");
         draft.ApiServerEnabled.Should().BeTrue();
     }
 
@@ -97,10 +95,10 @@ public sealed class SettingsServiceTests
         var console = new ConsoleBaseline(false, true, false);
         var updates = new AppUpdateSettings { AutoCheckPeriodHours = 12 };
 
-        SettingsService.ApplyDraftsToAppData(store, "Bob", 22000, 32000, console, updates);
+        SettingsService.ApplyDraftsToAppData(store, "Bob", 22000, console, updates);
 
         store.Data.User.Name.Should().Be("Bob");
-        store.Data.Ports.OfficialStart.Should().Be(22000);
+        store.Data.Ports.ModulesStart.Should().Be(22000);
         store.Data.Consoles.ShowCompletedProcesses.Should().BeTrue();
         store.Data.Updates.AutoCheckPeriodHours.Should().Be(12);
     }
@@ -108,9 +106,9 @@ public sealed class SettingsServiceTests
     [Fact]
     public void HasUnsaved_changes_detect_differences()
     {
-        var baseline = new AslmBaseline("Alice", "20000", "30000", true);
+        var baseline = new AslmBaseline("Alice", "20000", true);
         SettingsService.HasUnsavedAccountChanges("Bob", baseline).Should().BeTrue();
-        SettingsService.HasUnsavedPortChanges("20001", "30000", baseline).Should().BeTrue();
+        SettingsService.HasUnsavedPortChanges("20001", baseline).Should().BeTrue();
         SettingsService.HasUnsavedApiServerChanges(false, baseline).Should().BeTrue();
     }
 

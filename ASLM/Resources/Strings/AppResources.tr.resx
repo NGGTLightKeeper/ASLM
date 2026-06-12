@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -906,11 +906,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>Kullanılabilir ayar yok</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>Resmi modüller için başlangıç noktası. Bu değerden itibaren 100 bağlantı noktası ayrılmıştır</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>Tüm modüller için başlangıç bağlantı noktası. Bağlantı noktaları bu değerden itibaren sırayla ayrılır</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>Resmi modüller başlangıç bağlantı noktası</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>Modül başlangıç bağlantı noktası</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Ollama hesabı</value>
@@ -1112,12 +1112,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>Yeni tema</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>Harici modüller için başlangıç noktası. Bu değerden itibaren 1000 bağlantı noktası ayrılmıştır</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>Üçüncü taraf modüller başlangıç bağlantı noktası</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Ayarlar</value>
   </data>
@@ -1197,7 +1191,7 @@
     <value>Hızlı kurulum</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>Hızlı kurulum Windows kullanıcı adınızı ve varsayılan bağlantı noktalarını kullanır</value>
+    <value>Hızlı kurulum Windows kullanıcı adınızı ve varsayılan ayarları kullanır</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>Bitir</value>
@@ -1214,8 +1208,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>Yükle</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>Resmi modüller (100 bağlantı noktası)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>Modül başlangıç bağlantı noktası</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>Genel ilerleme</value>
@@ -1258,9 +1252,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>Kullanıcı profili</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>Üçüncü taraf modüller (1000 bağlantı noktası)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>ASLM kurulumu</value>

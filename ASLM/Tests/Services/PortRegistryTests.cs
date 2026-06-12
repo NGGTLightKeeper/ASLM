@@ -24,22 +24,19 @@ public sealed class PortRegistryTests
     }
 
     [Fact]
-    public void GetOrAssignPorts_allocates_within_official_range()
+    public void GetOrAssignPorts_allocates_from_modules_start()
     {
         _ = new AslmFileSystemLayout();
         var appData = new AppDataStore(TestLoggerFactory.Create<AppDataStore>());
-        appData.Data.Ports.OfficialStart = 25000;
-        appData.Data.Ports.OfficialCount = 50;
-        appData.Data.Ports.ThirdPartyStart = 35000;
-        appData.Data.Ports.ThirdPartyCount = 50;
+        appData.Data.Ports.ModulesStart = 25000;
 
         var registry = new PortRegistry(appData);
-        var module = ModuleConfigBuilder.Create(id: "official-module");
+        var module = ModuleConfigBuilder.Create(id: "sample-module");
 
         var ports = registry.GetOrAssignPorts(module);
 
         ports.Should().ContainKey("http");
-        ports["http"].Should().BeInRange(25000, 25049);
+        ports["http"].Should().Be(25000);
     }
 
     [Fact]
@@ -47,8 +44,7 @@ public sealed class PortRegistryTests
     {
         _ = new AslmFileSystemLayout();
         var appData = new AppDataStore(TestLoggerFactory.Create<AppDataStore>());
-        appData.Data.Ports.OfficialStart = 26000;
-        appData.Data.Ports.OfficialCount = 100;
+        appData.Data.Ports.ModulesStart = 26000;
 
         var registry = new PortRegistry(appData);
 
@@ -79,8 +75,7 @@ public sealed class PortRegistryTests
     {
         _ = new AslmFileSystemLayout();
         var appData = new AppDataStore(TestLoggerFactory.Create<AppDataStore>());
-        appData.Data.Ports.OfficialStart = 27000;
-        appData.Data.Ports.OfficialCount = 50;
+        appData.Data.Ports.ModulesStart = 27000;
         var registry = new PortRegistry(appData);
         var module = ModuleConfigBuilder.Create(id: "snapshot-module");
 
@@ -114,8 +109,7 @@ public sealed class PortRegistryTests
     {
         _ = new AslmFileSystemLayout();
         var appData = new AppDataStore(TestLoggerFactory.Create<AppDataStore>());
-        appData.Data.Ports.OfficialStart = 28000;
-        appData.Data.Ports.OfficialCount = 50;
+        appData.Data.Ports.ModulesStart = 28000;
         var registry = new PortRegistry(appData);
         var module = ModuleConfigBuilder.Create(id: "page-url-module");
 
@@ -135,6 +129,22 @@ public sealed class PortRegistryTests
         var module = ModuleConfigBuilder.Create(id: "unassigned-page-url");
 
         registry.TryGetModulePageUrl(module).Should().BeNull();
+    }
+
+    [Fact]
+    public void EnsurePortsAvailable_keeps_free_ports_unchanged()
+    {
+        _ = new AslmFileSystemLayout();
+        var appData = new AppDataStore(TestLoggerFactory.Create<AppDataStore>());
+        appData.Data.Ports.ModulesStart = 30000;
+        var registry = new PortRegistry(appData);
+        var module = ModuleConfigBuilder.Create(id: "availability-module");
+
+        var assigned = registry.GetOrAssignPorts(module);
+        var changed = registry.EnsurePortsAvailable(module.Id);
+
+        changed.Should().BeFalse();
+        registry.TryGetAssignedPorts(module.Id)!["http"].Should().Be(assigned["http"]);
     }
 
     [Theory]

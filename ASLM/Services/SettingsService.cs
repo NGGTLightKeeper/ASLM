@@ -52,7 +52,7 @@ namespace ASLM.Services
     /// <summary>
     /// Stores the initial ASLM values loaded for the current page session.
     /// </summary>
-    public sealed record AslmBaseline(string UserName, string OfficialPort, string ThirdPartyPort, bool ApiServerEnabled);
+    public sealed record AslmBaseline(string UserName, string PortStart, bool ApiServerEnabled);
 
     /// <summary>
     /// Stores the initial console preferences loaded for the current page session.
@@ -75,8 +75,7 @@ namespace ASLM.Services
     /// </summary>
     public sealed record AslmDraftSnapshot(
         string UserName,
-        string OfficialPort,
-        string ThirdPartyPort,
+        string PortStart,
         bool ApiServerEnabled,
         ConsoleBaseline ConsoleBaseline,
         UpdateBaseline UpdateBaseline);
@@ -92,8 +91,7 @@ namespace ASLM.Services
     public readonly struct PortParseResult
     {
         public bool Success { get; init; }
-        public int OfficialPort { get; init; }
-        public int ThirdPartyPort { get; init; }
+        public int ModulesStart { get; init; }
         public string ErrorMessage { get; init; }
     }
 
@@ -217,50 +215,23 @@ namespace ASLM.Services
         /// <summary>
         /// Validates the port draft values and returns parsed integers when valid.
         /// </summary>
-        public static PortParseResult TryParsePorts(string officialDraft, string thirdPartyDraft)
+        public static PortParseResult TryParsePortStart(string draft)
         {
-            // Official port range: 1024–65000.
-            if (!int.TryParse(officialDraft, NumberStyles.Integer, CultureInfo.InvariantCulture, out var officialPort) ||
-                officialPort < 1024 ||
-                officialPort > 65000)
+            if (!int.TryParse(draft, NumberStyles.Integer, CultureInfo.InvariantCulture, out var modulesStart) ||
+                modulesStart < 1024 ||
+                modulesStart > 65000)
             {
                 return new PortParseResult
                 {
                     Success = false,
-                    ErrorMessage = "Official port must be between 1024 and 65000."
-                };
-            }
-
-            // Third-party port range: 1024–64000.
-            if (!int.TryParse(thirdPartyDraft, NumberStyles.Integer, CultureInfo.InvariantCulture, out var thirdPartyPort) ||
-                thirdPartyPort < 1024 ||
-                thirdPartyPort > 64000)
-            {
-                return new PortParseResult
-                {
-                    Success = false,
-                    ErrorMessage = "Third-party port must be between 1024 and 64000."
-                };
-            }
-
-            // Reserved ranges must not overlap (official +100, third-party +1000).
-            var officialPortEnd = officialPort + 100;
-            var thirdPartyPortEnd = thirdPartyPort + 1000;
-            if (officialPort < thirdPartyPortEnd && thirdPartyPort < officialPortEnd)
-            {
-                return new PortParseResult
-                {
-                    Success = false,
-                    ErrorMessage =
-                        $"Port ranges overlap. Official {officialPort}-{officialPortEnd - 1} conflicts with Third-party {thirdPartyPort}-{thirdPartyPortEnd - 1}."
+                    ErrorMessage = "Module start port must be between 1024 and 65000."
                 };
             }
 
             return new PortParseResult
             {
                 Success = true,
-                OfficialPort = officialPort,
-                ThirdPartyPort = thirdPartyPort,
+                ModulesStart = modulesStart,
                 ErrorMessage = string.Empty
             };
         }
@@ -349,8 +320,7 @@ namespace ASLM.Services
 
             return new AslmDraftSnapshot(
                 appData.Data.User.Name ?? string.Empty,
-                appData.Data.Ports.OfficialStart.ToString(CultureInfo.InvariantCulture),
-                appData.Data.Ports.ThirdPartyStart.ToString(CultureInfo.InvariantCulture),
+                appData.Data.Ports.ModulesStart.ToString(CultureInfo.InvariantCulture),
                 apiServerEnabled,
                 new ConsoleBaseline(
                     appData.Data.Consoles.SidebarVisible,
@@ -371,14 +341,12 @@ namespace ASLM.Services
         public static void ApplyDraftsToAppData(
             AppDataStore appData,
             string userName,
-            int officialPort,
-            int thirdPartyPort,
+            int modulesStart,
             ConsoleBaseline consoleDraft,
             AppUpdateSettings updateSettings)
         {
             appData.Data.User.Name = userName;
-            appData.Data.Ports.OfficialStart = officialPort;
-            appData.Data.Ports.ThirdPartyStart = thirdPartyPort;
+            appData.Data.Ports.ModulesStart = modulesStart;
             appData.Data.Consoles.SidebarVisible = consoleDraft.SidebarVisible;
             appData.Data.Consoles.ShowCompletedProcesses = consoleDraft.ShowCompletedProcesses;
             appData.Data.Consoles.ShowIndividualModuleConsoles = consoleDraft.ShowIndividualModuleConsoles;
@@ -420,13 +388,12 @@ namespace ASLM.Services
         /// <summary>
         /// Builds ASLM defaults for ports, API and console sections.
         /// </summary>
-        public static (string OfficialPort, string ThirdPartyPort, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults) BuildDefaultAslmDrafts()
+        public static (string PortStart, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults) BuildDefaultAslmDrafts()
         {
             var defaultPorts = new AppPortConfig();
             var defaultConsoles = new AppConsoleConfig();
             return (
-                defaultPorts.OfficialStart.ToString(CultureInfo.InvariantCulture),
-                defaultPorts.ThirdPartyStart.ToString(CultureInfo.InvariantCulture),
+                defaultPorts.ModulesStart.ToString(CultureInfo.InvariantCulture),
                 new AppApiConfig().ServerEnabled,
                 new ConsoleBaseline(
                     defaultConsoles.SidebarVisible,
@@ -446,9 +413,8 @@ namespace ASLM.Services
         /// <summary>
         /// Checks whether ports draft differs from baseline.
         /// </summary>
-        public static bool HasUnsavedPortChanges(string officialPort, string thirdPartyPort, AslmBaseline baseline) =>
-            !string.Equals(officialPort, baseline.OfficialPort, StringComparison.Ordinal) ||
-            !string.Equals(thirdPartyPort, baseline.ThirdPartyPort, StringComparison.Ordinal);
+        public static bool HasUnsavedPortChanges(string portStart, AslmBaseline baseline) =>
+            !string.Equals(portStart, baseline.PortStart, StringComparison.Ordinal);
 
         /// <summary>
         /// Checks whether API-enabled draft differs from baseline.
@@ -477,15 +443,14 @@ namespace ASLM.Services
         /// Checks whether non-account ASLM settings differ from baseline.
         /// </summary>
         public static bool HasUnsavedAslmSettingsChanges(
-            string officialPort,
-            string thirdPartyPort,
+            string portStart,
             bool apiServerEnabled,
             ConsoleBaseline consoleDraft,
             UpdateBaseline updateDraft,
             AslmBaseline aslmBaseline,
             ConsoleBaseline consoleBaseline,
             UpdateBaseline updateBaseline) =>
-            HasUnsavedPortChanges(officialPort, thirdPartyPort, aslmBaseline) ||
+            HasUnsavedPortChanges(portStart, aslmBaseline) ||
             HasUnsavedApiServerChanges(apiServerEnabled, aslmBaseline) ||
             HasUnsavedConsoleChanges(consoleDraft, consoleBaseline) ||
             HasUnsavedUpdateChanges(updateDraft, updateBaseline);

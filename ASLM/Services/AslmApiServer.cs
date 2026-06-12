@@ -99,7 +99,7 @@ namespace ASLM.Services
                 {
                     return _activePort ??
                            _ports.TryGetInternalServicePort(PortRegistry.AslmApiServiceId, PortRegistry.AslmApiPortKey) ??
-                           _appData.Data.Ports.OfficialStart;
+                           _appData.Data.Ports.ModulesStart;
                 }
             }
         }
@@ -1792,10 +1792,14 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Gets or reserves the ASLM API port from the shared official module pool.
+        /// Gets or reserves the ASLM API port from the shared module port pool.
         /// </summary>
         private int GetAssignedPort()
         {
+            _ports.GetOrAssignInternalServicePort(
+                PortRegistry.AslmApiServiceId,
+                PortRegistry.AslmApiPortKey);
+            _ports.EnsurePortsAvailable(PortRegistry.AslmApiServiceId);
             return _ports.GetOrAssignInternalServicePort(
                 PortRegistry.AslmApiServiceId,
                 PortRegistry.AslmApiPortKey);

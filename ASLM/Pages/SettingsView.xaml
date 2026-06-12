@@ -133,12 +133,12 @@
                                        TextColor="{DynamicResource LabelTertiary}"
                                        Margin="0" />
                                 <VerticalStackLayout Spacing="8">
-                                    <Label x:Name="OfficialPortTitleLabel"
-                                           Text="Official modules start port"
+                                    <Label x:Name="ModulePortTitleLabel"
+                                           Text="Module start port"
                                            FontSize="14"
                                            FontAttributes="Bold"
                                            TextColor="{DynamicResource LabelPrimary}" />
-                                    <Label x:Name="OfficialPortDescriptionLabel"
+                                    <Label x:Name="ModulePortDescriptionLabel"
                                            Text=""
                                            FontSize="12"
                                            TextColor="{DynamicResource LabelSecondary}" />
@@ -147,31 +147,7 @@
                                             StrokeThickness="1"
                                             StrokeShape="RoundRectangle 4"
                                             Padding="8,0">
-                                        <Entry x:Name="OfficialPortEntry"
-                                               Keyboard="Numeric"
-                                               FontSize="13"
-                                               HeightRequest="40"
-                                               TextColor="{DynamicResource LabelPrimary}"
-                                               BackgroundColor="Transparent" />
-                                    </Border>
-                                </VerticalStackLayout>
-
-                                <VerticalStackLayout Spacing="8">
-                                    <Label x:Name="ThirdPartyPortTitleLabel"
-                                           Text="Third-party modules start port"
-                                           FontSize="14"
-                                           FontAttributes="Bold"
-                                           TextColor="{DynamicResource LabelPrimary}" />
-                                    <Label x:Name="ThirdPartyPortDescriptionLabel"
-                                           Text=""
-                                           FontSize="12"
-                                           TextColor="{DynamicResource LabelSecondary}" />
-                                    <Border BackgroundColor="{DynamicResource BackgroundSecondary}"
-                                            Stroke="{DynamicResource Separator}"
-                                            StrokeThickness="1"
-                                            StrokeShape="RoundRectangle 4"
-                                            Padding="8,0">
-                                        <Entry x:Name="ThirdPartyPortEntry"
+                                        <Entry x:Name="ModulePortEntry"
                                                Keyboard="Numeric"
                                                FontSize="13"
                                                HeightRequest="40"
