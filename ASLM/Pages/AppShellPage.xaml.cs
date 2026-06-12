@@ -824,6 +824,12 @@ namespace ASLM.Pages
                     return;
                 }
 
+                if (string.Equals(notification.SourceKind, "engine", StringComparison.OrdinalIgnoreCase))
+                {
+                    await RunEngineUpdateFromNotificationAsync(notification.SourceId);
+                    return;
+                }
+
                 if (string.Equals(notification.SourceKind, "app", StringComparison.OrdinalIgnoreCase))
                 {
                     await RunAppSelfUpdateFromNotificationAsync();
@@ -876,6 +882,55 @@ namespace ASLM.Pages
                 OnModuleStateChanged);
 
             OpenModuleUpdateOverlay(viewModel, ModuleUpdateMode.Configure);
+        }
+
+        /// <summary>
+        /// Applies an available engine update referenced by one notification.
+        /// </summary>
+        private async Task RunEngineUpdateFromNotificationAsync(string engineId)
+        {
+            var engines = await _updateManager.DiscoverInstalledEnginesAsync();
+            var engine = engines.FirstOrDefault(candidate =>
+                string.Equals(candidate.Id, engineId, StringComparison.OrdinalIgnoreCase));
+
+            if (engine == null)
+            {
+                _notifications.PublishSystemToast(
+                    L.Get(LocalizationKeys.Notifications_EngineUpdateTitle),
+                    L.Get(LocalizationKeys.Notifications_EngineUpdateNotAvailable),
+                    L.Get(LocalizationKeys.Notifications_Unavailable),
+                    engineId);
+                return;
+            }
+
+            var candidate = await Task.Run(() =>
+                _updateManager.CheckEngineUpdateAsync(
+                    engine,
+                    publishUpdateNotification: false,
+                    isManualRequest: true));
+
+            if (candidate == null)
+            {
+                _notifications.PublishSystemToast(
+                    L.Get(LocalizationKeys.Notifications_EngineUpdateTitle),
+                    L.Get(LocalizationKeys.Notifications_EngineUpdateNotAvailable),
+                    L.Get(LocalizationKeys.Settings_OllamaUpdate_UpToDate),
+                    engineId);
+                return;
+            }
+
+            var success = await Task.Run(() => _updateManager.ApplyEngineUpdateAsync(
+                candidate,
+                isManualRequest: true));
+
+            if (!success)
+            {
+                _notifications.PublishSystemToast(
+                    L.Get(LocalizationKeys.Notifications_EngineUpdateTitle),
+                    L.Get(LocalizationKeys.Notifications_EngineUpdateFailed),
+                    L.Get(LocalizationKeys.Notifications_ActionFailed),
+                    engineId);
+            }
         }
 
         /// <summary>

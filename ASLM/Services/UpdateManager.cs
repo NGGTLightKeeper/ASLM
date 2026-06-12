@@ -25,8 +25,10 @@ namespace ASLM.Services
 
         private readonly AppDataStore _appData;
         private readonly ModuleInstaller _moduleInstaller;
+        private readonly EngineInstaller _engineInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly ModuleTrustService _moduleTrustService;
+        private readonly OllamaSettingsStore _ollamaSettings;
         private readonly GitHubUpdateClient _github;
         private readonly NotificationCenter _notifications;
         private readonly ILogger<UpdateManager> _logger;
@@ -47,16 +49,20 @@ namespace ASLM.Services
         public UpdateManager(
             AppDataStore appData,
             ModuleInstaller moduleInstaller,
+            EngineInstaller engineInstaller,
             ModuleRunner moduleRunner,
             ModuleTrustService moduleTrustService,
+            OllamaSettingsStore ollamaSettings,
             GitHubUpdateClient github,
             NotificationCenter notifications,
             ILogger<UpdateManager> logger)
         {
             _appData = appData;
             _moduleInstaller = moduleInstaller;
+            _engineInstaller = engineInstaller;
             _moduleRunner = moduleRunner;
             _moduleTrustService = moduleTrustService;
+            _ollamaSettings = ollamaSettings;
             _github = github;
             _notifications = notifications;
             _logger = logger;
@@ -210,6 +216,138 @@ namespace ASLM.Services
         }
 
         /// <summary>
+        /// Checks one installed engine for an available GitHub release update.
+        /// </summary>
+        public async Task<UpdateCandidate?> CheckEngineUpdateAsync(
+            EngineConfig engine,
+            CancellationToken ct = default,
+            bool publishUpdateNotification = true,
+            bool isManualRequest = false)
+        {
+            engine.Normalize();
+            if (!engine.Status.Installed)
+            {
+                return null;
+            }
+
+            if (EngineInstaller.EnsureManifestMetadata(engine) && !string.IsNullOrWhiteSpace(engine.SourcePath))
+            {
+                await _engineInstaller.SaveEngineConfigAsync(engine);
+                _engineInstaller.InvalidateCache();
+            }
+
+            if (engine.Update == null ||
+                string.IsNullOrWhiteSpace(engine.Update.Repo))
+            {
+                return null;
+            }
+
+            await TrySyncEngineInstalledReleaseTagFromRuntimeAsync(engine, ct, isManualRequest);
+
+            var assetName = GetConfiguredEngineAssetName(engine);
+            if (string.IsNullOrWhiteSpace(assetName))
+            {
+                return null;
+            }
+
+            var channel = string.IsNullOrWhiteSpace(_appData.Data.Updates.AppChannel)
+                ? "release"
+                : _appData.Data.Updates.AppChannel;
+            var includePrerelease = IsPrereleaseChannel(channel);
+
+            var releases = await _github.GetReleasesAsync(
+                engine.Update.Repo,
+                includePrerelease,
+                ResolveRequestSource(isManualRequest),
+                ct);
+
+            foreach (var release in releases)
+            {
+                var asset = release.Assets.FirstOrDefault(candidate =>
+                    string.Equals(candidate.Name, assetName, StringComparison.OrdinalIgnoreCase));
+                if (asset == null || string.IsNullOrWhiteSpace(asset.BrowserDownloadUrl))
+                {
+                    continue;
+                }
+
+                if (!ShouldOfferEngineUpdate(engine, release.TagName))
+                {
+                    continue;
+                }
+
+                var candidate = new UpdateCandidate
+                {
+                    TargetKind = "engine",
+                    TargetId = engine.Id,
+                    Name = engine.Name,
+                    DisplayName = engine.Name,
+                    CurrentVersion = ResolveInstalledEngineReleaseTag(engine),
+                    RemoteVersion = release.TagName,
+                    Channel = includePrerelease ? "pre-release" : "release",
+                    Mode = "release",
+                    DownloadUrl = asset.BrowserDownloadUrl,
+                    ReleaseTag = release.TagName,
+                    IsPrerelease = release.Prerelease,
+                    PublishedAt = release.PublishedAt,
+                    Engine = engine
+                };
+
+                if (publishUpdateNotification)
+                {
+                    _notifications.PublishUpdateCandidate(candidate);
+                }
+
+                return candidate;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Resolves and persists the installed release tag from the engine runtime when possible.
+        /// </summary>
+        public async Task<string?> TrySyncEngineInstalledReleaseTagFromRuntimeAsync(
+            EngineConfig engine,
+            CancellationToken ct = default,
+            bool isManualRequest = false)
+        {
+            engine.Normalize();
+            if (EngineInstaller.EnsureManifestMetadata(engine) && !string.IsNullOrWhiteSpace(engine.SourcePath))
+            {
+                await _engineInstaller.SaveEngineConfigAsync(engine);
+                _engineInstaller.InvalidateCache();
+            }
+
+            if (!engine.Status.Installed ||
+                engine.Update == null ||
+                string.IsNullOrWhiteSpace(engine.Update.Repo))
+            {
+                return ResolveInstalledEngineReleaseTag(engine);
+            }
+
+            var probedVersion = await TryProbeEngineRuntimeVersionAsync(engine, ct);
+            if (string.IsNullOrWhiteSpace(probedVersion))
+            {
+                return ResolveInstalledEngineReleaseTag(engine);
+            }
+
+            var normalizedTag = NormalizeEngineVersionReference(probedVersion);
+            if (ReleaseTagOrdering.AreEquivalentVersionReferences(
+                    engine.Status.InstalledReleaseTag ?? string.Empty,
+                    normalizedTag))
+            {
+                return normalizedTag;
+            }
+
+            engine.Status.InstalledReleaseTag = normalizedTag;
+            engine.Status.InstalledVersion = normalizedTag;
+            engine.Status.LastChecked = DateTime.UtcNow.ToString("o");
+            await _engineInstaller.SaveEngineConfigAsync(engine);
+            _engineInstaller.InvalidateCache();
+            return normalizedTag;
+        }
+
+        /// <summary>
         /// Resolves the concrete install target that should be used for a module during setup.
         /// </summary>
         public async Task<UpdateCandidate?> ResolveModuleInstallCandidateAsync(
@@ -314,6 +452,26 @@ namespace ASLM.Services
                 }
             }
 
+            // Each installed engine with update metadata is checked independently.
+            var engines = await DiscoverInstalledEnginesAsync(ct);
+            foreach (var engine in engines)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                try
+                {
+                    var candidate = await CheckEngineUpdateAsync(engine, ct, publishUpdateNotifications, isManualRequest);
+                    if (candidate != null)
+                    {
+                        candidates.Add(candidate);
+                    }
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _logger.LogWarning(ex, "Engine update check failed for {EngineId}.", engine.Id);
+                }
+            }
+
             return candidates;
         }
 
@@ -348,6 +506,12 @@ namespace ASLM.Services
                 if (string.Equals(update.TargetKind, "module", StringComparison.OrdinalIgnoreCase))
                 {
                     await ApplyModuleUpdateAsync(update, log, null, isManualRequest, ct);
+                    continue;
+                }
+
+                if (string.Equals(update.TargetKind, "engine", StringComparison.OrdinalIgnoreCase))
+                {
+                    await ApplyEngineUpdateAsync(update, log, null, isManualRequest, ct);
                 }
             }
         }
@@ -357,6 +521,21 @@ namespace ASLM.Services
         /// </summary>
         public Task<List<ModuleConfig>> DiscoverInstalledModulesAsync() =>
             _moduleInstaller.DiscoverModulesAsync();
+
+        /// <summary>
+        /// Returns every installed engine manifest that supports GitHub release updates.
+        /// </summary>
+        public Task<List<EngineConfig>> DiscoverInstalledEnginesAsync(CancellationToken ct = default)
+        {
+            ct.ThrowIfCancellationRequested();
+            var engines = _engineInstaller.DiscoverEngines()
+                .Where(engine =>
+                    engine.Status.Installed &&
+                    engine.Update != null &&
+                    !string.IsNullOrWhiteSpace(engine.Update.Repo))
+                .ToList();
+            return Task.FromResult(engines);
+        }
 
         /// <summary>
         /// Returns selectable branches for one module repository.
@@ -727,6 +906,208 @@ namespace ASLM.Services
             }
         }
 
+        /// <summary>
+        /// Downloads and applies one engine runtime update.
+        /// </summary>
+        public async Task<bool> ApplyEngineUpdateAsync(
+            UpdateCandidate candidate,
+            IProgress<string>? log = null,
+            IProgress<DownloadProgress>? progress = null,
+            bool isManualRequest = false,
+            CancellationToken ct = default)
+        {
+            var engine = candidate.Engine ?? throw new InvalidOperationException(
+                "Engine update candidate does not contain engine metadata.");
+            engine.Normalize();
+
+            if (IsEngineAlreadyAtInstallTarget(engine, candidate))
+            {
+                log?.Report("The selected version is already installed.");
+                return false;
+            }
+
+            var operationKey = NotificationCenter.BuildOperationKey("engine-update", engine.Id);
+            await _notifications.StartDownloadAsync(
+                operationKey,
+                "Updating engine",
+                $"{engine.Name} {candidate.RemoteVersion}",
+                candidate.TargetKind,
+                candidate.TargetId);
+
+            var engineDir = Path.GetDirectoryName(engine.SourcePath);
+            if (string.IsNullOrWhiteSpace(engineDir))
+            {
+                _notifications.FailDownload(operationKey, "Engine update target could not be resolved.");
+                return false;
+            }
+
+            var runtimeDir = Path.Combine(engineDir, "runtime");
+            var updateRoot = Path.Combine(
+                GetRootDirectory(),
+                UpdateWorkDirName,
+                "engines",
+                engine.Id,
+                Guid.NewGuid().ToString("N"));
+            var archivePath = Path.Combine(updateRoot, "engine.zip");
+            List<string>? enabledModuleSourcePaths = null;
+            var modulesWereStopped = false;
+
+            try
+            {
+                log?.Report($"Downloading {engine.Name} {candidate.RemoteVersion}...");
+                var notificationProgress = _notifications.CreateDownloadProgressBridge(operationKey, progress);
+                await _github.DownloadFileAsync(
+                    candidate.DownloadUrl,
+                    archivePath,
+                    log,
+                    notificationProgress,
+                    ResolveRequestSource(isManualRequest),
+                    ct);
+
+                enabledModuleSourcePaths = await CaptureEnabledModuleSourcePathsAsync(ct);
+                await StopModulesForEngineUpdateAsync(engine, engineDir, enabledModuleSourcePaths, log, ct);
+                modulesWereStopped = true;
+
+                log?.Report($"Stopping {engine.Name} before update...");
+                await StopProcessesRunningFromDirectoryAsync(engineDir, log, ct);
+
+                await Task.Run(() =>
+                {
+                    if (Directory.Exists(runtimeDir))
+                    {
+                        ClearDirectory(runtimeDir, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+                    }
+                    else
+                    {
+                        Directory.CreateDirectory(runtimeDir);
+                    }
+
+                    ExtractZipSafe(archivePath, runtimeDir);
+                }, ct);
+
+                var installedTag = candidate.ReleaseTag ?? candidate.RemoteVersion;
+                engine.Status.Installed = true;
+                engine.Status.InstalledReleaseTag = installedTag;
+                engine.Status.InstalledVersion = installedTag;
+                engine.Status.LastChecked = DateTime.UtcNow.ToString("o");
+
+                await _engineInstaller.SaveEngineConfigAsync(engine);
+                _engineInstaller.InvalidateCache();
+
+                log?.Report($"{engine.Name} updated successfully.");
+                _notifications.CompleteDownload(operationKey, $"{engine.Name} updated successfully.");
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                _notifications.FailDownload(operationKey, $"{engine.Name} update canceled.");
+                throw;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Engine update failed for {EngineId}.", engine.Id);
+                log?.Report($"Engine update failed: {ex.Message}");
+                _notifications.FailDownload(operationKey, $"Engine update failed: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                TryDeleteDirectory(updateRoot);
+
+                if (modulesWereStopped && enabledModuleSourcePaths is { Count: > 0 })
+                {
+                    await RestoreModulesAfterEngineUpdateAsync(enabledModuleSourcePaths, log, CancellationToken.None);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns source paths for modules that were enabled before an engine update begins.
+        /// </summary>
+        private async Task<List<string>> CaptureEnabledModuleSourcePathsAsync(CancellationToken ct)
+        {
+            var modules = await _moduleInstaller.DiscoverModulesAsync();
+            return modules
+                .Where(module => module.Status.Enabled)
+                .Select(module => module.SourcePath)
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Stops enabled modules and engine-owned processes before replacing an engine runtime.
+        /// </summary>
+        private async Task StopModulesForEngineUpdateAsync(
+            EngineConfig engine,
+            string engineDir,
+            IReadOnlyList<string> enabledModuleSourcePaths,
+            IProgress<string>? log,
+            CancellationToken ct)
+        {
+            if (enabledModuleSourcePaths.Count > 0)
+            {
+                log?.Report($"Stopping {enabledModuleSourcePaths.Count} module(s) before engine update...");
+                await _moduleRunner.StopAllModulesAsync();
+
+                foreach (var moduleSourcePath in enabledModuleSourcePaths)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var moduleDir = Path.GetDirectoryName(moduleSourcePath);
+                    if (string.IsNullOrWhiteSpace(moduleDir))
+                    {
+                        continue;
+                    }
+
+                    await StopProcessesRunningFromDirectoryAsync(moduleDir, log, ct);
+                }
+            }
+
+            if (string.Equals(engine.Id, "ollama-service", StringComparison.OrdinalIgnoreCase))
+            {
+                _ollamaSettings.StopManagedRuntime();
+            }
+
+            await StopProcessesRunningFromDirectoryAsync(engineDir, log, ct);
+        }
+
+        /// <summary>
+        /// Restarts modules that were enabled before an engine update completed.
+        /// </summary>
+        private async Task RestoreModulesAfterEngineUpdateAsync(
+            IReadOnlyList<string> enabledModuleSourcePaths,
+            IProgress<string>? log,
+            CancellationToken ct)
+        {
+            log?.Report($"Restarting {enabledModuleSourcePaths.Count} module(s)...");
+
+            foreach (var moduleSourcePath in enabledModuleSourcePaths)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                try
+                {
+                    var module = await _moduleInstaller.LoadModuleConfig(moduleSourcePath);
+                    if (module == null || module.Commands.Run.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    module.Status.Enabled = true;
+                    await _moduleInstaller.SaveConfigAsync(module, raiseModulesChanged: false);
+                    await _moduleRunner.ExecuteRunAsync(
+                        module,
+                        log ?? NoOpProgress<string>.Instance,
+                        ct);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _logger.LogWarning(ex, "Failed to restart module after engine update: {ModulePath}", moduleSourcePath);
+                    log?.Report($"Failed to restart module: {Path.GetFileName(Path.GetDirectoryName(moduleSourcePath))}");
+                }
+            }
+        }
+
 
         // App check helpers
 
@@ -753,6 +1134,195 @@ namespace ASLM.Services
 
             _logger.LogWarning("ASLM update asset for key '{AssetKey}' is not configured.", assetKey);
             return null;
+        }
+
+        /// <summary>
+        /// Returns the configured engine asset name for the current OS and architecture.
+        /// </summary>
+        private string? GetConfiguredEngineAssetName(EngineConfig engine)
+        {
+            engine.Update?.Normalize();
+            if (engine.Update == null)
+            {
+                return null;
+            }
+
+            var assetKey = ResolveCurrentAppAssetKey();
+            if (engine.Update.AssetName.TryGetValue(assetKey, out var assetName) &&
+                !string.IsNullOrWhiteSpace(assetName))
+            {
+                return assetName;
+            }
+
+            _logger.LogWarning(
+                "Engine update asset for key '{AssetKey}' is not configured for {EngineId}.",
+                assetKey,
+                engine.Id);
+            return null;
+        }
+
+        /// <summary>
+        /// Returns whether the installed engine should treat the release tag as an available update.
+        /// </summary>
+        private static bool ShouldOfferEngineUpdate(EngineConfig engine, string releaseTag)
+        {
+            if (string.IsNullOrWhiteSpace(releaseTag))
+            {
+                return false;
+            }
+
+            var currentTag = ResolveInstalledEngineReleaseTag(engine);
+            if (IsPlaceholderEngineReleaseTag(currentTag))
+            {
+                return true;
+            }
+
+            return ReleaseTagOrdering.ComparePrecedence(releaseTag.Trim(), currentTag.Trim()) > 0;
+        }
+
+        /// <summary>
+        /// Returns whether an engine manifest still stores a placeholder instead of a release tag.
+        /// </summary>
+        private static bool HasPlaceholderEngineReleaseTag(EngineConfig engine)
+        {
+            if (!string.IsNullOrWhiteSpace(engine.Status.InstalledReleaseTag) &&
+                !IsPlaceholderEngineReleaseTag(engine.Status.InstalledReleaseTag))
+            {
+                return false;
+            }
+
+            var version = engine.Status.InstalledVersion ?? engine.Version;
+            return IsPlaceholderEngineReleaseTag(engine.Status.InstalledReleaseTag) &&
+                   IsPlaceholderEngineReleaseTag(version);
+        }
+
+        private static bool IsPlaceholderEngineReleaseTag(string? value) =>
+            string.IsNullOrWhiteSpace(value) ||
+            string.Equals(value.Trim(), "latest", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Probes the installed engine runtime for its version string.
+        /// </summary>
+        private async Task<string?> TryProbeEngineRuntimeVersionAsync(EngineConfig engine, CancellationToken ct)
+        {
+            if (string.Equals(engine.Id, "ollama-service", StringComparison.OrdinalIgnoreCase))
+            {
+                var apiVersion = await TryProbeOllamaApiVersionAsync(ct);
+                if (!string.IsNullOrWhiteSpace(apiVersion))
+                {
+                    return apiVersion;
+                }
+            }
+
+            var executablePath = _engineInstaller.GetEngineExecutablePath(engine.Id);
+            if (string.IsNullOrWhiteSpace(executablePath) || !File.Exists(executablePath))
+            {
+                return null;
+            }
+
+            return await TryProbeExecutableVersionAsync(executablePath, ct);
+        }
+
+        private static async Task<string?> TryProbeOllamaApiVersionAsync(CancellationToken ct)
+        {
+            try
+            {
+                using var client = new HttpClient
+                {
+                    Timeout = TimeSpan.FromSeconds(2)
+                };
+                using var response = await client.GetAsync("http://127.0.0.1:11434/api/version", ct);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return null;
+                }
+
+                await using var stream = await response.Content.ReadAsStreamAsync(ct);
+                using var document = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+                if (document.RootElement.TryGetProperty("version", out var versionElement))
+                {
+                    return versionElement.GetString();
+                }
+            }
+            catch
+            {
+                // Runtime probe is best-effort only.
+            }
+
+            return null;
+        }
+
+        private static async Task<string?> TryProbeExecutableVersionAsync(string executablePath, CancellationToken ct)
+        {
+            try
+            {
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = executablePath,
+                    Arguments = "--version",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using var process = Process.Start(startInfo);
+                if (process == null)
+                {
+                    return null;
+                }
+
+                var output = await process.StandardOutput.ReadToEndAsync(ct);
+                await process.WaitForExitAsync(ct);
+                return TryExtractVersionToken(output);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static string? TryExtractVersionToken(string output)
+        {
+            if (string.IsNullOrWhiteSpace(output))
+            {
+                return null;
+            }
+
+            var match = System.Text.RegularExpressions.Regex.Match(
+                output,
+                @"\d+\.\d+\.\d+(?:\.\d+)?");
+            return match.Success ? match.Value : null;
+        }
+
+        private static string NormalizeEngineVersionReference(string version)
+        {
+            var trimmed = version.Trim();
+            return trimmed.StartsWith("v", StringComparison.OrdinalIgnoreCase) ? trimmed : $"v{trimmed}";
+        }
+
+        /// <summary>
+        /// Returns the locally installed release tag or version string for one engine.
+        /// </summary>
+        private static string ResolveInstalledEngineReleaseTag(EngineConfig engine)
+        {
+            return engine.Status.InstalledReleaseTag ?? engine.Status.InstalledVersion ?? engine.Version;
+        }
+
+        /// <summary>
+        /// Returns whether one engine update candidate already matches the installed runtime.
+        /// </summary>
+        internal static bool IsEngineAlreadyAtInstallTarget(EngineConfig engine, UpdateCandidate candidate)
+        {
+            var targetTag = candidate.ReleaseTag ?? candidate.RemoteVersion;
+            if (string.IsNullOrWhiteSpace(targetTag))
+            {
+                return false;
+            }
+
+            return ReleaseTagOrdering.AreEquivalentVersionReferences(
+                ResolveInstalledEngineReleaseTag(engine),
+                targetTag);
         }
 
 

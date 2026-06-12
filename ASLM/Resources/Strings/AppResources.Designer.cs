@@ -2302,6 +2302,42 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Engine update available.
+        /// </summary>
+        public static string Notifications_EngineUpdateAvailable {
+            get {
+                return ResourceManager.GetString("Notifications_EngineUpdateAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на The engine update could not be applied..
+        /// </summary>
+        public static string Notifications_EngineUpdateFailed {
+            get {
+                return ResourceManager.GetString("Notifications_EngineUpdateFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на No engine update is available right now..
+        /// </summary>
+        public static string Notifications_EngineUpdateNotAvailable {
+            get {
+                return ResourceManager.GetString("Notifications_EngineUpdateNotAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Engine update.
+        /// </summary>
+        public static string Notifications_EngineUpdateTitle {
+            get {
+                return ResourceManager.GetString("Notifications_EngineUpdateTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на installed version.
         /// </summary>
         public static string Notifications_InstalledVersionFallback {
@@ -2617,11 +2653,29 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Check ASLM updates.
+        /// </summary>
+        public static string Settings_CheckAslmUpdates {
+            get {
+                return ResourceManager.GetString("Settings_CheckAslmUpdates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Check now.
         /// </summary>
         public static string Settings_CheckNow {
             get {
                 return ResourceManager.GetString("Settings_CheckNow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Check for updates.
+        /// </summary>
+        public static string Settings_CheckOllamaUpdates {
+            get {
+                return ResourceManager.GetString("Settings_CheckOllamaUpdates", resourceCulture);
             }
         }
         
@@ -3144,6 +3198,78 @@ namespace ASLM.Resources.Strings {
         public static string Settings_OllamaSignOut_Title {
             get {
                 return ResourceManager.GetString("Settings_OllamaSignOut_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Ollama update {0} is available.
+        /// </summary>
+        public static string Settings_OllamaUpdate_Available {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Available", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Update Ollama.
+        /// </summary>
+        public static string Settings_OllamaUpdate_Button {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Current version: {0}.
+        /// </summary>
+        public static string Settings_OllamaUpdate_Description {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Update failed: {0}.
+        /// </summary>
+        public static string Settings_OllamaUpdate_Failed {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Failed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Ollama updated to {0}.
+        /// </summary>
+        public static string Settings_OllamaUpdate_Success {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Success", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Ollama update.
+        /// </summary>
+        public static string Settings_OllamaUpdate_Title {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Updating Ollama....
+        /// </summary>
+        public static string Settings_OllamaUpdate_Updating {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Updating", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Ollama is up to date.
+        /// </summary>
+        public static string Settings_OllamaUpdate_UpToDate {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_UpToDate", resourceCulture);
             }
         }
         
@@ -3686,6 +3812,15 @@ namespace ASLM.Resources.Strings {
         public static string Settings_UpdateStatus_Downloading {
             get {
                 return ResourceManager.GetString("Settings_UpdateStatus_Downloading", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} engine update(s) available.
+        /// </summary>
+        public static string Settings_UpdateStatus_EngineUpdatesCount {
+            get {
+                return ResourceManager.GetString("Settings_UpdateStatus_EngineUpdatesCount", resourceCulture);
             }
         }
         

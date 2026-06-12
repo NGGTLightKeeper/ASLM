@@ -252,6 +252,10 @@ public static class LocalizationKeys
     public const string Notifications_ClearAll = "Notifications_ClearAll";
     public const string Notifications_InstalledVersionFallback = "Notifications_InstalledVersionFallback";
     public const string Notifications_ModuleNotInstalledMessage = "Notifications_ModuleNotInstalledMessage";
+    public const string Notifications_EngineUpdateAvailable = "Notifications_EngineUpdateAvailable";
+    public const string Notifications_EngineUpdateFailed = "Notifications_EngineUpdateFailed";
+    public const string Notifications_EngineUpdateNotAvailable = "Notifications_EngineUpdateNotAvailable";
+    public const string Notifications_EngineUpdateTitle = "Notifications_EngineUpdateTitle";
     public const string Notifications_ModuleUpdateAvailable = "Notifications_ModuleUpdateAvailable";
     public const string Notifications_NewVersionFound = "Notifications_NewVersionFound";
     public const string Notifications_Unavailable = "Notifications_Unavailable";
@@ -300,6 +304,8 @@ public static class LocalizationKeys
     public const string Settings_Category_Personalization_Description = "Settings_Category_Personalization_Description";
     public const string Settings_Category_Updates = "Settings_Category_Updates";
     public const string Settings_Category_Updates_Description = "Settings_Category_Updates_Description";
+    public const string Settings_CheckAslmUpdates = "Settings_CheckAslmUpdates";
+    public const string Settings_CheckOllamaUpdates = "Settings_CheckOllamaUpdates";
     public const string Settings_CheckNow = "Settings_CheckNow";
     public const string Settings_CheckUpdates_Description = "Settings_CheckUpdates_Description";
     public const string Settings_CheckUpdates_Title = "Settings_CheckUpdates_Title";
@@ -398,6 +404,15 @@ public static class LocalizationKeys
     public const string Settings_ThemeNew_DefaultName = "Settings_ThemeNew_DefaultName";
     public const string Settings_ThemeNew_PromptMessage = "Settings_ThemeNew_PromptMessage";
     public const string Settings_ThemeNew_PromptTitle = "Settings_ThemeNew_PromptTitle";
+    public const string Settings_OllamaUpdate_Available = "Settings_OllamaUpdate_Available";
+    public const string Settings_OllamaUpdate_Button = "Settings_OllamaUpdate_Button";
+    public const string Settings_OllamaUpdate_Description = "Settings_OllamaUpdate_Description";
+    public const string Settings_OllamaUpdate_Failed = "Settings_OllamaUpdate_Failed";
+    public const string Settings_OllamaUpdate_Success = "Settings_OllamaUpdate_Success";
+    public const string Settings_OllamaUpdate_Title = "Settings_OllamaUpdate_Title";
+    public const string Settings_OllamaUpdate_Updating = "Settings_OllamaUpdate_Updating";
+    public const string Settings_OllamaUpdate_UpToDate = "Settings_OllamaUpdate_UpToDate";
+    public const string Settings_UpdateStatus_EngineUpdatesCount = "Settings_UpdateStatus_EngineUpdatesCount";
     public const string Settings_Title = "Settings_Title";
     public const string Settings_UpdateStatus_AslmAvailable = "Settings_UpdateStatus_AslmAvailable";
     public const string Settings_UpdateStatus_AslmAvailableStaged = "Settings_UpdateStatus_AslmAvailableStaged";

@@ -31,6 +31,12 @@
         }
     ],
     "postInstall": [],
+    "update": {
+        "repo": "ollama/ollama",
+        "assetName": {
+            "windows-x64": "ollama-windows-amd64.zip"
+        }
+    },
     "status": {
         "installed": false,
         "installedVersion": null,

@@ -70,6 +70,7 @@ namespace ASLM.Services
                                 }
 
                                 config.SourcePath = jsonFile;
+                                var manifestChanged = BackfillEngineManifestMetadata(config);
 
                                 // Validate that "installed" engines actually have their runtime on disk.
                                 // If a user manually deleted the runtime folder, reset the status.
@@ -89,6 +90,12 @@ namespace ASLM.Services
                                         var updatedJson = JsonSerializer.Serialize(config, _jsonOptions);
                                         File.WriteAllText(jsonFile, updatedJson);
                                     }
+                                }
+
+                                if (manifestChanged)
+                                {
+                                    var updatedJson = JsonSerializer.Serialize(config, _jsonOptions);
+                                    File.WriteAllText(jsonFile, updatedJson);
                                 }
 
                                 engines.Add(config);
@@ -119,6 +126,37 @@ namespace ASLM.Services
                 .Where(engine => engine.Status.Installed)
                 .GroupBy(engine => engine.Id, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Restores shipped update metadata on older engine manifests that predate the update block.
+        /// </summary>
+        public static bool EnsureManifestMetadata(EngineConfig config) => BackfillEngineManifestMetadata(config);
+
+        private static bool BackfillEngineManifestMetadata(EngineConfig config)
+        {
+            if (!string.Equals(config.Id, "ollama-service", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var changed = false;
+            config.Update ??= new EngineUpdateConfig();
+            if (string.IsNullOrWhiteSpace(config.Update.Repo))
+            {
+                config.Update.Repo = "ollama/ollama";
+                changed = true;
+            }
+
+            config.Update.AssetName ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (!config.Update.AssetName.ContainsKey("windows-x64"))
+            {
+                config.Update.AssetName["windows-x64"] = "ollama-windows-amd64.zip";
+                changed = true;
+            }
+
+            config.Update.Normalize();
+            return changed;
         }
 
         // Engine lookup
@@ -281,16 +319,30 @@ namespace ASLM.Services
                 config.Status.InstalledVersion = config.Version;
                 config.Status.LastChecked = DateTime.UtcNow.ToString("o");
 
-                await SaveConfigAsync(config);
+                await SaveEngineConfigAsync(config);
                 log.Report($"=== {config.Name} installed successfully ===");
 
-                lock (_cacheLock)
-                {
-                    _cachedEngines = null;
-                    _cachedEnginesById = null;
-                    _cachedInstalledEnginesById = null;
-                }
+                InvalidateCache();
             }, ct);
+        }
+
+        /// <summary>
+        /// Saves one engine manifest back to disk.
+        /// </summary>
+        /// <param name="config">The config to save.</param>
+        public Task SaveEngineConfigAsync(EngineConfig config) => SaveConfigAsync(config);
+
+        /// <summary>
+        /// Clears cached engine discovery results so the next lookup reloads manifests from disk.
+        /// </summary>
+        public void InvalidateCache()
+        {
+            lock (_cacheLock)
+            {
+                _cachedEngines = null;
+                _cachedEnginesById = null;
+                _cachedInstalledEnginesById = null;
+            }
         }
 
         // Step execution

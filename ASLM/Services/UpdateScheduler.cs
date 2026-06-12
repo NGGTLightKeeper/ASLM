@@ -17,6 +17,7 @@ namespace ASLM.Services
 
         private readonly AppDataStore _appData;
         private readonly UpdateManager _updateManager;
+        private readonly EngineInstaller _engineInstaller;
         private readonly GitHubRateLimitStore _rateLimitStore;
         private readonly ILogger<UpdateScheduler> _logger;
 
@@ -35,11 +36,13 @@ namespace ASLM.Services
         public UpdateScheduler(
             AppDataStore appData,
             UpdateManager updateManager,
+            EngineInstaller engineInstaller,
             GitHubRateLimitStore rateLimitStore,
             ILogger<UpdateScheduler> logger)
         {
             _appData = appData;
             _updateManager = updateManager;
+            _engineInstaller = engineInstaller;
             _rateLimitStore = rateLimitStore;
             _logger = logger;
         }
@@ -171,6 +174,20 @@ namespace ASLM.Services
                     _pendingChecks.Enqueue(ScheduledUpdateCheckItem.ForModule(module));
                 }
             }
+
+            var engines = _engineInstaller.DiscoverEngines()
+                .Where(engine =>
+                    engine.Status.Installed &&
+                    engine.Update != null &&
+                    !string.IsNullOrWhiteSpace(engine.Update.Repo))
+                .ToList();
+            lock (_queueGate)
+            {
+                foreach (var engine in engines)
+                {
+                    _pendingChecks.Enqueue(ScheduledUpdateCheckItem.ForEngine(engine));
+                }
+            }
         }
 
         /// <summary>
@@ -198,6 +215,8 @@ namespace ASLM.Services
                 ScheduledUpdateCheckItem.AppKind => await SafeCheckAppUpdateAsync(ct, publishNotifications),
                 ScheduledUpdateCheckItem.ModuleKind when item.Module != null =>
                     await SafeCheckModuleUpdateAsync(item.Module, ct, publishNotifications),
+                ScheduledUpdateCheckItem.EngineKind when item.Engine != null =>
+                    await SafeCheckEngineUpdateAsync(item.Engine, ct, publishNotifications),
                 _ => null
             };
 
@@ -248,6 +267,29 @@ namespace ASLM.Services
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 _logger.LogWarning(ex, "Module update check failed for {ModuleId}.", module.Id);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Checks one engine for updates without aborting the scheduler on failure.
+        /// </summary>
+        private async Task<UpdateCandidate?> SafeCheckEngineUpdateAsync(
+            EngineConfig engine,
+            CancellationToken ct,
+            bool publishNotifications)
+        {
+            try
+            {
+                return await _updateManager.CheckEngineUpdateAsync(
+                    engine,
+                    ct,
+                    publishNotifications,
+                    isManualRequest: false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning(ex, "Engine update check failed for {EngineId}.", engine.Id);
                 return null;
             }
         }
@@ -315,15 +357,20 @@ namespace ASLM.Services
         {
             public const string AppKind = "app";
             public const string ModuleKind = "module";
+            public const string EngineKind = "engine";
 
             public string Kind { get; private init; } = string.Empty;
             public ModuleConfig? Module { get; private init; }
+            public EngineConfig? Engine { get; private init; }
 
             public static ScheduledUpdateCheckItem ForApp() =>
                 new() { Kind = AppKind };
 
             public static ScheduledUpdateCheckItem ForModule(ModuleConfig module) =>
                 new() { Kind = ModuleKind, Module = module };
+
+            public static ScheduledUpdateCheckItem ForEngine(EngineConfig engine) =>
+                new() { Kind = EngineKind, Engine = engine };
         }
     }
 }
