@@ -884,7 +884,7 @@ namespace ASLM.Pages
         {
             // Setup should resolve the same branch or release candidate the normal updater would use.
             var candidate = await Task.Run(
-                () => _updateManager.ResolveModuleInstallCandidateAsync(module, ct),
+                () => _updateManager.ResolveModuleInstallCandidateAsync(module, ct, isManualRequest: true),
                 ct);
             if (candidate == null)
             {
@@ -894,7 +894,12 @@ namespace ASLM.Pages
 
             // Reuse the full module update pipeline so preserve rules and first-run behavior stay consistent.
             return await Task.Run(
-                () => _updateManager.ApplyModuleUpdateAsync(candidate, logProgress, downloadProgress, ct),
+                () => _updateManager.ApplyModuleUpdateAsync(
+                    candidate,
+                    logProgress,
+                    downloadProgress,
+                    isManualRequest: true,
+                    ct: ct),
                 ct);
         }
 

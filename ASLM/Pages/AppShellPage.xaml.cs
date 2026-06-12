@@ -180,7 +180,6 @@ namespace ASLM.Pages
             ApplyConsoleNavigationState();
             ScheduleEnsureModuleBrowserLeftToRight();
             _ = StartEnabledModulesAsync();
-            _ = CheckStartupUpdatesAsync();
         }
 
         /// <summary>
@@ -272,32 +271,6 @@ namespace ASLM.Pages
                 }
             }
         }
-
-        /// <summary>
-        /// Checks ASLM and modules for updates once after the main shell opens.
-        /// </summary>
-        private async Task CheckStartupUpdatesAsync()
-        {
-            try
-            {
-                _appData.Data.Updates.Normalize();
-                var autoUpdate = _appData.Data.Updates.AutoUpdateEnabled;
-                var publishNotifications = !autoUpdate;
-                var updates = await Task.Run(() => _updateManager.CheckAllUpdatesAsync(
-                    CancellationToken.None,
-                    publishNotifications));
-
-                if (autoUpdate && updates.Count > 0)
-                {
-                    await Task.Run(() => _updateManager.ApplyDiscoveredUpdatesAsync(updates, null, CancellationToken.None));
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[StartupUpdates] Check failed: {ex.Message}");
-            }
-        }
-
 
         // Module refresh
 
@@ -926,7 +899,12 @@ namespace ASLM.Pages
             if (!_updateManager.HasPendingAppUpdate && candidate != null)
             {
                 var prepared = await Task.Run(() =>
-                    _updateManager.PrepareAppUpdateAsync(candidate, null, null, CancellationToken.None));
+                    _updateManager.PrepareAppUpdateAsync(
+                        candidate,
+                        null,
+                        null,
+                        isManualRequest: true,
+                        ct: CancellationToken.None));
                 if (!prepared)
                 {
                     _notifications.PublishSystemToast(

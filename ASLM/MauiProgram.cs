@@ -68,6 +68,7 @@ namespace ASLM
             builder.Services.AddSingleton<DownloadInstaller>();
             builder.Services.AddSingleton<NotificationCenter>();
             builder.Services.AddSingleton<OllamaSettingsStore>();
+            builder.Services.AddSingleton<GitHubRateLimitStore>();
             builder.Services.AddSingleton<GitHubUpdateClient>();
             builder.Services.AddSingleton<UpdateManager>();
             builder.Services.AddSingleton<UpdateScheduler>();

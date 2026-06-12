@@ -14,6 +14,8 @@ namespace ASLM.Pages
         private readonly AppDataStore _appData;
         private readonly LegalAcceptanceService _legalAcceptance;
         private readonly NotificationCenter _notifications;
+        private readonly GitHubRateLimitStore _rateLimitStore;
+        private readonly GitHubUpdateClient _githubUpdateClient;
         private readonly UpdateScheduler _updateScheduler;
         private readonly AslmApiServer _apiServer;
         private readonly AslmModuleInteropServer _moduleInteropServer;
@@ -34,6 +36,8 @@ namespace ASLM.Pages
             AppDataStore appData,
             LegalAcceptanceService legalAcceptance,
             NotificationCenter notifications,
+            GitHubRateLimitStore rateLimitStore,
+            GitHubUpdateClient githubUpdateClient,
             UpdateScheduler updateScheduler,
             AslmApiServer apiServer,
             AslmModuleInteropServer moduleInteropServer,
@@ -47,6 +51,8 @@ namespace ASLM.Pages
             _appData = appData;
             _legalAcceptance = legalAcceptance;
             _notifications = notifications;
+            _rateLimitStore = rateLimitStore;
+            _githubUpdateClient = githubUpdateClient;
             _updateScheduler = updateScheduler;
             _apiServer = apiServer;
             _moduleInteropServer = moduleInteropServer;
@@ -90,6 +96,8 @@ namespace ASLM.Pages
             await Task.Run(() => _notifications.InitializeAsync());
             await Task.Run(() => _apiServer.StartIfEnabledAsync());
             await Task.Run(() => _moduleInteropServer.EnsureStartedAsync());
+            await Task.Run(() => _rateLimitStore.InitializeAsync());
+            await Task.Run(() => _githubUpdateClient.RefreshRateLimitAsync());
             await Task.Run(_updateScheduler.Start);
             _themeService.ApplyFromSettings();
 

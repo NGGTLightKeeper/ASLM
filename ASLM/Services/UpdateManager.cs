@@ -105,7 +105,8 @@ namespace ASLM.Services
         /// <param name="publishUpdateNotification">When false, skips publishing an update-available notification (used when auto-updates will apply immediately).</param>
         public async Task<UpdateCandidate?> CheckAppUpdateAsync(
             CancellationToken ct = default,
-            bool publishUpdateNotification = true)
+            bool publishUpdateNotification = true,
+            bool isManualRequest = false)
         {
             // Resolve channel, repository, and the platform-specific release asset name.
             var source = await LoadAppUpdateSourceAsync(ct);
@@ -126,7 +127,11 @@ namespace ASLM.Services
             }
 
             // Walk releases until a newer tag exposes the configured asset download URL.
-            var releases = await _github.GetReleasesAsync(appSource.Source.Repo, includePrerelease, ct);
+            var releases = await _github.GetReleasesAsync(
+                appSource.Source.Repo,
+                includePrerelease,
+                ResolveRequestSource(isManualRequest),
+                ct);
             foreach (var release in releases)
             {
                 var asset = release.Assets.FirstOrDefault(candidate =>
@@ -173,7 +178,8 @@ namespace ASLM.Services
         public async Task<UpdateCandidate?> CheckModuleUpdateAsync(
             ModuleConfig module,
             CancellationToken ct = default,
-            bool publishUpdateNotification = true)
+            bool publishUpdateNotification = true,
+            bool isManualRequest = false)
         {
             module.Normalize();
             if (!string.Equals(module.Source.Type, "github", StringComparison.OrdinalIgnoreCase) ||
@@ -185,7 +191,7 @@ namespace ASLM.Services
             // Branch and release modes use different GitHub resolution strategies.
             if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase))
             {
-                var branchCandidate = await CheckModuleBranchUpdateAsync(module, ct);
+                var branchCandidate = await CheckModuleBranchUpdateAsync(module, isManualRequest, ct);
                 if (branchCandidate != null && publishUpdateNotification)
                 {
                     _notifications.PublishUpdateCandidate(branchCandidate);
@@ -194,7 +200,7 @@ namespace ASLM.Services
                 return branchCandidate;
             }
 
-            var releaseCandidate = await CheckModuleReleaseUpdateAsync(module, ct);
+            var releaseCandidate = await CheckModuleReleaseUpdateAsync(module, isManualRequest, ct);
             if (releaseCandidate != null && publishUpdateNotification)
             {
                 _notifications.PublishUpdateCandidate(releaseCandidate);
@@ -208,7 +214,8 @@ namespace ASLM.Services
         /// </summary>
         public async Task<UpdateCandidate?> ResolveModuleInstallCandidateAsync(
             ModuleConfig module,
-            CancellationToken ct = default)
+            CancellationToken ct = default,
+            bool isManualRequest = false)
         {
             module.Normalize();
             if (!string.Equals(module.Source.Type, "github", StringComparison.OrdinalIgnoreCase) ||
@@ -219,10 +226,10 @@ namespace ASLM.Services
 
             if (string.Equals(module.Update.Mode, "branch", StringComparison.OrdinalIgnoreCase))
             {
-                return await ResolveModuleBranchInstallCandidateAsync(module, ct);
+                return await ResolveModuleBranchInstallCandidateAsync(module, isManualRequest, ct);
             }
 
-            return await ResolveModuleReleaseInstallCandidateAsync(module, ct);
+            return await ResolveModuleReleaseInstallCandidateAsync(module, isManualRequest, ct);
         }
 
         /// <summary>
@@ -230,7 +237,8 @@ namespace ASLM.Services
         /// </summary>
         public async Task<List<UpdateCandidate>> GetModuleReleaseCandidatesAsync(
             ModuleConfig module,
-            CancellationToken ct = default)
+            CancellationToken ct = default,
+            bool isManualRequest = false)
         {
             module.Normalize();
             if (!string.Equals(module.Source.Type, "github", StringComparison.OrdinalIgnoreCase) ||
@@ -240,7 +248,11 @@ namespace ASLM.Services
             }
 
             var includePrerelease = IsPrereleaseMode(module.Update.Mode);
-            var releases = await _github.GetReleasesAsync(module.Source.Repo, includePrerelease, ct);
+            var releases = await _github.GetReleasesAsync(
+                module.Source.Repo,
+                includePrerelease,
+                ResolveRequestSource(isManualRequest),
+                ct);
             var candidates = new List<UpdateCandidate>();
 
             foreach (var release in releases)
@@ -263,14 +275,15 @@ namespace ASLM.Services
         /// <param name="publishUpdateNotifications">When false, skips publishing update-available notifications for every discovery (used when auto-updates will apply immediately).</param>
         public async Task<List<UpdateCandidate>> CheckAllUpdatesAsync(
             CancellationToken ct = default,
-            bool publishUpdateNotifications = true)
+            bool publishUpdateNotifications = true,
+            bool isManualRequest = false)
         {
             var candidates = new List<UpdateCandidate>();
 
             // ASLM check failures must not prevent module discovery from running.
             try
             {
-                var appCandidate = await CheckAppUpdateAsync(ct, publishUpdateNotifications);
+                var appCandidate = await CheckAppUpdateAsync(ct, publishUpdateNotifications, isManualRequest);
                 if (appCandidate != null)
                 {
                     candidates.Add(appCandidate);
@@ -289,7 +302,7 @@ namespace ASLM.Services
 
                 try
                 {
-                    var candidate = await CheckModuleUpdateAsync(module, ct, publishUpdateNotifications);
+                    var candidate = await CheckModuleUpdateAsync(module, ct, publishUpdateNotifications, isManualRequest);
                     if (candidate != null)
                     {
                         candidates.Add(candidate);
@@ -314,7 +327,8 @@ namespace ASLM.Services
         public async Task ApplyDiscoveredUpdatesAsync(
             IReadOnlyList<UpdateCandidate> updates,
             IProgress<string>? log,
-            CancellationToken ct = default)
+            CancellationToken ct = default,
+            bool isManualRequest = false)
         {
             foreach (var update in updates)
             {
@@ -325,7 +339,7 @@ namespace ASLM.Services
                 {
                     if (!HasPendingAppUpdate)
                     {
-                        await PrepareAppUpdateAsync(update, log, null, ct);
+                        await PrepareAppUpdateAsync(update, log, null, isManualRequest, ct);
                     }
 
                     continue;
@@ -333,18 +347,27 @@ namespace ASLM.Services
 
                 if (string.Equals(update.TargetKind, "module", StringComparison.OrdinalIgnoreCase))
                 {
-                    await ApplyModuleUpdateAsync(update, log, null, ct);
+                    await ApplyModuleUpdateAsync(update, log, null, isManualRequest, ct);
                 }
             }
         }
 
         /// <summary>
+        /// Returns every installed module manifest for background update scheduling.
+        /// </summary>
+        public Task<List<ModuleConfig>> DiscoverInstalledModulesAsync() =>
+            _moduleInstaller.DiscoverModulesAsync();
+
+        /// <summary>
         /// Returns selectable branches for one module repository.
         /// </summary>
-        public Task<List<GitHubBranchInfo>> GetModuleBranchesAsync(ModuleConfig module, CancellationToken ct = default)
+        public Task<List<GitHubBranchInfo>> GetModuleBranchesAsync(
+            ModuleConfig module,
+            CancellationToken ct = default,
+            bool isManualRequest = false)
         {
             return string.Equals(module.Source.Type, "github", StringComparison.OrdinalIgnoreCase)
-                ? _github.GetBranchesAsync(module.Source.Repo, ct)
+                ? _github.GetBranchesAsync(module.Source.Repo, ResolveRequestSource(isManualRequest), ct)
                 : Task.FromResult(new List<GitHubBranchInfo>());
         }
 
@@ -490,6 +513,7 @@ namespace ASLM.Services
             UpdateCandidate candidate,
             IProgress<string>? log = null,
             IProgress<DownloadProgress>? progress = null,
+            bool isManualRequest = false,
             CancellationToken ct = default)
         {
             // Surface download progress and validate the shipped update source before touching disk.
@@ -525,7 +549,13 @@ namespace ASLM.Services
             try
             {
                 // Download, extract off the UI thread, then persist pending.json for the patcher.
-                await _github.DownloadFileAsync(candidate.DownloadUrl, archivePath, log, notificationProgress, ct);
+                await _github.DownloadFileAsync(
+                    candidate.DownloadUrl,
+                    archivePath,
+                    log,
+                    notificationProgress,
+                    ResolveRequestSource(isManualRequest),
+                    ct);
                 var payloadDir = await Task.Run(() =>
                 {
                     // Archive extraction and payload inspection can touch a lot of files, so keep it off the UI thread.
@@ -572,6 +602,7 @@ namespace ASLM.Services
             UpdateCandidate candidate,
             IProgress<string>? log = null,
             IProgress<DownloadProgress>? progress = null,
+            bool isManualRequest = false,
             CancellationToken ct = default)
         {
             var module = candidate.Module ?? throw new InvalidOperationException(
@@ -615,7 +646,14 @@ namespace ASLM.Services
 
                 // Download, extract, and validate the archive manifest on a background thread.
                 var notificationProgress = _notifications.CreateDownloadProgressBridge(operationKey, progress);
-                await DownloadModuleArchiveAsync(module, candidate, archivePath, log, notificationProgress, ct);
+                await DownloadModuleArchiveAsync(
+                    module,
+                    candidate,
+                    archivePath,
+                    log,
+                    notificationProgress,
+                    isManualRequest,
+                    ct);
                 var preparedUpdate = await Task.Run(() =>
                 {
                     // Extraction and manifest validation are local filesystem work and should not block the UI thread.
@@ -723,9 +761,15 @@ namespace ASLM.Services
         /// <summary>
         /// Checks whether a branch-tracked module has moved to a newer commit.
         /// </summary>
-        private async Task<UpdateCandidate?> CheckModuleBranchUpdateAsync(ModuleConfig module, CancellationToken ct)
+        private async Task<UpdateCandidate?> CheckModuleBranchUpdateAsync(
+            ModuleConfig module,
+            bool isManualRequest,
+            CancellationToken ct)
         {
-            var branches = await _github.GetBranchesAsync(module.Source.Repo, ct);
+            var branches = await _github.GetBranchesAsync(
+                module.Source.Repo,
+                ResolveRequestSource(isManualRequest),
+                ct);
             var selected = branches.FirstOrDefault(branch =>
                 string.Equals(branch.Name, module.Update.Branch, StringComparison.OrdinalIgnoreCase));
 
@@ -756,9 +800,13 @@ namespace ASLM.Services
         /// </summary>
         private async Task<UpdateCandidate?> ResolveModuleBranchInstallCandidateAsync(
             ModuleConfig module,
+            bool isManualRequest,
             CancellationToken ct)
         {
-            var branches = await _github.GetBranchesAsync(module.Source.Repo, ct);
+            var branches = await _github.GetBranchesAsync(
+                module.Source.Repo,
+                ResolveRequestSource(isManualRequest),
+                ct);
             var selected = branches.FirstOrDefault(branch =>
                 string.Equals(branch.Name, module.Update.Branch, StringComparison.OrdinalIgnoreCase));
             if (selected == null || string.IsNullOrWhiteSpace(selected.CommitSha))
@@ -793,10 +841,13 @@ namespace ASLM.Services
         /// <summary>
         /// Checks whether a release-tracked module has a newer GitHub release.
         /// </summary>
-        private async Task<UpdateCandidate?> CheckModuleReleaseUpdateAsync(ModuleConfig module, CancellationToken ct)
+        private async Task<UpdateCandidate?> CheckModuleReleaseUpdateAsync(
+            ModuleConfig module,
+            bool isManualRequest,
+            CancellationToken ct)
         {
             var currentTag = ResolveInstalledModuleReleaseTag(module);
-            var candidates = await GetModuleReleaseCandidatesAsync(module, ct);
+            var candidates = await GetModuleReleaseCandidatesAsync(module, ct, isManualRequest);
             if (candidates.Count == 0)
             {
                 return null;
@@ -829,9 +880,10 @@ namespace ASLM.Services
         /// </summary>
         private async Task<UpdateCandidate?> ResolveModuleReleaseInstallCandidateAsync(
             ModuleConfig module,
+            bool isManualRequest,
             CancellationToken ct)
         {
-            var candidates = await GetModuleReleaseCandidatesAsync(module, ct);
+            var candidates = await GetModuleReleaseCandidatesAsync(module, ct, isManualRequest);
             if (candidates.Count == 0)
             {
                 return null;
@@ -917,8 +969,10 @@ namespace ASLM.Services
             string archivePath,
             IProgress<string>? log,
             IProgress<DownloadProgress>? progress,
+            bool isManualRequest,
             CancellationToken ct)
         {
+            var requestSource = ResolveRequestSource(isManualRequest);
             if (string.Equals(candidate.Mode, "branch", StringComparison.OrdinalIgnoreCase))
             {
                 await _github.DownloadRepositoryZipAsync(
@@ -927,11 +981,12 @@ namespace ASLM.Services
                     archivePath,
                     log,
                     progress,
+                    requestSource,
                     ct);
                 return;
             }
 
-            await _github.DownloadFileAsync(candidate.DownloadUrl, archivePath, log, progress, ct);
+            await _github.DownloadFileAsync(candidate.DownloadUrl, archivePath, log, progress, requestSource, ct);
         }
 
         /// <summary>
@@ -1101,6 +1156,9 @@ namespace ASLM.Services
         /// <summary>
         /// Returns whether the selected update channel should include GitHub pre-releases.
         /// </summary>
+        private static string ResolveRequestSource(bool isManualRequest) =>
+            isManualRequest ? GitHubRequestSources.Manual : GitHubRequestSources.Auto;
+
         private static bool IsPrereleaseChannel(string? channel)
         {
             return string.Equals(channel, "pre-release", StringComparison.OrdinalIgnoreCase) ||

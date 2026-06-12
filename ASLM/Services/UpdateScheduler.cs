@@ -12,10 +12,16 @@ namespace ASLM.Services
     {
         private static readonly TimeSpan StartupDelay = TimeSpan.FromSeconds(15);
         private static readonly TimeSpan FailureRetryDelay = TimeSpan.FromMinutes(15);
+        private static readonly TimeSpan IdlePollDelay = TimeSpan.FromMinutes(1);
+        private static readonly TimeSpan BudgetExhaustedPadding = TimeSpan.FromSeconds(10);
 
         private readonly AppDataStore _appData;
         private readonly UpdateManager _updateManager;
+        private readonly GitHubRateLimitStore _rateLimitStore;
         private readonly ILogger<UpdateScheduler> _logger;
+
+        private readonly Queue<ScheduledUpdateCheckItem> _pendingChecks = new();
+        private readonly object _queueGate = new();
 
         private CancellationTokenSource? _cts;
         private Task? _worker;
@@ -29,10 +35,12 @@ namespace ASLM.Services
         public UpdateScheduler(
             AppDataStore appData,
             UpdateManager updateManager,
+            GitHubRateLimitStore rateLimitStore,
             ILogger<UpdateScheduler> logger)
         {
             _appData = appData;
             _updateManager = updateManager;
+            _rateLimitStore = rateLimitStore;
             _logger = logger;
         }
 
@@ -96,10 +104,7 @@ namespace ASLM.Services
             {
                 try
                 {
-                    await RunDueCheckAsync(ct);
-
-                    // Re-read the persisted period after every pass so changes in Settings apply without restart.
-                    var delay = GetSchedulerDelay(_appData.Data.Updates);
+                    var delay = await RunSchedulerPassAsync(ct);
                     await Task.Delay(delay, ct);
                 }
                 catch (OperationCanceledException)
@@ -115,31 +120,144 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Executes one due update check and applies automatic updates when enabled.
+        /// Executes one scheduler pass and returns the delay before the next pass.
         /// </summary>
-        private async Task RunDueCheckAsync(CancellationToken ct)
+        private async Task<TimeSpan> RunSchedulerPassAsync(CancellationToken ct)
         {
             _appData.Data.Updates.Normalize();
             var settings = _appData.Data.Updates;
-            if (!settings.CheckEnabled || !IsDue(settings))
+            if (!settings.CheckEnabled)
             {
-                return;
+                return IdlePollDelay;
             }
 
-            settings.LastAutoCheckUtc = DateTime.UtcNow.ToString("o");
-            await _appData.SaveAsync();
+            if (GetPendingCheckCount() == 0 && IsDue(settings))
+            {
+                await PopulateQueueAsync(ct);
+                settings.LastAutoCheckUtc = DateTime.UtcNow.ToString("o");
+                await _appData.SaveAsync();
+            }
 
+            if (GetPendingCheckCount() == 0)
+            {
+                return GetSchedulerDelay(settings);
+            }
+
+            if (!_rateLimitStore.CanMakeAutoRequest())
+            {
+                return _rateLimitStore.GetDelayUntilReset() + BudgetExhaustedPadding;
+            }
+
+            await ProcessNextItemAsync(ct);
+            return _rateLimitStore.CalculateInterCheckDelay();
+        }
+
+        /// <summary>
+        /// Discovers ASLM and module update targets and enqueues them for sequential checking.
+        /// </summary>
+        private async Task PopulateQueueAsync(CancellationToken ct)
+        {
+            lock (_queueGate)
+            {
+                _pendingChecks.Clear();
+                _pendingChecks.Enqueue(ScheduledUpdateCheckItem.ForApp());
+            }
+
+            var modules = await _updateManager.DiscoverInstalledModulesAsync();
+            lock (_queueGate)
+            {
+                foreach (var module in modules)
+                {
+                    _pendingChecks.Enqueue(ScheduledUpdateCheckItem.ForModule(module));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Runs one queued update check and applies automatic updates when enabled.
+        /// </summary>
+        private async Task ProcessNextItemAsync(CancellationToken ct)
+        {
+            ScheduledUpdateCheckItem? item;
+            lock (_queueGate)
+            {
+                if (_pendingChecks.Count == 0)
+                {
+                    return;
+                }
+
+                item = _pendingChecks.Dequeue();
+            }
+
+            _appData.Data.Updates.Normalize();
+            var settings = _appData.Data.Updates;
             var publishNotifications = !settings.AutoUpdateEnabled;
-            var updates = await _updateManager.CheckAllUpdatesAsync(ct, publishNotifications);
-            if (!settings.AutoUpdateEnabled || updates.Count == 0)
+
+            UpdateCandidate? candidate = item.Kind switch
+            {
+                ScheduledUpdateCheckItem.AppKind => await SafeCheckAppUpdateAsync(ct, publishNotifications),
+                ScheduledUpdateCheckItem.ModuleKind when item.Module != null =>
+                    await SafeCheckModuleUpdateAsync(item.Module, ct, publishNotifications),
+                _ => null
+            };
+
+            if (candidate == null || !settings.AutoUpdateEnabled)
             {
                 return;
             }
 
             var log = new Progress<string>(message =>
                 _logger.LogInformation("[Updater] {Message}", message));
+            await _updateManager.ApplyDiscoveredUpdatesAsync([candidate], log, ct);
+        }
 
-            await _updateManager.ApplyDiscoveredUpdatesAsync(updates, log, ct);
+        /// <summary>
+        /// Checks ASLM for updates without aborting the scheduler on failure.
+        /// </summary>
+        private async Task<UpdateCandidate?> SafeCheckAppUpdateAsync(
+            CancellationToken ct,
+            bool publishNotifications)
+        {
+            try
+            {
+                return await _updateManager.CheckAppUpdateAsync(ct, publishNotifications, isManualRequest: false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning(ex, "ASLM update check failed.");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Checks one module for updates without aborting the scheduler on failure.
+        /// </summary>
+        private async Task<UpdateCandidate?> SafeCheckModuleUpdateAsync(
+            ModuleConfig module,
+            CancellationToken ct,
+            bool publishNotifications)
+        {
+            try
+            {
+                return await _updateManager.CheckModuleUpdateAsync(
+                    module,
+                    ct,
+                    publishNotifications,
+                    isManualRequest: false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning(ex, "Module update check failed for {ModuleId}.", module.Id);
+                return null;
+            }
+        }
+
+        private int GetPendingCheckCount()
+        {
+            lock (_queueGate)
+            {
+                return _pendingChecks.Count;
+            }
         }
 
 
@@ -188,6 +306,24 @@ namespace ASLM.Services
             _cts.Cancel();
             _cts.Dispose();
             _cts = null;
+        }
+
+        /// <summary>
+        /// Describes one queued automatic update check.
+        /// </summary>
+        private sealed class ScheduledUpdateCheckItem
+        {
+            public const string AppKind = "app";
+            public const string ModuleKind = "module";
+
+            public string Kind { get; private init; } = string.Empty;
+            public ModuleConfig? Module { get; private init; }
+
+            public static ScheduledUpdateCheckItem ForApp() =>
+                new() { Kind = AppKind };
+
+            public static ScheduledUpdateCheckItem ForModule(ModuleConfig module) =>
+                new() { Kind = ModuleKind, Module = module };
         }
     }
 }

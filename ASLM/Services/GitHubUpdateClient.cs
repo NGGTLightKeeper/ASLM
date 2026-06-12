@@ -17,6 +17,7 @@ namespace ASLM.Services
         private static readonly TimeSpan BranchCacheLifetime = TimeSpan.FromMinutes(5);
 
         private readonly HttpClient _httpClient = new();
+        private readonly GitHubRateLimitStore _rateLimitStore;
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
             PropertyNameCaseInsensitive = true
@@ -33,11 +34,37 @@ namespace ASLM.Services
         /// <summary>
         /// Creates the GitHub client with the headers required by the REST API.
         /// </summary>
-        public GitHubUpdateClient()
+        public GitHubUpdateClient(GitHubRateLimitStore rateLimitStore)
         {
+            _rateLimitStore = rateLimitStore ?? throw new ArgumentNullException(nameof(rateLimitStore));
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("ASLM-Updater");
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
             _httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
+        }
+
+
+        // Rate limit metadata
+
+        /// <summary>
+        /// Refreshes the persisted GitHub rate-limit window from the dedicated API endpoint.
+        /// </summary>
+        public async Task RefreshRateLimitAsync(
+            string requestSource = GitHubRequestSources.Auto,
+            CancellationToken ct = default)
+        {
+            const string url = "https://api.github.com/rate_limit";
+            using var response = await _httpClient.GetAsync(url, ct);
+            ApplyRateLimitHeaders(response);
+            _rateLimitStore.RecordRequest(url, GitHubRequestTypes.RateLimit, requestSource, (int)response.StatusCode);
+            response.EnsureSuccessStatusCode();
+
+            await using var stream = await response.Content.ReadAsStreamAsync(ct);
+            var payload = await JsonSerializer.DeserializeAsync<GitHubRateLimitPayload>(stream, _jsonOptions, ct);
+            var core = payload?.Resources?.Core;
+            if (core != null)
+            {
+                _rateLimitStore.UpdateFromHeaders(core.Limit, core.Remaining, core.Reset);
+            }
         }
 
 
@@ -49,9 +76,10 @@ namespace ASLM.Services
         public async Task<GitHubReleaseInfo?> GetLatestReleaseAsync(
             string repo,
             bool includePrerelease,
+            string requestSource = GitHubRequestSources.Auto,
             CancellationToken ct = default)
         {
-            var releases = await GetReleasesAsync(repo, includePrerelease, ct);
+            var releases = await GetReleasesAsync(repo, includePrerelease, requestSource, ct);
             return releases.FirstOrDefault();
         }
 
@@ -61,6 +89,7 @@ namespace ASLM.Services
         public async Task<List<GitHubReleaseInfo>> GetReleasesAsync(
             string repo,
             bool includePrerelease,
+            string requestSource = GitHubRequestSources.Auto,
             CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(repo))
@@ -72,7 +101,7 @@ namespace ASLM.Services
                 cache: _releaseCache,
                 cacheKey: repo.Trim(),
                 lifetime: ReleaseCacheLifetime,
-                fetch: async cancellationToken => await FetchReleasesAsync(repo, cancellationToken),
+                fetch: async cancellationToken => await FetchReleasesAsync(repo, requestSource, cancellationToken),
                 ct);
 
             var filtered = releases
@@ -89,7 +118,10 @@ namespace ASLM.Services
         /// <summary>
         /// Returns all repository branch names with their current commit SHA.
         /// </summary>
-        public Task<List<GitHubBranchInfo>> GetBranchesAsync(string repo, CancellationToken ct = default)
+        public Task<List<GitHubBranchInfo>> GetBranchesAsync(
+            string repo,
+            string requestSource = GitHubRequestSources.Auto,
+            CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(repo))
             {
@@ -100,7 +132,7 @@ namespace ASLM.Services
                 cache: _branchCache,
                 cacheKey: repo.Trim(),
                 lifetime: BranchCacheLifetime,
-                fetch: async cancellationToken => await FetchBranchesAsync(repo, cancellationToken),
+                fetch: async cancellationToken => await FetchBranchesAsync(repo, requestSource, cancellationToken),
                 ct);
         }
 
@@ -115,12 +147,19 @@ namespace ASLM.Services
             string destinationPath,
             IProgress<string>? log = null,
             IProgress<DownloadProgress>? downloadProgress = null,
+            string requestSource = GitHubRequestSources.Auto,
             CancellationToken ct = default)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
             log?.Report($"Downloading {url}");
 
             using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            ApplyRateLimitHeaders(response);
+            _rateLimitStore.RecordRequest(
+                url,
+                ResolveDownloadRequestType(url),
+                requestSource,
+                (int)response.StatusCode);
             response.EnsureSuccessStatusCode();
 
             var totalBytes = response.Content.Headers.ContentLength ?? 0;
@@ -168,10 +207,11 @@ namespace ASLM.Services
             string destinationPath,
             IProgress<string>? log = null,
             IProgress<DownloadProgress>? downloadProgress = null,
+            string requestSource = GitHubRequestSources.Auto,
             CancellationToken ct = default)
         {
             var url = BuildApiUrl(repo, $"zipball/{Uri.EscapeDataString(reference)}");
-            return DownloadFileAsync(url, destinationPath, log, downloadProgress, ct);
+            return DownloadFileAsync(url, destinationPath, log, downloadProgress, requestSource, ct);
         }
 
 
@@ -261,24 +301,38 @@ namespace ASLM.Services
         /// <summary>
         /// Loads the full release list from GitHub for the requested repository.
         /// </summary>
-        private async Task<List<GitHubReleaseInfo>> FetchReleasesAsync(string repo, CancellationToken ct)
+        private async Task<List<GitHubReleaseInfo>> FetchReleasesAsync(
+            string repo,
+            string requestSource,
+            CancellationToken ct)
         {
-            using var stream = await _httpClient.GetStreamAsync(BuildApiUrl(repo, "releases?per_page=100"), ct);
-            return await JsonSerializer.DeserializeAsync<List<GitHubReleaseInfo>>(stream, _jsonOptions, ct) ?? [];
+            var url = BuildApiUrl(repo, "releases?per_page=100");
+            return await GetGitHubJsonAsync<List<GitHubReleaseInfo>>(
+                url,
+                GitHubRequestTypes.Releases,
+                requestSource,
+                ct) ?? [];
         }
 
         /// <summary>
         /// Loads every branch name and commit SHA from GitHub for the requested repository.
         /// </summary>
-        private async Task<List<GitHubBranchInfo>> FetchBranchesAsync(string repo, CancellationToken ct)
+        private async Task<List<GitHubBranchInfo>> FetchBranchesAsync(
+            string repo,
+            string requestSource,
+            CancellationToken ct)
         {
             var branches = new List<GitHubBranchInfo>();
             var page = 1;
 
             while (true)
             {
-                using var stream = await _httpClient.GetStreamAsync(BuildApiUrl(repo, $"branches?per_page=100&page={page}"), ct);
-                var payload = await JsonSerializer.DeserializeAsync<List<GitHubBranchPayload>>(stream, _jsonOptions, ct) ?? [];
+                var url = BuildApiUrl(repo, $"branches?per_page=100&page={page}");
+                var payload = await GetGitHubJsonAsync<List<GitHubBranchPayload>>(
+                    url,
+                    GitHubRequestTypes.Branches,
+                    requestSource,
+                    ct) ?? [];
                 if (payload.Count == 0)
                 {
                     break;
@@ -299,6 +353,84 @@ namespace ASLM.Services
             return branches
                 .OrderBy(branch => branch.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        /// <summary>
+        /// Sends one GitHub API request, records usage, and deserializes the JSON payload.
+        /// </summary>
+        private async Task<T?> GetGitHubJsonAsync<T>(
+            string url,
+            string requestType,
+            string requestSource,
+            CancellationToken ct)
+        {
+            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            ApplyRateLimitHeaders(response);
+            _rateLimitStore.RecordRequest(url, requestType, requestSource, (int)response.StatusCode);
+            response.EnsureSuccessStatusCode();
+
+            await using var stream = await response.Content.ReadAsStreamAsync(ct);
+            return await JsonSerializer.DeserializeAsync<T>(stream, _jsonOptions, ct);
+        }
+
+        /// <summary>
+        /// Applies GitHub rate-limit headers when they are present on a response.
+        /// </summary>
+        private void ApplyRateLimitHeaders(HttpResponseMessage response)
+        {
+            if (!TryReadRateLimitHeaders(response, out var limit, out var remaining, out var resetEpoch))
+            {
+                return;
+            }
+
+            _rateLimitStore.UpdateFromHeaders(limit, remaining, resetEpoch);
+        }
+
+        /// <summary>
+        /// Reads GitHub rate-limit headers from one HTTP response.
+        /// </summary>
+        private static bool TryReadRateLimitHeaders(
+            HttpResponseMessage response,
+            out int limit,
+            out int remaining,
+            out long resetEpoch)
+        {
+            limit = 0;
+            remaining = 0;
+            resetEpoch = 0;
+
+            if (!response.Headers.TryGetValues("X-RateLimit-Limit", out var limitValues) ||
+                !int.TryParse(limitValues.FirstOrDefault(), out limit))
+            {
+                return false;
+            }
+
+            if (!response.Headers.TryGetValues("X-RateLimit-Remaining", out var remainingValues) ||
+                !int.TryParse(remainingValues.FirstOrDefault(), out remaining))
+            {
+                return false;
+            }
+
+            if (!response.Headers.TryGetValues("X-RateLimit-Reset", out var resetValues) ||
+                !long.TryParse(resetValues.FirstOrDefault(), out resetEpoch))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves the persisted request type for one download URL.
+        /// </summary>
+        private static string ResolveDownloadRequestType(string url)
+        {
+            if (url.Contains("/zipball/", StringComparison.OrdinalIgnoreCase))
+            {
+                return GitHubRequestTypes.Download;
+            }
+
+            return GitHubRequestTypes.Download;
         }
 
         /// <summary>
@@ -377,5 +509,38 @@ namespace ASLM.Services
     {
         [JsonPropertyName("sha")]
         public string Sha { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Minimal GitHub rate-limit payload returned by the dedicated API endpoint.
+    /// </summary>
+    internal sealed class GitHubRateLimitPayload
+    {
+        [JsonPropertyName("resources")]
+        public GitHubRateLimitResourcesPayload? Resources { get; set; }
+    }
+
+    /// <summary>
+    /// Resource buckets returned by the GitHub rate-limit API.
+    /// </summary>
+    internal sealed class GitHubRateLimitResourcesPayload
+    {
+        [JsonPropertyName("core")]
+        public GitHubRateLimitCorePayload? Core { get; set; }
+    }
+
+    /// <summary>
+    /// Core REST API rate-limit bucket returned by GitHub.
+    /// </summary>
+    internal sealed class GitHubRateLimitCorePayload
+    {
+        [JsonPropertyName("limit")]
+        public int Limit { get; set; }
+
+        [JsonPropertyName("remaining")]
+        public int Remaining { get; set; }
+
+        [JsonPropertyName("reset")]
+        public long Reset { get; set; }
     }
 }

@@ -1606,7 +1606,7 @@ namespace ASLM.Pages
                     _updateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_Checking);
                 }
 
-                var updates = await Task.Run(() => _updateManager.CheckAllUpdatesAsync());
+                var updates = await Task.Run(() => _updateManager.CheckAllUpdatesAsync(isManualRequest: true));
                 _pendingAppUpdateCandidate = updates.FirstOrDefault(update =>
                     string.Equals(update.TargetKind, "app", StringComparison.OrdinalIgnoreCase));
 
@@ -1671,7 +1671,10 @@ namespace ASLM.Pages
                     }
                 });
 
-                var success = await Task.Run(() => _updateManager.PrepareAppUpdateAsync(_pendingAppUpdateCandidate, log));
+                var success = await Task.Run(() => _updateManager.PrepareAppUpdateAsync(
+                    _pendingAppUpdateCandidate,
+                    log,
+                    isManualRequest: true));
                 if (_updateStatusLabel != null)
                 {
                     if (success)
