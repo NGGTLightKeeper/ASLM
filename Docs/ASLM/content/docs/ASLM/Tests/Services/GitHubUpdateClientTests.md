@@ -44,6 +44,12 @@ draft: false
 
 ---
 
+#### `private static GitHubUpdateClient CreateClient()`
+
+**Purpose:** Creates a `GitHubUpdateClient` with a new `GitHubRateLimitStore` using a `NullLogger`.
+
+---
+
 ## Related
 
 - [GitHubUpdateClient](../../Services/GitHubUpdateClient/)
