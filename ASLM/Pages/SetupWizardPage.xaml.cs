@@ -23,6 +23,7 @@ namespace ASLM.Pages
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly UpdateManager _updateManager;
+        private readonly LegalAcceptanceService _legalAcceptance;
         private readonly AppLocalizationService _localization;
         private readonly IServiceProvider _services;
 
@@ -58,6 +59,7 @@ namespace ASLM.Pages
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
             UpdateManager updateManager,
+            LegalAcceptanceService legalAcceptance,
             AppLocalizationService localization,
             IServiceProvider services)
         {
@@ -67,6 +69,7 @@ namespace ASLM.Pages
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             _updateManager = updateManager;
+            _legalAcceptance = legalAcceptance;
             _localization = localization;
             _services = services;
 
@@ -102,6 +105,7 @@ namespace ASLM.Pages
             _moduleListLoaded = true;
             await PopulateModuleListAsync();
             _skipDockerStep = await _dockerService.IsCliInstalledAsync();
+            LegalAcceptanceOverlay.PresentIfRequired(OverlayContainer, _legalAcceptance, _services);
         }
 
 

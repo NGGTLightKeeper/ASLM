@@ -12,6 +12,7 @@ namespace ASLM.Pages
     public partial class LoadingPage : ContentPage, ILocalizable
     {
         private readonly AppDataStore _appData;
+        private readonly LegalAcceptanceService _legalAcceptance;
         private readonly NotificationCenter _notifications;
         private readonly UpdateScheduler _updateScheduler;
         private readonly AslmApiServer _apiServer;
@@ -31,6 +32,7 @@ namespace ASLM.Pages
         /// </summary>
         public LoadingPage(
             AppDataStore appData,
+            LegalAcceptanceService legalAcceptance,
             NotificationCenter notifications,
             UpdateScheduler updateScheduler,
             AslmApiServer apiServer,
@@ -43,6 +45,7 @@ namespace ASLM.Pages
         {
             InitializeComponent();
             _appData = appData;
+            _legalAcceptance = legalAcceptance;
             _notifications = notifications;
             _updateScheduler = updateScheduler;
             _apiServer = apiServer;
@@ -80,6 +83,7 @@ namespace ASLM.Pages
 
             _initialized = true;
             await Task.Run(() => _appData.InitializeAsync());
+            await Task.Run(() => _legalAcceptance.InitializeAsync());
             _localization.ApplyCulture();
             await Task.Run(() => _moduleTrustService.InitializeAsync());
             await Task.Run(() => _customThemesStore.LoadAsync());
@@ -88,6 +92,8 @@ namespace ASLM.Pages
             await Task.Run(() => _moduleInteropServer.EnsureStartedAsync());
             await Task.Run(_updateScheduler.Start);
             _themeService.ApplyFromSettings();
+
+            await _legalAcceptance.ResolveStartupAcceptanceAsync(_appData);
 
             Page nextPage = _appData.IsFirstRun
                 ? _services.GetRequiredService<SetupWizardPage>()

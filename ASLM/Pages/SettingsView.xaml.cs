@@ -96,6 +96,9 @@ namespace ASLM.Pages
         private CompactToggle? _consoleSidebarToggle;
         private CompactToggle? _consoleCompletedToggle;
         private CompactToggle? _consoleIndividualToggle;
+        private CompactToggle? _legalAutoAcceptToggle;
+        private bool _legalAutoAcceptDraft = true;
+        private bool _legalAutoAcceptBaseline = true;
         private CancellationTokenSource? _ollamaMetadataRefreshCts;
         private CancellationTokenSource? _ollamaStatusPollingCts;
         private bool _settingsReconcileTimerStarted;
@@ -677,6 +680,8 @@ namespace ASLM.Pages
             _consoleDraft = _consoleBaseline;
             _updateBaseline = snapshot.UpdateBaseline;
             _updateDraft = _updateBaseline;
+            _legalAutoAcceptDraft = _appData.Data.Legal.AutoAcceptUpdates;
+            _legalAutoAcceptBaseline = _legalAutoAcceptDraft;
 
             ApplyAslmDraftsToControls();
             PortErrorLabel.IsVisible = false;
@@ -1246,6 +1251,9 @@ namespace ASLM.Pages
             content.Children.Add(CreateSubGroupHeader(L.Get(LocalizationKeys.Settings_SubGroup_Consoles)));
             AddConsoleSettings(content);
 
+            content.Children.Add(CreateSubGroupHeader(L.Get(LocalizationKeys.Settings_SubGroup_Legal)));
+            AddLegalSettings(content);
+
             section.Content = content;
             ModuleSettingsContainer.Children.Add(section);
         }
@@ -1334,6 +1342,23 @@ namespace ASLM.Pages
                 L.Get(LocalizationKeys.Settings_CompletedConsoles_Title),
                 L.Get(LocalizationKeys.Settings_CompletedConsoles_Description),
                 _consoleCompletedToggle.View));
+        }
+
+        /// <summary>
+        /// Adds legal document acceptance setting rows to the combined ASLM category.
+        /// </summary>
+        private void AddLegalSettings(Layout content)
+        {
+            _legalAutoAcceptToggle = CreateCompactToggle(_legalAutoAcceptDraft);
+            _legalAutoAcceptToggle.Toggled += (_, _) =>
+            {
+                RefreshAslmApiAndConsoleDraftsFromToggles();
+                QueueActionButtonUpdate();
+            };
+            content.Children.Add(CreateUpdateCard(
+                L.Get(LocalizationKeys.Settings_Legal_AutoAcceptUpdates_Title),
+                L.Get(LocalizationKeys.Settings_Legal_AutoAcceptUpdates_Description),
+                _legalAutoAcceptToggle.View));
         }
 
         /// <summary>
@@ -1847,10 +1872,15 @@ namespace ASLM.Pages
             {
                 _consoleCompletedToggle.SetStateWithoutToggleEvent(_consoleDraft.ShowCompletedProcesses);
             }
+
+            if (_legalAutoAcceptToggle != null)
+            {
+                _legalAutoAcceptToggle.SetStateWithoutToggleEvent(_legalAutoAcceptDraft);
+            }
         }
 
         /// <summary>
-        /// Copies API and console compact toggles into the shared drafts after user interaction.
+        /// Copies API, console, and legal compact toggles into the shared drafts after user interaction.
         /// </summary>
         private void RefreshAslmApiAndConsoleDraftsFromToggles()
         {
@@ -1867,6 +1897,11 @@ namespace ASLM.Pages
                     _consoleSidebarToggle.IsToggled,
                     _consoleCompletedToggle.IsToggled,
                     _consoleIndividualToggle.IsToggled);
+            }
+
+            if (_legalAutoAcceptToggle != null)
+            {
+                _legalAutoAcceptDraft = _legalAutoAcceptToggle.IsToggled;
             }
         }
 
@@ -2100,9 +2135,11 @@ namespace ASLM.Pages
                 _apiServerEnabledDraft,
                 _consoleDraft,
                 GetCurrentUpdateDraft(),
+                _legalAutoAcceptDraft,
                 _aslmBaseline,
                 _consoleBaseline,
-                _updateBaseline);
+                _updateBaseline,
+                _legalAutoAcceptBaseline);
 
         /// <summary>
         /// Reads the module start port draft from visible controls when the ports section is shown.
@@ -2287,7 +2324,7 @@ namespace ASLM.Pages
             SyncDraftValuesFromControls();
 
             var appliedAslmBuiltInDefaults = false;
-            (string PortStart, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults)? aslmDefaultBuiltIns = null;
+            (string PortStart, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults, bool LegalAutoAcceptUpdates)? aslmDefaultBuiltIns = null;
 
             switch (_activeCategory.Kind)
             {
@@ -2296,6 +2333,7 @@ namespace ASLM.Pages
                     _portStartDraft = aslmDefaultBuiltIns.Value.PortStart;
                     _apiServerEnabledDraft = aslmDefaultBuiltIns.Value.ApiServerEnabled;
                     _consoleDraft = aslmDefaultBuiltIns.Value.ConsoleDefaults;
+                    _legalAutoAcceptDraft = aslmDefaultBuiltIns.Value.LegalAutoAcceptUpdates;
                     appliedAslmBuiltInDefaults = true;
                     PortErrorLabel.IsVisible = false;
                     RenderAslmCategory();
@@ -2330,6 +2368,7 @@ namespace ASLM.Pages
                 _portStartDraft = builtIns.PortStart;
                 _apiServerEnabledDraft = builtIns.ApiServerEnabled;
                 _consoleDraft = builtIns.ConsoleDefaults;
+                _legalAutoAcceptDraft = builtIns.LegalAutoAcceptUpdates;
                 ApplyAslmDraftsToControls();
                 ApplyAslmBuiltInDraftsToToggles();
             }
@@ -2470,7 +2509,8 @@ namespace ASLM.Pages
                     _userNameDraft,
                     portResult.ModulesStart,
                     _consoleDraft,
-                    nextSettings);
+                    nextSettings,
+                    _legalAutoAcceptDraft);
                 await _appData.SaveAsync();
 
                 if (_apiServerEnabledDraft != _aslmBaseline.ApiServerEnabled)
@@ -2484,6 +2524,7 @@ namespace ASLM.Pages
                     _apiServer.IsEnabled);
                 _apiServerEnabledDraft = _apiServer.IsEnabled;
                 _consoleBaseline = _consoleDraft;
+                _legalAutoAcceptBaseline = _legalAutoAcceptDraft;
                 _updateBaseline = SettingsService.BuildAslmDraftSnapshot(_appData, _apiServer.IsEnabled).UpdateBaseline;
                 _updateDraft = _updateBaseline;
                 PortErrorLabel.IsVisible = false;

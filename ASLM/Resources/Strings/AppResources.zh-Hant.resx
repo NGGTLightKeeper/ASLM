@@ -1,4 +1,4 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>首頁</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>接受並繼續</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>我已閱讀並接受{0}。</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>請先接受此協議後再繼續。</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>拒絕</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>條款已更新，請重新查閱並接受。</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>條款 {0} / {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>接受使用 ASLM 所需的條款。</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>條款與授權</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>載入中...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -1064,7 +1087,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>主控台</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>條款</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>自動接受條款更新</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>首次確認後自動接受新增和更新的條款。</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>刪除</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">

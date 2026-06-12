@@ -41,6 +41,7 @@ namespace ASLM.Pages
         private readonly ModuleStartThrottle _moduleStartThrottle;
         private readonly ModuleLaunchCoordinator _moduleLaunchCoordinator;
         private readonly SettingsService _settingsService;
+        private readonly LegalAcceptanceService _legalAcceptance;
         private readonly AppLocalizationService _localization;
         private readonly IServiceProvider _services;
 
@@ -83,6 +84,7 @@ namespace ASLM.Pages
             ModuleStartThrottle moduleStartThrottle,
             ModuleLaunchCoordinator moduleLaunchCoordinator,
             SettingsService settingsService,
+            LegalAcceptanceService legalAcceptance,
             AppLocalizationService localization,
             IServiceProvider services)
         {
@@ -97,6 +99,7 @@ namespace ASLM.Pages
             _moduleStartThrottle = moduleStartThrottle;
             _moduleLaunchCoordinator = moduleLaunchCoordinator;
             _settingsService = settingsService;
+            _legalAcceptance = legalAcceptance;
             _localization = localization;
             _services = services;
 
@@ -169,6 +172,7 @@ namespace ASLM.Pages
             }
 
             _hasLoaded = true;
+            LegalAcceptanceOverlay.PresentIfRequired(OverlayContainer, _legalAcceptance, _services);
             ScheduleSidebarButtonLayoutRefresh();
             await RefreshModulesAsync();
             NavigateTo(HomeButton);

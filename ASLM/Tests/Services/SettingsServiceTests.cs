@@ -95,7 +95,7 @@ public sealed class SettingsServiceTests
         var console = new ConsoleBaseline(false, true, false);
         var updates = new AppUpdateSettings { AutoCheckPeriodHours = 12 };
 
-        SettingsService.ApplyDraftsToAppData(store, "Bob", 22000, console, updates);
+        SettingsService.ApplyDraftsToAppData(store, "Bob", 22000, console, updates, legalAutoAcceptUpdates: true);
 
         store.Data.User.Name.Should().Be("Bob");
         store.Data.Ports.ModulesStart.Should().Be(22000);

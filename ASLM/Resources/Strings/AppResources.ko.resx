@@ -1,4 +1,4 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>홈</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>동의하고 계속</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>{0}을(를) 읽었으며 이에 동의합니다.</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>계속하려면 이 약관에 동의하세요.</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>거부</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>약관이 업데이트되었습니다. 다시 검토하고 동의하세요.</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>약관 {0} / {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>ASLM을 사용하려면 필수 약관에 동의하세요.</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>약관 및 라이선스</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>로드 중...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -1064,7 +1087,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>콘솔</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>약관</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>약관 업데이트 자동 동의</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>첫 검토 후 새 약관과 업데이트된 약관을 자동으로 동의합니다.</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>삭제</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">

@@ -8,7 +8,8 @@
              Title="ASLM Setup"
              BackgroundColor="{DynamicResource BackgroundPrimary}">
 
-    <Grid RowDefinitions="Auto, *, Auto" Padding="16">
+    <Grid>
+        <Grid RowDefinitions="Auto, *, Auto" Padding="16">
 
         <!-- Header (hidden on welcome step) -->
         <Grid x:Name="HeaderRow" Grid.Row="0" ColumnDefinitions="*, Auto"
@@ -236,6 +237,11 @@
                     Clicked="OnNextClicked" />
         </HorizontalStackLayout>
 
+        </Grid>
+
+        <ContentView x:Name="OverlayContainer"
+                     IsVisible="False"
+                     BackgroundColor="Transparent" />
     </Grid>
 
 </ContentPage>

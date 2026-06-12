@@ -40,6 +40,10 @@ namespace ASLM.Models
         [JsonPropertyName("personalization")]
         public AppPersonalizationConfig Personalization { get; set; } = new();
 
+        // Stores legal document acceptance preferences.
+        [JsonPropertyName("legal")]
+        public AppLegalConfig Legal { get; set; } = new();
+
         /// <summary>
         /// Restores nested objects after JSON deserialization.
         /// </summary>
@@ -68,6 +72,31 @@ namespace ASLM.Models
             // Recreate and normalize personalization preferences when the section is absent.
             Personalization ??= new();
             Personalization.Normalize();
+
+            // Recreate and normalize legal preferences when the section is absent.
+            Legal ??= new();
+            Legal.Normalize();
+        }
+    }
+
+
+    // Legal acceptance settings
+
+    /// <summary>
+    /// Stores preferences for legal document acceptance after the initial review.
+    /// </summary>
+    public class AppLegalConfig
+    {
+        // Automatically accepts newly added legal documents without showing the review overlay.
+        [JsonPropertyName("autoAcceptUpdates")]
+        public bool AutoAcceptUpdates { get; set; } = true;
+
+        /// <summary>
+        /// Restores safe defaults after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            // Boolean properties already carry their default values.
         }
     }
 

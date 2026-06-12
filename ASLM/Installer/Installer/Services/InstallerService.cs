@@ -20,6 +20,7 @@ public sealed class InstallerService
     private const string PayloadEnvironmentVariable = "ASLM_INSTALLER_PAYLOAD_PATH";
     private const string LauncherExeName = "ASLM.exe";
     private const string ManifestFileName = "install-manifest.json";
+    private const string LegalAcceptanceFileName = "ASLM_LegalAcceptance.json";
     private const string AppName = "ASLM";
 
     // Default paths.
@@ -168,6 +169,7 @@ public sealed class InstallerService
                 AcceptedDocuments: options.AcceptedDocuments);
 
             await WriteManifestAsync(sharedInstallDir, manifest, cancellationToken);
+            await WriteLegalAcceptanceAsync(userAppDir, options.AcceptedDocuments, cancellationToken);
 
             if (options.CreateDesktopShortcut)
             {
@@ -445,6 +447,22 @@ public sealed class InstallerService
 
         await using var stream = File.Create(manifestPath);
         await JsonSerializer.SerializeAsync(stream, manifest, JsonOptions.Default, cancellationToken);
+    }
+
+    /// <summary>
+    /// Writes accepted legal documents into the per-user application data directory.
+    /// </summary>
+    private static async Task WriteLegalAcceptanceAsync(
+        string userAppDir,
+        IReadOnlyList<AcceptedLegalDocument> acceptedDocuments,
+        CancellationToken cancellationToken)
+    {
+        var legalPath = Path.Combine(userAppDir, "Data", "App", LegalAcceptanceFileName);
+        Directory.CreateDirectory(Path.GetDirectoryName(legalPath)!);
+
+        var payload = new { acceptedDocuments };
+        await using var stream = File.Create(legalPath);
+        await JsonSerializer.SerializeAsync(stream, payload, JsonOptions.Default, cancellationToken);
     }
 
 

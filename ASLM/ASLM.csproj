@@ -29,6 +29,7 @@
 	</PropertyGroup>
 	
 	<Import Project="..\ASLM.Build.props" />
+	<Import Project="Installer\Build\Installer.Build.targets" />
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Release' and '$(SelfContained)' == ''">
 		<SelfContained>true</SelfContained>
@@ -65,6 +66,8 @@
 	
 	<PropertyGroup>
 		<OutputPath>$(ASLMBuildOutputRoot)App\</OutputPath>
+		<ASLMLegalSourceDir>$(MSBuildProjectDirectory)\Installer\Legal</ASLMLegalSourceDir>
+		<ASLMLegalOutputFile>$(MSBuildProjectDirectory)\Resources\Raw\legal-documents.json</ASLMLegalOutputFile>
 	</PropertyGroup>
 	
 	
@@ -164,6 +167,11 @@
 	  </EmbeddedResource>
 	</ItemGroup>
 	
+	<Target Name="GenerateAslmLegalDocuments" BeforeTargets="BeforeBuild">
+		<GenerateInstallerLegalDocuments SourceDir="$(ASLMLegalSourceDir)"
+		                                OutputFile="$(ASLMLegalOutputFile)" />
+	</Target>
+
 	<!-- Flatten icon_*.scale-100.png into tint_png/ for PackagedIconTintCache (unpackaged WinUI). -->
 	<Target Name="_CopyResizedIconsForTint" AfterTargets="ResizetizeImages">
 		<ItemGroup>

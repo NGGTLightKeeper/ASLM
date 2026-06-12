@@ -185,6 +185,14 @@ public static class LocalizationKeys
     public const string Home_ModulesHeader = "Home_ModulesHeader";
     public const string Home_Status_Loading = "Home_Status_Loading";
     public const string Home_Title = "Home_Title";
+    public const string Legal_AcceptContinue = "Legal_AcceptContinue";
+    public const string Legal_AcceptDocumentFormat = "Legal_AcceptDocumentFormat";
+    public const string Legal_AcceptRequired = "Legal_AcceptRequired";
+    public const string Legal_Decline = "Legal_Decline";
+    public const string Legal_DocumentsUpdated = "Legal_DocumentsUpdated";
+    public const string Legal_StepFormat = "Legal_StepFormat";
+    public const string Legal_Subtitle = "Legal_Subtitle";
+    public const string Legal_Title = "Legal_Title";
     public const string Loading_Text = "Loading_Text";
     public const string ModuleUpdate_ActivityTitle_Activity = "ModuleUpdate_ActivityTitle_Activity";
     public const string ModuleUpdate_ActivityTitle_Status = "ModuleUpdate_ActivityTitle_Status";
@@ -353,6 +361,9 @@ public static class LocalizationKeys
     public const string Settings_Saving = "Settings_Saving";
     public const string Settings_SubGroup_API = "Settings_SubGroup_API";
     public const string Settings_SubGroup_Consoles = "Settings_SubGroup_Consoles";
+    public const string Settings_SubGroup_Legal = "Settings_SubGroup_Legal";
+    public const string Settings_Legal_AutoAcceptUpdates_Title = "Settings_Legal_AutoAcceptUpdates_Title";
+    public const string Settings_Legal_AutoAcceptUpdates_Description = "Settings_Legal_AutoAcceptUpdates_Description";
     public const string Settings_ThemeDelete_Accept = "Settings_ThemeDelete_Accept";
     public const string Settings_ThemeDelete_Message = "Settings_ThemeDelete_Message";
     public const string Settings_ThemeDelete_Title = "Settings_ThemeDelete_Title";

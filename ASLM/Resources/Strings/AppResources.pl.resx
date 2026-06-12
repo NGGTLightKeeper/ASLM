@@ -1,4 +1,4 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>Start</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>Akceptuj i kontynuuj</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>Przeczytałem(-am) i akceptuję dokument {0}.</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>Zaakceptuj tę umowę, aby kontynuować.</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>Odrzuć</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>Warunki zostały zaktualizowane. Przejrzyj i zaakceptuj ponownie.</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>Warunki {0} z {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>Zaakceptuj wymagane warunki, aby korzystać z ASLM.</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>Warunki i licencje</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>Ładowanie...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -1064,7 +1087,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>Konsole</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>Warunki</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>Automatycznie akceptuj aktualizacje warunków</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>Akceptuj nowe i zaktualizowane warunki po pierwszej weryfikacji.</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>Usuń</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">

@@ -1,4 +1,4 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>Beranda</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>Terima dan lanjutkan</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>Saya telah membaca dan menerima {0}.</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>Terima perjanjian ini untuk melanjutkan.</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>Tolak</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>Ketentuan diperbarui. Tinjau dan terima lagi.</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>Ketentuan {0} dari {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>Terima ketentuan yang diperlukan untuk menggunakan ASLM.</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>Ketentuan dan lisensi</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>Memuat...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -1064,7 +1087,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>Konsol</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>Ketentuan</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>Terima pembaruan ketentuan otomatis</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>Terima ketentuan baru dan diperbarui setelah tinjauan pertama.</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>Hapus</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">

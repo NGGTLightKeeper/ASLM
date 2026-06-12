@@ -558,6 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>Home</value>
   </data>
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>Accept and continue</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>I have read and accept {0}.</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>Accept this agreement to continue.</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>Decline</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>Terms were updated. Review and accept again.</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>Terms {0} of {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>Accept the required terms to use ASLM.</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>Terms and licenses</value>
+  </data>
   <data name="Loading_Text" xml:space="preserve">
     <value>Loading...</value>
   </data>
@@ -1063,6 +1087,15 @@
   </data>
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>Consoles</value>
+  </data>
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>Terms</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>Auto-accept term updates</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>Accept new and updated terms after the first review.</value>
   </data>
   <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>Delete</value>

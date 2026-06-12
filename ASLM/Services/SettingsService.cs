@@ -343,7 +343,8 @@ namespace ASLM.Services
             string userName,
             int modulesStart,
             ConsoleBaseline consoleDraft,
-            AppUpdateSettings updateSettings)
+            AppUpdateSettings updateSettings,
+            bool legalAutoAcceptUpdates)
         {
             appData.Data.User.Name = userName;
             appData.Data.Ports.ModulesStart = modulesStart;
@@ -357,6 +358,9 @@ namespace ASLM.Services
             appData.Data.Updates.ModuleDefaultMode = updateSettings.ModuleDefaultMode;
             appData.Data.Updates.ModuleDefaultChannel = updateSettings.ModuleDefaultChannel;
             appData.Data.Updates.Normalize();
+
+            appData.Data.Legal.AutoAcceptUpdates = legalAutoAcceptUpdates;
+            appData.Data.Legal.Normalize();
         }
 
         /// <summary>
@@ -388,17 +392,20 @@ namespace ASLM.Services
         /// <summary>
         /// Builds ASLM defaults for ports, API and console sections.
         /// </summary>
-        public static (string PortStart, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults) BuildDefaultAslmDrafts()
+        public static (string PortStart, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults, bool LegalAutoAcceptUpdates) BuildDefaultAslmDrafts()
         {
             var defaultPorts = new AppPortConfig();
             var defaultConsoles = new AppConsoleConfig();
+            var defaultLegal = new AppLegalConfig();
+            defaultLegal.Normalize();
             return (
                 defaultPorts.ModulesStart.ToString(CultureInfo.InvariantCulture),
                 new AppApiConfig().ServerEnabled,
                 new ConsoleBaseline(
                     defaultConsoles.SidebarVisible,
                     defaultConsoles.ShowCompletedProcesses,
-                    defaultConsoles.ShowIndividualModuleConsoles));
+                    defaultConsoles.ShowIndividualModuleConsoles),
+                defaultLegal.AutoAcceptUpdates);
         }
 
 
@@ -442,18 +449,24 @@ namespace ASLM.Services
         /// <summary>
         /// Checks whether non-account ASLM settings differ from baseline.
         /// </summary>
+        public static bool HasUnsavedLegalChanges(bool legalAutoAcceptUpdates, bool legalBaseline) =>
+            legalAutoAcceptUpdates != legalBaseline;
+
         public static bool HasUnsavedAslmSettingsChanges(
             string portStart,
             bool apiServerEnabled,
             ConsoleBaseline consoleDraft,
             UpdateBaseline updateDraft,
+            bool legalAutoAcceptUpdates,
             AslmBaseline aslmBaseline,
             ConsoleBaseline consoleBaseline,
-            UpdateBaseline updateBaseline) =>
+            UpdateBaseline updateBaseline,
+            bool legalBaseline) =>
             HasUnsavedPortChanges(portStart, aslmBaseline) ||
             HasUnsavedApiServerChanges(apiServerEnabled, aslmBaseline) ||
             HasUnsavedConsoleChanges(consoleDraft, consoleBaseline) ||
-            HasUnsavedUpdateChanges(updateDraft, updateBaseline);
+            HasUnsavedUpdateChanges(updateDraft, updateBaseline) ||
+            HasUnsavedLegalChanges(legalAutoAcceptUpdates, legalBaseline);
 
 
         // Runtime & module control

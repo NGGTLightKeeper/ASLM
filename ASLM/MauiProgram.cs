@@ -45,6 +45,7 @@ namespace ASLM
 
             // Service registrations
             builder.Services.AddSingleton<AppDataStore>();
+            builder.Services.AddSingleton<LegalAcceptanceService>();
             builder.Services.AddSingleton<DockerService>();
             builder.Services.AddSingleton<EngineInstaller>();
             builder.Services.AddSingleton<ModuleEnvironmentResolver>();
@@ -81,6 +82,7 @@ namespace ASLM
             builder.Services.AddTransient<AppShellPage>();
             builder.Services.AddTransient<SetupWizardPage>();
             builder.Services.AddTransient<LoadingPage>();
+            builder.Services.AddTransient<LegalAcceptanceView>();
 
             // Content view registrations
             builder.Services.AddTransient<HomeView>();
