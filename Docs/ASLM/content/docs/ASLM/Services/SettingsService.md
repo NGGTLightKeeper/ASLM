@@ -195,15 +195,54 @@ Stops every running module process before applying settings that require a clean
 
 ---
 
+#### `public static void StartLauncherForApplicationRestart()`
+
+**Purpose:** Starts the launcher so it can relaunch ASLM after the current process exits.
+
+**Parameters:** None
+
+**Return Values:** `void`
+
+**Usage Example:**
+
+```csharp
+SettingsService.StartLauncherForApplicationRestart();
+Application.Current?.Quit();
+```
+
+---
+
 #### `public static void StartLauncherForSelfUpdate()`
 
 **Purpose:** Starts the launcher so it can detect the prepared update after the current app exits.
 
+**Parameters:** None
+
+**Return Values:** `void`
+
+**Usage Example:**
+
+```csharp
+SettingsService.StartLauncherForSelfUpdate();
+Application.Current?.Quit();
+```
+
 ---
 
-#### `public static string ResolveRootForSelfUpdate()`
+#### `public static string ResolveInstallRoot()`
 
-**Purpose:** Resolves the ASLM root folder that contains the pending update manifest.
+**Purpose:** Resolves the ASLM install root used for launcher restarts and self-updates.
+
+**Parameters:** None
+
+**Return Values:** `string` - The absolute path to the ASLM installation root directory.
+
+**Usage Example:**
+
+```csharp
+var rootDir = SettingsService.ResolveInstallRoot();
+var launcherPath = Path.Combine(rootDir, "ASLM.exe");
+```
 
 ---
 
