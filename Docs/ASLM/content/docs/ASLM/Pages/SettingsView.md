@@ -340,7 +340,7 @@ Lightweight switch used instead of native `Switch` for consistent sizing.
 
 #### `private async Task LoadModuleDraftsAsync(bool reloadModules, bool reloadRuntimeValues)`
 
-**Purpose:** Discovers installed modules and optional runtime values.
+**Purpose:** Discovers installed modules and optional runtime values. It filters out ineligible modules using `SettingsService.IsModuleEligibleForSettings`.
 
 **Steps:**
 

@@ -23,7 +23,7 @@ Implements **`IDisposable`**. Subscribes to **`PortRegistry.PortsRedistributed`*
 
 #### `public async Task<bool> ExecuteFirstRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct, bool skipModuleDependencies = false)`
 
-**Purpose:** Ensures module dependencies have completed first-run (unless `skipModuleDependencies` is true), installs engine dependencies, synchronizes declared settings, runs **`Commands.FirstRun`** (non-tracked). Sets **`FirstRunCompleted`** on success.
+**Purpose:** Installs engine dependencies, synchronizes declared settings, runs **`Commands.FirstRun`** (non-tracked). Sets **`Installed`** and **`FirstRunCompleted`** on success.
 
 ---
 

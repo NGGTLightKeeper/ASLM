@@ -77,9 +77,15 @@ draft: false
 
 ---
 
+#### `public static bool IsModuleEligibleForSettings(ModuleConfig module)`
+
+**Purpose:** Returns whether one module should appear in the settings sidebar. A module is eligible if it is installed, its first run is completed, and it has at least one setting that should be displayed.
+
+---
+
 #### `public List<SettingsCategory> CreateOrderedCategories(IReadOnlyList<ModuleConfig> loadedModules)`
 
-**Purpose:** Builds the ordered category list with ASLM categories first and modules after them.
+**Purpose:** Builds the ordered category list with ASLM categories first and eligible modules after them.
 
 ---
 

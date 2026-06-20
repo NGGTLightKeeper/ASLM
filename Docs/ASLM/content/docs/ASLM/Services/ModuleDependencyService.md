@@ -5,9 +5,17 @@ draft: false
 
 ## Overview
 
-`ASLM/Services/ModuleDependencyService.cs` — **`public sealed`** — ensures declared module dependencies are installed and ready before a dependent module runs.
+`ASLM/Services/ModuleDependencyService.cs` — **`public`** — ensures declared module dependencies are installed and ready before a dependent module runs. It also detects circular dependencies during discovery.
 
 **DI:** `AddSingleton<ModuleDependencyService>()`.
+
+Types in same file: **`ModuleDependencyService`**.
+
+---
+
+## Class `ModuleDependencyService`
+
+**Dependencies:** [ModuleInstaller](ModuleInstaller/), [ModuleRunner](ModuleRunner/), `ILogger<ModuleDependencyService>`.
 
 ---
 
@@ -17,60 +25,34 @@ draft: false
 
 **Purpose:** Creates the module dependency service.
 
-**Steps:**
-
-1. Stores references to the installer, runner, and logger.
-
 ---
 
 #### `public async Task<bool> EnsureFirstRunCompletedAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct)`
 
 **Purpose:** Runs first-run setup for every declared module dependency that is not ready yet.
+Sets **`Status.Installed = true`** and **`Status.FirstRunCompleted = true`** on the dependency module upon successful completion of its setup.
 
-**Steps:**
+**Parameters:**
+- `module`: The dependent `ModuleConfig` requesting execution.
+- `log`: Progress reporter to log installation and execution output.
+- `ct`: Cancellation token to abort the process.
 
-1. Manages a thread-local visit stack (`AsyncLocal<HashSet<string>>`) to detect circular dependencies.
-2. Delegates to `EnsureFirstRunCompletedCoreAsync` for recursive dependency resolution.
-3. Cleans up the visit stack if the current invocation owns it.
-4. Returns `true` if all dependencies are successfully resolved and ready, `false` otherwise.
+**Returns:**
+- `Task<bool>`: Returns `true` if all dependencies are verified or successfully setup; `false` on missing dependencies, setup failure, or if a circular dependency is detected.
 
----
-
-## Private methods
-
-#### `private async Task<bool> EnsureFirstRunCompletedCoreAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct, HashSet<string> visitStack)`
-
-**Purpose:** Internal recursive implementation for checking and setting up dependencies.
-
-**Steps:**
-
-1. Iterates over `Dependencies.Modules` in the given `module`.
-2. Checks for self-dependency or circular dependency using `visitStack`. Returns `false` and logs an error if found.
-3. Resolves the installed dependency using `ResolveInstalledModuleAsync`.
-4. Recursively calls `EnsureFirstRunCompletedCoreAsync` for the dependency module itself.
-5. If the dependency module's `FirstRunCompleted` is true, skips further setup.
-6. Otherwise, logs progress and calls `ModuleRunner.ExecuteFirstRunAsync` with `skipModuleDependencies: true`.
-7. Updates the dependency module's status and saves the config.
-8. Ensures `visitStack` is cleaned up after each dependency is processed.
-
----
-
-#### `private async Task<ModuleConfig?> ResolveInstalledModuleAsync(string moduleId, IProgress<string> log, CancellationToken ct)`
-
-**Purpose:** Finds a matching installed module configuration by its dependency identifier.
-
-**Steps:**
-
-1. Calls `ModuleInstaller.DiscoverModulesAsync()` to get the current catalog.
-2. Filters the catalog for modules matching `moduleId` (case-insensitive).
-3. Warns if multiple matching modules are found and selects the one sorted first by `SourcePath`.
-4. Logs an error and returns `null` if no match is found.
-5. Returns the matched `ModuleConfig`.
+**Usage:**
+```csharp
+var dependencyService = _serviceProvider.GetRequiredService<ModuleDependencyService>();
+if (!await dependencyService.EnsureFirstRunCompletedAsync(module, log, ct))
+{
+    return false; // Stop execution, dependency setup failed
+}
+```
 
 ---
 
 ## Related
 
-- [ModuleConfig](../Models/ModuleConfig/)
-- [ModuleRunner](ModuleRunner/)
 - [ModuleInstaller](ModuleInstaller/)
+- [ModuleRunner](ModuleRunner/)
+- [ModuleLaunchCoordinator](ModuleLaunchCoordinator/)
