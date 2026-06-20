@@ -13,7 +13,7 @@ draft: false
 
 | Name | Value |
 | --- | --- |
-| `TotalSteps` | `3` | Numbered steps (excludes welcome step `0`) |
+| `TotalSteps` | `3` (Numbered steps, excludes welcome step `0`) |
 
 ---
 
@@ -82,6 +82,7 @@ Three-row grid: **header** | **content** | **footer**.
 ---
 
 ## Member reference
+
 #### `private async void OnLoaded(object? sender, EventArgs e)`
 
 **Purpose:** Once: **`PopulateModuleListAsync()`**, set **`_skipDockerStep`** from **`DockerService.IsCliInstalledAsync()`**.

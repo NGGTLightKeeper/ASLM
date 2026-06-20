@@ -33,7 +33,7 @@ Layout: centered `VerticalStackLayout` on `BackgroundPrimary`.
 
 ## Constructor
 
-#### `LoadingPage(AppDataStore, NotificationCenter, UpdateScheduler, AslmApiServer, AslmModuleInteropServer, ThemeService, CustomThemesStore, ModuleTrustService, AppLocalizationService, IServiceProvider)`
+#### `LoadingPage(AppDataStore, NotificationCenter, GitHubRateLimitStore, GitHubUpdateClient, UpdateScheduler, AslmApiServer, AslmModuleInteropServer, ThemeService, CustomThemesStore, ModuleTrustService, AppLocalizationService, IServiceProvider)`
 
 **Purpose:** Calls `InitializeComponent()`, stores services, **`LocalizableAttach.Hook(this, _localization, this)`**.
 
@@ -60,8 +60,10 @@ Layout: centered `VerticalStackLayout` on `BackgroundPrimary`.
 | 5 | `_notifications.InitializeAsync()` | background |
 | 6 | `_apiServer.StartIfEnabledAsync()` | background |
 | 7 | `_moduleInteropServer.EnsureStartedAsync()` | background |
-| 8 | `_updateScheduler.Start()` | background |
-| 9 | `_themeService.ApplyFromSettings()` | UI |
+| 8 | `_rateLimitStore.InitializeAsync()` | background |
+| 9 | `_githubUpdateClient.RefreshRateLimitAsync()` | background |
+| 10 | `_updateScheduler.Start()` | background |
+| 11 | `_themeService.ApplyFromSettings()` | UI |
 
 **Navigation:**
 

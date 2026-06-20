@@ -5,7 +5,7 @@ draft: false
 
 ## Class `GitHubUpdateClient`
 
-`ASLM/Services/GitHubUpdateClient.cs` — **`public sealed`** — GitHub REST API for ASLM update checks: releases, branches, file and zipball downloads. In-memory caches (5-minute TTL per repo).
+`ASLM/Services/GitHubUpdateClient.cs` — **`public sealed`** — GitHub REST API for ASLM update checks: releases, branches, file and zipball downloads. In-memory caches (5-minute TTL per repo). Manages rate limit metadata via `GitHubRateLimitStore`.
 
 Branch results use [GitHubBranchInfo](../Models/UpdateModels/) from `ASLM/Models/UpdateModels.cs`.
 
@@ -36,21 +36,38 @@ Types in same file: **`CacheEntry<T>`**, **`GitHubReleaseInfo`**, **`GitHubRelea
 
 ## Public methods
 
-#### `public GitHubUpdateClient()`
+#### `public GitHubUpdateClient(GitHubRateLimitStore rateLimitStore)`
 
 **Purpose:** Creates the GitHub client with headers required by the REST API.
 
 **Steps:**
 
-1. User-Agent: `ASLM-Updater`.
-2. Accept: `application/vnd.github+json`.
-3. `X-GitHub-Api-Version`: `2022-11-28`.
+1. Stores `_rateLimitStore` dependency.
+2. User-Agent: `ASLM-Updater`.
+3. Accept: `application/vnd.github+json`.
+4. `X-GitHub-Api-Version`: `2022-11-28`.
 
 ---
 
-#### `public async Task<GitHubReleaseInfo?> GetLatestReleaseAsync(string repo, bool includePrerelease, CancellationToken ct = default)`
+#### `public async Task RefreshRateLimitAsync(string requestSource = GitHubRequestSources.Auto, CancellationToken ct = default)`
+
+**Purpose:** Refreshes the persisted GitHub rate-limit window from the dedicated API endpoint.
+
+**Steps:**
+
+1. Requests `https://api.github.com/rate_limit`.
+2. Calls `ApplyRateLimitHeaders` and records the request.
+3. Deserializes `GitHubRateLimitPayload` and updates `_rateLimitStore` from core limit metadata.
+
+#### `public async Task<GitHubReleaseInfo?> GetLatestReleaseAsync(string repo, bool includePrerelease, string requestSource = GitHubRequestSources.Auto, CancellationToken ct = default)`
 
 **Purpose:** Returns the most recent release allowed by the requested channel.
+
+- **Parameters:**
+  - `repo`: Repository name.
+  - `includePrerelease`: Whether to include pre-releases.
+  - `requestSource`: Source of request, auto or manual.
+  - `ct`: Cancellation token.
 
 **Steps:**
 
@@ -59,9 +76,15 @@ Types in same file: **`CacheEntry<T>`**, **`GitHubReleaseInfo`**, **`GitHubRelea
 
 ---
 
-#### `public async Task<List<GitHubReleaseInfo>> GetReleasesAsync(string repo, bool includePrerelease, CancellationToken ct = default)`
+#### `public async Task<List<GitHubReleaseInfo>> GetReleasesAsync(string repo, bool includePrerelease, string requestSource = GitHubRequestSources.Auto, CancellationToken ct = default)`
 
 **Purpose:** Returns the release list allowed by the requested channel.
+
+- **Parameters:**
+  - `repo`: Repository name.
+  - `includePrerelease`: Whether to include pre-releases.
+  - `requestSource`: Source of request, auto or manual.
+  - `ct`: Cancellation token.
 
 **Steps:**
 
@@ -72,9 +95,14 @@ Types in same file: **`CacheEntry<T>`**, **`GitHubReleaseInfo`**, **`GitHubRelea
 
 ---
 
-#### `public Task<List<GitHubBranchInfo>> GetBranchesAsync(string repo, CancellationToken ct = default)`
+#### `public Task<List<GitHubBranchInfo>> GetBranchesAsync(string repo, string requestSource = GitHubRequestSources.Auto, CancellationToken ct = default)`
 
 **Purpose:** Returns all repository branch names with their current commit SHA.
+
+- **Parameters:**
+  - `repo`: Repository name.
+  - `requestSource`: Source of request, auto or manual.
+  - `ct`: Cancellation token.
 
 **Steps:**
 
@@ -83,9 +111,17 @@ Types in same file: **`CacheEntry<T>`**, **`GitHubReleaseInfo`**, **`GitHubRelea
 
 ---
 
-#### `public async Task DownloadFileAsync(string url, string destinationPath, IProgress<string>? log = null, IProgress<DownloadProgress>? downloadProgress = null, CancellationToken ct = default)`
+#### `public async Task DownloadFileAsync(string url, string destinationPath, IProgress<string>? log = null, IProgress<DownloadProgress>? downloadProgress = null, string requestSource = GitHubRequestSources.Auto, CancellationToken ct = default)`
 
 **Purpose:** Downloads one URL to the requested file path with throttled progress.
+
+- **Parameters:**
+  - `url`: Target URL.
+  - `destinationPath`: Output path.
+  - `log`: Progress log.
+  - `downloadProgress`: Download progress sink.
+  - `requestSource`: Source of request, auto or manual.
+  - `ct`: Cancellation token.
 
 **Steps:**
 
@@ -96,9 +132,18 @@ Types in same file: **`CacheEntry<T>`**, **`GitHubReleaseInfo`**, **`GitHubRelea
 
 ---
 
-#### `public Task DownloadRepositoryZipAsync(string repo, string reference, string destinationPath, IProgress<string>? log = null, IProgress<DownloadProgress>? downloadProgress = null, CancellationToken ct = default)`
+#### `public Task DownloadRepositoryZipAsync(string repo, string reference, string destinationPath, IProgress<string>? log = null, IProgress<DownloadProgress>? downloadProgress = null, string requestSource = GitHubRequestSources.Auto, CancellationToken ct = default)`
 
 **Purpose:** Downloads a repository ZIP archive for the requested ref.
+
+- **Parameters:**
+  - `repo`: Repository name.
+  - `reference`: Branch or ref.
+  - `destinationPath`: Output path.
+  - `log`: Progress log.
+  - `downloadProgress`: Download progress sink.
+  - `requestSource`: Source of request, auto or manual.
+  - `ct`: Cancellation token.
 
 **Steps:**
 
