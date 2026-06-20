@@ -47,6 +47,12 @@ Implements **`IDisposable`**. Subscribes to **`PortRegistry.PortsRedistributed`*
 
 ---
 
+#### `public IReadOnlyList<ModuleConfig> GetRunningModuleConfigs()`
+
+**Purpose:** Returns the module configurations for instances that currently have tracked live processes. The returned configs are the same snapshots stored at process launch time.
+
+---
+
 #### `public IReadOnlyList<RunningModuleSnapshot> GetRunningModulesSnapshot()`
 
 **Purpose:** Id, name, and source path for modules with live processes.
