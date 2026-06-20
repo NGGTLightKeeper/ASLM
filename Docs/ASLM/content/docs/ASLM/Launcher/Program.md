@@ -7,19 +7,25 @@ draft: false
 
 `ASLM/Launcher/Program.cs` — **`internal static`** entry point. Assembly name **`ASLM`** (`Launcher.csproj` → `ASLM.exe` at install root).
 
+Two layouts are supported:
+
+- **Monolithic (Debug):** The Launcher executable sits next to `App\`, `Patcher\`, `Data\`, etc. in one directory. This layout is detected automatically and behaves exactly as before.
+- **Dual-location (Release):** The Launcher sits in a shared installation directory alongside `aslm-base.zip`. The application itself lives in the per-user `%LOCALAPPDATA%\ASLM` directory. If that directory is not yet populated, the Launcher bootstraps it from `aslm-base.zip` before starting the application.
+
 ---
 
 ### Constants
 
 | Name | Value | Role |
 | --- | --- | --- |
-| `FolderName` | `"App"` | Subfolder containing the MAUI host |
+| `AppFolderName` | `"App"` | Subfolder containing the MAUI host |
 | `ExeName` | `"ASLM.exe"` | Main application executable |
 | `LogFileName` | `"Launcher.log"` | Log file next to launcher |
 | `PatcherFolderName` | `"Patcher"` | Bundled patcher directory |
 | `PatcherExeNames` | `ASLM Patcher.exe`, `Patcher.exe` | Tried in order |
-| `PendingUpdatePath` | `.aslm-update\pending.json` | Self-update handoff marker |
+| `PendingUpdateRelativePath` | `.aslm-update\pending.json` | Self-update handoff marker |
 | `WaitProcessArgument` | `--wait-process` | Launcher-only CLI flag |
+| `LauncherArgument` | `--launcher` | Argument to pass the Launcher's own path to the Patcher |
 
 ---
 
@@ -27,18 +33,39 @@ draft: false
 
 #### `private static void Main(string[] args)`
 
-**Purpose:** Application entry — wait for a prior process if requested, hand off to the patcher when an update is pending, otherwise start `App/ASLM.exe`.
+**Purpose:** Application entry — wait for a prior process if requested, conditionally bootstrap the user application directory based on the layout, hand off to the patcher when an update is pending, and otherwise start the main application.
 
 | Step | Action |
 | --- | --- |
-| 1 | Resolve `currentDir`, `logPath`, `targetPath` = `{currentDir}/App/ASLM.exe` |
-| 2 | `WaitForRequestedProcessExit(args, logPath)` |
-| 3 | If `TryStartPendingPatcher(currentDir, logPath)` → return (patcher owns restart) |
-| 4 | If `App/ASLM.exe` missing → log and `Environment.Exit(1)` |
-| 5 | Build `ProcessStartInfo` for `targetPath`, `WorkingDirectory = App` |
-| 6 | `AppendForwardedArguments(startInfo, args)` |
-| 7 | `Process.Start`; on failure log and exit 1 |
-| Catch | Log critical error and exit 1 |
+| 1 | Resolve `sharedInstallDir` and `logPath`. |
+| 2 | `WaitForRequestedProcessExit(args, logPath)`. |
+| 3 | Determine `appRoot`: if `AppPaths.IsMonolithicLayout`, `appRoot = sharedInstallDir`. Otherwise, `appRoot = AppPaths.GetUserAppDir()`. If the user directory is not ready, bootstrap it using `UserBootstrapper.TryBootstrap` and write the launcher reference file. |
+| 4 | `TryStartPendingPatcher(sharedInstallDir, appRoot, logPath)`. If true, return (patcher owns restart). |
+| 5 | `StartApp(appRoot, args, logPath)`. |
+| Catch | Log critical error and exit 1. |
+
+---
+
+#### `private static void StartApp(string appRoot, string[] args, string logPath)`
+
+**Purpose:** Starts the main ASLM application from the resolved application root directory. Validates the executable path, builds `ProcessStartInfo` (with `WorkingDirectory = App`), forwards arguments, and starts the process. Exits if the target is not found or fails to start.
+
+---
+
+#### `private static bool TryStartPendingPatcher(string sharedInstallDir, string appRoot, string logPath)`
+
+**Purpose:** Start the patcher from a temp shadow copy when `pending.json` exists.
+
+| Step | Action |
+| --- | --- |
+| 1 | If `{appRoot}/.aslm-update/pending.json` is missing → return `false`. |
+| 2 | `ResolvePatcherExecutableName(patcherDir)`. If null → log and return `false`. |
+| 3 | Create `shadowDir` at `%TEMP%/Patcher_{guid}`. |
+| 4 | `CopyDirectory(patcherDir, shadowDir)`. |
+| 5 | Start patcher with `--root {appRoot}` and `--launcher {launcherExePath}`. |
+| 6 | Return `true` on success. |
+
+On exception: log and return `false`.
 
 ---
 
@@ -62,23 +89,6 @@ Used when [SettingsService](../Services/SettingsService/) starts the launcher wi
 **Purpose:** Forward CLI arguments to the MAUI host, excluding launcher-only flags.
 
 Copies each argument to `startInfo.ArgumentList` except `--wait-process` and the following PID value.
-
----
-
-#### `private static bool TryStartPendingPatcher(string rootDir, string logPath)`
-
-**Purpose:** Start the patcher from a temp shadow copy when `pending.json` exists.
-
-| Step | Action |
-| --- | --- |
-| 1 | If `{root}/.aslm-update/pending.json` missing → return `false` |
-| 2 | `ResolvePatcherExecutableName(patcherDir)`; if null → log and return `false` |
-| 3 | `shadowDir = %TEMP%/Patcher_{guid}` |
-| 4 | `CopyDirectory(patcherDir, shadowDir)` |
-| 5 | Start patcher with `--root` + `rootDir` |
-| 6 | Return `true` on success |
-
-On exception: log and return `false`.
 
 ---
 

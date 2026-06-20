@@ -193,6 +193,11 @@ Clears `FooterLabel` at start (except legal-required path).
 
 Calls **`RenderLegalDocumentStep`**, **`UpdatePathPreview`**, or **`UpdateConfirmation`** on relevant steps. Clears `_isRendering` at end.
 
+**Copy changes for dual-location install:**
+
+- `PathStep`: "Choose launcher location" / "Select where the shared launcher and update archive will be placed. The application itself will be installed to your personal AppData folder."
+- `InstallStep`: "Files are being extracted to the selected locations."
+
 ---
 
 #### `private void RenderLegalDocumentStep()`
@@ -215,7 +220,7 @@ Then **`RenderLegalDocumentValidation()`**.
 
 #### `private void UpdateConfirmation()`
 
-**Purpose:** `ConfirmPathLabel` = install path or validation error from **`ValidateCurrentInstallPath()`**.
+**Purpose:** `ConfirmPathLabel` = launcher location and application data path, or validation error from **`ValidateCurrentInstallPath()`**.
 
 ---
 
@@ -261,8 +266,7 @@ Then **`RenderLegalDocumentValidation()`**.
 
 #### `private LegalDocument? GetCurrentLegalDocument()`
 
-**Purpose:** Returns `_legalDocuments[CurrentLegalDocumentIndex]` if in range, else 
-ull`.
+**Purpose:** Returns `_legalDocuments[CurrentLegalDocumentIndex]` if in range, else `null`.
 
 ---
 
@@ -280,7 +284,7 @@ ull`.
 
 | Step | Action |
 | --- | --- |
-| 1 | If `_manifest` and `LaunchAfterInstallCheckBox` checked → `_installerService.Launch(_manifest.InstallPath)`; on error show footer and return |
+| 1 | If `_manifest` and `LaunchAfterInstallCheckBox` checked → `_installerService.Launch(_manifest.SharedInstallPath)`; on error show footer and return |
 | 2 | `Application.Current?.Quit()` |
 
 ---
