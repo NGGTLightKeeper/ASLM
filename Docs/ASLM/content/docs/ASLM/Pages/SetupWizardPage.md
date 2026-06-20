@@ -53,8 +53,8 @@ Three-row grid: **header** | **content** | **footer**.
 | `Step1Panel` | Display name |
 | `DisplayNameTitleLabel`, `UsernameEntry` | **`SettingsService.TryValidateDisplayName`** |
 | `Step2Panel` | Port ranges |
-| `PortAllocationTitleLabel`, `OfficialPortsLabel`, `ThirdPartyPortsLabel` | |
-| `OfficialPortEntry`, `ThirdPartyPortEntry`, `PortErrorLabel` | **`SettingsService.TryParsePorts`** |
+| `PortAllocationTitleLabel`, `ModulePortLabel` | |
+| `ModulePortEntry`, `PortErrorLabel` | **`SettingsService.TryParsePortStart`** |
 | `Step3Panel` | Module list + install UI |
 | `ModuleListScroll` / `ModuleList` | Dynamic checkboxes |
 | `InstallPanel` | Progress + log |
@@ -148,7 +148,7 @@ Three-row grid: **header** | **content** | **footer**.
 
 #### `private bool ValidatePorts()`
 
-**Purpose:** **`SettingsService.TryParsePorts`**; **`ShowPortError`** on failure.
+**Purpose:** **`SettingsService.TryParsePortStart`**; **`ShowPortError`** on failure.
 
 ---
 

@@ -25,16 +25,29 @@ draft: false
 
 ---
 
-#### `public void GetOrAssignPorts_allocates_within_official_range()`
+#### `public void GetOrAssignPorts_allocates_from_modules_start()`
 
-**Purpose:** Official module `http` port is allocated inside configured official range.
+**Purpose:** Module `http` port is allocated starting from the configured modules start port.
 
 | Step | Action |
 | --- | --- |
-| 1 | Layout + `AppDataStore`; set `OfficialStart = 25000`, `OfficialCount = 50` |
-| 2 | `new PortRegistry(appData)`; module `id: "official-module"` |
+| 1 | Layout + `AppDataStore`; set `ModulesStart = 25000` |
+| 2 | `new PortRegistry(appData)`; module `id: "sample-module"` |
 | 3 | `GetOrAssignPorts(module)` |
-| 4 | Assert `ports` contains `http` in range `25000`…`25049` |
+| 4 | Assert `ports` contains `http` equal to `25000` |
+
+---
+
+#### `public void EnsurePortsAvailable_keeps_free_ports_unchanged()`
+
+**Purpose:** Validates that already-free ports are kept when `EnsurePortsAvailable` is called.
+
+| Step | Action |
+| --- | --- |
+| 1 | Layout + `AppDataStore`; set `ModulesStart = 30000` |
+| 2 | `new PortRegistry(appData)`; module `id: "availability-module"` |
+| 3 | `GetOrAssignPorts(module)` |
+| 4 | Assert `EnsurePortsAvailable(module.Id)` returns `false` |
 
 ---
 
@@ -44,7 +57,7 @@ draft: false
 
 | Step | Action |
 | --- | --- |
-| 1 | Layout + app data; `OfficialStart = 26000`, `OfficialCount = 100` |
+| 1 | Layout + app data; `ModulesStart = 26000` |
 | 2 | Two calls with `AslmApiServiceId` / `AslmApiPortKey` |
 | 3 | Assert second equals first; `TryGetInternalServicePort` matches |
 

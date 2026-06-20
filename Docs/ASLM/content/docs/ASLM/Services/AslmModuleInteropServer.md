@@ -166,7 +166,7 @@ Unknown routes → **404** JSON error. Unhandled exceptions → **500**.
 
 #### `private int GetAssignedPort()`
 
-**Purpose:** **`PortRegistry.GetOrAssignInternalServicePort`** for interop service id/key.
+**Purpose:** **`PortRegistry.GetOrAssignInternalServicePort`** and **`EnsurePortsAvailable`** for interop service id/key.
 
 ---
 

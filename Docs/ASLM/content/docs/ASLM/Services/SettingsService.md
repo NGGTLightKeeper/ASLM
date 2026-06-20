@@ -31,7 +31,7 @@ draft: false
 
 ---
 
-#### `public sealed record AslmBaseline(string UserName, string OfficialPort, string ThirdPartyPort, bool ApiServerEnabled)`
+#### `public sealed record AslmBaseline(string UserName, string PortStart, bool ApiServerEnabled)`
 
 **Purpose:** Stores the initial ASLM values loaded for the current page session.
 
@@ -49,7 +49,7 @@ draft: false
 
 ---
 
-#### `public sealed record AslmDraftSnapshot( string UserName, string OfficialPort, string ThirdPartyPort, bool ApiServerEnabled, ConsoleBaseline ConsoleBaseline, UpdateBaseline UpdateBaseline)`
+#### `public sealed record AslmDraftSnapshot( string UserName, string PortStart, bool ApiServerEnabled, ConsoleBaseline ConsoleBaseline, UpdateBaseline UpdateBaseline)`
 
 **Purpose:** Snapshot of editable ASLM drafts derived from persisted app data and runtime state.
 
@@ -95,7 +95,7 @@ draft: false
 
 ---
 
-#### `public static PortParseResult TryParsePorts(string officialDraft, string thirdPartyDraft)`
+#### `public static PortParseResult TryParsePortStart(string draft)`
 
 **Purpose:** Validates the port draft values and returns parsed integers when valid.
 
@@ -125,7 +125,7 @@ draft: false
 
 ---
 
-#### `public static void ApplyDraftsToAppData( AppDataStore appData, string userName, int officialPort, int thirdPartyPort, ConsoleBaseline consoleDraft, AppUpdateSettings updateSettings)`
+#### `public static void ApplyDraftsToAppData( AppDataStore appData, string userName, int modulesStart, ConsoleBaseline consoleDraft, AppUpdateSettings updateSettings)`
 
 **Purpose:** Writes ASLM and update drafts to persisted app data.
 
@@ -143,7 +143,7 @@ draft: false
 
 ---
 
-#### `public static (string OfficialPort, string ThirdPartyPort, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults) BuildDefaultAslmDrafts()`
+#### `public static (string PortStart, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults) BuildDefaultAslmDrafts()`
 
 **Purpose:** Builds ASLM defaults for ports, API and console sections.
 
@@ -155,7 +155,7 @@ draft: false
 
 ---
 
-#### `public static bool HasUnsavedPortChanges(string officialPort, string thirdPartyPort, AslmBaseline baseline)`
+#### `public static bool HasUnsavedPortChanges(string portStart, AslmBaseline baseline)`
 
 **Purpose:** Checks whether ports draft differs from baseline.
 
@@ -179,7 +179,7 @@ draft: false
 
 ---
 
-#### `public static bool HasUnsavedAslmSettingsChanges( string officialPort, string thirdPartyPort, bool apiServerEnabled, ConsoleBaseline consoleDraft, UpdateBaseline updateDraft, AslmBaseline aslmBaseline, ConsoleBaseline consoleBaseline, UpdateBaseline updateBaseline)`
+#### `public static bool HasUnsavedAslmSettingsChanges( string portStart, bool apiServerEnabled, ConsoleBaseline consoleDraft, UpdateBaseline updateDraft, AslmBaseline aslmBaseline, ConsoleBaseline consoleBaseline, UpdateBaseline updateBaseline)`
 
 **Purpose:** Checks whether non-account ASLM settings differ from baseline.
 

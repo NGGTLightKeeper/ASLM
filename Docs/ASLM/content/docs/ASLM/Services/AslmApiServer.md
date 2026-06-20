@@ -453,7 +453,7 @@ Converts a mirror-prefixed path back into the backend root-relative path.
 
 #### `private int GetAssignedPort()`
 
-**Purpose:** Gets or reserves the ASLM API port from the shared official module pool.
+**Purpose:** Gets or reserves the ASLM API port from the shared module port pool.
 
 ---
 
