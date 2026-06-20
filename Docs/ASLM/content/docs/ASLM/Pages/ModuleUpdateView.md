@@ -60,6 +60,7 @@ Implements **`ILocalizable`**, **`INotifyPropertyChanged`**.
 | `ReleasePicker`, `BranchPicker` | GitHub refs |
 | `CheckUpdatesButton`, `InstallUpdateButton` | Footer actions |
 | `OverallProgressLabel`, progress bars, download detail | Activity section |
+| `UpdateLogPanel` | Panel for the console, bound to `HasLog` |
 | `UpdateLogConsole` | **`ConsoleOutputView`** ← `LogText`, `UpdateLogSessionKey` |
 
 ---
@@ -88,7 +89,7 @@ Implements **`ILocalizable`**, **`INotifyPropertyChanged`**.
 
 ## Bound properties
 
-Delegate to **`_module`** when attached (empty/fallback when null). Key members: **`DialogTitle`**, **`DialogSubtitle`**, **`CurrentVersionLabel`**, **`TargetVersionLabel`**, **`SourceModeOptions`**, **`SelectedSourceMode`**, **`ReleaseOptions`**, **`SelectedReleaseOption`**, **`BranchOptions`**, **`SelectedBranch`**, **`IsBranchMode`**, **`IsReleaseMode`**, **`HasUpdate`**, **`CanInstallUpdate`**, **`CanCheckUpdates`**, **`ShowInstallAction`**, **`IsBusy`**, **`ActivityTitle`**, **`ActivityStatus`**, progress fields, **`LogText`**, **`HasLog`**, **`UpdateLogSessionKey`** (`module.SourcePath`).
+Delegate to **`_module`** when attached (empty/fallback when null). Key members: **`DialogTitle`**, **`DialogSubtitle`**, **`CurrentVersionLabel`**, **`TargetVersionLabel`**, **`SourceModeOptions`**, **`SelectedSourceMode`**, **`ReleaseOptions`**, **`SelectedReleaseOption`**, **`BranchOptions`**, **`SelectedBranch`**, **`IsBranchMode`**, **`IsReleaseMode`**, **`HasUpdate`**, **`CanInstallUpdate`**, **`CanCheckUpdates`**, **`ShowInstallAction`**, **`IsBusy`**, **`ActivityTitle`**, **`ActivityStatus`**, progress fields, **`LogText`**, **`HasLog`**, **`UpdateLogSessionKey`** (generates dynamically for new update sessions).
 
 Setters on **`SelectedSourceMode`** / release / branch forward to **`ModuleViewModel`** and trigger option load.
 
