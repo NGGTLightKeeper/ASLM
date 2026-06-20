@@ -185,9 +185,9 @@ Three-row grid: **header** | **content** | **footer**.
 | Persist | User name + ports → **`SaveAsync`** |
 | Select | Checked modules; if none → **`FinishSetupAsync`** |
 | UI mode | Hide module list, show **`InstallPanel`**, new **`_installLogSessionKey`**, clear log |
-| Plan | Count engine + module steps; **`ResetDownloadMetrics`** |
+| Plan | Use **`ModuleDependencyResolver.ExpandInstallOrder`** to include dependencies; count engine + module steps; **`ResetDownloadMetrics`** |
 | Engines | **`DiscoverEngines`** → **`InstallAsync`** per required engine |
-| Modules | Update pipeline (`ShouldUseConfiguredUpdateInstall`) or download + **`ExecuteFirstRunAsync`** |
+| Modules | Skip if **`FirstRunCompleted`**; else update pipeline (`ShouldUseConfiguredUpdateInstall`) or download + **`ExecuteFirstRunAsync`** |
 | End | Success → **`ConfigureFinishButton`**; failure → **`ConfigureRetryAndSkipButtons`** |
 
 Uses **`InlineProgress<string>`** for logs and **`Progress<DownloadProgress>`** for bars.
