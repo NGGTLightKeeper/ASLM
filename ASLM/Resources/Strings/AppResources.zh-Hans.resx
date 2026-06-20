@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>主页</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>接受并继续</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>我已阅读并接受{0}。</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>请先接受此协议后再继续。</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>拒绝</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>条款已更新，请重新查阅并接受。</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>条款 {0} / {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>接受使用 ASLM 所需的条款。</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>条款与许可</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>正在加载...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -741,6 +764,18 @@
   <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
     <value>该模块已不再安装。</value>
   </data>
+  <data name="Notifications_EngineUpdateAvailable" xml:space="preserve">
+    <value>引擎更新可用</value>
+  </data>
+  <data name="Notifications_EngineUpdateFailed" xml:space="preserve">
+    <value>无法应用引擎更新。</value>
+  </data>
+  <data name="Notifications_EngineUpdateNotAvailable" xml:space="preserve">
+    <value>当前没有可用的引擎更新。</value>
+  </data>
+  <data name="Notifications_EngineUpdateTitle" xml:space="preserve">
+    <value>引擎更新</value>
+  </data>
   <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
     <value>模块更新可用</value>
   </data>
@@ -804,6 +839,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>ASLM 使用的显示名称，并与模块共享</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>账户</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>ASLM 显示名称、GitHub 与 Ollama 登录</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>ASLM 账户</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>GitHub 账户</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Ollama 账户</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>未连接</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>连接可将 API 限额从每小时 60 次提升至 5,000 次</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>已连接</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>已以 {0} 连接</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>连接</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>断开连接</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>正在连接…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... 或 github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>粘贴 GitHub 令牌</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>GitHub 应已打开并预填 1 年有效期。公开更新检查请保留默认权限，生成令牌后粘贴到此处。</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>GitHub 账户</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>使用个人访问令牌登录以享受更高的 GitHub API 限额。</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>连接失败：{0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>模块专属配置</value>
   </data>
@@ -824,6 +913,36 @@
   </data>
   <data name="Settings_Category_Updates_Description" xml:space="preserve">
     <value>应用程序与模块更新偏好</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Available" xml:space="preserve">
+    <value>Ollama 更新 {0} 可用</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Button" xml:space="preserve">
+    <value>更新 Ollama</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Description" xml:space="preserve">
+    <value>当前版本：{0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Failed" xml:space="preserve">
+    <value>更新失败：{0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Success" xml:space="preserve">
+    <value>Ollama 已更新至 {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Title" xml:space="preserve">
+    <value>Ollama 更新</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Updating" xml:space="preserve">
+    <value>正在更新 Ollama...</value>
+  </data>
+  <data name="Settings_OllamaUpdate_UpToDate" xml:space="preserve">
+    <value>Ollama 已是最新版本</value>
+  </data>
+  <data name="Settings_CheckAslmUpdates" xml:space="preserve">
+    <value>检查 ASLM 更新</value>
+  </data>
+  <data name="Settings_CheckOllamaUpdates" xml:space="preserve">
+    <value>检查更新</value>
   </data>
   <data name="Settings_CheckNow" xml:space="preserve">
     <value>立即检查</value>
@@ -906,11 +1025,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>没有可用的设置</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>官方模块的起始端口。从此值起保留 100 个端口</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>所有模块的起始端口。从此值起按顺序分配端口</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>官方模块起始端口</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>模块起始端口</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Ollama 账户</value>
@@ -1064,7 +1183,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>控制台</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>条款</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>自动接受条款更新</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>首次确认后自动接受新增和更新的条款。</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>删除</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">
@@ -1112,12 +1239,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>新建主题</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>外部模块的起始端口。从此值起保留 1000 个端口</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>第三方模块起始端口</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>设置</value>
   </data>
@@ -1141,6 +1262,9 @@
   </data>
   <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
     <value>正在下载 ASLM 构建...</value>
+  </data>
+  <data name="Settings_UpdateStatus_EngineUpdatesCount" xml:space="preserve">
+    <value>有 {0} 个引擎更新可用</value>
   </data>
   <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
     <value>有 {0} 个更新可用。可在模块页面应用模块更新</value>
@@ -1197,7 +1321,7 @@
     <value>快速安装</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>快速安装将使用您的 Windows 用户名和默认端口</value>
+    <value>快速安装将使用您的 Windows 用户名和默认设置</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>完成</value>
@@ -1214,8 +1338,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>安装</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>官方模块（100 个端口）</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>模块起始端口</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>总体进度</value>
@@ -1258,9 +1382,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>用户配置文件</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>第三方模块（1000 个端口）</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>ASLM 安装</value>

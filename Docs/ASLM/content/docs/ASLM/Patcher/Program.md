@@ -28,7 +28,9 @@ Applies pending ASLM self-update from `.aslm-update/pending.json`.
 | `PendingRelativePath` | `.aslm-update/pending.json` |
 | `LogRelativePath` | `.aslm-update/logs/Patcher.log` |
 | `LauncherExeName` | `ASLM.exe` |
+| `LauncherRefFileName` | `launcher-ref.json` |
 | `WaitProcessArgument` | `--wait-process` |
+| `LauncherArgument` | `--launcher` |
 
 ### Static fields
 
@@ -144,9 +146,19 @@ Deletes files (normalizes attributes), recurses into subdirs, removes empty subd
 
 ### Private methods — launcher & cleanup
 
-#### `private static void StartLauncher(string root)`
+#### `private static void StartLauncher(string root, string[] args)`
 
-**Purpose:** Starts `{root}/ASLM.exe`, `WorkingDirectory = root`, `UseShellExecute = false`. Logs if missing or start fails.
+**Purpose:** Restarts the Launcher after patching or after a fatal error. Uses a three-tier strategy (see `ResolveLauncherPath`) to find the Launcher, then starts it with `WorkingDirectory` set to the directory containing the executable, and `UseShellExecute = false`. Logs if missing or start fails.
+
+---
+
+#### `private static string? ResolveLauncherPath(string root, string[] args)`
+
+**Purpose:** Resolves the Launcher executable path using a three-tier strategy:
+
+1. The `--launcher` command-line argument passed by the Launcher itself.
+2. The `launcher-ref.json` file written by the Launcher in the application root.
+3. Fallback: `ASLM.exe` adjacent to the application root (legacy / monolithic layout).
 
 #### `private static void TryDeleteDirectory(string path)`
 

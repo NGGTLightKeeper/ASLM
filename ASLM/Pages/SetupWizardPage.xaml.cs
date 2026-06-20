@@ -23,6 +23,7 @@ namespace ASLM.Pages
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly UpdateManager _updateManager;
+        private readonly LegalAcceptanceService _legalAcceptance;
         private readonly AppLocalizationService _localization;
         private readonly IServiceProvider _services;
 
@@ -58,6 +59,7 @@ namespace ASLM.Pages
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
             UpdateManager updateManager,
+            LegalAcceptanceService legalAcceptance,
             AppLocalizationService localization,
             IServiceProvider services)
         {
@@ -67,6 +69,7 @@ namespace ASLM.Pages
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             _updateManager = updateManager;
+            _legalAcceptance = legalAcceptance;
             _localization = localization;
             _services = services;
 
@@ -80,8 +83,7 @@ namespace ASLM.Pages
                 ? Environment.UserName
                 : existingName;
 
-            OfficialPortEntry.Text = _appData.Data.Ports.OfficialStart.ToString();
-            ThirdPartyPortEntry.Text = _appData.Data.Ports.ThirdPartyStart.ToString();
+            ModulePortEntry.Text = _appData.Data.Ports.ModulesStart.ToString();
 
             // Loaded is more reliable than OnAppearing for this WinUI startup flow.
             Loaded += OnLoaded;
@@ -103,6 +105,7 @@ namespace ASLM.Pages
             _moduleListLoaded = true;
             await PopulateModuleListAsync();
             _skipDockerStep = await _dockerService.IsCliInstalledAsync();
+            LegalAcceptanceOverlay.PresentIfRequired(OverlayContainer, _legalAcceptance, _services);
         }
 
 
@@ -126,8 +129,7 @@ namespace ASLM.Pages
         {
             _appData.Data.User.Name = Environment.UserName;
             var defaultPorts = new AppPortConfig();
-            _appData.Data.Ports.OfficialStart = defaultPorts.OfficialStart;
-            _appData.Data.Ports.ThirdPartyStart = defaultPorts.ThirdPartyStart;
+            _appData.Data.Ports.ModulesStart = defaultPorts.ModulesStart;
             await _appData.SaveAsync();
 
             _pendingFastSetup = true;
@@ -331,8 +333,7 @@ namespace ASLM.Pages
             DisplayNameTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_DisplayNameTitle);
             UsernameEntry.Placeholder = L.Get(LocalizationKeys.SetupWizard_DisplayNamePlaceholder);
             PortAllocationTitleLabel.Text = L.Get(LocalizationKeys.SetupWizard_PortAllocationTitle);
-            OfficialPortsLabel.Text = L.Get(LocalizationKeys.SetupWizard_OfficialPortsLabel);
-            ThirdPartyPortsLabel.Text = L.Get(LocalizationKeys.SetupWizard_ThirdPartyPortsLabel);
+            ModulePortLabel.Text = L.Get(LocalizationKeys.SetupWizard_ModulesPortLabel);
             InstallStatusLabel.Text = L.Get(LocalizationKeys.SetupWizard_Preparing);
             OverallProgressLabel.Text = L.Get(LocalizationKeys.SetupWizard_OverallProgress);
             BackButton.Text = L.Get(LocalizationKeys.Common_Back);
@@ -375,14 +376,13 @@ namespace ASLM.Pages
         // Port validation
 
         /// <summary>
-        /// Validates both persisted port ranges and reports overlap errors.
+        /// Validates the module start port draft.
         /// </summary>
         private bool ValidatePorts()
         {
             PortErrorLabel.IsVisible = false;
-            var portResult = SettingsService.TryParsePorts(
-                OfficialPortEntry.Text?.Trim() ?? string.Empty,
-                ThirdPartyPortEntry.Text?.Trim() ?? string.Empty);
+            var portResult = SettingsService.TryParsePortStart(
+                ModulePortEntry.Text?.Trim() ?? string.Empty);
             if (!portResult.Success)
             {
                 ShowPortError(portResult.ErrorMessage);
@@ -489,13 +489,11 @@ namespace ASLM.Pages
                 _appData.Data.User.Name = validatedUserName;
             }
 
-            var portResult = SettingsService.TryParsePorts(
-                OfficialPortEntry.Text?.Trim() ?? string.Empty,
-                ThirdPartyPortEntry.Text?.Trim() ?? string.Empty);
+            var portResult = SettingsService.TryParsePortStart(
+                ModulePortEntry.Text?.Trim() ?? string.Empty);
             if (portResult.Success)
             {
-                _appData.Data.Ports.OfficialStart = portResult.OfficialPort;
-                _appData.Data.Ports.ThirdPartyStart = portResult.ThirdPartyPort;
+                _appData.Data.Ports.ModulesStart = portResult.ModulesStart;
             }
 
             await _appData.SaveAsync();
@@ -531,11 +529,25 @@ namespace ASLM.Pages
             _cts = new CancellationTokenSource();
             var logProgress = new InlineProgress<string>(AddLog);
 
+            List<ModuleConfig> catalog;
+            try
+            {
+                catalog = await Task.Run(() => _moduleInstaller.DiscoverModulesAsync(), _cts.Token);
+            }
+            catch (Exception ex)
+            {
+                AddLog($"Failed to load module catalog: {ex.Message}");
+                ConfigureRetryAndSkipButtons();
+                return;
+            }
+
+            var installModules = ModuleDependencyResolver.ExpandInstallOrder(selectedModules, catalog);
+
             var totalSteps = 0;
             var completedSteps = 0;
             var hasFailures = false;
 
-            var requiredEngineIds = selectedModules
+            var requiredEngineIds = installModules
                 .SelectMany(module => module.Dependencies.Engines)
                 .Select(engine => engine.Id)
                 .Distinct()
@@ -543,7 +555,7 @@ namespace ASLM.Pages
 
             var allEngines = await Task.Run(() => _engineInstaller.DiscoverEngines(), _cts.Token);
             totalSteps += requiredEngineIds.Count;
-            totalSteps += selectedModules.Sum(GetModuleInstallStepCount);
+            totalSteps += installModules.Sum(GetModuleInstallStepCount);
 
             // Reset rolling download metrics before the first transfer begins.
             ResetDownloadMetrics();
@@ -616,9 +628,17 @@ namespace ASLM.Pages
                     ResetFileProgress();
                 }
 
-                // Install each selected module either through the update-aware pipeline or the legacy download flow.
-                foreach (var module in selectedModules)
+                // Install each selected module (and declared module dependencies) either through the update-aware pipeline or the legacy download flow.
+                foreach (var module in installModules)
                 {
+                    if (module.Status.FirstRunCompleted)
+                    {
+                        AddLog($"[OK] {module.Name} already set up.");
+                        completedSteps += GetModuleInstallStepCount(module);
+                        UpdateOverallProgress(completedSteps, totalSteps);
+                        continue;
+                    }
+
                     if (ShouldUseConfiguredUpdateInstall(module))
                     {
                         UpdateInstallStatus($"Installing {module.Name}...");
@@ -864,7 +884,7 @@ namespace ASLM.Pages
         {
             // Setup should resolve the same branch or release candidate the normal updater would use.
             var candidate = await Task.Run(
-                () => _updateManager.ResolveModuleInstallCandidateAsync(module, ct),
+                () => _updateManager.ResolveModuleInstallCandidateAsync(module, ct, isManualRequest: true),
                 ct);
             if (candidate == null)
             {
@@ -874,7 +894,12 @@ namespace ASLM.Pages
 
             // Reuse the full module update pipeline so preserve rules and first-run behavior stay consistent.
             return await Task.Run(
-                () => _updateManager.ApplyModuleUpdateAsync(candidate, logProgress, downloadProgress, ct),
+                () => _updateManager.ApplyModuleUpdateAsync(
+                    candidate,
+                    logProgress,
+                    downloadProgress,
+                    isManualRequest: true,
+                    ct: ct),
                 ct);
         }
 

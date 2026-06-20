@@ -364,8 +364,8 @@ public partial class MainPage : ContentPage
         }
         else if (_step == PathStep)
         {
-            TitleLabel.Text = "Choose installation location";
-            SubtitleLabel.Text = "Select a parent directory and the folder name to create.";
+            TitleLabel.Text = "Choose launcher location";
+            SubtitleLabel.Text = "Select where the shared launcher and update archive will be placed. The application itself will be installed to your personal AppData folder.";
             NextButton.Text = "Next";
             UpdatePathPreview();
         }
@@ -379,7 +379,7 @@ public partial class MainPage : ContentPage
         else if (_step == InstallStep)
         {
             TitleLabel.Text = _isInstalled ? "Installation complete" : "Installing ASLM";
-            SubtitleLabel.Text = _isInstalled ? "ASLM is ready to use." : "Files are being extracted to the selected folder.";
+            SubtitleLabel.Text = _isInstalled ? "ASLM is ready to use." : "Files are being extracted to the selected locations.";
             NextButton.Text = _isInstalled ? "Finish" : "Installing";
         }
 
@@ -425,15 +425,23 @@ public partial class MainPage : ContentPage
     }
 
     /// <summary>
-    /// Updates the final confirmation text.
+    /// Updates the final confirmation text showing both installation locations.
     /// </summary>
     private void UpdateConfirmation()
     {
         var validation = ValidateCurrentInstallPath();
+        var userAppDir = _installerService.GetUserAppDir();
 
-        ConfirmPathLabel.Text = validation.IsValid
-            ? $"Install path: {validation.InstallPath}"
-            : $"Install path: {validation.Message}";
+        if (validation.IsValid)
+        {
+            ConfirmPathLabel.Text =
+                $"Launcher location: {validation.InstallPath}{Environment.NewLine}" +
+                $"Application data:  {userAppDir}";
+        }
+        else
+        {
+            ConfirmPathLabel.Text = $"Launcher location: {validation.Message}";
+        }
     }
 
 
@@ -512,7 +520,7 @@ public partial class MainPage : ContentPage
         {
             try
             {
-                _installerService.Launch(_manifest.InstallPath);
+                _installerService.Launch(_manifest.SharedInstallPath);
             }
             catch (Exception ex)
             {

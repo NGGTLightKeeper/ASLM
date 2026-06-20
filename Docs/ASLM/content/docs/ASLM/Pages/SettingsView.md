@@ -70,7 +70,7 @@ Style resource keys: `FooterButtonStyleKey`, `FooterPrimaryButtonStyleKey`, `Foo
 | `SettingsScroll` / `SettingsContentContainer` | Right pane scroll host |
 | `AslmSettingsContainer` | Profile + ports (account/ASLM categories) |
 | `UserProfileSection` | `UsernameEntry` |
-| `PortsSection` | `OfficialPortEntry`, `ThirdPartyPortEntry`, `PortErrorLabel` |
+| `PortsSection` | `ModulePortEntry`, `PortErrorLabel` |
 | `ModuleSettingsContainer` | Dynamic module / updates / personalization / Ollama content |
 | `EmptyCategoryState` / `EmptyCategoryLabel` | No settings placeholder |
 | `DefaultButton` | `OnDefaultClicked` |
@@ -340,7 +340,7 @@ Lightweight switch used instead of native `Switch` for consistent sizing.
 
 #### `private async Task LoadModuleDraftsAsync(bool reloadModules, bool reloadRuntimeValues)`
 
-**Purpose:** Discovers installed modules and optional runtime values.
+**Purpose:** Discovers installed modules and optional runtime values. It filters out ineligible modules using `SettingsService.IsModuleEligibleForSettings`.
 
 **Steps:**
 
@@ -480,7 +480,7 @@ Lightweight switch used instead of native `Switch` for consistent sizing.
 
 #### `private bool HasPendingRestartChanges()`
 
-**Purpose:** True when save+restart would affect app or modules.
+**Purpose:** Checks whether any pending edit has a restart path, regardless of the visible category.
 
 ---
 
@@ -704,7 +704,7 @@ Lightweight switch used instead of native `Switch` for consistent sizing.
 
 ---
 
-#### `private string GetCurrentOfficialPortDraft()` / `GetCurrentThirdPartyPortDraft()`
+#### `private string GetCurrentPortStartDraft()`
 
 **Purpose:** Reads ports from visible entries or cached drafts.
 
@@ -783,7 +783,7 @@ Lightweight switch used instead of native `Switch` for consistent sizing.
 1. Validate display name, ports, updates, all modules.
 2. `SavePersonalizationAsync` if needed; `ApplyDraftsToAppData`; `SaveAsync`.
 3. Toggle API server; update baselines; save changed modules; rebuild categories.
-4. Success toast; `RestartChangedTargetsAsync` or personalization module restarts.
+4. Success toast; optionally restarts application via launcher if personalization changes exist, otherwise calls `RestartChangedTargetsAsync`.
 
 ---
 
@@ -793,15 +793,9 @@ Lightweight switch used instead of native `Switch` for consistent sizing.
 
 ---
 
-#### `private async Task RestartModulesForHostPersonalizationAsync(IEnumerable<ModuleConfig> alreadyRestarted)`
+#### `private async Task RestartApplicationThroughLauncherAsync()`
 
-**Purpose:** Restarts modules with theme/locale settings not already restarted.
-
----
-
-#### `private static bool ModuleDeclaresHostPersonalizationSync(ModuleConfig module)`
-
-**Purpose:** True if manifest has `theme` or `locale` setting types.
+**Purpose:** Stops modules, starts the launcher with process wait, and exits so ASLM relaunches cleanly.
 
 ---
 
@@ -985,9 +979,9 @@ Lightweight switch used instead of native `Switch` for consistent sizing.
 
 ---
 
-#### `private async Task SavePersonalizationAsync()`
+#### `private async Task SavePersonalizationAsync(bool applyImmediately = true)`
 
-**Purpose:** Persists theme edits, app personalization, applies theme, culture if language changed.
+**Purpose:** Persists the personalization draft to app data and optionally applies the new theme immediately.
 
 ---
 

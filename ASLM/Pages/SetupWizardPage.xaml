@@ -8,7 +8,8 @@
              Title="ASLM Setup"
              BackgroundColor="{DynamicResource BackgroundPrimary}">
 
-    <Grid RowDefinitions="Auto, *, Auto" Padding="16">
+    <Grid>
+        <Grid RowDefinitions="Auto, *, Auto" Padding="16">
 
         <!-- Header (hidden on welcome step) -->
         <Grid x:Name="HeaderRow" Grid.Row="0" ColumnDefinitions="*, Auto"
@@ -128,22 +129,12 @@
                        Text="Port Allocation"
                        FontSize="18"
                        TextColor="{DynamicResource LabelPrimary}" />
-                <Label x:Name="OfficialPortsLabel"
-                       Text="Official modules (100 ports)"
+                <Label x:Name="ModulePortLabel"
+                       Text="Module start port"
                        FontSize="13"
                        TextColor="{DynamicResource LabelSecondary}" />
-                <Entry x:Name="OfficialPortEntry"
+                <Entry x:Name="ModulePortEntry"
                        Text="20000"
-                       Keyboard="Numeric"
-                       FontSize="16"
-                       TextColor="{DynamicResource LabelPrimary}"
-                       BackgroundColor="{DynamicResource BackgroundSecondary}" />
-                <Label x:Name="ThirdPartyPortsLabel"
-                       Text="Third-party modules (1000 ports)"
-                       FontSize="13"
-                       TextColor="{DynamicResource LabelSecondary}" />
-                <Entry x:Name="ThirdPartyPortEntry"
-                       Text="21000"
                        Keyboard="Numeric"
                        FontSize="16"
                        TextColor="{DynamicResource LabelPrimary}"
@@ -246,6 +237,11 @@
                     Clicked="OnNextClicked" />
         </HorizontalStackLayout>
 
+        </Grid>
+
+        <ContentView x:Name="OverlayContainer"
+                     IsVisible="False"
+                     BackgroundColor="Transparent" />
     </Grid>
 
 </ContentPage>

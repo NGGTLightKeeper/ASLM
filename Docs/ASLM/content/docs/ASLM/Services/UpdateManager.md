@@ -34,43 +34,85 @@ draft: false
 
 ---
 
-#### `public async Task<UpdateCandidate?> CheckAppUpdateAsync( CancellationToken ct = default, bool publishUpdateNotification = true)`
+#### `public async Task<UpdateCandidate?> CheckAppUpdateAsync( CancellationToken ct = default, bool publishUpdateNotification = true, bool isManualRequest = false)`
 
-**Purpose:** When false, skips publishing an update-available notification (used when auto-updates will apply immediately).
+**Purpose:** Checks for ASLM updates.
+
+- **Parameters:**
+  - `ct`: Cancellation token.
+  - `publishUpdateNotification`: When false, skips publishing an update-available notification (used when auto-updates will apply immediately).
+  - `isManualRequest`: Indicates if the request was triggered manually by the user, adjusting rate limit handling.
 
 ---
 
-#### `public async Task<UpdateCandidate?> CheckModuleUpdateAsync( ModuleConfig module, CancellationToken ct = default, bool publishUpdateNotification = true)`
+#### `public async Task<UpdateCandidate?> CheckModuleUpdateAsync( ModuleConfig module, CancellationToken ct = default, bool publishUpdateNotification = true, bool isManualRequest = false)`
 
-**Purpose:** When false, skips publishing an update-available notification (used when auto-updates will apply immediately).
+**Purpose:** Checks for ASLM updates.
+
+- **Parameters:**
+  - `ct`: Cancellation token.
+  - `publishUpdateNotification`: When false, skips publishing an update-available notification (used when auto-updates will apply immediately).
+  - `isManualRequest`: Indicates if the request was triggered manually by the user, adjusting rate limit handling.
 
 ---
 
-#### `public async Task<UpdateCandidate?> ResolveModuleInstallCandidateAsync( ModuleConfig module, CancellationToken ct = default)`
+#### `public async Task<UpdateCandidate?> ResolveModuleInstallCandidateAsync( ModuleConfig module, CancellationToken ct = default, bool isManualRequest = false)`
 
 **Purpose:** Resolves the concrete install target that should be used for a module during setup.
 
----
-
-#### `public async Task<List<UpdateCandidate>> GetModuleReleaseCandidatesAsync( ModuleConfig module, CancellationToken ct = default)`
-
-**Purpose:** ---
-
-#### `public async Task<List<UpdateCandidate>> CheckAllUpdatesAsync( CancellationToken ct = default, bool publishUpdateNotifications = true)`
-
-When false, skips publishing update-available notifications for every discovery (used when auto-updates will apply immediately).
+- **Parameters:**
+  - `module`: Module config.
+  - `ct`: Cancellation token.
+  - `isManualRequest`: Indicates if the request was manually initiated.
 
 ---
 
-#### `public async Task ApplyDiscoveredUpdatesAsync( IReadOnlyList<UpdateCandidate> updates, IProgress<string>? log, CancellationToken ct = default)`
+#### `public async Task<List<UpdateCandidate>> GetModuleReleaseCandidatesAsync( ModuleConfig module, CancellationToken ct = default, bool isManualRequest = false)`
+
+**Purpose:** Gets module release candidates.
+
+- **Parameters:**
+  - `module`: The module configuration.
+  - `ct`: Cancellation token.
+  - `isManualRequest`: Indicates if the request was manually initiated.
+
+#### `public async Task<List<UpdateCandidate>> CheckAllUpdatesAsync( CancellationToken ct = default, bool publishUpdateNotifications = true, bool isManualRequest = false)`
+
+**Purpose:** Checks all updates.
+
+- **Parameters:**
+  - `ct`: Cancellation token.
+  - `publishUpdateNotifications`: When false, skips publishing update-available notifications for every discovery (used when auto-updates will apply immediately).
+  - `isManualRequest`: Indicates if the request was manually initiated.
+
+---
+
+#### `public async Task ApplyDiscoveredUpdatesAsync( IReadOnlyList<UpdateCandidate> updates, IProgress<string>? log, CancellationToken ct = default, bool isManualRequest = false)`
 
 **Purpose:** ASLM self-update prepared for the next launcher start when not already staged.
 
+- **Parameters:**
+  - `updates`: Updates to apply.
+  - `log`: Progress log.
+  - `ct`: Cancellation token.
+  - `isManualRequest`: Indicates if the request was manually initiated.
+
 ---
 
-#### `public Task<List<GitHubBranchInfo>> GetModuleBranchesAsync(ModuleConfig module, CancellationToken ct = default)`
+#### `public Task<List<ModuleConfig>> DiscoverInstalledModulesAsync()`
 
-**Purpose:** ---
+**Purpose:** Returns every installed module manifest for background update scheduling.
+
+---
+
+#### `public Task<List<GitHubBranchInfo>> GetModuleBranchesAsync(ModuleConfig module, CancellationToken ct = default, bool isManualRequest = false)`
+
+**Purpose:** Gets module branches.
+
+- **Parameters:**
+  - `module`: The module configuration.
+  - `ct`: Cancellation token.
+  - `isManualRequest`: Indicates if the request was manually initiated.
 
 #### `public void SaveModuleUpdatePreferences(ModuleConfig module)`
 
@@ -84,15 +126,29 @@ Saves one module manifest after update preferences changed in UI.
 
 ---
 
-#### `public async Task<bool> PrepareAppUpdateAsync( UpdateCandidate candidate, IProgress<string>? log = null, IProgress<DownloadProgress>? progress = null, CancellationToken ct = default)`
+#### `public async Task<bool> PrepareAppUpdateAsync( UpdateCandidate candidate, IProgress<string>? log = null, IProgress<DownloadProgress>? progress = null, bool isManualRequest = false, CancellationToken ct = default)`
 
 **Purpose:** Downloads and stages an ASLM app update for the external patcher.
 
+- **Parameters:**
+  - `candidate`: Update candidate.
+  - `log`: Progress log.
+  - `progress`: Download progress.
+  - `isManualRequest`: Indicates if the request was manually initiated.
+  - `ct`: Cancellation token.
+
 ---
 
-#### `public async Task<bool> ApplyModuleUpdateAsync( UpdateCandidate candidate, IProgress<string>? log = null, IProgress<DownloadProgress>? progress = null, CancellationToken ct = default)`
+#### `public async Task<bool> ApplyModuleUpdateAsync( UpdateCandidate candidate, IProgress<string>? log = null, IProgress<DownloadProgress>? progress = null, bool isManualRequest = false, CancellationToken ct = default)`
 
 **Purpose:** Downloads and applies one module update.
+
+- **Parameters:**
+  - `candidate`: Update candidate.
+  - `log`: Progress log.
+  - `progress`: Download progress.
+  - `isManualRequest`: Indicates if the request was manually initiated.
+  - `ct`: Cancellation token.
 
 ---
 
@@ -200,9 +256,46 @@ Saves one module manifest after update preferences changed in UI.
 
 ---
 
-#### `private static bool IsModuleAlreadyAtInstallTarget(ModuleConfig module, UpdateCandidate candidate)`
+#### `internal static bool HasRecordedRemoteSourceInstall(ModuleConfig module)`
 
-**Purpose:** ---
+**Purpose:** Returns whether the module manifest records a successful remote source install.
+
+**Parameters:**
+
+- `module`: The `ModuleConfig` to check.
+
+**Returns:** `true` if a remote source install is recorded; otherwise, `false`.
+
+**Example:**
+
+```csharp
+bool hasInstall = UpdateManager.HasRecordedRemoteSourceInstall(module);
+```
+
+---
+
+#### `internal static bool ShouldOfferReleaseInstallCandidate(ModuleConfig module, string resolvedReleaseTag)`
+
+**Purpose:** Returns whether a resolved release install candidate should be offered for download.
+
+**Parameters:**
+
+- `module`: The `ModuleConfig` to evaluate.
+- `resolvedReleaseTag`: The resolved release tag.
+
+**Returns:** `true` if the candidate should be offered; otherwise, `false`.
+
+**Example:**
+
+```csharp
+bool shouldOffer = UpdateManager.ShouldOfferReleaseInstallCandidate(module, "0.7.1.8");
+```
+
+---
+
+#### `internal static bool IsModuleAlreadyAtInstallTarget(ModuleConfig module, UpdateCandidate candidate)`
+
+**Purpose:** Returns whether the install candidate already matches the local installation (no file work needed).
 
 #### `private static string ResolveCurrentAppDisplayVersion()`
 

@@ -48,9 +48,15 @@ Internal owners use id prefix **`__`**.
 
 ---
 
+#### `public bool EnsurePortsAvailable(string ownerId)`
+
+**Purpose:** Verifies all assigned ports for an owner are free on the system, reallocating any that are in use and returning whether the map was changed.
+
+---
+
 #### `public int GetOrAssignInternalServicePort(string serviceId, string portKey)`
 
-**Purpose:** Official-pool allocation for internal services (e.g. API mirror, interop).
+**Purpose:** Shared-pool allocation for internal services (e.g. API mirror, interop).
 
 ---
 
@@ -63,6 +69,30 @@ Internal owners use id prefix **`__`**.
 #### `public bool RedistributePorts(bool reserveAslmApiServer)`
 
 **Purpose:** Rebuilds entire map in stable owner order; reserves API owner when requested; always reserves interop; fires **`PortsRedistributed`** when map changed. Returns whether persisted map changed.
+
+---
+
+#### `public IReadOnlyDictionary<string, int>? TryGetAssignedPorts(string ownerId)`
+
+**Purpose:** Returns a read-only copy of all assigned port keys for one owner, or `null` when no assignment exists. Does not allocate new ports.
+
+---
+
+#### `public string? TryGetModulePageUrl(ModuleConfig module)`
+
+**Purpose:** Returns the loopback root URL for the primary WebView port of a module, or `null` when no assignment exists. Does not allocate new ports.
+
+---
+
+#### `public static string BuildLoopbackUrl(int port)`
+
+**Purpose:** Builds a loopback root URL for the given port number.
+
+---
+
+#### `public static string BuildHostRouteKey(string hostKey)`
+
+**Purpose:** Converts a port-map host key to the URL route segment used by the ASLM API mirror. Strips known suffixes (`-port`, `_port`, ` port`) from the key.
 
 ---
 
@@ -112,25 +142,25 @@ Internal owners use id prefix **`__`**.
 
 #### `private bool IsPortValid(string ownerId, int port)`
 
-**Purpose:** In configured official/third-party range, or legacy **40000–49999** fallback band.
+**Purpose:** Checks whether an assigned port is valid for the current start port.
 
 ---
 
 #### `private int AllocatePort(string ownerId)`
 
-**Purpose:** Next free port in owner category using global used set.
+**Purpose:** Allocates the next available port from the shared module pool.
 
 ---
 
 #### `private int AllocatePort(string ownerId, HashSet<int> usedPorts)`
 
-**Purpose:** Explicit used-port set for redistribution.
+**Purpose:** Allocates using an explicit used-port set.
 
 ---
 
-#### `private static int AllocatePort(string ownerId, HashSet<int> usedPorts, int start, int count)`
+#### `private static int AllocatePort(string ownerId, HashSet<int> usedPorts, int start)`
 
-**Purpose:** Linear scan in range, then deterministic **40000+** hash fallback; throws when exhausted.
+**Purpose:** Linear scan from start port, then deterministic **40000+** hash fallback; throws when exhausted.
 
 ---
 

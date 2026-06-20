@@ -41,6 +41,7 @@ namespace ASLM.Pages
         private readonly ModuleStartThrottle _moduleStartThrottle;
         private readonly ModuleLaunchCoordinator _moduleLaunchCoordinator;
         private readonly SettingsService _settingsService;
+        private readonly LegalAcceptanceService _legalAcceptance;
         private readonly AppLocalizationService _localization;
         private readonly IServiceProvider _services;
 
@@ -83,6 +84,7 @@ namespace ASLM.Pages
             ModuleStartThrottle moduleStartThrottle,
             ModuleLaunchCoordinator moduleLaunchCoordinator,
             SettingsService settingsService,
+            LegalAcceptanceService legalAcceptance,
             AppLocalizationService localization,
             IServiceProvider services)
         {
@@ -97,6 +99,7 @@ namespace ASLM.Pages
             _moduleStartThrottle = moduleStartThrottle;
             _moduleLaunchCoordinator = moduleLaunchCoordinator;
             _settingsService = settingsService;
+            _legalAcceptance = legalAcceptance;
             _localization = localization;
             _services = services;
 
@@ -169,6 +172,7 @@ namespace ASLM.Pages
             }
 
             _hasLoaded = true;
+            LegalAcceptanceOverlay.PresentIfRequired(OverlayContainer, _legalAcceptance, _services);
             ScheduleSidebarButtonLayoutRefresh();
             await RefreshModulesAsync();
             NavigateTo(HomeButton);
@@ -176,7 +180,6 @@ namespace ASLM.Pages
             ApplyConsoleNavigationState();
             ScheduleEnsureModuleBrowserLeftToRight();
             _ = StartEnabledModulesAsync();
-            _ = CheckStartupUpdatesAsync();
         }
 
         /// <summary>
@@ -268,32 +271,6 @@ namespace ASLM.Pages
                 }
             }
         }
-
-        /// <summary>
-        /// Checks ASLM and modules for updates once after the main shell opens.
-        /// </summary>
-        private async Task CheckStartupUpdatesAsync()
-        {
-            try
-            {
-                _appData.Data.Updates.Normalize();
-                var autoUpdate = _appData.Data.Updates.AutoUpdateEnabled;
-                var publishNotifications = !autoUpdate;
-                var updates = await Task.Run(() => _updateManager.CheckAllUpdatesAsync(
-                    CancellationToken.None,
-                    publishNotifications));
-
-                if (autoUpdate && updates.Count > 0)
-                {
-                    await Task.Run(() => _updateManager.ApplyDiscoveredUpdatesAsync(updates, null, CancellationToken.None));
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[StartupUpdates] Check failed: {ex.Message}");
-            }
-        }
-
 
         // Module refresh
 
@@ -847,6 +824,12 @@ namespace ASLM.Pages
                     return;
                 }
 
+                if (string.Equals(notification.SourceKind, "engine", StringComparison.OrdinalIgnoreCase))
+                {
+                    await RunEngineUpdateFromNotificationAsync(notification.SourceId);
+                    return;
+                }
+
                 if (string.Equals(notification.SourceKind, "app", StringComparison.OrdinalIgnoreCase))
                 {
                     await RunAppSelfUpdateFromNotificationAsync();
@@ -902,6 +885,55 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Applies an available engine update referenced by one notification.
+        /// </summary>
+        private async Task RunEngineUpdateFromNotificationAsync(string engineId)
+        {
+            var engines = await _updateManager.DiscoverInstalledEnginesAsync();
+            var engine = engines.FirstOrDefault(candidate =>
+                string.Equals(candidate.Id, engineId, StringComparison.OrdinalIgnoreCase));
+
+            if (engine == null)
+            {
+                _notifications.PublishSystemToast(
+                    L.Get(LocalizationKeys.Notifications_EngineUpdateTitle),
+                    L.Get(LocalizationKeys.Notifications_EngineUpdateNotAvailable),
+                    L.Get(LocalizationKeys.Notifications_Unavailable),
+                    engineId);
+                return;
+            }
+
+            var candidate = await Task.Run(() =>
+                _updateManager.CheckEngineUpdateAsync(
+                    engine,
+                    publishUpdateNotification: false,
+                    isManualRequest: true));
+
+            if (candidate == null)
+            {
+                _notifications.PublishSystemToast(
+                    L.Get(LocalizationKeys.Notifications_EngineUpdateTitle),
+                    L.Get(LocalizationKeys.Notifications_EngineUpdateNotAvailable),
+                    L.Get(LocalizationKeys.Settings_OllamaUpdate_UpToDate),
+                    engineId);
+                return;
+            }
+
+            var success = await Task.Run(() => _updateManager.ApplyEngineUpdateAsync(
+                candidate,
+                isManualRequest: true));
+
+            if (!success)
+            {
+                _notifications.PublishSystemToast(
+                    L.Get(LocalizationKeys.Notifications_EngineUpdateTitle),
+                    L.Get(LocalizationKeys.Notifications_EngineUpdateFailed),
+                    L.Get(LocalizationKeys.Notifications_ActionFailed),
+                    engineId);
+            }
+        }
+
+        /// <summary>
         /// Prepares a pending ASLM build when needed and restarts through the launcher.
         /// </summary>
         private async Task RunAppSelfUpdateFromNotificationAsync()
@@ -922,7 +954,12 @@ namespace ASLM.Pages
             if (!_updateManager.HasPendingAppUpdate && candidate != null)
             {
                 var prepared = await Task.Run(() =>
-                    _updateManager.PrepareAppUpdateAsync(candidate, null, null, CancellationToken.None));
+                    _updateManager.PrepareAppUpdateAsync(
+                        candidate,
+                        null,
+                        null,
+                        isManualRequest: true,
+                        ct: CancellationToken.None));
                 if (!prepared)
                 {
                     _notifications.PublishSystemToast(

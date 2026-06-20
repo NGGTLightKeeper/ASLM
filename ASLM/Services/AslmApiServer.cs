@@ -99,7 +99,7 @@ namespace ASLM.Services
                 {
                     return _activePort ??
                            _ports.TryGetInternalServicePort(PortRegistry.AslmApiServiceId, PortRegistry.AslmApiPortKey) ??
-                           _appData.Data.Ports.OfficialStart;
+                           _appData.Data.Ports.ModulesStart;
                 }
             }
         }
@@ -1664,20 +1664,8 @@ namespace ASLM.Services
         /// <summary>
         /// Builds the public route key used for one port-map host.
         /// </summary>
-        private static string BuildHostRouteKey(string hostKey)
-        {
-            var value = (hostKey ?? string.Empty).Trim();
-            foreach (var suffix in new[] { "-port", "_port", " port" })
-            {
-                if (value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) &&
-                    value.Length > suffix.Length)
-                {
-                    return value[..^suffix.Length];
-                }
-            }
-
-            return value;
-        }
+        private static string BuildHostRouteKey(string hostKey) =>
+            PortRegistry.BuildHostRouteKey(hostKey);
 
         /// <summary>
         /// Returns whether a path is already mounted under a mirror route prefix.
@@ -1804,10 +1792,14 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Gets or reserves the ASLM API port from the shared official module pool.
+        /// Gets or reserves the ASLM API port from the shared module port pool.
         /// </summary>
         private int GetAssignedPort()
         {
+            _ports.GetOrAssignInternalServicePort(
+                PortRegistry.AslmApiServiceId,
+                PortRegistry.AslmApiPortKey);
+            _ports.EnsurePortsAvailable(PortRegistry.AslmApiServiceId);
             return _ports.GetOrAssignInternalServicePort(
                 PortRegistry.AslmApiServiceId,
                 PortRegistry.AslmApiPortKey);

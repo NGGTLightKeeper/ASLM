@@ -126,9 +126,12 @@ namespace ASLM.Services
             }
 
             var isApp = string.Equals(candidate.TargetKind, "app", StringComparison.OrdinalIgnoreCase);
+            var isEngine = string.Equals(candidate.TargetKind, "engine", StringComparison.OrdinalIgnoreCase);
             var title = isApp
                 ? L.Get(LocalizationKeys.Notifications_AslmUpdateAvailable)
-                : L.Get(LocalizationKeys.Notifications_ModuleUpdateAvailable);
+                : isEngine
+                    ? L.Get(LocalizationKeys.Notifications_EngineUpdateAvailable)
+                    : L.Get(LocalizationKeys.Notifications_ModuleUpdateAvailable);
             var currentVersion = string.IsNullOrWhiteSpace(candidate.CurrentVersion)
                 ? L.Get(LocalizationKeys.Notifications_InstalledVersionFallback)
                 : candidate.CurrentVersion;

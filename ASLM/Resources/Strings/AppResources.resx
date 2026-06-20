@@ -558,6 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>Home</value>
   </data>
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>Accept and continue</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>I have read and accept {0}.</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>Accept this agreement to continue.</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>Decline</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>Terms were updated. Review and accept again.</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>Terms {0} of {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>Accept the required terms to use ASLM.</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>Terms and licenses</value>
+  </data>
   <data name="Loading_Text" xml:space="preserve">
     <value>Loading...</value>
   </data>
@@ -756,6 +780,18 @@
   <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
     <value>That module is no longer installed.</value>
   </data>
+  <data name="Notifications_EngineUpdateAvailable" xml:space="preserve">
+    <value>Engine update available</value>
+  </data>
+  <data name="Notifications_EngineUpdateFailed" xml:space="preserve">
+    <value>The engine update could not be applied.</value>
+  </data>
+  <data name="Notifications_EngineUpdateNotAvailable" xml:space="preserve">
+    <value>No engine update is available right now.</value>
+  </data>
+  <data name="Notifications_EngineUpdateTitle" xml:space="preserve">
+    <value>Engine update</value>
+  </data>
   <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
     <value>Module update available</value>
   </data>
@@ -804,6 +840,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>Display name used by ASLM and shared with modules</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>Accounts</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>ASLM display name, GitHub and Ollama sign-in</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>ASLM Account</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>GitHub Account</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Ollama Account</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>Not connected</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>Connect to raise the API limit from 60 to 5,000 requests/hour</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>Connected as {0}</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>Connect</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>Disconnect</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>Connecting...</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... or github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>Paste GitHub token</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>GitHub should have opened with a 1-year expiration prefilled. Leave permissions at defaults for public update checks, click Generate token, then paste it here.</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>GitHub Account</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>Sign in with a personal access token to use the higher GitHub API rate limit.</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>Connection failed: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>Module-specific configuration</value>
   </data>
@@ -824,6 +914,36 @@
   </data>
   <data name="Settings_Category_Updates_Description" xml:space="preserve">
     <value>Application and module update preferences</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Available" xml:space="preserve">
+    <value>Ollama update {0} is available</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Button" xml:space="preserve">
+    <value>Update Ollama</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Description" xml:space="preserve">
+    <value>Current version: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Failed" xml:space="preserve">
+    <value>Update failed: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Success" xml:space="preserve">
+    <value>Ollama updated to {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Title" xml:space="preserve">
+    <value>Ollama update</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Updating" xml:space="preserve">
+    <value>Updating Ollama...</value>
+  </data>
+  <data name="Settings_OllamaUpdate_UpToDate" xml:space="preserve">
+    <value>Ollama is up to date</value>
+  </data>
+  <data name="Settings_CheckAslmUpdates" xml:space="preserve">
+    <value>Check ASLM updates</value>
+  </data>
+  <data name="Settings_CheckOllamaUpdates" xml:space="preserve">
+    <value>Check for updates</value>
   </data>
   <data name="Settings_CheckNow" xml:space="preserve">
     <value>Check now</value>
@@ -906,11 +1026,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>No settings are available</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>Starting point for official modules. 100 ports are reserved from this value</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>Starting port for all modules. Ports are allocated sequentially from this value</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>Official modules start port</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>Module start port</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Ollama Account</value>
@@ -1064,6 +1184,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>Consoles</value>
   </data>
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>Terms</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>Auto-accept term updates</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>Accept new and updated terms after the first review.</value>
+  </data>
   <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>Delete</value>
   </data>
@@ -1112,12 +1241,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>New Theme</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>Starting point for external modules. 1000 ports are reserved from this value</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>Third-party modules start port</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Settings</value>
   </data>
@@ -1141,6 +1264,9 @@
   </data>
   <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
     <value>Downloading ASLM build...</value>
+  </data>
+  <data name="Settings_UpdateStatus_EngineUpdatesCount" xml:space="preserve">
+    <value>{0} engine update(s) available</value>
   </data>
   <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
     <value>{0} update(s) available. Module updates can be applied from the Modules page</value>
@@ -1197,7 +1323,7 @@
     <value>Fast Setup</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>Fast Setup uses your Windows username and default ports</value>
+    <value>Fast Setup uses your Windows username and default settings</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>Finish</value>
@@ -1214,8 +1340,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>Install</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>Official modules (100 ports)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>Module start port</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>Overall Progress</value>
@@ -1258,9 +1384,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>User Profile</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>Third-party modules (1000 ports)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>ASLM Setup</value>

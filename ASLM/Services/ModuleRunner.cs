@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using ASLM.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace ASLM.Services
@@ -23,6 +24,7 @@ namespace ASLM.Services
         private readonly ModuleThemePayloadBuilder _themePayloadBuilder;
         private readonly ModuleLocalePayloadBuilder _localePayloadBuilder;
         private readonly ModuleInteropHostState _interopHostState;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ModuleRunner> _logger;
         private readonly SemaphoreSlim _settingCommandThrottle = new(4, 4);
         private static readonly Encoding Utf8NoBom = new UTF8Encoding(false);
@@ -50,6 +52,7 @@ namespace ASLM.Services
         /// <param name="themePayloadBuilder">Builds host theme JSON for modules that declare a theme setting.</param>
         /// <param name="localePayloadBuilder">Builds host locale JSON for modules that declare a locale setting.</param>
         /// <param name="interopHostState">Tracks the module interop listener URL for opted-in modules.</param>
+        /// <param name="serviceProvider">Resolves optional services such as <see cref="ModuleDependencyService"/>.</param>
         /// <param name="logger">Logger instance.</param>
         public ModuleRunner(
             EngineInstaller engineInstaller,
@@ -61,6 +64,7 @@ namespace ASLM.Services
             ModuleThemePayloadBuilder themePayloadBuilder,
             ModuleLocalePayloadBuilder localePayloadBuilder,
             ModuleInteropHostState interopHostState,
+            IServiceProvider serviceProvider,
             ILogger<ModuleRunner> logger)
         {
             _engineInstaller = engineInstaller;
@@ -72,6 +76,7 @@ namespace ASLM.Services
             _themePayloadBuilder = themePayloadBuilder;
             _localePayloadBuilder = localePayloadBuilder;
             _interopHostState = interopHostState;
+            _serviceProvider = serviceProvider;
             _logger = logger;
             _ports.PortsRedistributed += OnPortsRedistributed;
         }
@@ -85,10 +90,24 @@ namespace ASLM.Services
         /// <param name="log">Progress reporter for logging output.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>True if all setup steps succeeded; otherwise, false.</returns>
-        public async Task<bool> ExecuteFirstRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct)
+        public async Task<bool> ExecuteFirstRunAsync(
+            ModuleConfig module,
+            IProgress<string> log,
+            CancellationToken ct,
+            bool skipModuleDependencies = false)
         {
             _consoleStore.EnsureModule(module);
             var moduleLog = CreateModuleLog(module, log);
+
+            if (!skipModuleDependencies &&
+                module.Dependencies.Modules.Count > 0)
+            {
+                var dependencyService = _serviceProvider.GetRequiredService<ModuleDependencyService>();
+                if (!await dependencyService.EnsureFirstRunCompletedAsync(module, moduleLog, ct))
+                {
+                    return false;
+                }
+            }
 
             // 1. Install engine dependencies (libraries) first
             if (!await InstallDependenciesAsync(module, moduleLog, ct))
@@ -100,6 +119,7 @@ namespace ASLM.Services
             if (module.Commands.FirstRun.Count == 0)
             {
                 moduleLog.Report("No first-run commands defined.");
+                module.Status.Installed = true;
                 module.Status.FirstRunCompleted = true;
                 return true;
             }
@@ -120,6 +140,7 @@ namespace ASLM.Services
                 }
             }
 
+            module.Status.Installed = true;
             module.Status.FirstRunCompleted = true;
             return true;
         }
@@ -143,6 +164,9 @@ namespace ASLM.Services
                 moduleLog.Report($"No run commands for {module.Name}.");
                 return true;
             }
+
+            _ports.GetOrAssignPorts(module);
+            _ports.EnsurePortsAvailable(module.Id);
 
             await SynchronizeDeclaredModuleSettingsAsync(module, moduleLog, ct);
 
@@ -317,6 +341,41 @@ namespace ASLM.Services
                     {
                         results.Add(new RunningModuleSnapshot(module.Id, module.Name, module.SourcePath));
                     }
+                }
+
+                return results;
+            }
+        }
+
+        /// <summary>
+        /// Returns the module configurations for instances that currently have tracked live processes.
+        /// The returned configs are the same snapshots stored at process launch time.
+        /// </summary>
+        public IReadOnlyList<ModuleConfig> GetRunningModuleConfigs()
+        {
+            lock (_processLock)
+            {
+                var results = new List<ModuleConfig>();
+
+                foreach (var pair in _runningProcesses)
+                {
+                    var hasLiveProcess = pair.Value.Any(static process =>
+                    {
+                        try
+                        {
+                            return !process.HasExited;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    });
+
+                    if (!hasLiveProcess)
+                        continue;
+
+                    if (_runningModules.TryGetValue(pair.Key, out var module))
+                        results.Add(module);
                 }
 
                 return results;

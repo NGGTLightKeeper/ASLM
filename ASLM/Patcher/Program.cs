@@ -21,7 +21,9 @@ internal static class PatcherRunner
     private const string PendingRelativePath = ".aslm-update/pending.json";
     private const string LogRelativePath = ".aslm-update/logs/Patcher.log";
     private const string LauncherExeName = "ASLM.exe";
+    private const string LauncherRefFileName = "launcher-ref.json";
     private const string WaitProcessArgument = "--wait-process";
+    private const string LauncherArgument = "--launcher";
 
     // Paths and runtime state
 
@@ -60,7 +62,7 @@ internal static class PatcherRunner
             if (!File.Exists(pendingPath))
             {
                 Log("No pending update found.");
-                StartLauncher(root);
+                StartLauncher(root, args);
                 return 0;
             }
 
@@ -102,7 +104,7 @@ internal static class PatcherRunner
                 TryDeleteDirectory(Path.GetDirectoryName(stagingPath) ?? stagingPath);
                 TryDeleteDirectory(backupPath);
                 Log($"Update {pending.Version} applied successfully.");
-                StartLauncher(targetRoot);
+                StartLauncher(root, args);
                 return 0;
             }
             catch
@@ -124,7 +126,7 @@ internal static class PatcherRunner
             // Keep the launcher usable after a fatal patcher error.
             Log("Fatal patcher error: " + ex);
             MarkPendingUpdateFailed(root);
-            StartLauncher(root);
+            StartLauncher(root, args);
             return 1;
         }
     }
@@ -429,23 +431,29 @@ internal static class PatcherRunner
     // Launcher restart
 
     /// <summary>
-    /// Restarts the main launcher after patching or after a fatal error.
+    /// Restarts the Launcher after patching or after a fatal error.
     /// </summary>
-    private static void StartLauncher(string root)
+    /// <remarks>
+    /// Resolution order for the Launcher path:
+    /// 1. The <c>--launcher</c> command-line argument passed by the Launcher itself.
+    /// 2. The <c>launcher-ref.json</c> file written by the Launcher in the application root.
+    /// 3. Fallback: <c>ASLM.exe</c> adjacent to the application root (legacy / monolithic layout).
+    /// </remarks>
+    private static void StartLauncher(string root, string[] args)
     {
         try
         {
-            var launcherPath = Path.Combine(root, LauncherExeName);
-            if (!File.Exists(launcherPath))
+            var launcherPath = ResolveLauncherPath(root, args);
+            if (string.IsNullOrWhiteSpace(launcherPath) || !File.Exists(launcherPath))
             {
-                Log("Launcher not found after patch: " + launcherPath);
+                Log("Launcher not found after patch: " + (launcherPath ?? "<unresolved>"));
                 return;
             }
 
             Process.Start(new ProcessStartInfo
             {
                 FileName = launcherPath,
-                WorkingDirectory = root,
+                WorkingDirectory = Path.GetDirectoryName(launcherPath) ?? root,
                 UseShellExecute = false
             });
         }
@@ -453,6 +461,47 @@ internal static class PatcherRunner
         {
             Log("Failed to restart launcher: " + ex);
         }
+    }
+
+    /// <summary>
+    /// Resolves the Launcher executable path using a three-tier strategy.
+    /// </summary>
+    private static string? ResolveLauncherPath(string root, string[] args)
+    {
+        // Tier 1: explicit --launcher argument provided by the Launcher process.
+        for (var i = 0; i < args.Length - 1; i++)
+        {
+            if (string.Equals(args[i], LauncherArgument, StringComparison.OrdinalIgnoreCase))
+            {
+                return args[i + 1];
+            }
+        }
+
+        // Tier 2: launcher-ref.json written to the application root directory.
+        var launcherRefPath = Path.Combine(root, LauncherRefFileName);
+        if (File.Exists(launcherRefPath))
+        {
+            try
+            {
+                var json = File.ReadAllText(launcherRefPath);
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("launcherPath", out var element))
+                {
+                    var path = element.GetString();
+                    if (!string.IsNullOrWhiteSpace(path))
+                    {
+                        return path;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Failed to read launcher-ref.json: " + ex.Message);
+            }
+        }
+
+        // Tier 3: legacy / monolithic layout — ASLM.exe lives next to the application root.
+        return Path.Combine(root, LauncherExeName);
     }
 
 

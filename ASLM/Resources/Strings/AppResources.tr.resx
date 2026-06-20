@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>Ana sayfa</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>Kabul et ve devam et</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>{0} belgesini okudum ve kabul ediyorum.</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>Devam etmek için bu sözleşmeyi kabul edin.</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>Reddet</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>Koşullar güncellendi. Yeniden inceleyin ve kabul edin.</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>Koşullar {0} / {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>ASLM'yi kullanmak için gerekli koşulları kabul edin.</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>Koşullar ve lisanslar</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>Yükleniyor...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -741,6 +764,18 @@
   <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
     <value>Bu modül artık yüklü değil.</value>
   </data>
+  <data name="Notifications_EngineUpdateAvailable" xml:space="preserve">
+    <value>Motor güncellemesi mevcut</value>
+  </data>
+  <data name="Notifications_EngineUpdateFailed" xml:space="preserve">
+    <value>Motor güncellemesi uygulanamadı.</value>
+  </data>
+  <data name="Notifications_EngineUpdateNotAvailable" xml:space="preserve">
+    <value>Şu anda kullanılabilir bir motor güncellemesi yok.</value>
+  </data>
+  <data name="Notifications_EngineUpdateTitle" xml:space="preserve">
+    <value>Motor güncellemesi</value>
+  </data>
   <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
     <value>Modül güncellemesi mevcut</value>
   </data>
@@ -804,6 +839,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>ASLM tarafından kullanılan ve modüllerle paylaşılan görünen ad</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>Hesaplar</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>ASLM görünen adı, GitHub ve Ollama oturumu</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>ASLM Hesabı</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>GitHub Hesabı</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Ollama Hesabı</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>Bağlı değil</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>API limitini saatte 60'tan 5.000 isteğe çıkarmak için bağlanın</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>Bağlandı</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>{0} olarak bağlandı</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>Bağlan</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>Bağlantıyı kes</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>Bağlanıyor…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... veya github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>GitHub belirtecini yapıştır</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>GitHub, bir yıllık süre önceden doldurulmuş olarak açılmalıydı. Genel güncelleme denetimleri için izinleri varsayılan bırakın, belirteci oluşturun ve buraya yapıştırın.</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>GitHub Hesabı</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>Daha yüksek GitHub API limiti için kişisel erişim belirteciyle oturum açın.</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>Bağlantı başarısız: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>Modüle özel yapılandırma</value>
   </data>
@@ -824,6 +913,36 @@
   </data>
   <data name="Settings_Category_Updates_Description" xml:space="preserve">
     <value>Uygulama ve modül güncelleme tercihleri</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Available" xml:space="preserve">
+    <value>Ollama {0} güncellemesi mevcut</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Button" xml:space="preserve">
+    <value>Ollama'yı güncelle</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Description" xml:space="preserve">
+    <value>Geçerli sürüm: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Failed" xml:space="preserve">
+    <value>Güncelleme başarısız: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Success" xml:space="preserve">
+    <value>Ollama {0} sürümüne güncellendi</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Title" xml:space="preserve">
+    <value>Ollama güncellemesi</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Updating" xml:space="preserve">
+    <value>Ollama güncelleniyor...</value>
+  </data>
+  <data name="Settings_OllamaUpdate_UpToDate" xml:space="preserve">
+    <value>Ollama güncel</value>
+  </data>
+  <data name="Settings_CheckAslmUpdates" xml:space="preserve">
+    <value>ASLM güncellemelerini denetle</value>
+  </data>
+  <data name="Settings_CheckOllamaUpdates" xml:space="preserve">
+    <value>Güncellemeleri denetle</value>
   </data>
   <data name="Settings_CheckNow" xml:space="preserve">
     <value>Şimdi denetle</value>
@@ -906,11 +1025,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>Kullanılabilir ayar yok</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>Resmi modüller için başlangıç noktası. Bu değerden itibaren 100 bağlantı noktası ayrılmıştır</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>Tüm modüller için başlangıç bağlantı noktası. Bağlantı noktaları bu değerden itibaren sırayla ayrılır</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>Resmi modüller başlangıç bağlantı noktası</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>Modül başlangıç bağlantı noktası</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Ollama hesabı</value>
@@ -1064,7 +1183,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>Konsollar</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>Koşullar</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>Koşul güncellemelerini otomatik kabul et</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>İlk incelemeden sonra yeni ve güncellenmiş koşulları kabul et.</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>Sil</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">
@@ -1112,12 +1239,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>Yeni tema</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>Harici modüller için başlangıç noktası. Bu değerden itibaren 1000 bağlantı noktası ayrılmıştır</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>Üçüncü taraf modüller başlangıç bağlantı noktası</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Ayarlar</value>
   </data>
@@ -1141,6 +1262,9 @@
   </data>
   <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
     <value>ASLM derlemesi indiriliyor...</value>
+  </data>
+  <data name="Settings_UpdateStatus_EngineUpdatesCount" xml:space="preserve">
+    <value>{0} motor güncellemesi mevcut</value>
   </data>
   <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
     <value>{0} güncelleme kullanılabilir. Modül güncellemeleri Modüller sayfasından uygulanabilir</value>
@@ -1197,7 +1321,7 @@
     <value>Hızlı kurulum</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>Hızlı kurulum Windows kullanıcı adınızı ve varsayılan bağlantı noktalarını kullanır</value>
+    <value>Hızlı kurulum Windows kullanıcı adınızı ve varsayılan ayarları kullanır</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>Bitir</value>
@@ -1214,8 +1338,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>Yükle</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>Resmi modüller (100 bağlantı noktası)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>Modül başlangıç bağlantı noktası</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>Genel ilerleme</value>
@@ -1258,9 +1382,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>Kullanıcı profili</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>Üçüncü taraf modüller (1000 bağlantı noktası)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>ASLM kurulumu</value>

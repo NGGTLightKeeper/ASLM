@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>Beranda</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>Terima dan lanjutkan</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>Saya telah membaca dan menerima {0}.</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>Terima perjanjian ini untuk melanjutkan.</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>Tolak</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>Ketentuan diperbarui. Tinjau dan terima lagi.</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>Ketentuan {0} dari {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>Terima ketentuan yang diperlukan untuk menggunakan ASLM.</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>Ketentuan dan lisensi</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>Memuat...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -741,6 +764,18 @@
   <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
     <value>Modul tersebut sudah tidak lagi terinstal.</value>
   </data>
+  <data name="Notifications_EngineUpdateAvailable" xml:space="preserve">
+    <value>Pembaruan mesin tersedia</value>
+  </data>
+  <data name="Notifications_EngineUpdateFailed" xml:space="preserve">
+    <value>Pembaruan mesin tidak dapat diterapkan.</value>
+  </data>
+  <data name="Notifications_EngineUpdateNotAvailable" xml:space="preserve">
+    <value>Saat ini tidak ada pembaruan mesin yang tersedia.</value>
+  </data>
+  <data name="Notifications_EngineUpdateTitle" xml:space="preserve">
+    <value>Pembaruan mesin</value>
+  </data>
   <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
     <value>Pembaruan modul tersedia</value>
   </data>
@@ -804,6 +839,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>Nama tampilan yang digunakan ASLM dan dibagikan ke modul</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>Akun</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>Nama tampilan ASLM, masuk ke GitHub dan Ollama</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>Akun ASLM</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>Akun GitHub</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Akun Ollama</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>Tidak terhubung</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>Hubungkan untuk menaikkan batas API dari 60 menjadi 5.000 permintaan per jam</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>Terhubung</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>Terhubung sebagai {0}</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>Hubungkan</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>Putuskan</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>Menghubungkan…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... atau github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>Tempel token GitHub</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>GitHub seharusnya terbuka dengan kedaluwarsa 1 tahun yang sudah diisi. Biarkan izin default untuk pemeriksaan pembaruan publik, buat token, lalu tempel di sini.</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>Akun GitHub</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>Masuk dengan token akses pribadi untuk menggunakan batas API GitHub yang lebih tinggi.</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>Koneksi gagal: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>Konfigurasi khusus modul</value>
   </data>
@@ -824,6 +913,36 @@
   </data>
   <data name="Settings_Category_Updates_Description" xml:space="preserve">
     <value>Preferensi pembaruan aplikasi dan modul</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Available" xml:space="preserve">
+    <value>Pembaruan Ollama {0} tersedia</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Button" xml:space="preserve">
+    <value>Perbarui Ollama</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Description" xml:space="preserve">
+    <value>Versi saat ini: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Failed" xml:space="preserve">
+    <value>Pembaruan gagal: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Success" xml:space="preserve">
+    <value>Ollama diperbarui ke {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Title" xml:space="preserve">
+    <value>Pembaruan Ollama</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Updating" xml:space="preserve">
+    <value>Memperbarui Ollama...</value>
+  </data>
+  <data name="Settings_OllamaUpdate_UpToDate" xml:space="preserve">
+    <value>Ollama sudah terbaru</value>
+  </data>
+  <data name="Settings_CheckAslmUpdates" xml:space="preserve">
+    <value>Periksa pembaruan ASLM</value>
+  </data>
+  <data name="Settings_CheckOllamaUpdates" xml:space="preserve">
+    <value>Periksa pembaruan</value>
   </data>
   <data name="Settings_CheckNow" xml:space="preserve">
     <value>Periksa sekarang</value>
@@ -906,11 +1025,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>Tidak ada pengaturan yang tersedia</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>Titik awal untuk modul resmi. 100 port dicadangkan dari nilai ini</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>Port awal untuk semua modul. Port dialokasikan secara berurutan dari nilai ini</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>Port awal modul resmi</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>Port awal modul</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Akun Ollama</value>
@@ -1064,7 +1183,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>Konsol</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>Ketentuan</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>Terima pembaruan ketentuan otomatis</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>Terima ketentuan baru dan diperbarui setelah tinjauan pertama.</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>Hapus</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">
@@ -1112,12 +1239,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>Tema Baru</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>Titik awal untuk modul eksternal. 1000 port dicadangkan dari nilai ini</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>Port awal modul pihak ketiga</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Pengaturan</value>
   </data>
@@ -1141,6 +1262,9 @@
   </data>
   <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
     <value>Mengunduh build ASLM...</value>
+  </data>
+  <data name="Settings_UpdateStatus_EngineUpdatesCount" xml:space="preserve">
+    <value>{0} pembaruan mesin tersedia</value>
   </data>
   <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
     <value>{0} pembaruan tersedia. Pembaruan modul dapat diterapkan dari halaman Modul</value>
@@ -1197,7 +1321,7 @@
     <value>Penyiapan Cepat</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>Penyiapan Cepat menggunakan nama pengguna Windows dan port default Anda</value>
+    <value>Penyiapan Cepat menggunakan nama pengguna Windows dan pengaturan default Anda</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>Selesai</value>
@@ -1214,8 +1338,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>Pasang</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>Modul resmi (100 port)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>Port awal modul</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>Kemajuan Keseluruhan</value>
@@ -1258,9 +1382,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>Profil Pengguna</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>Modul pihak ketiga (1000 port)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>Penyiapan ASLM</value>

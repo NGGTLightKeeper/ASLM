@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>होम</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>स्वीकार करें और जारी रखें</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>मैंने {0} पढ़ लिया है और स्वीकार करता/करती हूँ।</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>जारी रखने के लिए इस समझौते को स्वीकार करें।</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>अस्वीकार करें</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>शर्तें अपडेट की गईं। फिर से पढ़ें और स्वीकार करें।</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>शर्तें {0} / {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>ASLM का उपयोग करने के लिए आवश्यक शर्तें स्वीकार करें।</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>शर्तें और लाइसेंस</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>लोड हो रहा है...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -741,6 +764,18 @@
   <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
     <value>वह मॉड्यूल अब इंस्टॉल नहीं है।</value>
   </data>
+  <data name="Notifications_EngineUpdateAvailable" xml:space="preserve">
+    <value>इंजन अपडेट उपलब्ध है</value>
+  </data>
+  <data name="Notifications_EngineUpdateFailed" xml:space="preserve">
+    <value>इंजन अपडेट लागू नहीं किया जा सका।</value>
+  </data>
+  <data name="Notifications_EngineUpdateNotAvailable" xml:space="preserve">
+    <value>अभी कोई इंजन अपडेट उपलब्ध नहीं है।</value>
+  </data>
+  <data name="Notifications_EngineUpdateTitle" xml:space="preserve">
+    <value>इंजन अपडेट</value>
+  </data>
   <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
     <value>मॉड्यूल अपडेट उपलब्ध</value>
   </data>
@@ -804,6 +839,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>ASLM और मॉड्यूलों के साथ साझा किया गया प्रदर्शन नाम</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>खाते</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>ASLM प्रदर्शन नाम, GitHub और Ollama साइन-इन</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>ASLM खाता</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>GitHub खाता</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Ollama खाता</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>कनेक्ट नहीं</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>API सीमा प्रति घंटे 60 से 5,000 अनुरोध तक बढ़ाने के लिए कनेक्ट करें</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>कनेक्टेड</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>{0} के रूप में कनेक्टेड</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>कनेक्ट करें</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>डिस्कनेक्ट करें</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>कनेक्ट हो रहा है…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... या github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>GitHub टोकन चिपकाएँ</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>GitHub एक वर्ष की समाप्ति के साथ खुलना चाहिए था। सार्वजनिक अपडेट जाँच के लिए अनुमतियाँ डिफ़ॉल्ट रखें, टोकन बनाएँ और यहाँ चिपकाएँ।</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>GitHub खाता</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>उच्च GitHub API सीमा के लिए व्यक्तिगत एक्सेस टोकन से साइन इन करें।</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>कनेक्शन विफल: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>मॉड्यूल-विशिष्ट कॉन्फ़िगरेशन</value>
   </data>
@@ -824,6 +913,36 @@
   </data>
   <data name="Settings_Category_Updates_Description" xml:space="preserve">
     <value>एप्लिकेशन और मॉड्यूल अपडेट प्राथमिकताएँ</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Available" xml:space="preserve">
+    <value>Ollama अपडेट {0} उपलब्ध है</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Button" xml:space="preserve">
+    <value>Ollama अपडेट करें</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Description" xml:space="preserve">
+    <value>वर्तमान संस्करण: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Failed" xml:space="preserve">
+    <value>अपडेट विफल: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Success" xml:space="preserve">
+    <value>Ollama को {0} पर अपडेट किया गया</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Title" xml:space="preserve">
+    <value>Ollama अपडेट</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Updating" xml:space="preserve">
+    <value>Ollama अपडेट हो रहा है...</value>
+  </data>
+  <data name="Settings_OllamaUpdate_UpToDate" xml:space="preserve">
+    <value>Ollama अप-टू-डेट है</value>
+  </data>
+  <data name="Settings_CheckAslmUpdates" xml:space="preserve">
+    <value>ASLM अपडेट जाँचें</value>
+  </data>
+  <data name="Settings_CheckOllamaUpdates" xml:space="preserve">
+    <value>अपडेट जाँचें</value>
   </data>
   <data name="Settings_CheckNow" xml:space="preserve">
     <value>अभी जाँचें</value>
@@ -906,11 +1025,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>कोई सेटिंग उपलब्ध नहीं</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>आधिकारिक मॉड्यूल के लिए प्रारंभ बिंदु। इस मान से 100 पोर्ट आरक्षित हैं</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>सभी मॉड्यूल के लिए प्रारंभ पोर्ट। इस मान से पोर्ट क्रमिक रूप से आवंटित किए जाते हैं</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>आधिकारिक मॉड्यूल प्रारंभ पोर्ट</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>मॉड्यूल प्रारंभ पोर्ट</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Ollama खाता</value>
@@ -1064,7 +1183,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>कंसोल</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>शर्तें</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>शर्त अपडेट स्वतः स्वीकार करें</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>पहली समीक्षा के बाद नई और अपडेट की गई शर्तें स्वीकार करें।</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>हटाएँ</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">
@@ -1112,12 +1239,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>नई थीम</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>बाहरी मॉड्यूल के लिए प्रारंभ बिंदु। इस मान से 1000 पोर्ट आरक्षित हैं</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>तृतीय-पक्ष मॉड्यूल प्रारंभ पोर्ट</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>सेटिंग्स</value>
   </data>
@@ -1141,6 +1262,9 @@
   </data>
   <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
     <value>ASLM बिल्ड डाउनलोड हो रहा है...</value>
+  </data>
+  <data name="Settings_UpdateStatus_EngineUpdatesCount" xml:space="preserve">
+    <value>{0} इंजन अपडेट उपलब्ध</value>
   </data>
   <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
     <value>{0} अपडेट उपलब्ध। मॉड्यूल अपडेट मॉड्यूल पृष्ठ से लागू किए जा सकते हैं</value>
@@ -1197,7 +1321,7 @@
     <value>त्वरित सेटअप</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>त्वरित सेटअप आपके Windows उपयोगकर्ता नाम और डिफ़ॉल्ट पोर्ट का उपयोग करता है</value>
+    <value>त्वरित सेटअप आपके Windows उपयोगकर्ता नाम और डिफ़ॉल्ट सेटिंग्स का उपयोग करता है</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>समाप्त</value>
@@ -1214,8 +1338,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>इंस्टॉल करें</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>आधिकारिक मॉड्यूल (100 पोर्ट)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>मॉड्यूल प्रारंभ पोर्ट</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>समग्र प्रगति</value>
@@ -1258,9 +1382,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>उपयोगकर्ता प्रोफ़ाइल</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>तृतीय-पक्ष मॉड्यूल (1000 पोर्ट)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>ASLM सेटअप</value>

@@ -3,7 +3,7 @@
     "id": "aslm-nodejs-example",
     "name": "Example Node.js Module",
     "description": "Reference ASLM Node.js module: Express WebView UI, typed settings (getExec/setExec), downloads bridge (stdio JSON), host theme/locale snapshots, module interop HTTP client, and host-managed nodejs-runtime venv.",
-    "version": "1.0.0",
+    "version": "1.0.0.5",
     "author": "NEXTGGTECH",
     "type": "ui",
     "category": [
@@ -21,9 +21,7 @@
         "channel": "release",
         "branch": "main",
         "preserve": [
-            "Settings/settings.json",
-            "Settings/host_theme.json",
-            "Settings/host_locale.json"
+            "Settings/settings.json"
         ],
         "runFirstRunAfterUpdate": true
     },
@@ -49,7 +47,7 @@
         "run": [
             {
                 "name": "Express WebView server",
-                "description": "Binds to ui-port and serves App/ for the ASLM module page (ASLM_UI_PORT).",
+                "description": "Binds to example-port and serves App/ for the ASLM module page (ASLM_UI_PORT).",
                 "engine": "nodejs-runtime",
                 "exec": "main.js runserver"
             }
@@ -57,69 +55,69 @@
     },
     "settings": [
         {
-            "key": "ui-port",
-            "name": "HTTP listen port",
-            "description": "TCP port for main.js runserver. Type port: ASLM reserves the port, injects ASLM_UI_PORT, and passes the numeric value to setExec.",
+            "key": "example-port",
+            "name": "Port number",
+            "description": "TCP port for the Express UI server; ASLM reserves it, injects ASLM_UI_PORT, and passes the value to setExec",
             "type": "port",
             "default": 20200,
             "engine": "nodejs-runtime",
-            "getExec": "main.js get_setting --key ui-port",
-            "setExec": "main.js set_setting --key ui-port --value {value}"
+            "getExec": "main.js get_setting --key example-port",
+            "setExec": "main.js set_setting --key example-port --value {value}"
         },
         {
-            "key": "greeting",
-            "name": "Dashboard banner text",
-            "description": "Plain string stored in settings.json and exported as ASLM_GREETING when the module runs. Use for module title or build label in your UI.",
+            "key": "example-string",
+            "name": "String value",
+            "description": "Plain text stored in settings.json, exported as ASLM_EXAMPLE_STRING; shown as the greeting banner on the dashboard",
             "type": "string",
-            "default": "Example Node.js Module — ASLM reference UI",
+            "default": "Example Node.js Module - ASLM reference UI",
             "engine": "nodejs-runtime",
-            "getExec": "main.js get_setting --key greeting",
-            "setExec": "main.js set_setting --key greeting --value {value}"
+            "getExec": "main.js get_setting --key example-string",
+            "setExec": "main.js set_setting --key example-string --value {value}"
         },
         {
-            "key": "show-debug-info",
-            "name": "Expose runtime diagnostics",
-            "description": "Type bool: when true, the dashboard shows ASLM_* environment variables, HTTP exchange logs, and raw JSON snapshots (intended for module authors).",
+            "key": "example-bool",
+            "name": "Boolean value",
+            "description": "ASLM passes \"true\"/\"false\" to setExec, normalised to a JS bool; when true, the dashboard shows ASLM_* env vars and raw JSON debug panels",
             "type": "bool",
             "default": true,
             "engine": "nodejs-runtime",
-            "getExec": "main.js get_setting --key show-debug-info",
-            "setExec": "main.js set_setting --key show-debug-info --value {value}"
+            "getExec": "main.js get_setting --key example-bool",
+            "setExec": "main.js set_setting --key example-bool --value {value}"
         },
         {
-            "key": "counter-start",
-            "name": "Auto-refresh interval (ms)",
-            "description": "Type int: base period in milliseconds for UI polling (e.g. module interop registry refresh). The dashboard default timer uses 10000 ms when this value is 10000.",
+            "key": "example-int",
+            "name": "Integer value",
+            "description": "Whole number passed as a string to setExec and converted with parseInt(); used as the auto-refresh interval (ms) for the Module Interop registry timer",
             "type": "int",
             "default": 10000,
             "engine": "nodejs-runtime",
-            "getExec": "main.js get_setting --key counter-start",
-            "setExec": "main.js set_setting --key counter-start --value {value}"
+            "getExec": "main.js get_setting --key example-int",
+            "setExec": "main.js set_setting --key example-int --value {value}"
         },
         {
-            "key": "ratio",
-            "name": "Log sampling rate",
-            "description": "Type number (float): fraction between 0 and 1 for sampling verbose logs in custom bridge/interop code (1.0 = log every event, 0.25 = one in four).",
+            "key": "example-number",
+            "name": "Float value",
+            "description": "Decimal number passed to setExec and converted with parseFloat(); sampling fraction 0.0-1.0 for verbose log output in bridge and interop handlers",
             "type": "number",
             "default": 0.25,
             "engine": "nodejs-runtime",
-            "getExec": "main.js get_setting --key ratio",
-            "setExec": "main.js set_setting --key ratio --value {value}"
+            "getExec": "main.js get_setting --key example-number",
+            "setExec": "main.js set_setting --key example-number --value {value}"
         },
         {
-            "key": "api-key-demo",
-            "name": "Outbound API token",
-            "description": "Type password: secret for Authorization headers in sample HTTP clients. Masked in ASLM settings UI; redacted in GET /api/settings (shows *** when set).",
+            "key": "example-password",
+            "name": "Password value",
+            "description": "Masked in the ASLM UI, redacted to *** in GET /api/settings; used as a bearer token in sample HTTP client Authorization headers",
             "type": "password",
             "default": "sk-1234-5678-9012-3456-7890",
             "engine": "nodejs-runtime",
-            "getExec": "main.js get_setting --key api-key-demo",
-            "setExec": "main.js set_setting --key api-key-demo --value {value}"
+            "getExec": "main.js get_setting --key example-password",
+            "setExec": "main.js set_setting --key example-password --value {value}"
         },
         {
-            "key": "log-level",
-            "name": "Node.js log level",
-            "description": "Type select: controls console output verbosity in main.js subcommands. Allowed: basic (INFO), debug (DEBUG), trace (DEBUG + verbose output).",
+            "key": "example-select",
+            "name": "Select value",
+            "description": "Enum constrained to allowedValues; controls console output verbosity in main.js subcommands (basic: INFO, debug: DEBUG, trace: DEBUG + verbose)",
             "type": "select",
             "default": "debug",
             "allowedValues": [
@@ -128,13 +126,13 @@
                 "trace"
             ],
             "engine": "nodejs-runtime",
-            "getExec": "main.js get_setting --key log-level",
-            "setExec": "main.js set_setting --key log-level --value {value}"
+            "getExec": "main.js get_setting --key example-select",
+            "setExec": "main.js set_setting --key example-select --value {value}"
         },
         {
             "key": "nodejs-runtime",
-            "name": "nodejs-runtime engine",
-            "description": "Type engine: read-only mirror of whether ASLM installed the nodejs-runtime engine for this module. false if the engine package is missing.",
+            "name": "Engine flag",
+            "description": "Read-only flag set by ASLM; true when the nodejs-runtime engine is installed, false when the package is missing. Key equals the engine id.",
             "type": "engine",
             "default": true,
             "engine": "nodejs-runtime",
@@ -143,8 +141,8 @@
         },
         {
             "key": "nodejs-runtime_path",
-            "name": "Node.js executable (engine path)",
-            "description": "Type path: absolute path to node.exe in the engine runtime directory. ASLM manages the value; override via Custom Value only when debugging.",
+            "name": "Path value",
+            "description": "Absolute path to node.exe in the host-managed venv; ASLM auto-fills it using the key prefix convention <engineId>_path",
             "type": "path",
             "default": null,
             "engine": "nodejs-runtime",
@@ -153,8 +151,8 @@
         },
         {
             "key": "nodejs-runtime_data",
-            "name": "Engine data directory",
-            "description": "Type data: writable per-engine data root (Data/nodejs-runtime/ under the module). Use for caches, SQLite DBs, or bridge download targets (targetRef).",
+            "name": "Data directory",
+            "description": "Per-engine writable data root resolved by ASLM (Data/nodejs-runtime/); ASLM auto-fills it using the key prefix convention <engineId>_data",
             "type": "data",
             "default": null,
             "engine": "nodejs-runtime",
@@ -163,8 +161,8 @@
         },
         {
             "key": "nodejs-runtime_models",
-            "name": "Engine models directory",
-            "description": "Type models: optional Models/nodejs-runtime/ path for ML weights or large artifacts. ASLM creates the directory; same contract as data but semantically for models.",
+            "name": "Models directory",
+            "description": "Per-engine models directory resolved by ASLM (Models/nodejs-runtime/); ASLM auto-fills it using the key prefix convention <engineId>_models",
             "type": "models",
             "default": null,
             "engine": "nodejs-runtime",
@@ -172,17 +170,17 @@
             "setExec": "main.js set_setting --key nodejs-runtime_models --value {value}"
         },
         {
-            "key": "aslm-host-theme",
+            "key": "example-theme",
             "name": "Host theme snapshot",
-            "description": "Type theme: host-only. ASLM writes JSON (appearance, theme, colors) and calls apply_aslm_host_theme --file {path}. Persist to Settings/host_theme.json and map colors.* to CSS.",
+            "description": "Host-only; ASLM calls apply_aslm_host_theme --file {path}, handler saves to Settings/host_theme.json and maps colors.* to CSS variables",
             "type": "theme",
             "engine": "nodejs-runtime",
             "setExec": "main.js apply_aslm_host_theme --file {value}"
         },
         {
-            "key": "aslm-host-locale",
+            "key": "example-locale",
             "name": "Host locale snapshot",
-            "description": "Type locale: host-only. ASLM writes JSON (language, displayName) and calls apply_aslm_locale --file {path}. Load Settings/host_locale.json to localize module UI.",
+            "description": "Host-only; ASLM calls apply_aslm_locale --file {path}, handler saves to Settings/host_locale.json; read language and displayName to localise UI strings",
             "type": "locale",
             "engine": "nodejs-runtime",
             "setExec": "main.js apply_aslm_locale --file {value}"

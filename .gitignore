@@ -81,6 +81,7 @@ venv/
 Launcher.log
 ASLM/Installer/Installer/Resources/Raw/aslm-payload.zip
 ASLM/Installer/Installer/Resources/Raw/legal-documents.json
+ASLM/Resources/Raw/legal-documents.json
 ASLM/Installer/Installer-Bootstrapper/Resources/installer-ui.zip
 ASLM/Installer/Installer-Bootstrapper/Resources/aslm-payload.zip
 ASLM/Tests/_layout_root

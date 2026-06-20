@@ -49,7 +49,7 @@ namespace ASLM.Models
         [JsonPropertyName("source")]
         public ModuleSource Source { get; set; } = new();
 
-        // Engine and model dependencies required by the module.
+        // Engine, module, and model dependencies required by the module.
         [JsonPropertyName("dependencies")]
         public ModuleDependencies Dependencies { get; set; } = new();
 
@@ -450,13 +450,17 @@ namespace ASLM.Models
     // Module dependencies
 
     /// <summary>
-    /// Declares the engines and model categories required by a module.
+    /// Declares the engines, modules, and model categories required by a module.
     /// </summary>
     public class ModuleDependencies
     {
         // Required engine runtimes and their package dependencies.
         [JsonPropertyName("engines")]
         public List<ModuleEngineDependency> Engines { get; set; } = [];
+
+        // Required ASLM modules that must be installed and running before this module starts.
+        [JsonPropertyName("modules")]
+        public List<ModuleModuleDependency> Modules { get; set; } = [];
 
         // Required model categories matched against installed models.
         [JsonPropertyName("models")]
@@ -474,11 +478,39 @@ namespace ASLM.Models
                 engine?.Normalize();
             }
 
+            Modules ??= [];
+            foreach (var module in Modules)
+            {
+                module?.Normalize();
+            }
+
             // Remove empty model category entries while preserving valid ones.
             Models ??= [];
             Models = Models
                 .Where(static model => !string.IsNullOrWhiteSpace(model))
                 .ToList();
+        }
+    }
+
+
+    // Module dependencies
+
+    /// <summary>
+    /// Describes the dependency on another installed ASLM module.
+    /// </summary>
+    public class ModuleModuleDependency
+    {
+        // Stable identifier of the required module (matches <see cref="ModuleConfig.Id"/>).
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Restores module dependency values after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            Id ??= string.Empty;
+            Id = Id.Trim();
         }
     }
 

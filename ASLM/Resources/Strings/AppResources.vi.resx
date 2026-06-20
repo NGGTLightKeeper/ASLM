@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>Trang chủ</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>Chấp nhận và tiếp tục</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>Tôi đã đọc và chấp nhận {0}.</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>Hãy chấp nhận thỏa thuận này để tiếp tục.</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>Từ chối</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>Điều khoản đã được cập nhật. Vui lòng xem lại và chấp nhận.</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>Điều khoản {0} / {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>Chấp nhận các điều khoản bắt buộc để sử dụng ASLM.</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>Điều khoản và giấy phép</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>Đang tải...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -741,6 +764,18 @@
   <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
     <value>Mô-đun đó không còn được cài đặt nữa.</value>
   </data>
+  <data name="Notifications_EngineUpdateAvailable" xml:space="preserve">
+    <value>Có bản cập nhật engine</value>
+  </data>
+  <data name="Notifications_EngineUpdateFailed" xml:space="preserve">
+    <value>Không thể áp dụng bản cập nhật engine.</value>
+  </data>
+  <data name="Notifications_EngineUpdateNotAvailable" xml:space="preserve">
+    <value>Hiện không có bản cập nhật engine nào.</value>
+  </data>
+  <data name="Notifications_EngineUpdateTitle" xml:space="preserve">
+    <value>Cập nhật engine</value>
+  </data>
   <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
     <value>Có bản cập nhật mô-đun</value>
   </data>
@@ -804,6 +839,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>Tên hiển thị dùng bởi ASLM và chia sẻ với mô-đun</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>Tài khoản</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>Tên hiển thị ASLM, đăng nhập GitHub và Ollama</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>Tài khoản ASLM</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>Tài khoản GitHub</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Tài khoản Ollama</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>Chưa kết nối</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>Kết nối để tăng giới hạn API từ 60 lên 5.000 yêu cầu mỗi giờ</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>Đã kết nối</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>Đã kết nối với tư cách {0}</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>Kết nối</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>Ngắt kết nối</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>Đang kết nối…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... hoặc github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>Dán token GitHub</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>GitHub lẽ ra đã mở với thời hạn hiệu lực 1 năm được điền sẵn. Giữ quyền mặc định để kiểm tra cập nhật công khai, tạo token rồi dán vào đây.</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>Tài khoản GitHub</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>Đăng nhập bằng token truy cập cá nhân để dùng giới hạn API GitHub cao hơn.</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>Kết nối thất bại: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>Cấu hình riêng cho mô-đun</value>
   </data>
@@ -824,6 +913,36 @@
   </data>
   <data name="Settings_Category_Updates_Description" xml:space="preserve">
     <value>Tùy chọn cập nhật ứng dụng và mô-đun</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Available" xml:space="preserve">
+    <value>Có bản cập nhật Ollama {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Button" xml:space="preserve">
+    <value>Cập nhật Ollama</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Description" xml:space="preserve">
+    <value>Phiên bản hiện tại: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Failed" xml:space="preserve">
+    <value>Cập nhật thất bại: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Success" xml:space="preserve">
+    <value>Đã cập nhật Ollama lên {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Title" xml:space="preserve">
+    <value>Cập nhật Ollama</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Updating" xml:space="preserve">
+    <value>Đang cập nhật Ollama...</value>
+  </data>
+  <data name="Settings_OllamaUpdate_UpToDate" xml:space="preserve">
+    <value>Ollama đã ở phiên bản mới nhất</value>
+  </data>
+  <data name="Settings_CheckAslmUpdates" xml:space="preserve">
+    <value>Kiểm tra cập nhật ASLM</value>
+  </data>
+  <data name="Settings_CheckOllamaUpdates" xml:space="preserve">
+    <value>Kiểm tra cập nhật</value>
   </data>
   <data name="Settings_CheckNow" xml:space="preserve">
     <value>Kiểm tra ngay</value>
@@ -906,11 +1025,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>Không có cài đặt</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>Điểm bắt đầu cho mô-đun chính thức. 100 cổng được dành từ giá trị này</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>Cổng bắt đầu cho tất cả mô-đun. Cổng được phân bổ tuần tự từ giá trị này</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>Cổng bắt đầu mô-đun chính thức</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>Cổng bắt đầu mô-đun</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Tài khoản Ollama</value>
@@ -1064,7 +1183,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>Bảng điều khiển</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>Điều khoản</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>Tự động chấp nhận cập nhật điều khoản</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>Chấp nhận điều khoản mới và cập nhật sau lần xem xét đầu tiên.</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>Xóa</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">
@@ -1112,12 +1239,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>Chủ đề mới</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>Điểm bắt đầu cho mô-đun bên ngoài. 1000 cổng được dành từ giá trị này</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>Cổng bắt đầu mô-đun bên thứ ba</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Cài đặt</value>
   </data>
@@ -1141,6 +1262,9 @@
   </data>
   <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
     <value>Đang tải bản dựng ASLM...</value>
+  </data>
+  <data name="Settings_UpdateStatus_EngineUpdatesCount" xml:space="preserve">
+    <value>Có {0} bản cập nhật engine</value>
   </data>
   <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
     <value>Có {0} bản cập nhật. Có thể áp dụng từ trang Mô-đun</value>
@@ -1197,7 +1321,7 @@
     <value>Thiết lập nhanh</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>Thiết lập nhanh dùng tên người dùng Windows và cổng mặc định</value>
+    <value>Thiết lập nhanh dùng tên người dùng Windows và cài đặt mặc định</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>Hoàn tất</value>
@@ -1214,8 +1338,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>Cài đặt</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>Mô-đun chính thức (100 cổng)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>Cổng bắt đầu mô-đun</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>Tiến độ tổng</value>
@@ -1258,9 +1382,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>Hồ sơ người dùng</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>Mô-đun bên thứ ba (1000 cổng)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>Thiết lập ASLM</value>

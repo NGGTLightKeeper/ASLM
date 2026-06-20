@@ -216,7 +216,8 @@
                                             FontSize="13"
                                             HeightRequest="32"
                                             CornerRadius="4"
-                                            HorizontalOptions="Fill" />
+                                            HorizontalOptions="Fill"
+                                            Padding="0,10" />
                                     <Button Grid.Column="1"
                                             Text="{Binding RestartLabel}"
                                             ImageSource="icon_restart.png"

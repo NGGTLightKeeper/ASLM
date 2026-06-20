@@ -1,0 +1,128 @@
+<!-- Copyright NGGT.LightKeeper. All Rights Reserved. -->
+
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ASLM.Pages.LegalAcceptanceView"
+             BackgroundColor="{DynamicResource OverlayBackground}">
+
+    <Border x:Name="LegalDialog"
+            WidthRequest="720"
+            HeightRequest="630"
+            HorizontalOptions="Center"
+            VerticalOptions="Center"
+            BackgroundColor="{DynamicResource BackgroundSecondary}"
+            Stroke="{DynamicResource Separator}"
+            StrokeThickness="1"
+            Padding="16"
+            StrokeShape="RoundRectangle 8">
+
+        <Border.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnDialogTapped" />
+        </Border.GestureRecognizers>
+
+        <Grid RowDefinitions="Auto,Auto,*,Auto"
+              RowSpacing="12">
+
+            <VerticalStackLayout Spacing="4">
+                <Label x:Name="TitleLabel"
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource LabelPrimary}" />
+                <Label x:Name="SubtitleLabel"
+                       FontSize="13"
+                       TextColor="{DynamicResource LabelSecondary}"
+                       LineBreakMode="WordWrap" />
+                <Label x:Name="StepLabel"
+                       Margin="0,4,0,0"
+                       FontSize="13"
+                       TextColor="{DynamicResource LabelSecondary}" />
+            </VerticalStackLayout>
+
+            <Border x:Name="UpdatedNoticeBorder"
+                    Grid.Row="1"
+                    IsVisible="False"
+                    BackgroundColor="{DynamicResource BackgroundTertiary}"
+                    Stroke="{DynamicResource SystemOrange}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 6"
+                    Padding="10">
+                <Label x:Name="UpdatedNoticeLabel"
+                       FontSize="13"
+                       TextColor="{DynamicResource LabelPrimary}"
+                       LineBreakMode="WordWrap" />
+            </Border>
+
+            <Grid Grid.Row="2"
+                  RowDefinitions="Auto,*,Auto"
+                  RowSpacing="8">
+                <Label x:Name="LegalDocumentTitleLabel"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource LabelPrimary}" />
+                <Border x:Name="LegalDocumentBorder"
+                        Grid.Row="1"
+                        BackgroundColor="{DynamicResource BackgroundTertiary}"
+                        Stroke="{DynamicResource Separator}"
+                        StrokeThickness="1"
+                        Padding="0"
+                        StrokeShape="RoundRectangle 8">
+                    <Editor x:Name="LegalDocumentEditor"
+                            Margin="0"
+                            FontFamily="Consolas"
+                            FontSize="13"
+                            TextColor="{DynamicResource LabelPrimary}"
+                            BackgroundColor="Transparent"
+                            IsReadOnly="True"
+                            AutoSize="Disabled" />
+                </Border>
+                <HorizontalStackLayout Grid.Row="2"
+                                       Spacing="8"
+                                       VerticalOptions="Center">
+                    <CheckBox x:Name="AcceptLegalCheckBox"
+                              CheckedChanged="OnAcceptLegalChanged"
+                              Color="{DynamicResource ActionBlue}"
+                              MinimumWidthRequest="24"
+                              WidthRequest="24"
+                              MinimumHeightRequest="24"
+                              HeightRequest="24"
+                              HorizontalOptions="Center"
+                              VerticalOptions="Center" />
+                    <Label x:Name="AcceptLegalLabel"
+                           FontSize="14"
+                           TextColor="{DynamicResource LabelPrimary}"
+                           VerticalOptions="Center"
+                           LineBreakMode="WordWrap" />
+                </HorizontalStackLayout>
+            </Grid>
+
+            <Grid Grid.Row="3"
+                  ColumnDefinitions="*,Auto,Auto,Auto"
+                  ColumnSpacing="8">
+                <Label x:Name="FooterLabel"
+                       Text=""
+                       FontSize="14"
+                       TextColor="{DynamicResource SystemRed}"
+                       VerticalOptions="Center"
+                       LineBreakMode="WordWrap" />
+                <Button x:Name="BackButton"
+                        Grid.Column="1"
+                        Clicked="OnBackClicked"
+                        FontSize="16"
+                        BackgroundColor="{DynamicResource SystemGray4}"
+                        TextColor="{DynamicResource LabelPrimary}" />
+                <Button x:Name="DeclineButton"
+                        Grid.Column="2"
+                        Clicked="OnDeclineClicked"
+                        FontSize="16"
+                        BackgroundColor="{DynamicResource SystemGray4}"
+                        TextColor="{DynamicResource LabelPrimary}" />
+                <Button x:Name="NextButton"
+                        Grid.Column="3"
+                        Clicked="OnNextClicked"
+                        FontSize="16"
+                        BackgroundColor="{DynamicResource ActionBlue}"
+                        TextColor="{DynamicResource White}" />
+            </Grid>
+        </Grid>
+    </Border>
+</ContentView>

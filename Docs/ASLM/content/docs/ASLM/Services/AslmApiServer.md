@@ -395,7 +395,7 @@ Creates one host info object for the ASLM UI and web index.
 
 #### `private static string BuildHostRouteKey(string hostKey)`
 
-**Purpose:** Builds the public route key used for one port-map host.
+**Purpose:** Builds the public route key used for one port-map host. Delegates to `PortRegistry.BuildHostRouteKey`.
 
 ---
 
@@ -453,7 +453,7 @@ Converts a mirror-prefixed path back into the backend root-relative path.
 
 #### `private int GetAssignedPort()`
 
-**Purpose:** Gets or reserves the ASLM API port from the shared official module pool.
+**Purpose:** Gets or reserves the ASLM API port from the shared module port pool.
 
 ---
 

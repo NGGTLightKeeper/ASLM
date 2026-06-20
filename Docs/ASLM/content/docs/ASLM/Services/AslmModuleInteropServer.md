@@ -5,9 +5,9 @@ draft: false
 
 ## Class `AslmModuleInteropServer`
 
-`ASLM/Services/AslmModuleInteropServer.cs` — **`public sealed`** — local JSON **`HttpListener`** API for module registry and coordinated starts.
+`ASLM/Services/AslmModuleInteropServer.cs` — **`public sealed`** — local JSON **`HttpListener`** API for module registry, port discovery, and coordinated starts.
 
-**DI:** singleton — [AppDataStore](AppDataStore/), [PortRegistry](PortRegistry/), [ModuleInstaller](ModuleInstaller/), [ModuleRunner](ModuleRunner/), [ModuleLaunchCoordinator](ModuleLaunchCoordinator/), [ModuleInteropHostState](ModuleInteropHostState/).
+**DI:** singleton — [AppDataStore](AppDataStore/), [PortRegistry](PortRegistry/), [AslmApiServer](AslmApiServer/), [ModuleInstaller](ModuleInstaller/), [ModuleRunner](ModuleRunner/), [ModuleLaunchCoordinator](ModuleLaunchCoordinator/), [ModuleInteropHostState](ModuleInteropHostState/).
 
 Implements **`IDisposable`**. Port owner: **`PortRegistry.AslmModuleInteropServiceId`** / **`AslmModuleInteropPortKey`**.
 
@@ -34,9 +34,9 @@ Implements **`IDisposable`**. Port owner: **`PortRegistry.AslmModuleInteropServi
 
 ## Public methods — lifecycle
 
-#### `public AslmModuleInteropServer(AppDataStore appData, PortRegistry ports, ModuleInstaller moduleInstaller, ModuleRunner moduleRunner, ModuleLaunchCoordinator launchCoordinator, ModuleInteropHostState interopHostState, ILogger<AslmModuleInteropServer> logger)`
+#### `public AslmModuleInteropServer(AppDataStore appData, PortRegistry ports, AslmApiServer apiServer, ModuleInstaller moduleInstaller, ModuleRunner moduleRunner, ModuleLaunchCoordinator launchCoordinator, ModuleInteropHostState interopHostState, ILogger<AslmModuleInteropServer> logger)`
 
-**Purpose:** Stores dependencies for registry and launch coordination.
+**Purpose:** Stores dependencies for registry, port exposure, and launch coordination.
 
 ---
 
@@ -79,6 +79,7 @@ Implements **`IDisposable`**. Port owner: **`PortRegistry.AslmModuleInteropServi
 | Method | Path | Handler |
 | --- | --- | --- |
 | GET | `/v1/registry` | **`HandleRegistryGetAsync`** |
+| GET | `/v1/ports` | **`HandlePortsGetAsync`** |
 | POST | `/v1/modules/start` | **`HandleModulesStartPostAsync`** |
 
 Unknown routes → **404** JSON error. Unhandled exceptions → **500**.
@@ -89,7 +90,25 @@ Unknown routes → **404** JSON error. Unhandled exceptions → **500**.
 
 #### `private async Task HandleRegistryGetAsync(HttpListenerContext context)`
 
-**Purpose:** Builds **`RegistryResponse`**: interop base URL, installed modules (**`BuildInstalledModulesAsync`**), running snapshots from **`ModuleRunner.GetRunningModulesSnapshot()`**. Returns **200** JSON.
+**Purpose:** Builds **`RegistryResponse`**: interop base URL, ASLM API state (**`BuildAslmApiResponseDto`**), installed modules (**`BuildInstalledModulesAsync`**), running modules with port/host data (**`BuildRunningModulesResponseDtos`**). Returns **200** JSON.
+
+---
+
+#### `private async Task HandlePortsGetAsync(HttpListenerContext context)`
+
+**Purpose:** Builds **`PortsResponse`**: ASLM API state and running modules with port/host data only — omits the installed-modules list for a lighter-weight response. Returns **200** JSON.
+
+---
+
+#### `private AslmApiResponseDto BuildAslmApiResponseDto()`
+
+**Purpose:** Reads `AppDataStore.Api.ServerEnabled`, resolves the API port from **`PortRegistry`**, and checks `AslmApiServer.IsRunning` to produce the `aslmApi` block. When disabled: `enabled: false`, all other fields `null`.
+
+---
+
+#### `private List<RunningModuleDto> BuildRunningModulesResponseDtos()`
+
+**Purpose:** Calls **`ModuleRunner.GetRunningModuleConfigs()`** (live processes only), then for each config calls **`ModuleInteropPortsBuilder.BuildRunningModulePorts`** to obtain port and host data. Mirror URLs are included when the ASLM API server is enabled.
 
 ---
 
@@ -147,7 +166,7 @@ Unknown routes → **404** JSON error. Unhandled exceptions → **500**.
 
 #### `private int GetAssignedPort()`
 
-**Purpose:** **`PortRegistry.GetOrAssignInternalServicePort`** for interop service id/key.
+**Purpose:** **`PortRegistry.GetOrAssignInternalServicePort`** and **`EnsurePortsAvailable`** for interop service id/key.
 
 ---
 
@@ -165,9 +184,21 @@ Unknown routes → **404** JSON error. Unhandled exceptions → **500**.
 
 ---
 
-#### `private sealed record RegistryResponse(string InteropBaseUrl, List<InstalledModuleDto> InstalledModules, List<RunningModuleDto> RunningModules)`
+#### `private sealed record RegistryResponse(string InteropBaseUrl, AslmApiResponseDto AslmApi, List<InstalledModuleDto> InstalledModules, List<RunningModuleDto> RunningModules)`
 
 **Purpose:** GET `/v1/registry` payload.
+
+---
+
+#### `private sealed record PortsResponse(AslmApiResponseDto AslmApi, List<RunningModuleDto> RunningModules)`
+
+**Purpose:** GET `/v1/ports` payload — same running-modules structure without installed list.
+
+---
+
+#### `private sealed record AslmApiResponseDto(bool Enabled, bool? Running, int? Port, string? BaseUrl)`
+
+**Purpose:** ASLM API mirror server state block. `Running` and `Port` are `null` when `Enabled` is `false`.
 
 ---
 
@@ -177,9 +208,15 @@ Unknown routes → **404** JSON error. Unhandled exceptions → **500**.
 
 ---
 
-#### `private sealed record RunningModuleDto(string Id, string Name, string InstanceFolder, string SourcePath)`
+#### `private sealed record RunningModuleDto(string Id, string Name, string InstanceFolder, string SourcePath, string? PageUrl, List<ModuleHostDto> Hosts)`
 
-**Purpose:** Per running instance in registry.
+**Purpose:** Per running instance with loopback page URL and all assigned host entries.
+
+---
+
+#### `private sealed record ModuleHostDto(string HostKey, string RouteKey, int Port, string TargetUrl, string? MirrorUrl)`
+
+**Purpose:** One port-map entry for a running module. `RouteKey` is the URL segment used by the ASLM API mirror (e.g. `ui-port` → `ui`). `MirrorUrl` is `null` when the ASLM API server is disabled.
 
 ---
 
@@ -201,9 +238,70 @@ Unknown routes → **404** JSON error. Unhandled exceptions → **500**.
 
 ---
 
+## HTTP API reference
+
+### GET `/v1/registry`
+
+Returns installed and running module snapshots. Also includes ASLM API state and port/host data for every running module.
+
+**Response shape:**
+
+```json
+{
+  "interopBaseUrl": "http://127.0.0.1:20001/",
+  "aslmApi": {
+    "enabled": true,
+    "running": true,
+    "port": 20000,
+    "baseUrl": "http://127.0.0.1:20000/"
+  },
+  "installedModules": [ ... ],
+  "runningModules": [
+    {
+      "id": "aslm-chat",
+      "name": "ASLM Chat",
+      "instanceFolder": "ASLM-Chat",
+      "sourcePath": "...",
+      "pageUrl": "http://127.0.0.1:20002/",
+      "hosts": [
+        {
+          "hostKey": "ui-port",
+          "routeKey": "ui",
+          "port": 20002,
+          "targetUrl": "http://127.0.0.1:20002/",
+          "mirrorUrl": "http://127.0.0.1:20000/aslm-chat/ui/"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### GET `/v1/ports`
+
+Lighter-weight endpoint for port and host discovery only — omits `installedModules`.
+
+**Response shape:**
+
+```json
+{
+  "aslmApi": { "enabled": true, "running": true, "port": 20000, "baseUrl": "http://127.0.0.1:20000/" },
+  "runningModules": [ ... ]
+}
+```
+
+**Rules:**
+- Only modules with live tracked processes appear in `runningModules`.
+- `hosts` are built from `PortRegistry` without allocating new entries (read-only).
+- `mirrorUrl` is `null` when the ASLM API server is disabled (`aslmApi.enabled: false`).
+- `pageUrl` resolves the primary WebView port key for the module.
+
+---
+
 ## Related
 
 - [ModuleLaunchCoordinator](ModuleLaunchCoordinator/)
 - [ModuleInteropHostState](ModuleInteropHostState/)
+- [ModuleInteropPortsBuilder](ModuleInteropPortsBuilder/)
 - [AslmApiServer](AslmApiServer/)
 - [PortRegistry](PortRegistry/)

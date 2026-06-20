@@ -9,19 +9,18 @@ namespace ASLM.Tests.Services;
 public sealed class SettingsServiceTests
 {
     [Theory]
-    [InlineData("20000", "30000", true)]
-    [InlineData("abc", "30000", false)]
-    [InlineData("20000", "99999", false)]
-    [InlineData("20050", "20000", false)]
-    public void TryParsePorts_validates_ranges_and_overlap(string official, string thirdParty, bool expectedSuccess)
+    [InlineData("20000", true)]
+    [InlineData("abc", false)]
+    [InlineData("99999", false)]
+    [InlineData("1023", false)]
+    public void TryParsePortStart_validates_range(string draft, bool expectedSuccess)
     {
-        var result = SettingsService.TryParsePorts(official, thirdParty);
+        var result = SettingsService.TryParsePortStart(draft);
 
         result.Success.Should().Be(expectedSuccess);
         if (expectedSuccess)
         {
-            result.OfficialPort.Should().Be(int.Parse(official));
-            result.ThirdPartyPort.Should().Be(int.Parse(thirdParty));
+            result.ModulesStart.Should().Be(int.Parse(draft));
         }
         else
         {
@@ -45,20 +44,20 @@ public sealed class SettingsServiceTests
     }
 
     [Fact]
-    public void TryValidateAndBuildUpdateSettings_rejects_invalid_period()
+    public void TryValidateAndBuildUpdateSettings_normalizes_fixed_check_period()
     {
         var draft = new UpdateBaseline(
             true,
             false,
-            "0",
-            "stable",
-            "manual",
-            "main");
+            "release",
+            "release",
+            "release");
 
-        var success = SettingsService.TryValidateAndBuildUpdateSettings(draft, out _, out var error);
+        var success = SettingsService.TryValidateAndBuildUpdateSettings(draft, out var settings, out var error);
 
-        success.Should().BeFalse();
-        error.Should().Contain("720");
+        success.Should().BeTrue();
+        error.Should().BeEmpty();
+        settings.AutoCheckPeriodHours.Should().Be(1);
     }
 
     [Fact]
@@ -79,13 +78,12 @@ public sealed class SettingsServiceTests
         _ = new AslmFileSystemLayout();
         var store = new AppDataStore(TestLoggerFactory.Create<AppDataStore>());
         store.Data.User.Name = "Tester";
-        store.Data.Ports.OfficialStart = 21000;
-        store.Data.Ports.ThirdPartyStart = 31000;
+        store.Data.Ports.ModulesStart = 21000;
 
         var draft = SettingsService.BuildAslmDraftSnapshot(store, apiServerEnabled: true);
 
         draft.UserName.Should().Be("Tester");
-        draft.OfficialPort.Should().Be("21000");
+        draft.PortStart.Should().Be("21000");
         draft.ApiServerEnabled.Should().BeTrue();
     }
 
@@ -97,20 +95,20 @@ public sealed class SettingsServiceTests
         var console = new ConsoleBaseline(false, true, false);
         var updates = new AppUpdateSettings { AutoCheckPeriodHours = 12 };
 
-        SettingsService.ApplyDraftsToAppData(store, "Bob", 22000, 32000, console, updates);
+        SettingsService.ApplyDraftsToAppData(store, "Bob", 22000, console, updates, legalAutoAcceptUpdates: true);
 
         store.Data.User.Name.Should().Be("Bob");
-        store.Data.Ports.OfficialStart.Should().Be(22000);
+        store.Data.Ports.ModulesStart.Should().Be(22000);
         store.Data.Consoles.ShowCompletedProcesses.Should().BeTrue();
-        store.Data.Updates.AutoCheckPeriodHours.Should().Be(12);
+        store.Data.Updates.AutoCheckPeriodHours.Should().Be(1);
     }
 
     [Fact]
     public void HasUnsaved_changes_detect_differences()
     {
-        var baseline = new AslmBaseline("Alice", "20000", "30000", true);
+        var baseline = new AslmBaseline("Alice", "20000", true);
         SettingsService.HasUnsavedAccountChanges("Bob", baseline).Should().BeTrue();
-        SettingsService.HasUnsavedPortChanges("20001", "30000", baseline).Should().BeTrue();
+        SettingsService.HasUnsavedPortChanges("20001", baseline).Should().BeTrue();
         SettingsService.HasUnsavedApiServerChanges(false, baseline).Should().BeTrue();
     }
 
@@ -157,5 +155,103 @@ public sealed class SettingsServiceTests
             false);
 
         SettingsService.GetGroupForCategory(moduleCategory).Should().Be(SettingsCategoryGroup.Modules);
+    }
+
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, true)]
+    public void IsModuleEligibleForSettings_requires_installed_first_run_and_displayable_settings(
+        bool installed,
+        bool firstRunCompleted,
+        bool expected)
+    {
+        var module = ModuleConfigBuilder.Create(configure: module =>
+        {
+            module.Status.Installed = installed;
+            module.Status.FirstRunCompleted = firstRunCompleted;
+            module.Settings =
+            [
+                new ModuleSetting
+                {
+                    Key = "flag",
+                    Type = "text",
+                    Default = "false"
+                }
+            ];
+        });
+
+        SettingsService.IsModuleEligibleForSettings(module).Should().Be(expected);
+    }
+
+    [Fact]
+    public void IsModuleEligibleForSettings_excludes_modules_without_displayable_settings()
+    {
+        var module = ModuleConfigBuilder.Create(configure: module =>
+        {
+            module.Status.Installed = true;
+            module.Status.FirstRunCompleted = true;
+            module.Settings =
+            [
+                new ModuleSetting
+                {
+                    Key = "http",
+                    Type = "port",
+                    Default = "0"
+                }
+            ];
+        });
+
+        SettingsService.IsModuleEligibleForSettings(module).Should().BeFalse();
+    }
+
+    [Fact]
+    public void CreateOrderedCategories_includes_only_eligible_modules()
+    {
+        var eligible = ModuleConfigBuilder.Create(
+            id: "ready-module",
+            name: "Ready Module",
+            configure: module =>
+            {
+                module.Status.Installed = true;
+                module.Status.FirstRunCompleted = true;
+                module.Settings =
+                [
+                    new ModuleSetting
+                    {
+                        Key = "flag",
+                        Type = "text",
+                        Default = "false"
+                    }
+                ];
+            });
+
+        var stub = ModuleConfigBuilder.Create(
+            id: "stub-module",
+            name: "Stub Module",
+            configure: module =>
+            {
+                module.Status.Installed = false;
+                module.Status.FirstRunCompleted = false;
+                module.Settings =
+                [
+                    new ModuleSetting
+                    {
+                        Key = "flag",
+                        Type = "text",
+                        Default = "false"
+                    }
+                ];
+            });
+
+        var service = new SettingsService(null!, null!, null!);
+        var categories = service.CreateOrderedCategories([eligible, stub]);
+
+        categories
+            .Where(category => category.Kind == SettingsCategoryKind.Module)
+            .Select(category => category.Module!.Id)
+            .Should()
+            .Equal("ready-module");
     }
 }

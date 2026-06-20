@@ -13,7 +13,7 @@ draft: false
 
 | Name | Value |
 | --- | --- |
-| `TotalSteps` | `3` | Numbered steps (excludes welcome step `0`) |
+| `TotalSteps` | `3` (Numbered steps, excludes welcome step `0`) |
 
 ---
 
@@ -53,8 +53,8 @@ Three-row grid: **header** | **content** | **footer**.
 | `Step1Panel` | Display name |
 | `DisplayNameTitleLabel`, `UsernameEntry` | **`SettingsService.TryValidateDisplayName`** |
 | `Step2Panel` | Port ranges |
-| `PortAllocationTitleLabel`, `OfficialPortsLabel`, `ThirdPartyPortsLabel` | |
-| `OfficialPortEntry`, `ThirdPartyPortEntry`, `PortErrorLabel` | **`SettingsService.TryParsePorts`** |
+| `PortAllocationTitleLabel`, `ModulePortLabel` | |
+| `ModulePortEntry`, `PortErrorLabel` | **`SettingsService.TryParsePortStart`** |
 | `Step3Panel` | Module list + install UI |
 | `ModuleListScroll` / `ModuleList` | Dynamic checkboxes |
 | `InstallPanel` | Progress + log |
@@ -82,6 +82,7 @@ Three-row grid: **header** | **content** | **footer**.
 ---
 
 ## Member reference
+
 #### `private async void OnLoaded(object? sender, EventArgs e)`
 
 **Purpose:** Once: **`PopulateModuleListAsync()`**, set **`_skipDockerStep`** from **`DockerService.IsCliInstalledAsync()`**.
@@ -148,7 +149,7 @@ Three-row grid: **header** | **content** | **footer**.
 
 #### `private bool ValidatePorts()`
 
-**Purpose:** **`SettingsService.TryParsePorts`**; **`ShowPortError`** on failure.
+**Purpose:** **`SettingsService.TryParsePortStart`**; **`ShowPortError`** on failure.
 
 ---
 
@@ -185,9 +186,9 @@ Three-row grid: **header** | **content** | **footer**.
 | Persist | User name + ports → **`SaveAsync`** |
 | Select | Checked modules; if none → **`FinishSetupAsync`** |
 | UI mode | Hide module list, show **`InstallPanel`**, new **`_installLogSessionKey`**, clear log |
-| Plan | Count engine + module steps; **`ResetDownloadMetrics`** |
+| Plan | Use **`ModuleDependencyResolver.ExpandInstallOrder`** to include dependencies; count engine + module steps; **`ResetDownloadMetrics`** |
 | Engines | **`DiscoverEngines`** → **`InstallAsync`** per required engine |
-| Modules | Update pipeline (`ShouldUseConfiguredUpdateInstall`) or download + **`ExecuteFirstRunAsync`** |
+| Modules | Skip if **`FirstRunCompleted`**; else update pipeline (`ShouldUseConfiguredUpdateInstall`) or download + **`ExecuteFirstRunAsync`** |
 | End | Success → **`ConfigureFinishButton`**; failure → **`ConfigureRetryAndSkipButtons`** |
 
 Uses **`InlineProgress<string>`** for logs and **`Progress<DownloadProgress>`** for bars.

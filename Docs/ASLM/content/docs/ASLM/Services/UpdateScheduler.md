@@ -7,7 +7,7 @@ draft: false
 
 `ASLM/Services/UpdateScheduler.cs` — **`public sealed`** — background loop for periodic update checks and optional auto-apply per [AppDataStore](AppDataStore/) **`Updates`** settings.
 
-**DI:** `AddSingleton<UpdateScheduler>()` — [UpdateManager](UpdateManager/).
+**DI:** `AddSingleton<UpdateScheduler>()` — [UpdateManager](UpdateManager/), [GitHubRateLimitStore](GitHubRateLimitStore/).
 
 Implements **`IDisposable`**.
 
@@ -19,12 +19,14 @@ Implements **`IDisposable`**.
 | --- | --- |
 | `StartupDelay` | 15 seconds |
 | `FailureRetryDelay` | 15 minutes |
+| `IdlePollDelay` | 1 minute |
+| `BudgetExhaustedPadding` | 10 seconds |
 
 ---
 
 ## Public methods
 
-#### `public UpdateScheduler(AppDataStore appData, UpdateManager updateManager, ILogger<UpdateScheduler> logger)`
+#### `public UpdateScheduler(AppDataStore appData, UpdateManager updateManager, GitHubRateLimitStore rateLimitStore, ILogger<UpdateScheduler> logger)`
 
 **Purpose:** Stores dependencies.
 
@@ -52,13 +54,13 @@ Implements **`IDisposable`**.
 
 #### `private async Task RunAsync(CancellationToken ct)`
 
-**Purpose:** After **`StartupDelay`**: loop **`RunDueCheckAsync`**, delay **`GetSchedulerDelay`** from settings (re-read each pass), on failure log and wait **`FailureRetryDelay`**.
+**Purpose:** After **`StartupDelay`**: loop **`RunSchedulerPassAsync`**, delay using returned time (re-read each pass), on failure log and wait **`FailureRetryDelay`**.
 
 ---
 
-#### `private async Task RunDueCheckAsync(CancellationToken ct)`
+#### `private async Task<TimeSpan> RunSchedulerPassAsync(CancellationToken ct)`
 
-**Purpose:** When **`CheckEnabled`** and **`IsDue`**: stamp **`LastAutoCheckUtc`**, **`AppDataStore.SaveAsync`**, **`UpdateManager.CheckAllUpdatesAsync`** (notifications when auto-update off). When **`AutoUpdateEnabled`** and updates found: **`ApplyDiscoveredUpdatesAsync`** with logged progress.
+**Purpose:** Executes one scheduler pass and returns the delay before the next pass. Populates check queue via `UpdateManager.DiscoverInstalledModulesAsync()`, respects `GitHubRateLimitStore.CanMakeAutoRequest()`, and processes items sequentially via `ProcessNextItemAsync`.
 
 ---
 

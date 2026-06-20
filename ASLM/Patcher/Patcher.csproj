@@ -20,6 +20,10 @@
 
 	<Import Project="..\..\ASLM.Build.props" />
 
+	<PropertyGroup Condition="'$(Configuration)' == 'Release' and '$(SelfContained)' == ''">
+		<SelfContained>true</SelfContained>
+	</PropertyGroup>
+
 	<PropertyGroup>
 		<OutputPath>$(ASLMBuildOutputRoot)Patcher\</OutputPath>
 	</PropertyGroup>

@@ -13,22 +13,22 @@ draft: false
 
 ## Test methods
 
-#### `public void TryParsePorts_validates_ranges_and_overlap(string official, string thirdParty, bool expectedSuccess)`
+#### `public void TryParsePortStart_validates_range(string draft, bool expectedSuccess)`
 
-**Purpose:** Port draft strings must parse, sit in valid ranges, and not overlap official/third-party bands.
+**Purpose:** Port start draft string must parse and sit in valid range.
 
-| `official` | `thirdParty` | `expectedSuccess` |
-| --- | --- | --- |
-| `20000` | `30000` | `true` |
-| `abc` | `30000` | `false` |
-| `20000` | `99999` | `false` |
-| `20050` | `20000` | `false` |
+| `draft` | `expectedSuccess` |
+| --- | --- |
+| `20000` | `true` |
+| `abc` | `false` |
+| `99999` | `false` |
+| `1023` | `false` |
 
 | Step | Action |
 | --- | --- |
-| 1 | `TryParsePorts(official, thirdParty)` |
+| 1 | `TryParsePortStart(draft)` |
 | 2 | Assert `Success == expectedSuccess` |
-| 3 | On success: parsed ports match integers; on failure: non-empty `ErrorMessage` |
+| 3 | On success: parsed port matches integer; on failure: non-empty `ErrorMessage` |
 
 ---
 
@@ -89,8 +89,8 @@ draft: false
 
 | Step | Action |
 | --- | --- |
-| 1 | `ApplyDraftsToAppData(store, "Bob", 22000, 32000, console, updates)` |
-| 2 | Assert user name, port starts, console flags, `AutoCheckPeriodHours` |
+| 1 | `ApplyDraftsToAppData(store, "Bob", 22000, console, updates)` |
+| 2 | Assert user name, port start, console flags, `AutoCheckPeriodHours` |
 
 ---
 
@@ -100,9 +100,9 @@ draft: false
 
 | Step | Action |
 | --- | --- |
-| 1 | Baseline `AslmBaseline("Alice", "20000", "30000", true)` |
+| 1 | Baseline `AslmBaseline("Alice", "20000", true)` |
 | 2 | `HasUnsavedAccountChanges("Bob", …)` → `true` |
-| 3 | `HasUnsavedPortChanges("20001", "30000", …)` → `true` |
+| 3 | `HasUnsavedPortChanges("20001", …)` → `true` |
 | 4 | `HasUnsavedApiServerChanges(false, …)` → `true` |
 
 ---
@@ -138,6 +138,40 @@ draft: false
 | --- | --- |
 | 1 | `SettingsCategory` with `SettingsCategoryKind.Module` |
 | 2 | `GetGroupForCategory` → `Modules` |
+
+---
+
+#### `public void IsModuleEligibleForSettings_requires_installed_first_run_and_displayable_settings(bool installed, bool firstRunCompleted, bool expected)`
+
+**Purpose:** The `IsModuleEligibleForSettings` check correctly uses the installed and first-run completion flags, verifying that the combination of these states matches the expected eligibility.
+
+| Step | Action |
+| --- | --- |
+| 1 | Create a module configuring `Installed`, `FirstRunCompleted`, and adding a setting that displays. |
+| 2 | `IsModuleEligibleForSettings` → `expected` |
+
+---
+
+#### `public void IsModuleEligibleForSettings_excludes_modules_without_displayable_settings()`
+
+**Purpose:** Ensure that a module is deemed ineligible if it lacks any settings that can be displayed, even if it is installed and has completed its first run.
+
+| Step | Action |
+| --- | --- |
+| 1 | Create a module that is installed and has completed first-run, but whose settings are automatically hidden (e.g., `Type = "port"`). |
+| 2 | `IsModuleEligibleForSettings` → `false` |
+
+---
+
+#### `public void CreateOrderedCategories_includes_only_eligible_modules()`
+
+**Purpose:** Ensure `CreateOrderedCategories` filters out modules that are not eligible for the settings UI.
+
+| Step | Action |
+| --- | --- |
+| 1 | Create one eligible module and one ineligible module. |
+| 2 | Call `CreateOrderedCategories` with both modules. |
+| 3 | Assert that only the eligible module is included in the resulting categories. |
 
 ---
 

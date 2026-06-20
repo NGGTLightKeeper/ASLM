@@ -16,6 +16,17 @@
 		<OutputPath>$(ASLMBuildOutputRoot)</OutputPath>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(SelfContained)' == 'true'">
+		<OutputPath>$(MSBuildProjectDirectory)\obj\$(Configuration)\launcher-sc-build\</OutputPath>
+		<PublishSingleFile>true</PublishSingleFile>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<PublishDir Condition="'$(PublishDir)' == ''">$(ASLMBuildOutputRoot)</PublishDir>
+	</PropertyGroup>
+
 	<ItemGroup Condition="'$(Configuration)' == 'Debug'">
 		<Content Include="..\..\Data\**\*.*">
 			<Link>Data\%(RecursiveDir)%(Filename)%(Extension)</Link>

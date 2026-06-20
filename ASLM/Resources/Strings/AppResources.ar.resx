@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>الرئيسية</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>قبول ومتابعة</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>لقد قرأت وأوافق على {0}.</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>اقبل هذا الاتفاق للمتابعة.</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>رفض</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>تم تحديث الشروط. راجعها واقبلها مرة أخرى.</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>الشروط {0} من {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>اقبل الشروط المطلوبة لاستخدام ASLM.</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>الشروط والتراخيص</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>جارٍ التحميل...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -741,6 +764,18 @@
   <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
     <value>هذه الوحدة لم تعد مثبّتة.</value>
   </data>
+  <data name="Notifications_EngineUpdateAvailable" xml:space="preserve">
+    <value>يتوفر تحديث للمحرك</value>
+  </data>
+  <data name="Notifications_EngineUpdateFailed" xml:space="preserve">
+    <value>تعذر تطبيق تحديث المحرك.</value>
+  </data>
+  <data name="Notifications_EngineUpdateNotAvailable" xml:space="preserve">
+    <value>لا يتوفر أي تحديث للمحرك حاليًا.</value>
+  </data>
+  <data name="Notifications_EngineUpdateTitle" xml:space="preserve">
+    <value>تحديث المحرك</value>
+  </data>
   <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
     <value>يتوفر تحديث للوحدة</value>
   </data>
@@ -804,6 +839,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>اسم العرض الذي يستخدمه ASLM ويشاركه مع الوحدات</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>الحسابات</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>اسم العرض في ASLM وتسجيل الدخول إلى GitHub وOllama</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>حساب ASLM</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>حساب GitHub</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>حساب Ollama</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>غير متصل</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>اتصل لرفع حد واجهة برمجة التطبيقات من 60 إلى 5000 طلب في الساعة</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>متصل</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>متصل باسم {0}</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>اتصال</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>قطع الاتصال</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>جارٍ الاتصال…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... أو github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>لصق رمز GitHub</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>يُفترض أن يكون GitHub قد فُتح مع تاريخ انتهاء مُسبق لمدة سنة واحدة. اترك الأذونات الافتراضية لفحوصات التحديثات العامة، أنشئ الرمز ثم الصقه هنا.</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>حساب GitHub</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>سجّل الدخول برمز وصول شخصي لاستخدام حد أعلى لواجهة برمجة تطبيقات GitHub.</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>فشل الاتصال: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>تهيئة خاصة بالوحدة</value>
   </data>
@@ -824,6 +913,36 @@
   </data>
   <data name="Settings_Category_Updates_Description" xml:space="preserve">
     <value>تفضيلات تحديث التطبيق والوحدات</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Available" xml:space="preserve">
+    <value>يتوفر تحديث Ollama {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Button" xml:space="preserve">
+    <value>تحديث Ollama</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Description" xml:space="preserve">
+    <value>الإصدار الحالي: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Failed" xml:space="preserve">
+    <value>فشل التحديث: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Success" xml:space="preserve">
+    <value>تم تحديث Ollama إلى {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Title" xml:space="preserve">
+    <value>تحديث Ollama</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Updating" xml:space="preserve">
+    <value>جارٍ تحديث Ollama...</value>
+  </data>
+  <data name="Settings_OllamaUpdate_UpToDate" xml:space="preserve">
+    <value>Ollama محدّث</value>
+  </data>
+  <data name="Settings_CheckAslmUpdates" xml:space="preserve">
+    <value>التحقق من تحديثات ASLM</value>
+  </data>
+  <data name="Settings_CheckOllamaUpdates" xml:space="preserve">
+    <value>التحقق من التحديثات</value>
   </data>
   <data name="Settings_CheckNow" xml:space="preserve">
     <value>التحقق الآن</value>
@@ -906,11 +1025,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>لا تتوفر إعدادات</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>نقطة البداية للوحدات الرسمية. يُحجز 100 منفذاً ابتداءً من هذه القيمة</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>منفذ البداية لجميع الوحدات. يتم تخصيص المنافذ بالتسلسل ابتداءً من هذه القيمة</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>منفذ بداية الوحدات الرسمية</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>منفذ بداية الوحدات</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>حساب Ollama</value>
@@ -1064,7 +1183,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>وحدات التحكم</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>الشروط</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>قبول تحديثات الشروط تلقائيًا</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>قبول الشروط الجديدة والمحدَّثة بعد المراجعة الأولى.</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>حذف</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">
@@ -1112,12 +1239,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>سمة جديدة</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>نقطة البداية للوحدات الخارجية. يُحجز 1000 منفذاً ابتداءً من هذه القيمة</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>منفذ بداية وحدات الطرف الثالث</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>الإعدادات</value>
   </data>
@@ -1141,6 +1262,9 @@
   </data>
   <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
     <value>جارٍ تنزيل بنية ASLM...</value>
+  </data>
+  <data name="Settings_UpdateStatus_EngineUpdatesCount" xml:space="preserve">
+    <value>يتوفر {0} من تحديثات المحرك</value>
   </data>
   <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
     <value>يتوفر {0} تحديث/تحديثات. يمكن تطبيق تحديثات الوحدات من صفحة الوحدات</value>
@@ -1197,7 +1321,7 @@
     <value>إعداد سريع</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>يستخدم الإعداد السريع اسم مستخدم Windows والمنافذ الافتراضية</value>
+    <value>يستخدم الإعداد السريع اسم مستخدم Windows والإعدادات الافتراضية</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>إنهاء</value>
@@ -1214,8 +1338,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>تثبيت</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>الوحدات الرسمية (100 منفذ)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>منفذ بداية الوحدات</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>التقدّم الإجمالي</value>
@@ -1258,9 +1382,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>ملف المستخدم</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>وحدات الطرف الثالث (1000 منفذ)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>إعداد ASLM</value>

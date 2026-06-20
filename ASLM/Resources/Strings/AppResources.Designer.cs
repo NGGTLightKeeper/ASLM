@@ -1699,6 +1699,78 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Accept and continue.
+        /// </summary>
+        public static string Legal_AcceptContinue {
+            get {
+                return ResourceManager.GetString("Legal_AcceptContinue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на I have read and accept {0}..
+        /// </summary>
+        public static string Legal_AcceptDocumentFormat {
+            get {
+                return ResourceManager.GetString("Legal_AcceptDocumentFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Accept this agreement to continue..
+        /// </summary>
+        public static string Legal_AcceptRequired {
+            get {
+                return ResourceManager.GetString("Legal_AcceptRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Decline.
+        /// </summary>
+        public static string Legal_Decline {
+            get {
+                return ResourceManager.GetString("Legal_Decline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Terms were updated. Review and accept again..
+        /// </summary>
+        public static string Legal_DocumentsUpdated {
+            get {
+                return ResourceManager.GetString("Legal_DocumentsUpdated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Terms {0} of {1}.
+        /// </summary>
+        public static string Legal_StepFormat {
+            get {
+                return ResourceManager.GetString("Legal_StepFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Accept the required terms to use ASLM..
+        /// </summary>
+        public static string Legal_Subtitle {
+            get {
+                return ResourceManager.GetString("Legal_Subtitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Terms and licenses.
+        /// </summary>
+        public static string Legal_Title {
+            get {
+                return ResourceManager.GetString("Legal_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Loading....
         /// </summary>
         public static string Loading_Text {
@@ -2230,6 +2302,42 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Engine update available.
+        /// </summary>
+        public static string Notifications_EngineUpdateAvailable {
+            get {
+                return ResourceManager.GetString("Notifications_EngineUpdateAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на The engine update could not be applied..
+        /// </summary>
+        public static string Notifications_EngineUpdateFailed {
+            get {
+                return ResourceManager.GetString("Notifications_EngineUpdateFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на No engine update is available right now..
+        /// </summary>
+        public static string Notifications_EngineUpdateNotAvailable {
+            get {
+                return ResourceManager.GetString("Notifications_EngineUpdateNotAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Engine update.
+        /// </summary>
+        public static string Notifications_EngineUpdateTitle {
+            get {
+                return ResourceManager.GetString("Notifications_EngineUpdateTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на installed version.
         /// </summary>
         public static string Notifications_InstalledVersionFallback {
@@ -2329,6 +2437,33 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на ASLM Account.
+        /// </summary>
+        public static string Settings_Accounts_SectionAslm {
+            get {
+                return ResourceManager.GetString("Settings_Accounts_SectionAslm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на GitHub Account.
+        /// </summary>
+        public static string Settings_Accounts_SectionGitHub {
+            get {
+                return ResourceManager.GetString("Settings_Accounts_SectionGitHub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Ollama Account.
+        /// </summary>
+        public static string Settings_Accounts_SectionOllama {
+            get {
+                return ResourceManager.GetString("Settings_Accounts_SectionOllama", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Start the local mirror server with ASLM.
         /// </summary>
         public static string Settings_ApiServer_Description {
@@ -2419,6 +2554,24 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Accounts.
+        /// </summary>
+        public static string Settings_Category_Accounts {
+            get {
+                return ResourceManager.GetString("Settings_Category_Accounts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на ASLM display name, GitHub and Ollama sign-in.
+        /// </summary>
+        public static string Settings_Category_Accounts_Description {
+            get {
+                return ResourceManager.GetString("Settings_Category_Accounts_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на ASLM.
         /// </summary>
         public static string Settings_Category_ASLM {
@@ -2500,11 +2653,29 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Check ASLM updates.
+        /// </summary>
+        public static string Settings_CheckAslmUpdates {
+            get {
+                return ResourceManager.GetString("Settings_CheckAslmUpdates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Check now.
         /// </summary>
         public static string Settings_CheckNow {
             get {
                 return ResourceManager.GetString("Settings_CheckNow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Check for updates.
+        /// </summary>
+        public static string Settings_CheckOllamaUpdates {
+            get {
+                return ResourceManager.GetString("Settings_CheckOllamaUpdates", resourceCulture);
             }
         }
         
@@ -2644,6 +2815,123 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Connect.
+        /// </summary>
+        public static string Settings_GitHub_Connect {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_Connect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Connected.
+        /// </summary>
+        public static string Settings_GitHub_Connected {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_Connected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Connected as {0}.
+        /// </summary>
+        public static string Settings_GitHub_ConnectedAs {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_ConnectedAs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Connection failed: {0}.
+        /// </summary>
+        public static string Settings_GitHub_ConnectFailed {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_ConnectFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Connecting....
+        /// </summary>
+        public static string Settings_GitHub_Connecting {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_Connecting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на GitHub should have opened with a 1-year expiration prefilled. Leave permissions at defaults for public update checks, click Generate token, then paste it here..
+        /// </summary>
+        public static string Settings_GitHub_ConnectPrompt_Message {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_ConnectPrompt_Message", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Paste GitHub token.
+        /// </summary>
+        public static string Settings_GitHub_ConnectPrompt_Title {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_ConnectPrompt_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Disconnect.
+        /// </summary>
+        public static string Settings_GitHub_Disconnect {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_Disconnect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Not connected.
+        /// </summary>
+        public static string Settings_GitHub_NotConnected {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_NotConnected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Connect to raise the API limit from 60 to 5,000 requests/hour.
+        /// </summary>
+        public static string Settings_GitHub_NotConnectedHint {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_NotConnectedHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Sign in with a personal access token to use the higher GitHub API rate limit..
+        /// </summary>
+        public static string Settings_GitHub_TokenDescription {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_TokenDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на ghp_... or github_pat_....
+        /// </summary>
+        public static string Settings_GitHub_TokenPlaceholder {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_TokenPlaceholder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на GitHub Account.
+        /// </summary>
+        public static string Settings_GitHub_TokenTitle {
+            get {
+                return ResourceManager.GetString("Settings_GitHub_TokenTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на MODULES.
         /// </summary>
         public static string Settings_Header_Modules {
@@ -2667,6 +2955,24 @@ namespace ASLM.Resources.Strings {
         public static string Settings_IndividualConsoles_Title {
             get {
                 return ResourceManager.GetString("Settings_IndividualConsoles_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Accept new and updated terms after the first review..
+        /// </summary>
+        public static string Settings_Legal_AutoAcceptUpdates_Description {
+            get {
+                return ResourceManager.GetString("Settings_Legal_AutoAcceptUpdates_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Auto-accept term updates.
+        /// </summary>
+        public static string Settings_Legal_AutoAcceptUpdates_Title {
+            get {
+                return ResourceManager.GetString("Settings_Legal_AutoAcceptUpdates_Title", resourceCulture);
             }
         }
         
@@ -2716,6 +3022,24 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Starting port for all modules. Ports are allocated sequentially from this value.
+        /// </summary>
+        public static string Settings_ModulePortDescription {
+            get {
+                return ResourceManager.GetString("Settings_ModulePortDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Module start port.
+        /// </summary>
+        public static string Settings_ModulePortTitle {
+            get {
+                return ResourceManager.GetString("Settings_ModulePortTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на New module preferences start from this mode; individual modules can override it.
         /// </summary>
         public static string Settings_ModuleUpdateMode_Description {
@@ -2739,24 +3063,6 @@ namespace ASLM.Resources.Strings {
         public static string Settings_NoSettingsAvailable {
             get {
                 return ResourceManager.GetString("Settings_NoSettingsAvailable", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Ищет локализованную строку, похожую на Starting point for official modules. 100 ports are reserved from this value.
-        /// </summary>
-        public static string Settings_OfficialPortDescription {
-            get {
-                return ResourceManager.GetString("Settings_OfficialPortDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Ищет локализованную строку, похожую на Official modules start port.
-        /// </summary>
-        public static string Settings_OfficialPortTitle {
-            get {
-                return ResourceManager.GetString("Settings_OfficialPortTitle", resourceCulture);
             }
         }
         
@@ -2892,6 +3198,78 @@ namespace ASLM.Resources.Strings {
         public static string Settings_OllamaSignOut_Title {
             get {
                 return ResourceManager.GetString("Settings_OllamaSignOut_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Ollama update {0} is available.
+        /// </summary>
+        public static string Settings_OllamaUpdate_Available {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Available", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Update Ollama.
+        /// </summary>
+        public static string Settings_OllamaUpdate_Button {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Current version: {0}.
+        /// </summary>
+        public static string Settings_OllamaUpdate_Description {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Update failed: {0}.
+        /// </summary>
+        public static string Settings_OllamaUpdate_Failed {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Failed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Ollama updated to {0}.
+        /// </summary>
+        public static string Settings_OllamaUpdate_Success {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Success", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Ollama update.
+        /// </summary>
+        public static string Settings_OllamaUpdate_Title {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Updating Ollama....
+        /// </summary>
+        public static string Settings_OllamaUpdate_Updating {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_Updating", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на Ollama is up to date.
+        /// </summary>
+        public static string Settings_OllamaUpdate_UpToDate {
+            get {
+                return ResourceManager.GetString("Settings_OllamaUpdate_UpToDate", resourceCulture);
             }
         }
         
@@ -3213,6 +3591,15 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Terms.
+        /// </summary>
+        public static string Settings_SubGroup_Legal {
+            get {
+                return ResourceManager.GetString("Settings_SubGroup_Legal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Delete.
         /// </summary>
         public static string Settings_ThemeDelete_Accept {
@@ -3357,24 +3744,6 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на Starting point for external modules. 1000 ports are reserved from this value.
-        /// </summary>
-        public static string Settings_ThirdPartyPortDescription {
-            get {
-                return ResourceManager.GetString("Settings_ThirdPartyPortDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Ищет локализованную строку, похожую на Third-party modules start port.
-        /// </summary>
-        public static string Settings_ThirdPartyPortTitle {
-            get {
-                return ResourceManager.GetString("Settings_ThirdPartyPortTitle", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Ищет локализованную строку, похожую на Settings.
         /// </summary>
         public static string Settings_Title {
@@ -3443,6 +3812,15 @@ namespace ASLM.Resources.Strings {
         public static string Settings_UpdateStatus_Downloading {
             get {
                 return ResourceManager.GetString("Settings_UpdateStatus_Downloading", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на {0} engine update(s) available.
+        /// </summary>
+        public static string Settings_UpdateStatus_EngineUpdatesCount {
+            get {
+                return ResourceManager.GetString("Settings_UpdateStatus_EngineUpdatesCount", resourceCulture);
             }
         }
         
@@ -3609,7 +3987,7 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на Fast Setup uses your Windows username and default ports.
+        ///   Ищет локализованную строку, похожую на Fast Setup uses your Windows username and default settings.
         /// </summary>
         public static string SetupWizard_FastSetupHint {
             get {
@@ -3654,20 +4032,20 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на Module start port.
+        /// </summary>
+        public static string SetupWizard_ModulesPortLabel {
+            get {
+                return ResourceManager.GetString("SetupWizard_ModulesPortLabel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на Install.
         /// </summary>
         public static string SetupWizard_Next_Install {
             get {
                 return ResourceManager.GetString("SetupWizard_Next_Install", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Ищет локализованную строку, похожую на Official modules (100 ports).
-        /// </summary>
-        public static string SetupWizard_OfficialPortsLabel {
-            get {
-                return ResourceManager.GetString("SetupWizard_OfficialPortsLabel", resourceCulture);
             }
         }
         
@@ -3794,15 +4172,6 @@ namespace ASLM.Resources.Strings {
         public static string SetupWizard_StepFormat {
             get {
                 return ResourceManager.GetString("SetupWizard_StepFormat", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Ищет локализованную строку, похожую на Third-party modules (1000 ports).
-        /// </summary>
-        public static string SetupWizard_ThirdPartyPortsLabel {
-            get {
-                return ResourceManager.GetString("SetupWizard_ThirdPartyPortsLabel", resourceCulture);
             }
         }
         

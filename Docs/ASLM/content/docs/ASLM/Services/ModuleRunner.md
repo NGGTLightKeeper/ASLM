@@ -15,21 +15,21 @@ Implements **`IDisposable`**. Subscribes to **`PortRegistry.PortsRedistributed`*
 
 ## Public methods — construction and setup
 
-#### `public ModuleRunner(EngineInstaller engineInstaller, ModuleEnvironmentResolver environmentResolver, PortRegistry ports, ProcessTracker processTracker, ModuleConsoleStore consoleStore, ProcessSnapshotReader processSnapshots, ModuleThemePayloadBuilder themePayloadBuilder, ModuleLocalePayloadBuilder localePayloadBuilder, ModuleInteropHostState interopHostState, ILogger<ModuleRunner> logger)`
+#### `public ModuleRunner(EngineInstaller engineInstaller, ModuleEnvironmentResolver environmentResolver, PortRegistry ports, ProcessTracker processTracker, ModuleConsoleStore consoleStore, ProcessSnapshotReader processSnapshots, ModuleThemePayloadBuilder themePayloadBuilder, ModuleLocalePayloadBuilder localePayloadBuilder, ModuleInteropHostState interopHostState, IServiceProvider serviceProvider, ILogger<ModuleRunner> logger)`
 
-**Purpose:** Creates the runner and wires port redistribution restarts.
+**Purpose:** Creates the runner, stores optional services resolver, and wires port redistribution restarts.
 
 ---
 
-#### `public async Task<bool> ExecuteFirstRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct)`
+#### `public async Task<bool> ExecuteFirstRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct, bool skipModuleDependencies = false)`
 
-**Purpose:** Installs engine dependencies, synchronizes declared settings, runs **`Commands.FirstRun`** (non-tracked). Sets **`FirstRunCompleted`** on success.
+**Purpose:** Installs engine dependencies, synchronizes declared settings, runs **`Commands.FirstRun`** (non-tracked). Sets **`Installed`** and **`FirstRunCompleted`** on success.
 
 ---
 
 #### `public async Task<bool> ExecuteRunAsync(ModuleConfig module, IProgress<string> log, CancellationToken ct)`
 
-**Purpose:** Synchronizes settings, starts each **`Commands.Run`** entry in background with **`trackProcess: true`**.
+**Purpose:** Allocates and ensures ports are available, synchronizes settings, and starts each **`Commands.Run`** entry in background with **`trackProcess: true`**.
 
 ---
 
@@ -44,6 +44,12 @@ Implements **`IDisposable`**. Subscribes to **`PortRegistry.PortsRedistributed`*
 #### `public IReadOnlyList<string> GetRunningModuleSourcePaths()`
 
 **Purpose:** Source paths with at least one live tracked process.
+
+---
+
+#### `public IReadOnlyList<ModuleConfig> GetRunningModuleConfigs()`
+
+**Purpose:** Returns the module configurations for instances that currently have tracked live processes. The returned configs are the same snapshots stored at process launch time.
 
 ---
 

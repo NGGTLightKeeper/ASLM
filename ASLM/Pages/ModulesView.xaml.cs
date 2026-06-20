@@ -1487,7 +1487,9 @@ namespace ASLM.Pages
                 await EnsureSelectionOptionsLoadedAsync(forceOptionLoad);
                 SynchronizeSelectionForUpdateOperation();
 
-                _updateCandidate = await Task.Run(() => _updateManager.CheckModuleUpdateAsync(_config));
+                _updateCandidate = await Task.Run(() => _updateManager.CheckModuleUpdateAsync(
+                    _config,
+                    isManualRequest: true));
                 HasUpdate = _updateCandidate != null;
                 OnPropertyChanged(nameof(UpdateCandidate));
                 OnPropertyChanged(nameof(AvailableUpdateLabel));
@@ -1558,7 +1560,9 @@ namespace ASLM.Pages
 
             try
             {
-                var branches = await Task.Run(() => _updateManager.GetModuleBranchesAsync(_config));
+                var branches = await Task.Run(() => _updateManager.GetModuleBranchesAsync(
+                    _config,
+                    isManualRequest: true));
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     var selectedBranch = string.IsNullOrWhiteSpace(_selectedBranch)
@@ -1639,7 +1643,9 @@ namespace ASLM.Pages
 
             try
             {
-                var releases = await Task.Run(() => _updateManager.GetModuleReleaseCandidatesAsync(_config));
+                var releases = await Task.Run(() => _updateManager.GetModuleReleaseCandidatesAsync(
+                    _config,
+                    isManualRequest: true));
                 var releaseOptions = BuildReleaseOptions(releases);
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
@@ -1812,7 +1818,8 @@ namespace ASLM.Pages
                     installCandidate,
                     combinedLog,
                     combinedProgress,
-                    CancellationToken.None));
+                    isManualRequest: true,
+                    ct: CancellationToken.None));
 
                 if (success)
                 {
@@ -2091,7 +2098,9 @@ namespace ASLM.Pages
 
             if (IsBranchMode)
             {
-                return await Task.Run(() => _updateManager.ResolveModuleInstallCandidateAsync(_config));
+                return await Task.Run(() => _updateManager.ResolveModuleInstallCandidateAsync(
+                    _config,
+                    isManualRequest: true));
             }
 
             return ResolveSelectedReleaseInstallCandidate();
@@ -2105,6 +2114,11 @@ namespace ASLM.Pages
             if (_selectedReleaseOption == null || string.IsNullOrWhiteSpace(_selectedReleaseOption.ReleaseTag))
             {
                 return null;
+            }
+
+            if (!UpdateManager.HasRecordedRemoteSourceInstall(_config))
+            {
+                return _selectedReleaseOption;
             }
 
             var installedRef = !string.IsNullOrWhiteSpace(_config.Update.InstalledReleaseTag)

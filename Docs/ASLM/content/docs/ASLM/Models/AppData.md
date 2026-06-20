@@ -15,7 +15,7 @@ draft: false
 | --- | --- | --- |
 | `firstRunCompleted` | `bool` | Setup wizard finished |
 | `user` | `AppUserData` | Display name |
-| `ports` | `AppPortConfig` | Official / third-party port ranges |
+| `ports` | `AppPortConfig` | Module start port |
 | `api` | `AppApiConfig` | Local API mirror server toggle |
 | `consoles` | `AppConsoleConfig` | Consoles page preferences |
 | `updates` | `AppUpdateSettings` | ASLM and module update policy |
@@ -59,10 +59,11 @@ Port assignment is handled at runtime by **`PortRegistry`**, not stored here.
 
 | Property | JSON | Default |
 | --- | --- | --- |
-| `OfficialStart` | `officialStart` | `20000` |
-| `OfficialCount` | `officialCount` | `100` |
-| `ThirdPartyStart` | `thirdPartyStart` | `21000` |
-| `ThirdPartyCount` | `thirdPartyCount` | `1000` |
+| `ModulesStart` | `modulesStart` | `20000` |
+
+#### `void Normalize()`
+
+**Purpose:** Migrates legacy official/third-party port settings and clamps the start port.
 
 ---
 

@@ -174,7 +174,7 @@ Root: **`Grid`** `ColumnDefinitions="Auto, *"`.
 | 6 | `NavigateTo(HomeButton)` |
 | 7 | Re-apply `ApplyAslmApiNavigationState()`, `ApplyConsoleNavigationState()` |
 | 8 | `ScheduleEnsureModuleBrowserLeftToRight()` |
-| 9 | Fire-and-forget `StartEnabledModulesAsync()`, `CheckStartupUpdatesAsync()` |
+| 9 | Fire-and-forget `StartEnabledModulesAsync()` |
 
 ---
 
@@ -228,20 +228,6 @@ If not `_shellEventsHooked`, return. Otherwise unsubscribe the same events as **
 | 3 | `ApplyShellNavInactiveStyle` on every `ModulePagePanel` `Button` |
 | 4 | If `_activeNavButton` set → `ApplyShellNavActiveStyle` on it |
 | 5 | Else if `_activeModule` set → find `ClassId="PAGE"` button with matching `AutomationId` → apply active style |
-
----
-
-#### `private async Task CheckStartupUpdatesAsync()
-
-**Purpose:** Checks ASLM and modules for updates once after the main shell opens.
-
-| Step | Action |
-| --- | --- |
-| 1 | `_appData.Data.Updates.Normalize()` |
-| 2 | `autoUpdate = Updates.AutoUpdateEnabled`; `publishNotifications = !autoUpdate` |
-| 3 | `CheckAllUpdatesAsync` on thread pool |
-| 4 | If `autoUpdate` and updates found → `ApplyDiscoveredUpdatesAsync` on thread pool |
-| — | On exception: debug log only (no user toast) |
 
 ---
 
@@ -753,8 +739,7 @@ Resolves path via **`ResolveSidebarIconFile`**; **`PackagedIconTintCache.Get(pat
 | `DownloadsButton` | `IconDownload` |
 | `SettingsButton` | `IconSettings` |
 | `ClassId="PAGE"` + `ModuleConfig` | `SidebarIconFullPath` if file exists, else `IconPage` |
-| Other | 
-ull` |
+| Other | `null` |
 
 ---
 

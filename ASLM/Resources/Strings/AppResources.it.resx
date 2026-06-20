@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>Home</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>Accetta e continua</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>Ho letto e accetto {0}.</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>Accetta questo accordo per continuare.</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>Rifiuta</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>I termini sono stati aggiornati. Rivedili e accettali di nuovo.</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>Termini {0} di {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>Accetta i termini richiesti per usare ASLM.</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>Termini e licenze</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>Caricamento...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -741,6 +764,18 @@
   <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
     <value>Quel modulo non è più installato.</value>
   </data>
+  <data name="Notifications_EngineUpdateAvailable" xml:space="preserve">
+    <value>Aggiornamento del motore disponibile</value>
+  </data>
+  <data name="Notifications_EngineUpdateFailed" xml:space="preserve">
+    <value>Impossibile applicare l'aggiornamento del motore.</value>
+  </data>
+  <data name="Notifications_EngineUpdateNotAvailable" xml:space="preserve">
+    <value>Al momento non sono disponibili aggiornamenti del motore.</value>
+  </data>
+  <data name="Notifications_EngineUpdateTitle" xml:space="preserve">
+    <value>Aggiornamento del motore</value>
+  </data>
   <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
     <value>Aggiornamento modulo disponibile</value>
   </data>
@@ -804,6 +839,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>Nome visualizzato usato da ASLM e condiviso con i moduli</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>Nome visualizzato ASLM, accesso a GitHub e Ollama</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>Account ASLM</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>Account GitHub</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Account Ollama</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>Non connesso</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>Connettiti per aumentare il limite API da 60 a 5.000 richieste all'ora</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>Connesso</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>Connesso come {0}</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>Connetti</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>Disconnetti</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>Connessione in corso…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... o github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>Incolla token GitHub</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>GitHub dovrebbe essersi aperto con scadenza preimpostata a un anno. Lascia i permessi predefiniti per i controlli di aggiornamento pubblici, crea il token e incollalo qui.</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>Account GitHub</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>Accedi con un token di accesso personale per usare il limite API GitHub più elevato.</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>Connessione non riuscita: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>Configurazione specifica del modulo</value>
   </data>
@@ -824,6 +913,36 @@
   </data>
   <data name="Settings_Category_Updates_Description" xml:space="preserve">
     <value>Preferenze di aggiornamento per applicazione e moduli</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Available" xml:space="preserve">
+    <value>È disponibile l'aggiornamento Ollama {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Button" xml:space="preserve">
+    <value>Aggiorna Ollama</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Description" xml:space="preserve">
+    <value>Versione attuale: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Failed" xml:space="preserve">
+    <value>Aggiornamento non riuscito: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Success" xml:space="preserve">
+    <value>Ollama aggiornato a {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Title" xml:space="preserve">
+    <value>Aggiornamento Ollama</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Updating" xml:space="preserve">
+    <value>Aggiornamento di Ollama...</value>
+  </data>
+  <data name="Settings_OllamaUpdate_UpToDate" xml:space="preserve">
+    <value>Ollama è aggiornato</value>
+  </data>
+  <data name="Settings_CheckAslmUpdates" xml:space="preserve">
+    <value>Controlla aggiornamenti ASLM</value>
+  </data>
+  <data name="Settings_CheckOllamaUpdates" xml:space="preserve">
+    <value>Controlla aggiornamenti</value>
   </data>
   <data name="Settings_CheckNow" xml:space="preserve">
     <value>Controlla ora</value>
@@ -906,11 +1025,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>Nessuna impostazione disponibile</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>Punto di partenza per i moduli ufficiali. Da questo valore sono riservate 100 porte</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>Porta iniziale per tutti i moduli. Le porte vengono assegnate in sequenza a partire da questo valore</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>Porta iniziale moduli ufficiali</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>Porta iniziale moduli</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Account Ollama</value>
@@ -1064,7 +1183,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>Console</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>Termini</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>Accetta automaticamente gli aggiornamenti</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>Accetta termini nuovi e aggiornati dopo la prima revisione.</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>Elimina</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">
@@ -1112,12 +1239,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>Nuovo tema</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>Punto di partenza per i moduli esterni. Da questo valore sono riservate 1000 porte</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>Porta iniziale moduli di terze parti</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Impostazioni</value>
   </data>
@@ -1141,6 +1262,9 @@
   </data>
   <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
     <value>Download della build ASLM...</value>
+  </data>
+  <data name="Settings_UpdateStatus_EngineUpdatesCount" xml:space="preserve">
+    <value>{0} aggiornamento/i del motore disponibile/i</value>
   </data>
   <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
     <value>{0} aggiornamenti disponibili. Gli aggiornamenti dei moduli possono essere applicati dalla pagina Moduli</value>
@@ -1197,7 +1321,7 @@
     <value>Configurazione rapida</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>La configurazione rapida usa il nome utente Windows e le porte predefinite</value>
+    <value>La configurazione rapida usa il nome utente Windows e le impostazioni predefinite</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>Fine</value>
@@ -1214,8 +1338,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>Installa</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>Moduli ufficiali (100 porte)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>Porta iniziale moduli</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>Avanzamento complessivo</value>
@@ -1258,9 +1382,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>Profilo utente</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>Moduli di terze parti (1000 porte)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>Configurazione ASLM</value>

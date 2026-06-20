@@ -74,6 +74,7 @@ namespace ASLM.Models
         public bool IsPrerelease { get; set; }
         public DateTimeOffset? PublishedAt { get; set; }
         public ModuleConfig? Module { get; set; }
+        public EngineConfig? Engine { get; set; }
     }
 
     /// <summary>

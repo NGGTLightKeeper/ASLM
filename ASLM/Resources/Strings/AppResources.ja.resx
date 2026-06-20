@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>ホーム</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>同意して続行</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>{0}を読み、同意します。</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>続行するにはこの同意書に同意してください。</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>拒否</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>利用条件が更新されました。再度確認して同意してください。</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>利用条件 {0} / {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>ASLMを使用するには必要な条件に同意してください。</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>利用条件とライセンス</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>読み込み中...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -741,6 +764,18 @@
   <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
     <value>そのモジュールはインストールされていません。</value>
   </data>
+  <data name="Notifications_EngineUpdateAvailable" xml:space="preserve">
+    <value>エンジンのアップデートが利用可能です</value>
+  </data>
+  <data name="Notifications_EngineUpdateFailed" xml:space="preserve">
+    <value>エンジンのアップデートを適用できませんでした。</value>
+  </data>
+  <data name="Notifications_EngineUpdateNotAvailable" xml:space="preserve">
+    <value>現在、利用可能なエンジンのアップデートはありません。</value>
+  </data>
+  <data name="Notifications_EngineUpdateTitle" xml:space="preserve">
+    <value>エンジンのアップデート</value>
+  </data>
   <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
     <value>モジュールのアップデートが利用可能</value>
   </data>
@@ -804,6 +839,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>ASLM およびモジュールと共有する表示名</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>アカウント</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>ASLM の表示名、GitHub と Ollama へのサインイン</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>ASLM アカウント</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>GitHub アカウント</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Ollama アカウント</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>未接続</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>接続すると API 制限が時間あたり 60 回から 5,000 回に増えます</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>接続済み</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>{0} として接続済み</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>接続</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>切断</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>接続中…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... または github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>GitHub トークンを貼り付け</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>GitHub が有効期限 1 年で開いているはずです。公開アップデートの確認には既定の権限のままで、トークンを作成してここに貼り付けてください。</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>GitHub アカウント</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>個人用アクセストークンでサインインすると、より高い GitHub API 制限が使えます。</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>接続に失敗しました: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>モジュール固有の設定</value>
   </data>
@@ -824,6 +913,36 @@
   </data>
   <data name="Settings_Category_Updates_Description" xml:space="preserve">
     <value>アプリケーションおよびモジュールの更新設定</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Available" xml:space="preserve">
+    <value>Ollama のアップデート {0} が利用可能です</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Button" xml:space="preserve">
+    <value>Ollama を更新</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Description" xml:space="preserve">
+    <value>現在のバージョン: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Failed" xml:space="preserve">
+    <value>更新に失敗しました: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Success" xml:space="preserve">
+    <value>Ollama を {0} に更新しました</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Title" xml:space="preserve">
+    <value>Ollama のアップデート</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Updating" xml:space="preserve">
+    <value>Ollama を更新しています...</value>
+  </data>
+  <data name="Settings_OllamaUpdate_UpToDate" xml:space="preserve">
+    <value>Ollama は最新です</value>
+  </data>
+  <data name="Settings_CheckAslmUpdates" xml:space="preserve">
+    <value>ASLM の更新を確認</value>
+  </data>
+  <data name="Settings_CheckOllamaUpdates" xml:space="preserve">
+    <value>更新を確認</value>
   </data>
   <data name="Settings_CheckNow" xml:space="preserve">
     <value>今すぐ確認</value>
@@ -906,11 +1025,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>利用できる設定はありません</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>公式モジュールの開始ポート。この値から 100 ポートを予約します</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>すべてのモジュールの開始ポート。この値から順にポートが割り当てられます</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>公式モジュールの開始ポート</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>モジュール開始ポート</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Ollama アカウント</value>
@@ -1064,7 +1183,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>コンソール</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>利用条件</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>条件の更新を自動的に同意</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>初回確認後、新規・更新された条件を自動的に同意します。</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>削除</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">
@@ -1112,12 +1239,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>新しいテーマ</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>外部モジュールの開始ポート。この値から 1000 ポートを予約します</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>サードパーティモジュールの開始ポート</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>設定</value>
   </data>
@@ -1141,6 +1262,9 @@
   </data>
   <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
     <value>ASLM ビルドをダウンロードしています...</value>
+  </data>
+  <data name="Settings_UpdateStatus_EngineUpdatesCount" xml:space="preserve">
+    <value>エンジンのアップデートが {0} 件利用可能です</value>
   </data>
   <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
     <value>更新 {0} 件が利用可能です。モジュール更新はモジュールページから適用できます</value>
@@ -1197,7 +1321,7 @@
     <value>クイックセットアップ</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>クイックセットアップでは Windows のユーザー名と既定のポートを使用します</value>
+    <value>クイックセットアップでは Windows のユーザー名と既定の設定を使用します</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>完了</value>
@@ -1214,8 +1338,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>インストール</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>公式モジュール（100 ポート）</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>モジュール開始ポート</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>全体の進捗</value>
@@ -1258,9 +1382,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>ユーザープロファイル</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>サードパーティモジュール（1000 ポート）</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>ASLM セットアップ</value>

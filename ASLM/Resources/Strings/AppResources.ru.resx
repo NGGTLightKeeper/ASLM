@@ -558,7 +558,30 @@
   <data name="Home_Title" xml:space="preserve">
     <value>Главная</value>
   </data>
-  <data name="Loading_Text" xml:space="preserve">
+  <data name="Legal_AcceptContinue" xml:space="preserve">
+    <value>Принять и продолжить</value>
+  </data>
+  <data name="Legal_AcceptDocumentFormat" xml:space="preserve">
+    <value>Я прочитал(а) и принимаю документ «{0}».</value>
+  </data>
+  <data name="Legal_AcceptRequired" xml:space="preserve">
+    <value>Примите соглашение, чтобы продолжить.</value>
+  </data>
+  <data name="Legal_Decline" xml:space="preserve">
+    <value>Отклонить</value>
+  </data>
+  <data name="Legal_DocumentsUpdated" xml:space="preserve">
+    <value>Условия обновлены. Примите их снова.</value>
+  </data>
+  <data name="Legal_StepFormat" xml:space="preserve">
+    <value>Условие {0} из {1}</value>
+  </data>
+  <data name="Legal_Subtitle" xml:space="preserve">
+    <value>Примите обязательные условия для использования ASLM.</value>
+  </data>
+  <data name="Legal_Title" xml:space="preserve">
+    <value>Условия и лицензии</value>
+  </data>  <data name="Loading_Text" xml:space="preserve">
     <value>Загрузка...</value>
   </data>
   <data name="ModuleUpdate_ActivityTitle_Activity" xml:space="preserve">
@@ -741,6 +764,18 @@
   <data name="Notifications_ModuleNotInstalledMessage" xml:space="preserve">
     <value>Этот модуль больше не установлен.</value>
   </data>
+  <data name="Notifications_EngineUpdateAvailable" xml:space="preserve">
+    <value>Доступно обновление движка</value>
+  </data>
+  <data name="Notifications_EngineUpdateFailed" xml:space="preserve">
+    <value>Не удалось применить обновление движка.</value>
+  </data>
+  <data name="Notifications_EngineUpdateNotAvailable" xml:space="preserve">
+    <value>Сейчас обновлений движка нет.</value>
+  </data>
+  <data name="Notifications_EngineUpdateTitle" xml:space="preserve">
+    <value>Обновление движка</value>
+  </data>
   <data name="Notifications_ModuleUpdateAvailable" xml:space="preserve">
     <value>Доступно обновление модуля</value>
   </data>
@@ -804,6 +839,60 @@
   <data name="Settings_Category_Account_Description" xml:space="preserve">
     <value>Отображаемое имя в ASLM, общее для модулей</value>
   </data>
+  <data name="Settings_Category_Accounts" xml:space="preserve">
+    <value>Учётные записи</value>
+  </data>
+  <data name="Settings_Category_Accounts_Description" xml:space="preserve">
+    <value>Отображаемое имя ASLM, вход в GitHub и Ollama</value>
+  </data>
+  <data name="Settings_Accounts_SectionAslm" xml:space="preserve">
+    <value>Учётная запись ASLM</value>
+  </data>
+  <data name="Settings_Accounts_SectionGitHub" xml:space="preserve">
+    <value>Учётная запись GitHub</value>
+  </data>
+  <data name="Settings_Accounts_SectionOllama" xml:space="preserve">
+    <value>Учётная запись Ollama</value>
+  </data>
+  <data name="Settings_GitHub_NotConnected" xml:space="preserve">
+    <value>Не подключено</value>
+  </data>
+  <data name="Settings_GitHub_NotConnectedHint" xml:space="preserve">
+    <value>Подключите, чтобы повысить лимит API с 60 до 5 000 запросов в час</value>
+  </data>
+  <data name="Settings_GitHub_Connected" xml:space="preserve">
+    <value>Подключено</value>
+  </data>
+  <data name="Settings_GitHub_ConnectedAs" xml:space="preserve">
+    <value>Подключено как {0}</value>
+  </data>
+  <data name="Settings_GitHub_Connect" xml:space="preserve">
+    <value>Подключить</value>
+  </data>
+  <data name="Settings_GitHub_Disconnect" xml:space="preserve">
+    <value>Отключить</value>
+  </data>
+  <data name="Settings_GitHub_Connecting" xml:space="preserve">
+    <value>Подключение…</value>
+  </data>
+  <data name="Settings_GitHub_TokenPlaceholder" xml:space="preserve">
+    <value>ghp_... или github_pat_...</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Title" xml:space="preserve">
+    <value>Вставьте токен GitHub</value>
+  </data>
+  <data name="Settings_GitHub_ConnectPrompt_Message" xml:space="preserve">
+    <value>Должна была открыться страница GitHub со сроком действия токена на 1 год. Для проверки публичных обновлений оставьте права по умолчанию, создайте токен и вставьте его сюда.</value>
+  </data>
+  <data name="Settings_GitHub_TokenTitle" xml:space="preserve">
+    <value>Учётная запись GitHub</value>
+  </data>
+  <data name="Settings_GitHub_TokenDescription" xml:space="preserve">
+    <value>Войдите с помощью персонального токена доступа, чтобы использовать повышенный лимит API GitHub.</value>
+  </data>
+  <data name="Settings_GitHub_ConnectFailed" xml:space="preserve">
+    <value>Не удалось подключиться: {0}</value>
+  </data>
   <data name="Settings_Category_Module_Description" xml:space="preserve">
     <value>Параметры конкретного модуля</value>
   </data>
@@ -824,6 +913,36 @@
   </data>
   <data name="Settings_Category_Updates_Description" xml:space="preserve">
     <value>Параметры обновления приложения и модулей</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Available" xml:space="preserve">
+    <value>Доступно обновление Ollama {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Button" xml:space="preserve">
+    <value>Обновить Ollama</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Description" xml:space="preserve">
+    <value>Текущая версия: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Failed" xml:space="preserve">
+    <value>Обновление не удалось: {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Success" xml:space="preserve">
+    <value>Ollama обновлён до {0}</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Title" xml:space="preserve">
+    <value>Обновление Ollama</value>
+  </data>
+  <data name="Settings_OllamaUpdate_Updating" xml:space="preserve">
+    <value>Обновление Ollama...</value>
+  </data>
+  <data name="Settings_OllamaUpdate_UpToDate" xml:space="preserve">
+    <value>Ollama актуален</value>
+  </data>
+  <data name="Settings_CheckAslmUpdates" xml:space="preserve">
+    <value>Проверить обновления ASLM</value>
+  </data>
+  <data name="Settings_CheckOllamaUpdates" xml:space="preserve">
+    <value>Проверить обновления</value>
   </data>
   <data name="Settings_CheckNow" xml:space="preserve">
     <value>Проверить сейчас</value>
@@ -906,11 +1025,11 @@
   <data name="Settings_NoSettingsAvailable" xml:space="preserve">
     <value>Параметры недоступны</value>
   </data>
-  <data name="Settings_OfficialPortDescription" xml:space="preserve">
-    <value>Начальная точка для официальных модулей. От этого значения зарезервировано 100 портов</value>
+  <data name="Settings_ModulePortDescription" xml:space="preserve">
+    <value>Начальный порт для всех модулей. Порты выделяются последовательно начиная с этого значения</value>
   </data>
-  <data name="Settings_OfficialPortTitle" xml:space="preserve">
-    <value>Начальный порт официальных модулей</value>
+  <data name="Settings_ModulePortTitle" xml:space="preserve">
+    <value>Начальный порт модулей</value>
   </data>
   <data name="Settings_OllamaAccount_Title" xml:space="preserve">
     <value>Учётная запись Ollama</value>
@@ -1064,7 +1183,15 @@
   <data name="Settings_SubGroup_Consoles" xml:space="preserve">
     <value>Консоли</value>
   </data>
-  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
+  <data name="Settings_SubGroup_Legal" xml:space="preserve">
+    <value>Условия</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Title" xml:space="preserve">
+    <value>Автопринятие обновлений условий</value>
+  </data>
+  <data name="Settings_Legal_AutoAcceptUpdates_Description" xml:space="preserve">
+    <value>Принимать новые и обновлённые условия после первого согласия.</value>
+  </data>  <data name="Settings_ThemeDelete_Accept" xml:space="preserve">
     <value>Удалить</value>
   </data>
   <data name="Settings_ThemeDelete_Message" xml:space="preserve">
@@ -1112,12 +1239,6 @@
   <data name="Settings_ThemeNew_PromptTitle" xml:space="preserve">
     <value>Новая тема</value>
   </data>
-  <data name="Settings_ThirdPartyPortDescription" xml:space="preserve">
-    <value>Начальная точка для внешних модулей. От этого значения зарезервировано 1000 портов</value>
-  </data>
-  <data name="Settings_ThirdPartyPortTitle" xml:space="preserve">
-    <value>Начальный порт сторонних модулей</value>
-  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>Настройки</value>
   </data>
@@ -1141,6 +1262,9 @@
   </data>
   <data name="Settings_UpdateStatus_Downloading" xml:space="preserve">
     <value>Загрузка сборки ASLM...</value>
+  </data>
+  <data name="Settings_UpdateStatus_EngineUpdatesCount" xml:space="preserve">
+    <value>Доступно обновлений движков: {0}</value>
   </data>
   <data name="Settings_UpdateStatus_ModuleUpdatesCount" xml:space="preserve">
     <value>Доступно обновлений: {0}. Обновления модулей можно применить на странице «Модули»</value>
@@ -1197,7 +1321,7 @@
     <value>Быстрая настройка</value>
   </data>
   <data name="SetupWizard_FastSetupHint" xml:space="preserve">
-    <value>Быстрая настройка использует имя пользователя Windows и порты по умолчанию</value>
+    <value>Быстрая настройка использует имя пользователя Windows и настройки по умолчанию</value>
   </data>
   <data name="SetupWizard_Finish" xml:space="preserve">
     <value>Готово</value>
@@ -1214,8 +1338,8 @@
   <data name="SetupWizard_Next_Install" xml:space="preserve">
     <value>Установить</value>
   </data>
-  <data name="SetupWizard_OfficialPortsLabel" xml:space="preserve">
-    <value>Официальные модули (100 портов)</value>
+  <data name="SetupWizard_ModulesPortLabel" xml:space="preserve">
+    <value>Начальный порт модулей</value>
   </data>
   <data name="SetupWizard_OverallProgress" xml:space="preserve">
     <value>Общий ход</value>
@@ -1258,9 +1382,6 @@
   </data>
   <data name="SetupWizard_Step_UserProfile" xml:space="preserve">
     <value>Профиль пользователя</value>
-  </data>
-  <data name="SetupWizard_ThirdPartyPortsLabel" xml:space="preserve">
-    <value>Сторонние модули (1000 портов)</value>
   </data>
   <data name="SetupWizard_Title" xml:space="preserve">
     <value>Настройка ASLM</value>

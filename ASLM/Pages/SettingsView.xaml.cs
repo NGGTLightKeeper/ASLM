@@ -51,7 +51,10 @@ namespace ASLM.Pages
         private readonly SettingsService _settingsService;
         private readonly AppLocalizationService _localization;
         private readonly OllamaSettingsStore _ollamaSettings;
+        private readonly GitHubAccountStore _githubAccountStore;
+        private readonly GitHubUpdateClient _githubUpdateClient;
         private readonly UpdateManager _updateManager;
+        private readonly EngineInstaller _engineInstaller;
         private readonly AslmApiServer _apiServer;
         private readonly NotificationCenter _notifications;
         private readonly ThemeService _themeService;
@@ -63,15 +66,15 @@ namespace ASLM.Pages
         private List<ModuleConfig> _loadedModules = [];
         private List<SettingsCategory> _categories = [];
         private SettingsCategory? _activeCategory;
-        private AslmBaseline _aslmBaseline = new(string.Empty, string.Empty, string.Empty, true);
+        private AslmBaseline _aslmBaseline = new(string.Empty, string.Empty, true);
         private ConsoleBaseline _consoleBaseline = new(true, true, true);
-        private UpdateBaseline _updateBaseline = new(true, false, "24", "release", "release", "release");
+        private UpdateBaseline _updateBaseline = new(true, false, "release", "release", "release");
         private ConsoleBaseline _consoleDraft = new(true, true, true);
-        private UpdateBaseline _updateDraft = new(true, false, "24", "release", "release", "release");
+        private UpdateBaseline _updateDraft = new(true, false, "release", "release", "release");
         private OllamaPersistentSettings _ollamaDraft = new();
+        private GitHubAccountState _githubDraft = new();
         private string _userNameDraft = string.Empty;
-        private string _officialPortDraft = string.Empty;
-        private string _thirdPartyPortDraft = string.Empty;
+        private string _portStartDraft = string.Empty;
         private bool _apiServerEnabledDraft = true;
         private bool _hasLoaded;
         private bool _isRefreshingVisibility;
@@ -79,13 +82,15 @@ namespace ASLM.Pages
         private bool _isSaving;
         private bool _isOllamaAccountActionRunning;
         private bool _isOllamaMetadataRefreshRunning;
+        private bool _isGitHubAccountActionRunning;
         private int _actionButtonUpdateQueued;
         private string _ollamaAccountAction = string.Empty;
         private Button? _ollamaAccountButton;
         private Label? _ollamaAccountStatusLabel;
+        private Button? _githubAccountButton;
+        private Label? _githubAccountStatusLabel;
         private CompactToggle? _checkUpdatesToggle;
         private CompactToggle? _autoUpdatesToggle;
-        private Entry? _updatePeriodEntry;
         private Picker? _appUpdateChannelPicker;
         private Picker? _moduleUpdateModePicker;
         private Picker? _moduleUpdateChannelPicker;
@@ -93,10 +98,18 @@ namespace ASLM.Pages
         private Button? _prepareAppUpdateButton;
         private Button? _restartAppUpdateButton;
         private UpdateCandidate? _pendingAppUpdateCandidate;
+        private Button? _ollamaUpdateButton;
+        private Button? _ollamaCheckUpdateButton;
+        private Label? _ollamaUpdateStatusLabel;
+        private Label? _ollamaVersionDescriptionLabel;
+        private UpdateCandidate? _pendingOllamaUpdateCandidate;
         private CompactToggle? _apiServerToggle;
         private CompactToggle? _consoleSidebarToggle;
         private CompactToggle? _consoleCompletedToggle;
         private CompactToggle? _consoleIndividualToggle;
+        private CompactToggle? _legalAutoAcceptToggle;
+        private bool _legalAutoAcceptDraft = true;
+        private bool _legalAutoAcceptBaseline = true;
         private CancellationTokenSource? _ollamaMetadataRefreshCts;
         private CancellationTokenSource? _ollamaStatusPollingCts;
         private bool _settingsReconcileTimerStarted;
@@ -353,7 +366,10 @@ namespace ASLM.Pages
             SettingsService settingsService,
             AppLocalizationService localization,
             OllamaSettingsStore ollamaSettings,
+            GitHubAccountStore githubAccountStore,
+            GitHubUpdateClient githubUpdateClient,
             UpdateManager updateManager,
+            EngineInstaller engineInstaller,
             AslmApiServer apiServer,
             NotificationCenter notifications,
             ThemeService themeService,
@@ -363,7 +379,10 @@ namespace ASLM.Pages
             _settingsService = settingsService;
             _localization = localization;
             _ollamaSettings = ollamaSettings;
+            _githubAccountStore = githubAccountStore;
+            _githubUpdateClient = githubUpdateClient;
             _updateManager = updateManager;
+            _engineInstaller = engineInstaller;
             _apiServer = apiServer;
             _notifications = notifications;
             _themeService = themeService;
@@ -371,13 +390,11 @@ namespace ASLM.Pages
             InitializeComponent();
             LocalizableAttach.Hook(this, _localization, this);
             ApplyFlatEntryStyle(UsernameEntry);
-            ApplyFlatEntryStyle(OfficialPortEntry);
-            ApplyFlatEntryStyle(ThirdPartyPortEntry);
+            ApplyFlatEntryStyle(ModulePortEntry);
             ApplyScrollViewChrome(CategoryScroll, isSidebar: true);
             ApplyScrollViewChrome(SettingsScroll, isSidebar: false);
             UsernameEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
-            OfficialPortEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
-            ThirdPartyPortEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
+            ModulePortEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
             SizeChanged += OnViewSizeChanged;
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
@@ -527,10 +544,8 @@ namespace ASLM.Pages
             DisplayNameTitleLabel.Text = L.Get(LocalizationKeys.Settings_DisplayName);
             DisplayNameDescriptionLabel.Text = L.Get(LocalizationKeys.Settings_DisplayNameDescription);
             PortsGroupHeader.Text = L.Get(LocalizationKeys.Settings_Ports);
-            OfficialPortTitleLabel.Text = L.Get(LocalizationKeys.Settings_OfficialPortTitle);
-            OfficialPortDescriptionLabel.Text = L.Get(LocalizationKeys.Settings_OfficialPortDescription);
-            ThirdPartyPortTitleLabel.Text = L.Get(LocalizationKeys.Settings_ThirdPartyPortTitle);
-            ThirdPartyPortDescriptionLabel.Text = L.Get(LocalizationKeys.Settings_ThirdPartyPortDescription);
+            ModulePortTitleLabel.Text = L.Get(LocalizationKeys.Settings_ModulePortTitle);
+            ModulePortDescriptionLabel.Text = L.Get(LocalizationKeys.Settings_ModulePortDescription);
 
             DefaultButton.Text = L.Get(LocalizationKeys.Settings_LoadDefault);
             DiscardButton.Text = L.Get(LocalizationKeys.Settings_DiscardChanges);
@@ -554,9 +569,8 @@ namespace ASLM.Pages
             category.Kind switch
             {
                 SettingsCategoryKind.Aslm => L.Get(LocalizationKeys.Settings_Category_ASLM),
-                SettingsCategoryKind.AslmProfile => L.Get(LocalizationKeys.Settings_Category_Account),
+                SettingsCategoryKind.Accounts => L.Get(LocalizationKeys.Settings_Category_Accounts),
                 SettingsCategoryKind.Updates => L.Get(LocalizationKeys.Settings_Category_Updates),
-                SettingsCategoryKind.Ollama => L.Get(LocalizationKeys.Settings_Category_Ollama),
                 SettingsCategoryKind.Personalization => L.Get(LocalizationKeys.Settings_Category_Personalization),
                 SettingsCategoryKind.Module => category.Module?.Name ?? category.Title,
                 _ => category.Title
@@ -675,14 +689,15 @@ namespace ASLM.Pages
         {
             var snapshot = SettingsService.BuildAslmDraftSnapshot(_appData, _apiServer.IsEnabled);
             _userNameDraft = snapshot.UserName;
-            _officialPortDraft = snapshot.OfficialPort;
-            _thirdPartyPortDraft = snapshot.ThirdPartyPort;
+            _portStartDraft = snapshot.PortStart;
             _apiServerEnabledDraft = snapshot.ApiServerEnabled;
-            _aslmBaseline = new AslmBaseline(_userNameDraft, _officialPortDraft, _thirdPartyPortDraft, _apiServerEnabledDraft);
+            _aslmBaseline = new AslmBaseline(_userNameDraft, _portStartDraft, _apiServerEnabledDraft);
             _consoleBaseline = snapshot.ConsoleBaseline;
             _consoleDraft = _consoleBaseline;
             _updateBaseline = snapshot.UpdateBaseline;
             _updateDraft = _updateBaseline;
+            _legalAutoAcceptDraft = _appData.Data.Legal.AutoAcceptUpdates;
+            _legalAutoAcceptBaseline = _legalAutoAcceptDraft;
 
             ApplyAslmDraftsToControls();
             PortErrorLabel.IsVisible = false;
@@ -711,7 +726,10 @@ namespace ASLM.Pages
         {
             if (reloadModules || _loadedModules.Count == 0)
             {
-                _loadedModules = await _settingsService.DiscoverModulesAsync();
+                var discovered = await _settingsService.DiscoverModulesAsync();
+                _loadedModules = discovered
+                    .Where(SettingsService.IsModuleEligibleForSettings)
+                    .ToList();
                 _runtimeLoadedModuleIds.Clear();
                 _settingBaselines.Clear();
             }
@@ -876,14 +894,11 @@ namespace ASLM.Pages
                 case SettingsCategoryKind.Aslm:
                     RenderAslmCategory();
                     break;
-                case SettingsCategoryKind.AslmProfile:
-                    RenderAccountCategory();
+                case SettingsCategoryKind.Accounts:
+                    RenderAccountsCategory();
                     break;
                 case SettingsCategoryKind.Updates:
                     RenderUpdatesCategory();
-                    break;
-                case SettingsCategoryKind.Ollama:
-                    RenderOllamaCategory();
                     break;
                 case SettingsCategoryKind.Module:
                     RenderModuleCategory(category.Module!);
@@ -1120,7 +1135,7 @@ namespace ASLM.Pages
         {
             var canInteract = !_isSaving && _activeCategory != null;
             var hasChanges = canInteract && HasAnyUnsavedChanges();
-            var canReset = _activeCategory is { Kind: not SettingsCategoryKind.Ollama };
+            var canReset = _activeCategory != null;
             DefaultButton.IsVisible = canReset;
             DefaultButton.IsEnabled = canInteract && canReset;
             DiscardButton.IsVisible = canReset && hasChanges;
@@ -1143,8 +1158,7 @@ namespace ASLM.Pages
                 return;
             }
 
-            var canShowRestart = hasChanges &&
-                (HasPendingRestartChanges() || HasUnsavedPersonalizationChanges());
+            var canShowRestart = hasChanges && HasPendingRestartChanges();
 
             SaveAndRestartButton.IsEnabled = canInteract && canShowRestart;
             SaveAndRestartButton.Text = L.Get(LocalizationKeys.Settings_SaveAndRestart);
@@ -1163,6 +1177,7 @@ namespace ASLM.Pages
         /// Checks whether any pending edit has a restart path, regardless of the visible category.
         /// </summary>
         private bool HasPendingRestartChanges() =>
+            HasUnsavedPersonalizationChanges() ||
             HasUnsavedAslmSettingsChanges() ||
             GetModulesWithUnsavedChanges().Any(CanRestartModule);
 
@@ -1249,21 +1264,38 @@ namespace ASLM.Pages
             content.Children.Add(CreateSubGroupHeader(L.Get(LocalizationKeys.Settings_SubGroup_Consoles)));
             AddConsoleSettings(content);
 
+            content.Children.Add(CreateSubGroupHeader(L.Get(LocalizationKeys.Settings_SubGroup_Legal)));
+            AddLegalSettings(content);
+
             section.Content = content;
             ModuleSettingsContainer.Children.Add(section);
         }
 
         /// <summary>
-        /// Shows the account category while hiding module-specific content.
+        /// Shows the combined accounts category with ASLM, GitHub, and Ollama sections.
         /// </summary>
-        private void RenderAccountCategory()
+        private void RenderAccountsCategory()
         {
             ApplyAslmDraftsToControls();
             _settingMappings.Clear();
             ResetRenderedControlReferences();
-            PrepareCategorySurface(showAslmContainer: true, showModuleContainer: false, showEmptyState: false);
+            PrepareCategorySurface(showAslmContainer: true, showModuleContainer: true, showEmptyState: false);
             UserProfileSection.IsVisible = true;
             PortsSection.IsVisible = false;
+
+            var section = CreateModuleSectionBorder();
+            var content = new VerticalStackLayout { Spacing = 8 };
+
+            content.Children.Add(CreateGitHubAccountCard());
+            content.Children.Add(CreateOllamaAccountCard());
+
+            section.Content = content;
+            ModuleSettingsContainer.Children.Add(section);
+
+            _githubDraft = _githubAccountStore.GetState();
+            UpdateGitHubAccountActionControls();
+            UpdateOllamaAccountActionControls();
+            StartOllamaMetadataRefresh();
         }
 
         /// <summary>
@@ -1340,6 +1372,23 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Adds legal document acceptance setting rows to the combined ASLM category.
+        /// </summary>
+        private void AddLegalSettings(Layout content)
+        {
+            _legalAutoAcceptToggle = CreateCompactToggle(_legalAutoAcceptDraft);
+            _legalAutoAcceptToggle.Toggled += (_, _) =>
+            {
+                RefreshAslmApiAndConsoleDraftsFromToggles();
+                QueueActionButtonUpdate();
+            };
+            content.Children.Add(CreateUpdateCard(
+                L.Get(LocalizationKeys.Settings_Legal_AutoAcceptUpdates_Title),
+                L.Get(LocalizationKeys.Settings_Legal_AutoAcceptUpdates_Description),
+                _legalAutoAcceptToggle.View));
+        }
+
+        /// <summary>
         /// Adds update setting rows to the combined ASLM category.
         /// </summary>
         private void AddUpdateSettings(Layout content)
@@ -1357,14 +1406,6 @@ namespace ASLM.Pages
                 L.Get(LocalizationKeys.Settings_AutoInstall_Title),
                 L.Get(LocalizationKeys.Settings_AutoInstall_Description),
                 _autoUpdatesToggle.View));
-
-            _updatePeriodEntry = CreateTextEntry(_updateDraft.AutoCheckPeriodHours);
-            _updatePeriodEntry.Keyboard = Keyboard.Numeric;
-            _updatePeriodEntry.TextChanged += (_, _) => QueueActionButtonUpdate();
-            content.Children.Add(CreateUpdateCard(
-                L.Get(LocalizationKeys.Settings_AutoCheckPeriod_Title),
-                L.Get(LocalizationKeys.Settings_AutoCheckPeriod_Description),
-                CreateFieldContainer(_updatePeriodEntry)));
 
             _appUpdateChannelPicker = CreatePicker(null, 13);
             _appUpdateChannelPicker.ItemsSource = new List<string> { "release", "pre-release" };
@@ -1394,27 +1435,127 @@ namespace ASLM.Pages
                 CreateUpdatePickerContainer(_moduleUpdateChannelPicker)));
 
             content.Children.Add(CreateManualUpdateCard());
+            content.Children.Add(CreateOllamaUpdateCard());
+            _ = RefreshOllamaVersionDisplayAsync();
         }
 
         /// <summary>
-        /// Rebuilds the Ollama settings page using the current persistent draft values.
+        /// Creates the Ollama engine update card shown in the Updates category.
         /// </summary>
-        private void RenderOllamaCategory()
+        private Border CreateOllamaUpdateCard()
         {
-            _settingMappings.Clear();
-            ResetRenderedControlReferences();
-            PrepareCategorySurface(showAslmContainer: false, showModuleContainer: true, showEmptyState: false);
+            var card = CreateSettingCardBorder();
+            var content = new VerticalStackLayout { Spacing = TitleDescriptionSpacing };
+            var engine = ResolveOllamaEngineConfig();
+            var currentVersion = engine?.Status.Installed == true
+                ? ResolveOllamaDisplayVersion(engine)
+                : "-";
 
-            var section = CreateModuleSectionBorder();
-            var content = new VerticalStackLayout { Spacing = 8 };
+            content.Children.Add(CreateCardTitle(L.Get(LocalizationKeys.Settings_OllamaUpdate_Title)));
+            _ollamaVersionDescriptionLabel = CreateCardDescription(
+                L.Get(LocalizationKeys.Settings_OllamaUpdate_Description, currentVersion));
+            content.Children.Add(_ollamaVersionDescriptionLabel);
 
-            content.Children.Add(CreateOllamaAccountCard());
+            var actions = new HorizontalStackLayout { Spacing = 8, Margin = new Thickness(0, 8, 0, 0) };
+            _ollamaCheckUpdateButton = CreateInlineActionButton(
+                L.Get(LocalizationKeys.Settings_CheckOllamaUpdates),
+                OnCheckOllamaUpdatesClicked);
+            _ollamaCheckUpdateButton.IsEnabled = engine?.Status.Installed == true;
+            _ollamaUpdateButton = CreateInlineActionButton(
+                L.Get(LocalizationKeys.Settings_OllamaUpdate_Button),
+                OnUpdateOllamaClicked);
+            _ollamaUpdateButton.IsVisible = false;
+            _ollamaUpdateButton.IsEnabled = engine?.Status.Installed == true;
+            actions.Children.Add(_ollamaCheckUpdateButton);
+            actions.Children.Add(_ollamaUpdateButton);
 
-            section.Content = content;
-            ModuleSettingsContainer.Children.Add(section);
+            _ollamaUpdateStatusLabel = CreateSecondaryLabel(BuildInitialOllamaUpdateStatusText());
 
-            UpdateOllamaAccountActionControls();
-            StartOllamaMetadataRefresh();
+            content.Children.Add(actions);
+            content.Children.Add(_ollamaUpdateStatusLabel);
+            card.Content = content;
+            return card;
+        }
+
+        /// <summary>
+        /// Returns the managed Ollama engine manifest when it is present on disk.
+        /// </summary>
+        private EngineConfig? ResolveOllamaEngineConfig()
+        {
+            return _engineInstaller.DiscoverEngines()
+                .FirstOrDefault(engine =>
+                    string.Equals(engine.Id, "ollama-service", StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Returns the best available installed version label for the Ollama engine card.
+        /// </summary>
+        private static string ResolveOllamaDisplayVersion(EngineConfig engine)
+        {
+            if (!string.IsNullOrWhiteSpace(engine.Status.InstalledReleaseTag) &&
+                !IsPlaceholderEngineReleaseTag(engine.Status.InstalledReleaseTag))
+            {
+                return engine.Status.InstalledReleaseTag.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(engine.Status.InstalledVersion) &&
+                !IsPlaceholderEngineReleaseTag(engine.Status.InstalledVersion))
+            {
+                return engine.Status.InstalledVersion.Trim();
+            }
+
+            return "—";
+        }
+
+        /// <summary>
+        /// Returns whether an engine version value is a manifest placeholder rather than a release tag.
+        /// </summary>
+        private static bool IsPlaceholderEngineReleaseTag(string? value) =>
+            string.IsNullOrWhiteSpace(value) ||
+            string.Equals(value.Trim(), "latest", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Builds the Ollama update status label shown before a check runs in this session.
+        /// </summary>
+        private string BuildInitialOllamaUpdateStatusText() =>
+            L.Get(LocalizationKeys.Settings_UpdateStatus_None);
+
+        /// <summary>
+        /// Resolves and refreshes only the installed Ollama version label in the Updates category.
+        /// </summary>
+        private async Task RefreshOllamaVersionDisplayAsync()
+        {
+            var engine = ResolveOllamaEngineConfig();
+            if (engine?.Status.Installed != true)
+            {
+                return;
+            }
+
+            try
+            {
+                await _updateManager.TrySyncEngineInstalledReleaseTagFromRuntimeAsync(engine, isManualRequest: false);
+                _engineInstaller.InvalidateCache();
+                engine = ResolveOllamaEngineConfig();
+                if (engine == null)
+                {
+                    return;
+                }
+
+                var version = ResolveOllamaDisplayVersion(engine);
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    if (_ollamaVersionDescriptionLabel != null)
+                    {
+                        _ollamaVersionDescriptionLabel.Text = L.Get(
+                            LocalizationKeys.Settings_OllamaUpdate_Description,
+                            version);
+                    }
+                });
+            }
+            catch
+            {
+                // Version sync is best-effort UI enrichment only.
+            }
         }
 
         /// <summary>
@@ -1468,7 +1609,9 @@ namespace ASLM.Pages
             _updateStatusLabel = CreateSecondaryLabel(BuildInitialManualUpdateStatusText());
 
             var actions = new HorizontalStackLayout { Spacing = 8, Margin = new Thickness(0, 8, 0, 0) };
-            var checkButton = CreateInlineActionButton(L.Get(LocalizationKeys.Settings_CheckNow), OnCheckUpdatesNowClicked);
+            var checkButton = CreateInlineActionButton(
+                L.Get(LocalizationKeys.Settings_CheckAslmUpdates),
+                OnCheckAslmUpdatesClicked);
             _prepareAppUpdateButton = CreateInlineActionButton(L.Get(LocalizationKeys.Settings_PrepareAslmUpdate), OnPrepareAppUpdateClicked);
             _prepareAppUpdateButton.IsVisible = false;
             _restartAppUpdateButton = CreateInlineActionButton(L.Get(LocalizationKeys.Settings_RestartNow), OnRestartNowClicked);
@@ -1500,9 +1643,9 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Builds the manual-check summary after <see cref="UpdateManager.CheckAllUpdatesAsync"/> completes.
+        /// Builds the ASLM manual-check summary after <see cref="UpdateManager.CheckAppUpdateAsync"/> completes.
         /// </summary>
-        private string BuildManualUpdateCheckStatusMessage(IReadOnlyList<UpdateCandidate> updates)
+        private string BuildAslmManualUpdateCheckStatusMessage()
         {
             var appTag = _pendingAppUpdateCandidate != null
                 ? (_pendingAppUpdateCandidate.ReleaseTag ?? _pendingAppUpdateCandidate.RemoteVersion).Trim()
@@ -1528,38 +1671,21 @@ namespace ASLM.Pages
                 return L.Get(LocalizationKeys.Settings_UpdateStatus_AslmAvailable, appTag);
             }
 
-            if (updates.Count == 0)
-            {
-                if (_updateManager.HasPendingAppUpdate)
-                {
-                    var pendingOnly = _updateManager.TryGetPendingPreparedAppVersion()?.Trim();
-                    return string.IsNullOrWhiteSpace(pendingOnly)
-                        ? L.Get(LocalizationKeys.Settings_UpdateStatus_Prepared)
-                        : L.Get(LocalizationKeys.Settings_UpdateStatus_PreparedWithVersion, pendingOnly);
-                }
-
-                return L.Get(LocalizationKeys.Settings_UpdateStatus_UpToDate);
-            }
-
-            var moduleSummary = L.Get(LocalizationKeys.Settings_UpdateStatus_ModuleUpdatesCount, updates.Count);
             if (_updateManager.HasPendingAppUpdate)
             {
-                var pendingStaged = _updateManager.TryGetPendingPreparedAppVersion()?.Trim();
-                if (!string.IsNullOrWhiteSpace(pendingStaged))
-                {
-                    return L.Get(LocalizationKeys.Settings_UpdateStatus_ModuleUpdatesStagedAslm, moduleSummary, pendingStaged);
-                }
-
-                return L.Get(LocalizationKeys.Settings_UpdateStatus_ModuleUpdatesStagedGeneric, moduleSummary);
+                var pendingOnly = _updateManager.TryGetPendingPreparedAppVersion()?.Trim();
+                return string.IsNullOrWhiteSpace(pendingOnly)
+                    ? L.Get(LocalizationKeys.Settings_UpdateStatus_Prepared)
+                    : L.Get(LocalizationKeys.Settings_UpdateStatus_PreparedWithVersion, pendingOnly);
             }
 
-            return moduleSummary;
+            return L.Get(LocalizationKeys.Settings_UpdateStatus_UpToDate);
         }
 
         /// <summary>
-        /// Runs a manual update check and exposes app self-update preparation when available.
+        /// Runs a manual ASLM update check and exposes self-update preparation when available.
         /// </summary>
-        private async void OnCheckUpdatesNowClicked(object? sender, EventArgs e)
+        private async void OnCheckAslmUpdatesClicked(object? sender, EventArgs e)
         {
             if (sender is Button button)
             {
@@ -1584,13 +1710,13 @@ namespace ASLM.Pages
                     _updateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_Checking);
                 }
 
-                var updates = await Task.Run(() => _updateManager.CheckAllUpdatesAsync());
-                _pendingAppUpdateCandidate = updates.FirstOrDefault(update =>
-                    string.Equals(update.TargetKind, "app", StringComparison.OrdinalIgnoreCase));
+                _pendingAppUpdateCandidate = await Task.Run(() =>
+                    _updateManager.CheckAppUpdateAsync(isManualRequest: true));
 
                 if (_prepareAppUpdateButton != null)
                 {
-                    _prepareAppUpdateButton.IsVisible = _pendingAppUpdateCandidate != null && !_updateManager.HasPendingAppUpdate;
+                    _prepareAppUpdateButton.IsVisible = _pendingAppUpdateCandidate != null &&
+                                                        !_updateManager.HasPendingAppUpdate;
                 }
 
                 if (_restartAppUpdateButton != null)
@@ -1600,7 +1726,7 @@ namespace ASLM.Pages
 
                 if (_updateStatusLabel != null)
                 {
-                    _updateStatusLabel.Text = BuildManualUpdateCheckStatusMessage(updates);
+                    _updateStatusLabel.Text = BuildAslmManualUpdateCheckStatusMessage();
                 }
             }
             catch (Exception ex)
@@ -1608,6 +1734,167 @@ namespace ASLM.Pages
                 if (_updateStatusLabel != null)
                 {
                     _updateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_CheckFailed, ex.Message);
+                }
+            }
+            finally
+            {
+                if (sender is Button senderButton)
+                {
+                    senderButton.IsEnabled = true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Runs a manual Ollama engine update check and exposes the update action when available.
+        /// </summary>
+        private async void OnCheckOllamaUpdatesClicked(object? sender, EventArgs e)
+        {
+            if (sender is Button button)
+            {
+                button.IsEnabled = false;
+            }
+
+            try
+            {
+                _pendingOllamaUpdateCandidate = null;
+                if (_ollamaUpdateButton != null)
+                {
+                    _ollamaUpdateButton.IsVisible = false;
+                }
+
+                if (_ollamaUpdateStatusLabel != null)
+                {
+                    _ollamaUpdateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_Checking);
+                }
+
+                var engine = ResolveOllamaEngineConfig();
+                if (engine?.Status.Installed != true)
+                {
+                    if (_ollamaUpdateStatusLabel != null)
+                    {
+                        _ollamaUpdateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_CheckFailed, "Ollama is not installed.");
+                    }
+
+                    return;
+                }
+
+                _pendingOllamaUpdateCandidate = await Task.Run(() =>
+                    _updateManager.CheckEngineUpdateAsync(engine, isManualRequest: true));
+
+                await RefreshOllamaVersionDisplayAsync();
+                engine = ResolveOllamaEngineConfig();
+
+                if (_ollamaUpdateButton != null)
+                {
+                    _ollamaUpdateButton.IsVisible = _pendingOllamaUpdateCandidate != null;
+                }
+
+                if (_ollamaUpdateStatusLabel != null)
+                {
+                    if (_pendingOllamaUpdateCandidate != null)
+                    {
+                        var ollamaTag = (_pendingOllamaUpdateCandidate.ReleaseTag ??
+                                         _pendingOllamaUpdateCandidate.RemoteVersion).Trim();
+                        _ollamaUpdateStatusLabel.Text = L.Get(
+                            LocalizationKeys.Settings_OllamaUpdate_Available,
+                            ollamaTag);
+                    }
+                    else if (engine?.Status.Installed == true)
+                    {
+                        _ollamaUpdateStatusLabel.Text = L.Get(LocalizationKeys.Settings_OllamaUpdate_UpToDate);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                if (_ollamaUpdateStatusLabel != null)
+                {
+                    _ollamaUpdateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_CheckFailed, ex.Message);
+                }
+            }
+            finally
+            {
+                if (sender is Button senderButton)
+                {
+                    senderButton.IsEnabled = true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Downloads and applies an available Ollama engine update.
+        /// </summary>
+        private async void OnUpdateOllamaClicked(object? sender, EventArgs e)
+        {
+            if (_pendingOllamaUpdateCandidate == null)
+            {
+                return;
+            }
+
+            if (sender is Button updateButton)
+            {
+                updateButton.IsEnabled = false;
+            }
+
+            try
+            {
+                if (_ollamaUpdateStatusLabel != null)
+                {
+                    _ollamaUpdateStatusLabel.Text = L.Get(LocalizationKeys.Settings_OllamaUpdate_Updating);
+                }
+
+                var candidate = _pendingOllamaUpdateCandidate;
+                var log = new Progress<string>(message =>
+                {
+                    if (_ollamaUpdateStatusLabel != null)
+                    {
+                        MainThread.BeginInvokeOnMainThread(() => _ollamaUpdateStatusLabel.Text = message);
+                    }
+                });
+
+                var success = await Task.Run(() => _updateManager.ApplyEngineUpdateAsync(
+                    candidate,
+                    log,
+                    isManualRequest: true));
+
+                if (_ollamaUpdateStatusLabel != null)
+                {
+                    if (success)
+                    {
+                        var installedTag = (candidate.ReleaseTag ?? candidate.RemoteVersion).Trim();
+                        _ollamaUpdateStatusLabel.Text = L.Get(
+                            LocalizationKeys.Settings_OllamaUpdate_Success,
+                            installedTag);
+                        if (_ollamaVersionDescriptionLabel != null)
+                        {
+                            _ollamaVersionDescriptionLabel.Text = L.Get(
+                                LocalizationKeys.Settings_OllamaUpdate_Description,
+                                installedTag);
+                        }
+
+                        _pendingOllamaUpdateCandidate = null;
+                    }
+                    else
+                    {
+                        _ollamaUpdateStatusLabel.Text = L.Get(
+                            LocalizationKeys.Settings_OllamaUpdate_Failed,
+                            "The update could not be applied.");
+                    }
+                }
+
+                if (_ollamaUpdateButton != null)
+                {
+                    _ollamaUpdateButton.IsVisible = !success && _pendingOllamaUpdateCandidate != null;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (_ollamaUpdateStatusLabel != null)
+                {
+                    _ollamaUpdateStatusLabel.Text = L.Get(
+                        LocalizationKeys.Settings_OllamaUpdate_Failed,
+                        ex.Message);
                 }
             }
             finally
@@ -1649,7 +1936,10 @@ namespace ASLM.Pages
                     }
                 });
 
-                var success = await Task.Run(() => _updateManager.PrepareAppUpdateAsync(_pendingAppUpdateCandidate, log));
+                var success = await Task.Run(() => _updateManager.PrepareAppUpdateAsync(
+                    _pendingAppUpdateCandidate,
+                    log,
+                    isManualRequest: true));
                 if (_updateStatusLabel != null)
                 {
                     if (success)
@@ -1701,9 +1991,7 @@ namespace ASLM.Pages
                     _updateStatusLabel.Text = L.Get(LocalizationKeys.Settings_UpdateStatus_Restarting);
                 }
 
-                await _settingsService.StopAllModulesAsync();
-                await Task.Run(SettingsService.StartLauncherForSelfUpdate);
-                Application.Current?.Quit();
+                await RestartApplicationThroughLauncherAsync();
             }
             catch (Exception ex)
             {
@@ -1720,7 +2008,50 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Builds the account card shown at the top of the Ollama category.
+        /// Builds the GitHub account card shown in the Accounts category.
+        /// </summary>
+        private Border CreateGitHubAccountCard()
+        {
+            var card = CreateSettingCardBorder();
+            var row = new Grid
+            {
+                ColumnSpacing = 16,
+                VerticalOptions = LayoutOptions.Center,
+                MinimumHeightRequest = 44
+            };
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+
+            var text = new VerticalStackLayout
+            {
+                Spacing = TitleDescriptionSpacing,
+                VerticalOptions = LayoutOptions.Center
+            };
+
+            var title = CreateCardTitle(L.Get(LocalizationKeys.Settings_GitHub_TokenTitle));
+            title.VerticalOptions = LayoutOptions.Center;
+            text.Children.Add(title);
+
+            _githubAccountStatusLabel = CreateSecondaryLabel(BuildGitHubAccountStatusText());
+            _githubAccountStatusLabel.LineBreakMode = LineBreakMode.TailTruncation;
+            _githubAccountStatusLabel.MaxLines = 2;
+            text.Children.Add(_githubAccountStatusLabel);
+
+            row.Children.Add(text);
+            Grid.SetColumn(text, 0);
+
+            _githubAccountButton = CreateInlineActionButton(
+                IsGitHubConnected() ? L.Get(LocalizationKeys.Settings_GitHub_Disconnect) : L.Get(LocalizationKeys.Settings_GitHub_Connect),
+                OnGitHubAccountButtonClicked);
+            row.Children.Add(_githubAccountButton);
+            Grid.SetColumn(_githubAccountButton, 1);
+
+            card.Content = row;
+            return card;
+        }
+
+        /// <summary>
+        /// Builds the Ollama account card shown in the Accounts category.
         /// </summary>
         private Border CreateOllamaAccountCard()
         {
@@ -1825,8 +2156,7 @@ namespace ASLM.Pages
         private void ApplyAslmDraftsToControls()
         {
             UsernameEntry.Text = _userNameDraft;
-            OfficialPortEntry.Text = _officialPortDraft;
-            ThirdPartyPortEntry.Text = _thirdPartyPortDraft;
+            ModulePortEntry.Text = _portStartDraft;
         }
 
         /// <summary>
@@ -1853,10 +2183,15 @@ namespace ASLM.Pages
             {
                 _consoleCompletedToggle.SetStateWithoutToggleEvent(_consoleDraft.ShowCompletedProcesses);
             }
+
+            if (_legalAutoAcceptToggle != null)
+            {
+                _legalAutoAcceptToggle.SetStateWithoutToggleEvent(_legalAutoAcceptDraft);
+            }
         }
 
         /// <summary>
-        /// Copies API and console compact toggles into the shared drafts after user interaction.
+        /// Copies API, console, and legal compact toggles into the shared drafts after user interaction.
         /// </summary>
         private void RefreshAslmApiAndConsoleDraftsFromToggles()
         {
@@ -1873,6 +2208,11 @@ namespace ASLM.Pages
                     _consoleSidebarToggle.IsToggled,
                     _consoleCompletedToggle.IsToggled,
                     _consoleIndividualToggle.IsToggled);
+            }
+
+            if (_legalAutoAcceptToggle != null)
+            {
+                _legalAutoAcceptDraft = _legalAutoAcceptToggle.IsToggled;
             }
         }
 
@@ -1917,8 +2257,7 @@ namespace ASLM.Pages
 
             if (PortsSection.IsVisible)
             {
-                _officialPortDraft = OfficialPortEntry.Text?.Trim() ?? string.Empty;
-                _thirdPartyPortDraft = ThirdPartyPortEntry.Text?.Trim() ?? string.Empty;
+                _portStartDraft = ModulePortEntry.Text?.Trim() ?? string.Empty;
             }
         }
 
@@ -2021,9 +2360,8 @@ namespace ASLM.Pages
             return _activeCategory.Kind switch
             {
                 SettingsCategoryKind.Aslm => HasUnsavedAslmSettingsChanges(),
-                SettingsCategoryKind.AslmProfile => HasUnsavedAccountChanges(),
+                SettingsCategoryKind.Accounts => HasUnsavedAccountChanges(),
                 SettingsCategoryKind.Updates => HasUnsavedUpdateChanges(),
-                SettingsCategoryKind.Ollama => false,
                 SettingsCategoryKind.Module => HasUnsavedModuleChanges(),
                 SettingsCategoryKind.Personalization => HasUnsavedPersonalizationChanges(),
                 _ => false
@@ -2103,30 +2441,23 @@ namespace ASLM.Pages
         /// </summary>
         private bool HasUnsavedAslmSettingsChanges() =>
             SettingsService.HasUnsavedAslmSettingsChanges(
-                GetCurrentOfficialPortDraft(),
-                GetCurrentThirdPartyPortDraft(),
+                GetCurrentPortStartDraft(),
                 _apiServerEnabledDraft,
                 _consoleDraft,
                 GetCurrentUpdateDraft(),
+                _legalAutoAcceptDraft,
                 _aslmBaseline,
                 _consoleBaseline,
-                _updateBaseline);
+                _updateBaseline,
+                _legalAutoAcceptBaseline);
 
         /// <summary>
-        /// Reads the official port draft from visible controls when the ports section is shown.
+        /// Reads the module start port draft from visible controls when the ports section is shown.
         /// </summary>
-        private string GetCurrentOfficialPortDraft() =>
+        private string GetCurrentPortStartDraft() =>
             PortsSection.IsVisible
-                ? OfficialPortEntry.Text?.Trim() ?? string.Empty
-                : _officialPortDraft;
-
-        /// <summary>
-        /// Reads the third-party port draft from visible controls when the ports section is shown.
-        /// </summary>
-        private string GetCurrentThirdPartyPortDraft() =>
-            PortsSection.IsVisible
-                ? ThirdPartyPortEntry.Text?.Trim() ?? string.Empty
-                : _thirdPartyPortDraft;
+                ? ModulePortEntry.Text?.Trim() ?? string.Empty
+                : _portStartDraft;
 
         /// <summary>
         /// Determines whether the port draft differs from the saved baseline.
@@ -2134,8 +2465,7 @@ namespace ASLM.Pages
         private bool HasUnsavedPortChanges()
         {
             return SettingsService.HasUnsavedPortChanges(
-                GetCurrentOfficialPortDraft(),
-                GetCurrentThirdPartyPortDraft(),
+                GetCurrentPortStartDraft(),
                 _aslmBaseline);
         }
 
@@ -2189,14 +2519,12 @@ namespace ASLM.Pages
         private UpdateBaseline GetCurrentUpdateDraft() =>
             _checkUpdatesToggle != null &&
             _autoUpdatesToggle != null &&
-            _updatePeriodEntry != null &&
             _appUpdateChannelPicker != null &&
             _moduleUpdateModePicker != null &&
             _moduleUpdateChannelPicker != null
                 ? new UpdateBaseline(
                     _checkUpdatesToggle.IsToggled,
                     _autoUpdatesToggle.IsToggled,
-                    _updatePeriodEntry.Text?.Trim() ?? string.Empty,
                     _appUpdateChannelPicker.SelectedItem?.ToString() ?? "release",
                     _moduleUpdateModePicker.SelectedItem?.ToString() ?? "release",
                     _moduleUpdateChannelPicker.SelectedItem?.ToString() ?? "release")
@@ -2217,11 +2545,6 @@ namespace ASLM.Pages
             if (_autoUpdatesToggle != null)
             {
                 _autoUpdatesToggle.IsToggled = _updateDraft.AutoUpdateEnabled;
-            }
-
-            if (_updatePeriodEntry != null)
-            {
-                _updatePeriodEntry.Text = _updateDraft.AutoCheckPeriodHours;
             }
 
             if (_appUpdateChannelPicker != null)
@@ -2304,29 +2627,27 @@ namespace ASLM.Pages
             SyncDraftValuesFromControls();
 
             var appliedAslmBuiltInDefaults = false;
-            (string OfficialPort, string ThirdPartyPort, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults)? aslmDefaultBuiltIns = null;
+            (string PortStart, bool ApiServerEnabled, ConsoleBaseline ConsoleDefaults, bool LegalAutoAcceptUpdates)? aslmDefaultBuiltIns = null;
 
             switch (_activeCategory.Kind)
             {
                 case SettingsCategoryKind.Aslm:
                     aslmDefaultBuiltIns = SettingsService.BuildDefaultAslmDrafts();
-                    _officialPortDraft = aslmDefaultBuiltIns.Value.OfficialPort;
-                    _thirdPartyPortDraft = aslmDefaultBuiltIns.Value.ThirdPartyPort;
+                    _portStartDraft = aslmDefaultBuiltIns.Value.PortStart;
                     _apiServerEnabledDraft = aslmDefaultBuiltIns.Value.ApiServerEnabled;
                     _consoleDraft = aslmDefaultBuiltIns.Value.ConsoleDefaults;
+                    _legalAutoAcceptDraft = aslmDefaultBuiltIns.Value.LegalAutoAcceptUpdates;
                     appliedAslmBuiltInDefaults = true;
                     PortErrorLabel.IsVisible = false;
                     RenderAslmCategory();
                     break;
-                case SettingsCategoryKind.AslmProfile:
+                case SettingsCategoryKind.Accounts:
                     _userNameDraft = Environment.UserName;
-                    RenderAccountCategory();
+                    RenderAccountsCategory();
                     break;
                 case SettingsCategoryKind.Updates:
                     ApplyUpdateDefaultsToControls();
                     RenderUpdatesCategory();
-                    break;
-                case SettingsCategoryKind.Ollama:
                     break;
                 case SettingsCategoryKind.Module:
                     SettingsService.ResetModuleToDefaults(_activeCategory.Module!);
@@ -2345,10 +2666,10 @@ namespace ASLM.Pages
             // Re-assert defaults on drafts and controls so save detection matches the intended default state.
             if (appliedAslmBuiltInDefaults && aslmDefaultBuiltIns is { } builtIns)
             {
-                _officialPortDraft = builtIns.OfficialPort;
-                _thirdPartyPortDraft = builtIns.ThirdPartyPort;
+                _portStartDraft = builtIns.PortStart;
                 _apiServerEnabledDraft = builtIns.ApiServerEnabled;
                 _consoleDraft = builtIns.ConsoleDefaults;
+                _legalAutoAcceptDraft = builtIns.LegalAutoAcceptUpdates;
                 ApplyAslmDraftsToControls();
                 ApplyAslmBuiltInDraftsToToggles();
             }
@@ -2443,7 +2764,7 @@ namespace ASLM.Pages
                 }
                 _userNameDraft = validatedUserName;
 
-                var portResult = SettingsService.TryParsePorts(_officialPortDraft, _thirdPartyPortDraft);
+                var portResult = SettingsService.TryParsePortStart(_portStartDraft);
                 if (!portResult.Success)
                 {
                     if (_activeCategory.Kind == SettingsCategoryKind.Aslm)
@@ -2477,7 +2798,7 @@ namespace ASLM.Pages
                 var hadPersonalizationChanges = HasUnsavedPersonalizationChanges();
                 if (hadPersonalizationChanges)
                 {
-                    await SavePersonalizationAsync();
+                    await SavePersonalizationAsync(applyImmediately: !restartAfterSave);
                 }
 
                 var hadAppRestartChanges = HasUnsavedAslmSettingsChanges();
@@ -2487,10 +2808,10 @@ namespace ASLM.Pages
                 SettingsService.ApplyDraftsToAppData(
                     _appData,
                     _userNameDraft,
-                    portResult.OfficialPort,
-                    portResult.ThirdPartyPort,
+                    portResult.ModulesStart,
                     _consoleDraft,
-                    nextSettings);
+                    nextSettings,
+                    _legalAutoAcceptDraft);
                 await _appData.SaveAsync();
 
                 if (_apiServerEnabledDraft != _aslmBaseline.ApiServerEnabled)
@@ -2500,11 +2821,11 @@ namespace ASLM.Pages
 
                 _aslmBaseline = new AslmBaseline(
                     _userNameDraft,
-                    _officialPortDraft,
-                    _thirdPartyPortDraft,
+                    _portStartDraft,
                     _apiServer.IsEnabled);
                 _apiServerEnabledDraft = _apiServer.IsEnabled;
                 _consoleBaseline = _consoleDraft;
+                _legalAutoAcceptBaseline = _legalAutoAcceptDraft;
                 _updateBaseline = SettingsService.BuildAslmDraftSnapshot(_appData, _apiServer.IsEnabled).UpdateBaseline;
                 _updateDraft = _updateBaseline;
                 PortErrorLabel.IsVisible = false;
@@ -2550,14 +2871,23 @@ namespace ASLM.Pages
                     await ShowSuccessAsync(successMessage);
                 }
 
-                if (restartAfterSave && await RestartChangedTargetsAsync(hadAppRestartChanges, touchedModules))
+                if (restartAfterSave && hadPersonalizationChanges)
                 {
+                    try
+                    {
+                        await RestartApplicationThroughLauncherAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        await ShowErrorAsync(L.Get(LocalizationKeys.Settings_UpdateStatus_RestartFailed, ex.Message));
+                    }
+
                     return;
                 }
 
-                if (restartAfterSave && hadPersonalizationChanges)
+                if (restartAfterSave && await RestartChangedTargetsAsync(hadAppRestartChanges, touchedModules))
                 {
-                    await RestartModulesForHostPersonalizationAsync(touchedModules);
+                    return;
                 }
             }
             finally
@@ -2588,36 +2918,14 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Restarts enabled modules that declare host-managed theme or locale settings and were not already restarted.
+        /// Stops modules, starts the launcher with process wait, and exits so ASLM relaunches cleanly.
         /// </summary>
-        private async Task RestartModulesForHostPersonalizationAsync(IEnumerable<ModuleConfig> alreadyRestarted)
+        private async Task RestartApplicationThroughLauncherAsync()
         {
-            var skip = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var module in alreadyRestarted)
-            {
-                if (!string.IsNullOrWhiteSpace(module.SourcePath))
-                {
-                    skip.Add(module.SourcePath);
-                }
-            }
-
-            foreach (var module in _loadedModules.Where(m =>
-                         ModuleDeclaresHostPersonalizationSync(m) &&
-                         CanRestartModule(m) &&
-                         !string.IsNullOrWhiteSpace(m.SourcePath) &&
-                         !skip.Contains(m.SourcePath)))
-            {
-                await _settingsService.RestartModuleAsync(module);
-            }
+            await _settingsService.StopAllModulesAsync();
+            await Task.Run(SettingsService.StartLauncherForApplicationRestart);
+            Application.Current?.Quit();
         }
-
-        /// <summary>
-        /// Returns whether a module exposes theme or locale settings that require a host restart.
-        /// </summary>
-        private static bool ModuleDeclaresHostPersonalizationSync(ModuleConfig module) =>
-            module.Settings?.Any(setting =>
-                string.Equals(setting.NormalizedType, "theme", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(setting.NormalizedType, "locale", StringComparison.OrdinalIgnoreCase)) == true;
 
         /// <summary>
         /// Restarts the application startup chain so app-level changes take effect.
@@ -2635,6 +2943,144 @@ namespace ASLM.Pages
             var window = application.Windows[0];
             window.Page = newPage;
         }
+
+        /// <summary>
+        /// Handles the GitHub account connect or disconnect button click.
+        /// </summary>
+        private async void OnGitHubAccountButtonClicked(object? sender, EventArgs e)
+        {
+            await ExecuteGitHubAccountActionAsync(connect: !IsGitHubConnected());
+        }
+
+        /// <summary>
+        /// Runs one GitHub account action and refreshes the account card state.
+        /// </summary>
+        private async Task ExecuteGitHubAccountActionAsync(bool connect)
+        {
+            if (_isGitHubAccountActionRunning)
+            {
+                return;
+            }
+
+            try
+            {
+                _isGitHubAccountActionRunning = true;
+                UpdateGitHubAccountActionControls();
+
+                if (connect)
+                {
+                    try
+                    {
+                        await Launcher.OpenAsync(GitHubAccountStore.BuildTokenCreationUrl());
+                    }
+                    catch (Exception ex)
+                    {
+                        await ShowErrorAsync(L.Get(LocalizationKeys.Settings_GitHub_ConnectFailed, ex.Message));
+                        return;
+                    }
+
+                    var token = await PromptForGitHubTokenAsync();
+                    if (string.IsNullOrWhiteSpace(token))
+                    {
+                        return;
+                    }
+
+                    var result = await _githubAccountStore.ConnectAsync(token);
+                    _githubDraft = result.State;
+
+                    if (!result.Success)
+                    {
+                        await ShowErrorAsync(L.Get(LocalizationKeys.Settings_GitHub_ConnectFailed, result.Message));
+                        return;
+                    }
+
+                    try
+                    {
+                        await _githubUpdateClient.RefreshRateLimitAsync(GitHubRequestSources.Manual);
+                    }
+                    catch
+                    {
+                        // Rate-limit refresh is best-effort after a successful connect.
+                    }
+                }
+                else
+                {
+                    var result = await _githubAccountStore.DisconnectAsync();
+                    _githubDraft = result.State;
+                }
+            }
+            finally
+            {
+                _isGitHubAccountActionRunning = false;
+                UpdateGitHubAccountActionControls();
+            }
+        }
+
+        /// <summary>
+        /// Returns whether the cached GitHub account state is connected.
+        /// </summary>
+        private bool IsGitHubConnected() => _githubDraft.IsConnected;
+
+        /// <summary>
+        /// Builds the GitHub account status line for the settings card.
+        /// </summary>
+        private string BuildGitHubAccountStatusText()
+        {
+            if (_isGitHubAccountActionRunning)
+            {
+                return L.Get(LocalizationKeys.Settings_GitHub_Connecting);
+            }
+
+            if (_githubDraft.IsConnected && !string.IsNullOrWhiteSpace(_githubDraft.UserName))
+            {
+                return L.Get(LocalizationKeys.Settings_GitHub_ConnectedAs, _githubDraft.UserName);
+            }
+
+            if (!string.IsNullOrWhiteSpace(_githubDraft.ErrorMessage))
+            {
+                return L.Get(LocalizationKeys.Settings_GitHub_ConnectFailed, _githubDraft.ErrorMessage);
+            }
+
+            return L.Get(LocalizationKeys.Settings_GitHub_NotConnectedHint);
+        }
+
+        /// <summary>
+        /// Refreshes the GitHub account card labels and action button state.
+        /// </summary>
+        private void UpdateGitHubAccountActionControls()
+        {
+            if (_githubAccountStatusLabel != null)
+            {
+                _githubAccountStatusLabel.Text = BuildGitHubAccountStatusText();
+            }
+
+            if (_githubAccountButton != null)
+            {
+                var isConnected = IsGitHubConnected();
+                _githubAccountButton.Text = _isGitHubAccountActionRunning
+                    ? L.Get(LocalizationKeys.Settings_GitHub_Connecting)
+                    : isConnected
+                        ? L.Get(LocalizationKeys.Settings_GitHub_Disconnect)
+                        : L.Get(LocalizationKeys.Settings_GitHub_Connect);
+                _githubAccountButton.IsEnabled = !_isGitHubAccountActionRunning;
+                ApplyOllamaAccountButtonState(_githubAccountButton, isConnected);
+            }
+        }
+
+        /// <summary>
+        /// Prompts the user to paste a GitHub personal access token after browser sign-in.
+        /// </summary>
+        private static Task<string?> PromptForGitHubTokenAsync() =>
+            Application.Current?.Windows.Count > 0
+                ? Application.Current.Windows[0].Page!.DisplayPromptAsync(
+                    L.Get(LocalizationKeys.Settings_GitHub_ConnectPrompt_Title),
+                    L.Get(LocalizationKeys.Settings_GitHub_ConnectPrompt_Message),
+                    L.Get(LocalizationKeys.Settings_GitHub_Connect),
+                    L.Get(LocalizationKeys.Common_Cancel),
+                    L.Get(LocalizationKeys.Settings_GitHub_TokenPlaceholder),
+                    maxLength: 256,
+                    keyboard: Keyboard.Text)
+                : Task.FromResult<string?>(null);
 
         /// <summary>
         /// Handles the single Ollama account action button click.
@@ -2766,7 +3212,7 @@ namespace ASLM.Pages
         /// </summary>
         private void StartOllamaMetadataRefresh()
         {
-            if (_activeCategory?.Kind != SettingsCategoryKind.Ollama)
+            if (_activeCategory?.Kind != SettingsCategoryKind.Accounts)
             {
                 return;
             }
@@ -2838,12 +3284,19 @@ namespace ASLM.Pages
             _ollamaAccountStatusLabel = null;
         }
 
+        private void ResetGitHubControlReferences()
+        {
+            _githubAccountButton = null;
+            _githubAccountStatusLabel = null;
+        }
+
         /// <summary>
         /// Clears all dynamic control references before rebuilding one category UI tree.
         /// </summary>
         private void ResetRenderedControlReferences()
         {
             ResetOllamaControlReferences();
+            ResetGitHubControlReferences();
             ResetUpdateControlReferences();
             ResetAslmApiControlReferences();
         }
@@ -2866,7 +3319,6 @@ namespace ASLM.Pages
         {
             _checkUpdatesToggle = null;
             _autoUpdatesToggle = null;
-            _updatePeriodEntry = null;
             _appUpdateChannelPicker = null;
             _moduleUpdateModePicker = null;
             _moduleUpdateChannelPicker = null;
@@ -2874,6 +3326,11 @@ namespace ASLM.Pages
             _prepareAppUpdateButton = null;
             _restartAppUpdateButton = null;
             _pendingAppUpdateCandidate = null;
+            _ollamaUpdateButton = null;
+            _ollamaCheckUpdateButton = null;
+            _ollamaUpdateStatusLabel = null;
+            _ollamaVersionDescriptionLabel = null;
+            _pendingOllamaUpdateCandidate = null;
         }
 
         /// <summary>
@@ -4158,9 +4615,9 @@ namespace ASLM.Pages
         }
 
         /// <summary>
-        /// Persists the personalization draft to app data and applies the new theme.
+        /// Persists the personalization draft to app data and optionally applies the new theme immediately.
         /// </summary>
-        private async Task SavePersonalizationAsync()
+        private async Task SavePersonalizationAsync(bool applyImmediately = true)
         {
             var languageChanged = !string.Equals(
                 _personalizationBaseline.Language,
@@ -4195,6 +4652,11 @@ namespace ASLM.Pages
                 Language = _personalizationDraft.Language,
                 CustomThemeId = _personalizationDraft.CustomThemeId
             };
+
+            if (!applyImmediately)
+            {
+                return;
+            }
 
             // Apply the saved theme and palette without waiting for restart.
             _themeService.ApplyFromSettings();

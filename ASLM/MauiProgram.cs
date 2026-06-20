@@ -45,6 +45,7 @@ namespace ASLM
 
             // Service registrations
             builder.Services.AddSingleton<AppDataStore>();
+            builder.Services.AddSingleton<LegalAcceptanceService>();
             builder.Services.AddSingleton<DockerService>();
             builder.Services.AddSingleton<EngineInstaller>();
             builder.Services.AddSingleton<ModuleEnvironmentResolver>();
@@ -60,12 +61,15 @@ namespace ASLM
             builder.Services.AddSingleton<ModuleStartThrottle>();
             builder.Services.AddSingleton<PortRegistry>();
             builder.Services.AddSingleton<ModuleRunner>();
+            builder.Services.AddSingleton<ModuleDependencyService>();
             builder.Services.AddSingleton<ModuleDownloadBridge>();
             builder.Services.AddSingleton<DownloadStateStore>();
             builder.Services.AddSingleton<DownloadCatalog>();
             builder.Services.AddSingleton<DownloadInstaller>();
             builder.Services.AddSingleton<NotificationCenter>();
             builder.Services.AddSingleton<OllamaSettingsStore>();
+            builder.Services.AddSingleton<GitHubAccountStore>();
+            builder.Services.AddSingleton<GitHubRateLimitStore>();
             builder.Services.AddSingleton<GitHubUpdateClient>();
             builder.Services.AddSingleton<UpdateManager>();
             builder.Services.AddSingleton<UpdateScheduler>();
@@ -80,6 +84,7 @@ namespace ASLM
             builder.Services.AddTransient<AppShellPage>();
             builder.Services.AddTransient<SetupWizardPage>();
             builder.Services.AddTransient<LoadingPage>();
+            builder.Services.AddTransient<LegalAcceptanceView>();
 
             // Content view registrations
             builder.Services.AddTransient<HomeView>();

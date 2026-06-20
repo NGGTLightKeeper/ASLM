@@ -59,6 +59,10 @@ namespace ASLM.Models
         [JsonPropertyName("postInstall")]
         public List<InstallStep> PostInstall { get; set; } = [];
 
+        // Remote update configuration used to check GitHub releases.
+        [JsonPropertyName("update")]
+        public EngineUpdateConfig? Update { get; set; }
+
         // Persisted installation state of the engine.
         [JsonPropertyName("status")]
         public EngineStatus Status { get; set; } = new();
@@ -103,6 +107,8 @@ namespace ASLM.Models
             // Ensure persisted runtime status is always available.
             Status ??= new();
             Status.Normalize();
+
+            Update?.Normalize();
         }
     }
 
@@ -288,6 +294,36 @@ namespace ASLM.Models
     }
 
 
+    // Update configuration
+
+    /// <summary>
+    /// Describes how one engine checks and downloads updates from GitHub releases.
+    /// </summary>
+    public class EngineUpdateConfig
+    {
+        // GitHub repository in owner/name form.
+        [JsonPropertyName("repo")]
+        public string Repo { get; set; } = string.Empty;
+
+        // Platform-specific release asset names, for example windows-x64.
+        [JsonPropertyName("assetName")]
+        public Dictionary<string, string> AssetName { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Restores required string values after JSON deserialization.
+        /// </summary>
+        public void Normalize()
+        {
+            Repo = string.IsNullOrWhiteSpace(Repo) ? string.Empty : Repo.Trim();
+
+            AssetName ??= new(StringComparer.OrdinalIgnoreCase);
+            AssetName = AssetName
+                .Where(pair => !string.IsNullOrWhiteSpace(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value))
+                .ToDictionary(pair => pair.Key.Trim(), pair => pair.Value.Trim(), StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+
     // Status tracking
 
     /// <summary>
@@ -303,6 +339,10 @@ namespace ASLM.Models
         [JsonPropertyName("installedVersion")]
         public string? InstalledVersion { get; set; }
 
+        // GitHub release tag of the installed engine, if known.
+        [JsonPropertyName("installedReleaseTag")]
+        public string? InstalledReleaseTag { get; set; }
+
         // Timestamp of the latest installation check or update.
         [JsonPropertyName("lastChecked")]
         public string? LastChecked { get; set; }
@@ -314,6 +354,7 @@ namespace ASLM.Models
         {
             // Empty text values are treated as missing persisted state.
             InstalledVersion = string.IsNullOrWhiteSpace(InstalledVersion) ? null : InstalledVersion;
+            InstalledReleaseTag = string.IsNullOrWhiteSpace(InstalledReleaseTag) ? null : InstalledReleaseTag;
             LastChecked = string.IsNullOrWhiteSpace(LastChecked) ? null : LastChecked;
         }
     }
