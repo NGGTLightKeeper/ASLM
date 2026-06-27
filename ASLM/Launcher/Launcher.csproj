@@ -8,6 +8,9 @@
 		<Nullable>enable</Nullable>
     
 		<AssemblyName>ASLM</AssemblyName>
+		<Version>0.7.1.5</Version>
+		<FileVersion>0.7.1.5</FileVersion>
+		<InformationalVersion>0.7.1.5</InformationalVersion>
 	</PropertyGroup>
 	
 	<Import Project="..\..\ASLM.Build.props" />
