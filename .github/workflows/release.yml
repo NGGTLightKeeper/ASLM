@@ -1,0 +1,489 @@
+# Copyright NGGT.LightKeeper. All Rights Reserved.
+
+name: Release
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: release-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  stage-version:
+    if: >
+      github.event_name == 'pull_request' &&
+      github.actor != 'github-actions[bot]' &&
+      startsWith(github.event.pull_request.title, 'v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out PR head branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute version
+        id: ver
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -uo pipefail
+          git fetch --tags --force origin
+          ENDPOINT=HEAD
+          # ── shared version computation (keep identical with the prepare job) ──
+          TITLE="$PR_TITLE"
+          if [[ ! "$TITLE" =~ ^v([0-9]+)\.([0-9]+)(-rc)?$ ]]; then
+            echo "Title '$TITLE' is not a release title (expected vG.S or vG.S-rc); skipping."
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          GLOBAL="${BASH_REMATCH[1]}"
+          SUB="${BASH_REMATCH[2]}"
+          IS_RC=false
+          [[ -n "${BASH_REMATCH[3]:-}" ]] && IS_RC=true
+
+          # Non-rc release tags: vX.Y.Z or vX.Y.Z.W (older tags omit W).
+          mapfile -t NONRC < <(git tag --list 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$')
+
+          # Z = number of existing non-rc revisions for vGLOBAL.SUB.*
+          declare -A seen_rev=()
+          for t in "${NONRC[@]}"; do
+            [[ "$t" =~ ^v${GLOBAL}\.${SUB}\.([0-9]+)(\.[0-9]+)?$ ]] && seen_rev["${BASH_REMATCH[1]}"]=1
+          done
+          Z="${#seen_rev[@]}"
+
+          # STABLE_BASE = highest non-rc tag with (g,s,r) < (GLOBAL,SUB,Z).
+          # Drives W (commit count) for both final and rc releases.
+          NEW_KEY=$(printf '%05d%05d%05d' "$GLOBAL" "$SUB" "$Z")
+          STABLE_BASE=""; BEST=""
+          for t in "${NONRC[@]}"; do
+            [[ "$t" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(\.[0-9]+)?$ ]] || continue
+            k=$(printf '%05d%05d%05d' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}")
+            if [[ "$k" < "$NEW_KEY" ]] && { [[ -z "$BEST" ]] || [[ "$k" > "$BEST" ]]; }; then
+              BEST="$k"; STABLE_BASE="$t"
+            fi
+          done
+
+          # W = commits in STABLE_BASE..ENDPOINT (cumulative from the last stable).
+          if [[ -n "$STABLE_BASE" ]]; then
+            W=$(git rev-list --count "${STABLE_BASE}..${ENDPOINT}")
+          else
+            W=$(git rev-list --count "${ENDPOINT}")
+          fi
+          # Stage (ENDPOINT=HEAD) writes before making its own stamp commit, so
+          # bump W by 1 to match the tag the release job counts from history.
+          [[ "$ENDPOINT" == HEAD ]] && W=$((W + 1))
+
+          # N = next rc ordinal; LATEST_RC = newest existing rc of this revision (vG.S.Z).
+          N=0; LATEST_RC=""
+          if $IS_RC; then
+            MAX_RC=0
+            while read -r t; do
+              [[ "$t" =~ ^v${GLOBAL}\.${SUB}\.${Z}\.[0-9]+-rc([0-9]+)$ ]] || continue
+              if (( BASH_REMATCH[1] > MAX_RC )); then MAX_RC="${BASH_REMATCH[1]}"; LATEST_RC="$t"; fi
+            done < <(git tag --list "v${GLOBAL}.${SUB}.${Z}."'*-rc*')
+            N=$((MAX_RC + 1))
+          fi
+
+          # Changelog base: rc -> newest prior release of any kind; final -> last stable.
+          if $IS_RC && [[ -n "$LATEST_RC" ]]; then
+            CHANGELOG_BASE="$LATEST_RC"
+          else
+            CHANGELOG_BASE="$STABLE_BASE"
+          fi
+
+          VERSION="${GLOBAL}.${SUB}.${Z}.${W}"
+          DISPLAY="${GLOBAL}.${SUB}.${Z}"
+          if $IS_RC; then TAG="v${VERSION}-rc${N}"; else TAG="v${VERSION}"; fi
+          ENDPOINT_SHA=$(git rev-parse "${ENDPOINT}")
+          {
+            echo "valid=true"
+            echo "version=${VERSION}"
+            echo "display=${DISPLAY}"
+            echo "appver=${W}"
+            echo "tag=${TAG}"
+            echo "is_rc=${IS_RC}"
+            echo "changelog_base=${CHANGELOG_BASE}"
+            echo "endpoint=${ENDPOINT_SHA}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Computed TAG=${TAG} VERSION=${VERSION} STABLE_BASE=${STABLE_BASE:-<none>} CHANGELOG_BASE=${CHANGELOG_BASE:-<none>}"
+          # ── end shared version computation ──────────────────────────────────
+
+      - name: Stamp app versions
+        if: steps.ver.outputs.valid == 'true'
+        env:
+          DISPLAY: ${{ steps.ver.outputs.display }}
+          APPVER: ${{ steps.ver.outputs.appver }}
+          VERSION: ${{ steps.ver.outputs.version }}
+          TAG: ${{ steps.ver.outputs.tag }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -uo pipefail
+          python .github/scripts/stamp-version.py "$DISPLAY" "$APPVER" "$VERSION"
+          if git diff --quiet; then
+            echo "App versions already at ${VERSION}; nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: set app version ${VERSION} for ${TAG} [skip ci]"
+          git push origin "HEAD:${HEAD_REF}"
+
+  prepare:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      build: ${{ steps.gate.outputs.build }}
+      version: ${{ steps.ver.outputs.version }}
+      display: ${{ steps.ver.outputs.display }}
+      appver: ${{ steps.ver.outputs.appver }}
+      tag: ${{ steps.ver.outputs.tag }}
+      is_rc: ${{ steps.ver.outputs.is_rc }}
+      changelog_base: ${{ steps.ver.outputs.changelog_base }}
+      endpoint: ${{ steps.ver.outputs.endpoint }}
+      pr_number: ${{ steps.pr.outputs.pr_number }}
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve merged PR for this commit
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          SHA="${{ github.sha }}"
+          # PR number from the merge-commit subject is available immediately;
+          # the commits/{sha}/pulls index lags for several seconds after a merge.
+          SUBJECT=$(git show -s --format=%s "$SHA")
+          PR_NUMBER=""
+          if [[ "$SUBJECT" =~ ^Merge\ pull\ request\ #([0-9]+) ]]; then
+            PR_NUMBER="${BASH_REMATCH[1]}"
+          elif [[ "$SUBJECT" =~ \(#([0-9]+)\)$ ]]; then
+            PR_NUMBER="${BASH_REMATCH[1]}"
+          fi
+          # Fallback for non-standard subjects: ask which PR introduced the merged
+          # commit, retrying because that association can lag right after merge.
+          if [[ -z "$PR_NUMBER" ]]; then
+            LOOKUP=$(git rev-parse "${SHA}^2" 2>/dev/null || echo "$SHA")
+            for attempt in 1 2 3 4 5; do
+              PR_JSON=$(gh api -H "Accept: application/vnd.github+json" \
+                "repos/${{ github.repository }}/commits/${LOOKUP}/pulls" 2>/dev/null || echo '[]')
+              PR_NUMBER=$(jq -r '[.[] | select(.base.ref == "main")] | last | .number // empty' <<<"$PR_JSON")
+              [[ -n "$PR_NUMBER" ]] && break
+              sleep 10
+            done
+          fi
+          if [[ -z "$PR_NUMBER" ]]; then
+            echo "No PR found for ${SHA}; skipping."
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          PR=$(gh api -H "Accept: application/vnd.github+json" \
+            "repos/${{ github.repository }}/pulls/${PR_NUMBER}" 2>/dev/null || echo '{}')
+          MERGED_AT=$(jq -r '.merged_at // empty' <<<"$PR")
+          BASE_REF=$(jq -r '.base.ref // empty' <<<"$PR")
+          if [[ -z "$MERGED_AT" || "$BASE_REF" != "main" ]]; then
+            echo "PR #${PR_NUMBER} not merged into main (base=${BASE_REF:-none}, merged_at=${MERGED_AT:-none}); skipping."
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "valid=true" >> "$GITHUB_OUTPUT"
+          echo "pr_title=$(jq -r '.title' <<<"$PR")" >> "$GITHUB_OUTPUT"
+          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "Resolved PR #${PR_NUMBER}: $(jq -r '.title' <<<"$PR")"
+
+      - name: Compute version
+        if: steps.pr.outputs.valid == 'true'
+        id: ver
+        env:
+          PR_TITLE: ${{ steps.pr.outputs.pr_title }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        run: |
+          set -uo pipefail
+          git fetch --tags --force origin
+          # Use the PR head lineage as the endpoint so W/changelog match the
+          # version staged into the csproj files regardless of merge strategy.
+          git fetch origin "refs/pull/${PR_NUMBER}/head"
+          ENDPOINT=FETCH_HEAD
+          # ── shared version computation (keep identical with the stage job) ──
+          TITLE="$PR_TITLE"
+          if [[ ! "$TITLE" =~ ^v([0-9]+)\.([0-9]+)(-rc)?$ ]]; then
+            echo "Title '$TITLE' is not a release title (expected vG.S or vG.S-rc); skipping."
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          GLOBAL="${BASH_REMATCH[1]}"
+          SUB="${BASH_REMATCH[2]}"
+          IS_RC=false
+          [[ -n "${BASH_REMATCH[3]:-}" ]] && IS_RC=true
+
+          # Non-rc release tags: vX.Y.Z or vX.Y.Z.W (older tags omit W).
+          mapfile -t NONRC < <(git tag --list 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$')
+
+          # Z = number of existing non-rc revisions for vGLOBAL.SUB.*
+          declare -A seen_rev=()
+          for t in "${NONRC[@]}"; do
+            [[ "$t" =~ ^v${GLOBAL}\.${SUB}\.([0-9]+)(\.[0-9]+)?$ ]] && seen_rev["${BASH_REMATCH[1]}"]=1
+          done
+          Z="${#seen_rev[@]}"
+
+          # STABLE_BASE = highest non-rc tag with (g,s,r) < (GLOBAL,SUB,Z).
+          # Drives W (commit count) for both final and rc releases.
+          NEW_KEY=$(printf '%05d%05d%05d' "$GLOBAL" "$SUB" "$Z")
+          STABLE_BASE=""; BEST=""
+          for t in "${NONRC[@]}"; do
+            [[ "$t" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(\.[0-9]+)?$ ]] || continue
+            k=$(printf '%05d%05d%05d' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}")
+            if [[ "$k" < "$NEW_KEY" ]] && { [[ -z "$BEST" ]] || [[ "$k" > "$BEST" ]]; }; then
+              BEST="$k"; STABLE_BASE="$t"
+            fi
+          done
+
+          # W = commits in STABLE_BASE..ENDPOINT (cumulative from the last stable).
+          if [[ -n "$STABLE_BASE" ]]; then
+            W=$(git rev-list --count "${STABLE_BASE}..${ENDPOINT}")
+          else
+            W=$(git rev-list --count "${ENDPOINT}")
+          fi
+          # Stage (ENDPOINT=HEAD) writes before making its own stamp commit, so
+          # bump W by 1 to match the tag the release job counts from history.
+          [[ "$ENDPOINT" == HEAD ]] && W=$((W + 1))
+
+          # N = next rc ordinal; LATEST_RC = newest existing rc of this revision (vG.S.Z).
+          N=0; LATEST_RC=""
+          if $IS_RC; then
+            MAX_RC=0
+            while read -r t; do
+              [[ "$t" =~ ^v${GLOBAL}\.${SUB}\.${Z}\.[0-9]+-rc([0-9]+)$ ]] || continue
+              if (( BASH_REMATCH[1] > MAX_RC )); then MAX_RC="${BASH_REMATCH[1]}"; LATEST_RC="$t"; fi
+            done < <(git tag --list "v${GLOBAL}.${SUB}.${Z}."'*-rc*')
+            N=$((MAX_RC + 1))
+          fi
+
+          # Changelog base: rc -> newest prior release of any kind; final -> last stable.
+          if $IS_RC && [[ -n "$LATEST_RC" ]]; then
+            CHANGELOG_BASE="$LATEST_RC"
+          else
+            CHANGELOG_BASE="$STABLE_BASE"
+          fi
+
+          VERSION="${GLOBAL}.${SUB}.${Z}.${W}"
+          DISPLAY="${GLOBAL}.${SUB}.${Z}"
+          if $IS_RC; then TAG="v${VERSION}-rc${N}"; else TAG="v${VERSION}"; fi
+          ENDPOINT_SHA=$(git rev-parse "${ENDPOINT}")
+          {
+            echo "valid=true"
+            echo "version=${VERSION}"
+            echo "display=${DISPLAY}"
+            echo "appver=${W}"
+            echo "tag=${TAG}"
+            echo "is_rc=${IS_RC}"
+            echo "changelog_base=${CHANGELOG_BASE}"
+            echo "endpoint=${ENDPOINT_SHA}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Computed TAG=${TAG} VERSION=${VERSION} STABLE_BASE=${STABLE_BASE:-<none>} CHANGELOG_BASE=${CHANGELOG_BASE:-<none>}"
+          # ── end shared version computation ──────────────────────────────────
+
+      - name: Decide whether to build
+        id: gate
+        if: steps.ver.outputs.valid == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          set -uo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists; skipping build."
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: prepare
+    if: needs.prepare.outputs.build == 'true'
+    runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-amd64
+            runs-on: windows-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Stamp app versions (match the release tag exactly)
+        env:
+          DISPLAY: ${{ needs.prepare.outputs.display }}
+          APPVER: ${{ needs.prepare.outputs.appver }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: python .github/scripts/stamp-version.py "$DISPLAY" "$APPVER" "$VERSION"
+
+      - name: Install MAUI workload (Windows)
+        if: runner.os == 'Windows'
+        run: dotnet workload install maui
+
+      - name: Build release (Windows; cascades full app + installer bootstrapper)
+        if: runner.os == 'Windows'
+        run: dotnet build ASLM/Installer/Installer-Bootstrapper/Installer-Bootstrapper.csproj -c Release -v minimal
+
+      - name: Package artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $appDir = "Build/Release/ASLM-windows-amd64"
+          $installer = "Build/Release/ASLM-Installer-windows-amd64.exe"
+          if (-not (Test-Path $appDir)) { throw "Build output not found: $appDir" }
+          if (-not (Test-Path $installer)) { throw "Installer exe not found: $installer" }
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $zip = Join-Path (Get-Location) "dist/ASLM-windows-amd64.zip"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          # Archive root must be the folder itself (ASLM-windows-amd64/...), so pack from its parent.
+          Push-Location "Build/Release"
+          & 7z a -tzip -mx=5 "$zip" "ASLM-windows-amd64" | Out-Null
+          $code = $LASTEXITCODE
+          Pop-Location
+          if ($code -ne 0) { throw "7z failed with $code" }
+          Copy-Item $installer "dist/ASLM-Installer-windows-amd64.exe" -Force
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.name }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    needs: [prepare, build]
+    if: needs.prepare.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create release and attach artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          IS_RC: ${{ needs.prepare.outputs.is_rc }}
+          CHANGELOG_BASE: ${{ needs.prepare.outputs.changelog_base }}
+          ENDPOINT: ${{ needs.prepare.outputs.endpoint }}
+          PR_NUMBER: ${{ needs.prepare.outputs.pr_number }}
+          MERGE_SHA: ${{ github.sha }}
+          OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          set -uo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists; nothing to do."
+            exit 0
+          fi
+          shopt -s nullglob
+          ASSETS=(dist/*)
+          if (( ${#ASSETS[@]} == 0 )); then echo "No artifacts to attach." >&2; exit 1; fi
+
+          # All commits except github-actions[bot], as "<subject> by <authors>".
+          # Primary author login comes from the Compare API; co-authors from
+          # Co-authored-by trailers, login resolved from the noreply email.
+          # Each known login becomes a plain markdown link (no @mention).
+          JQ='
+            def link($login; $name):
+              if ($login | type) == "string" and $login != ""
+              then "[\($login)](https://github.com/\($login))" else $name end;
+            def colog($email):
+              ($email // "")
+              | if test("^[0-9]+\\+[^@]+@users\\.noreply\\.github\\.com$"; "i")
+                then capture("^[0-9]+\\+(?<l>[^@]+)@"; "i").l
+                elif test("^[^@]+@users\\.noreply\\.github\\.com$"; "i")
+                then capture("^(?<l>[^@]+)@"; "i").l
+                else null end;
+            [ .[].commits[] ] | .[]
+            | select((.parents | length) < 2)
+            | select(.author.login != "github-actions[bot]")
+            | (.commit.message | split("\n")[0]) as $subject
+            | ( [ {login: (.author.login // null), name: .commit.author.name} ]
+                + ( .commit.message | split("\n")
+                    | map(capture("^co-authored-by:\\s*(?<name>[^<]+?)\\s*<(?<email>[^>]+)>\\s*$"; "i"))
+                    | map({login: colog(.email), name: .name}) ) )
+            | map(select(.login != "github-actions[bot]" and .name != "github-actions[bot]"))
+            | reduce .[] as $a ([]; if any(.[]; .login == $a.login and .name == $a.name) then . else . + [$a] end)
+            | map(link(.login; .name))
+            | "- " + $subject + " by " + join(", ")
+          '
+          if [[ -n "$CHANGELOG_BASE" ]]; then
+            CMP=$(gh api --paginate --slurp \
+              "repos/${OWNER}/${REPO_NAME}/compare/${CHANGELOG_BASE}...${ENDPOINT}" || echo '[]')
+            CHANGES=$(jq -r "$JQ" <<<"$CMP" || true)
+          else
+            git fetch origin "refs/pull/${PR_NUMBER}/head" >/dev/null 2>&1 || true
+            CHANGES=$(git log "$ENDPOINT" --no-merges --perl-regexp \
+              --author='^(?!github-actions\[bot\]).*$' \
+              --pretty=format:'- %s by %an' || true)
+          fi
+
+          {
+            echo "### What's Changed:"
+            if [[ -n "$CHANGES" ]]; then printf '%s\n' "$CHANGES"; else echo "_None_"; fi
+            if [[ -n "$CHANGELOG_BASE" ]]; then
+              echo
+              echo "**Full Changelog**: https://github.com/${OWNER}/${REPO_NAME}/compare/${CHANGELOG_BASE}...${TAG}"
+            fi
+          } > notes.md
+
+          echo "----- release notes (${TAG}) -----"
+          cat notes.md
+          echo "----------------------------------"
+
+          PRE=""
+          [[ "$IS_RC" == "true" ]] && PRE="--prerelease"
+          gh release create "$TAG" \
+            --target "$MERGE_SHA" \
+            --title "${REPO_NAME} ${TAG}" \
+            --notes-file notes.md \
+            $PRE \
+            "${ASSETS[@]}"
