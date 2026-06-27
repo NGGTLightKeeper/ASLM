@@ -14,9 +14,9 @@
 		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
 		<UseWindowsForms>true</UseWindowsForms>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
-		<Version>0.7.1.5</Version>
-		<FileVersion>0.7.1.5</FileVersion>
-		<InformationalVersion>0.7.1.5</InformationalVersion>
+		<Version>0.7.1.10</Version>
+		<FileVersion>0.7.1.10</FileVersion>
+		<InformationalVersion>0.7.1.10</InformationalVersion>
 	</PropertyGroup>
 
 	<Import Project="..\..\..\ASLM.Build.props" />
@@ -51,21 +51,21 @@
 	<Target Name="PrepareBootstrapperResources" BeforeTargets="BeforeBuild" Condition="'$(ASLMSkipBootstrapperResourceBuild)' != 'true'">
 		<MSBuild Projects="$(ASLMRepoRoot)ASLM\ASLM.csproj"
 		         Targets="Restore"
-		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);SelfContained=true" />
+		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);SelfContained=true;MSBuildRestoreSessionId=$([System.Guid]::NewGuid())" />
 		<MSBuild Projects="$(ASLMRepoRoot)ASLM\ASLM.csproj"
 		         Targets="Build"
 		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);SelfContained=true" />
 
 		<MSBuild Projects="$(ASLMRepoRoot)ASLM\Patcher\Patcher.csproj"
 		         Targets="Restore"
-		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);SelfContained=true" />
+		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);SelfContained=true;MSBuildRestoreSessionId=$([System.Guid]::NewGuid())" />
 		<MSBuild Projects="$(ASLMRepoRoot)ASLM\Patcher\Patcher.csproj"
 		         Targets="Build"
 		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);SelfContained=true" />
 
 		<MSBuild Projects="$(ASLMRepoRoot)ASLM\Launcher\Launcher.csproj"
 		         Targets="Restore"
-		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerLauncherTargetFramework);SelfContained=true" />
+		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerLauncherTargetFramework);SelfContained=true;MSBuildRestoreSessionId=$([System.Guid]::NewGuid())" />
 		<MSBuild Projects="$(ASLMRepoRoot)ASLM\Launcher\Launcher.csproj"
 		         Targets="Publish"
 		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerLauncherTargetFramework);SelfContained=true" />
@@ -79,7 +79,7 @@
 
 		<MSBuild Projects="$(ASLMInstallerProject)"
 		         Targets="Restore"
-		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);WindowsPackageType=None" />
+		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);WindowsPackageType=None;MSBuildRestoreSessionId=$([System.Guid]::NewGuid())" />
 		<MSBuild Projects="$(ASLMInstallerProject)"
 		         Targets="Publish"
 		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);WindowsPackageType=None;ASLMInstallerRequirePayload=true;ASLMSkipPayloadGeneration=true;PublishDir=$(ASLMInstallerOutputRoot)" />
