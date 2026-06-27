@@ -18,7 +18,7 @@ jobs:
       issues: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
@@ -28,22 +28,23 @@ jobs:
           COMMIT_MESSAGE=$(git log -1 --pretty=%s HEAD)
           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
           COMMIT_DIFF=$(git diff HEAD~1 HEAD)
+          # Cap oversized inputs so the request stays within Jules API and shell limits.
+          CHANGED_FILES=$(printf '%s' "${CHANGED_FILES:0:16384}")
+          COMMIT_DIFF=$(printf '%s' "${COMMIT_DIFF:0:524288}" | iconv -f UTF-8 -t UTF-8 -c)
 
           PROMPT="The task is created automatically by the CI/CD pipeline system. You are working in the ASLM project (Advanced System Language Models) — a Windows desktop application built with C# and .NET MAUI. The application is a launcher and manager for AI models and modules. The project contains documentation in the 'Docs/ASLM/' directory based on the Hugo Framework (Lotus Docs theme). Your task is to analyze the changes in the commit '${COMMIT_MESSAGE}' and add or update the project documentation. Only process changes to .cs and .xaml.cs files. For components that have both a .xaml and a .xaml.cs file (e.g. AppShellPage.xaml + AppShellPage.xaml.cs), document them as a single page. In the documentation, fully preserve the source file location structure: for example, 'ASLM/Services/ModuleRunner.cs' maps to 'Docs/ASLM/content/docs/ASLM/Services/ModuleRunner.md'; 'ASLM/Pages/AppShellPage.xaml.cs' maps to 'Docs/ASLM/content/docs/ASLM/Pages/AppShellPage.md'; 'ASLM/Launcher/Program.cs' maps to 'Docs/ASLM/content/docs/ASLM/Launcher/Program.md'; 'ASLM/Patcher/Program.cs' maps to 'Docs/ASLM/content/docs/ASLM/Patcher/Program.md'; 'ASLM/Installer/Installer/Services/InstallerService.cs' maps to 'Docs/ASLM/content/docs/ASLM/Installer/Installer/Services/InstallerService.md'. Carefully study the existing documentation structure before writing. Write detailed documentation for each public class and method: purpose, parameters, return values, and brief C# usage examples. Do not change any files outside the 'Docs/' folder. Do not touch files in 'Docs/ASLM/content/docs/PatchNotes/' — patch notes are managed by a separate pipeline. If there are no changes to .cs or .xaml.cs files, make a commit without any file changes. Name the output branch 'jules-docs-dev-BRANCH_NAME' where BRANCH_NAME is a short descriptive name for the changes, always preserving the 'jules-docs-dev-' prefix (example: 'jules-docs-dev-module-runner-update'). If there were no relevant file changes, name the branch 'jules-docs-dev-YYYYMMDDHHmm' where YYYYMMDDHHmm is your current UTC time. Keep in mind that this task was created automatically and may have errors, but follow the instructions as closely as possible. Modified files: '${CHANGED_FILES}'. Commit diff: '${COMMIT_DIFF}'."
 
-          {
-            echo 'prompt<<EOF'
-            echo "$PROMPT"
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
+          PROMPT_FILE="${RUNNER_TEMP}/jules_prompt.txt"
+          printf '%s' "$PROMPT" > "$PROMPT_FILE"
+          echo "prompt_file=$PROMPT_FILE" >> "$GITHUB_OUTPUT"
 
       - name: Jules - Create Session
         id: create-session
         env:
-          JULES_PROMPT: ${{ steps.generate-prompt.outputs.prompt }}
+          PROMPT_FILE: ${{ steps.generate-prompt.outputs.prompt_file }}
         run: |
           JSON_PAYLOAD=$(jq -n \
-            --arg prompt "$JULES_PROMPT" \
+            --rawfile prompt "$PROMPT_FILE" \
             --arg source_repo "sources/github/${{ github.repository }}" \
             --arg branch "${{ github.ref_name }}" \
             --arg title "CI/CD: Update Docs for commit ${{ github.sha }}" \

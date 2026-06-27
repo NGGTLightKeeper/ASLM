@@ -11,8 +11,8 @@
 		<AssemblyName>ASLM-Installer</AssemblyName>
 		<ApplicationTitle>ASLM Installer</ApplicationTitle>
 		<ApplicationId>com.companyname.aslm.installer</ApplicationId>
-		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
-		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationDisplayVersion>0.7.1</ApplicationDisplayVersion>
+		<ApplicationVersion>5</ApplicationVersion>
 		<WindowsPackageType>None</WindowsPackageType>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
