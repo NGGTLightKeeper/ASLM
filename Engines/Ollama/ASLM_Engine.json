@@ -1,40 +1,80 @@
 {
-    "fileVersion": 1,
+    "fileVersion": 2,
     "id": "ollama-service",
     "name": "Ollama",
     "description": "Ollama (latest) — local LLM inference service exposing an OpenAI-compatible REST API (http://localhost:11434)",
     "version": "latest",
     "type": "service",
-    "executablePath": "runtime/ollama.exe",
-    "requirements": {
-        "os": "windows",
-        "arch": "x64",
-        "diskSpaceMb": 4096
-    },
-    "install": [
+    "supportedPlatforms": [
         {
-            "action": "download",
-            "name": "Download Ollama Windows portable ZIP (latest release)",
-            "url": "https://github.com/ollama/ollama/releases/latest/download/ollama-windows-amd64.zip",
-            "dest": "{temp}/ollama-windows-amd64.zip"
+            "os": "windows",
+            "arch": "amd64",
+            "key": "windows-amd64"
         },
         {
-            "action": "extract",
-            "name": "Extract Ollama to runtime directory",
-            "source": "{temp}/ollama-windows-amd64.zip",
-            "dest": "Engines/Ollama/runtime"
-        },
-        {
-            "action": "cleanup",
-            "name": "Remove temporary files",
-            "target": "{temp}"
+            "os": "windows",
+            "arch": "arm64",
+            "key": "windows-arm64"
         }
     ],
-    "postInstall": [],
-    "update": {
-        "repo": "ollama/ollama",
-        "assetName": {
-            "windows-x64": "ollama-windows-amd64.zip"
+    "windows-amd64": {
+        "executablePath": "runtime/ollama.exe",
+        "requirements": {
+            "diskSpaceMb": 4096
+        },
+        "install": [
+            {
+                "action": "download",
+                "name": "Download Ollama Windows portable ZIP (latest release)",
+                "url": "https://github.com/ollama/ollama/releases/latest/download/ollama-windows-amd64.zip",
+                "dest": "{temp}/ollama-windows-amd64.zip"
+            },
+            {
+                "action": "extract",
+                "name": "Extract Ollama to runtime directory",
+                "source": "{temp}/ollama-windows-amd64.zip",
+                "dest": "Engines/Ollama/runtime"
+            },
+            {
+                "action": "cleanup",
+                "name": "Remove temporary files",
+                "target": "{temp}"
+            }
+        ],
+        "postInstall": [],
+        "update": {
+            "repo": "ollama/ollama",
+            "assetName": "ollama-windows-amd64.zip"
+        }
+    },
+    "windows-arm64": {
+        "executablePath": "runtime/ollama.exe",
+        "requirements": {
+            "diskSpaceMb": 4096
+        },
+        "install": [
+            {
+                "action": "download",
+                "name": "Download Ollama Windows ARM64 portable ZIP (latest release)",
+                "url": "https://github.com/ollama/ollama/releases/latest/download/ollama-windows-arm64.zip",
+                "dest": "{temp}/ollama-windows-arm64.zip"
+            },
+            {
+                "action": "extract",
+                "name": "Extract Ollama to runtime directory",
+                "source": "{temp}/ollama-windows-arm64.zip",
+                "dest": "Engines/Ollama/runtime"
+            },
+            {
+                "action": "cleanup",
+                "name": "Remove temporary files",
+                "target": "{temp}"
+            }
+        ],
+        "postInstall": [],
+        "update": {
+            "repo": "ollama/ollama",
+            "assetName": "ollama-windows-arm64.zip"
         }
     },
     "status": {

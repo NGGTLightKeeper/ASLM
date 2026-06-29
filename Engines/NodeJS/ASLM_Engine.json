@@ -1,54 +1,110 @@
 {
-    "fileVersion": 1,
+    "fileVersion": 2,
     "id": "nodejs-runtime",
     "name": "Node.js Runtime",
     "description": "Node.js v25.6.1 JavaScript runtime for ASLM modules",
     "version": "25.6.1",
     "type": "runtime",
-    "executablePath": "runtime/node.exe",
-    "packageManager": {
-        "command": "install",
-        "executable": "runtime/npm.cmd"
-    },
-    "moduleEnvironment": {
-        "enabled": true,
-        "directoryPrefix": "venv-",
-        "kind": "node-prefix",
-        "executablePath": "{engineExecutable}",
-        "packageManagerExecutable": "{engineDir}/runtime/npm.cmd",
-        "packageManagerCommand": "install --prefix \"{environmentDir}\"",
-        "environment": {
-            "NODE_PATH": "{environmentDir}/node_modules",
-            "PATH": "{environmentDir}/node_modules/.bin;{path}"
-        }
-    },
-    "requirements": {
-        "os": "windows",
-        "arch": "x64",
-        "diskSpaceMb": 256
-    },
-    "install": [
+    "supportedPlatforms": [
         {
-            "action": "download",
-            "url": "https://nodejs.org/dist/v25.6.1/node-v25.6.1-win-x64.zip",
-            "dest": "{temp}/node.zip"
+            "os": "windows",
+            "arch": "amd64",
+            "key": "windows-amd64"
         },
         {
-            "action": "extract",
-            "source": "{temp}/node.zip",
-            "dest": "{temp}/node-extract"
-        },
-        {
-            "action": "move",
-            "source": "{temp}/node-extract/node-v25.6.1-win-x64",
-            "dest": "Engines/NodeJS/runtime"
-        },
-        {
-            "action": "cleanup",
-            "target": "{temp}"
+            "os": "windows",
+            "arch": "arm64",
+            "key": "windows-arm64"
         }
     ],
-    "postInstall": [],
+    "windows-amd64": {
+        "executablePath": "runtime/node.exe",
+        "packageManager": {
+            "command": "install",
+            "executable": "runtime/npm.cmd"
+        },
+        "moduleEnvironment": {
+            "enabled": true,
+            "directoryPrefix": "venv-",
+            "kind": "node-prefix",
+            "executablePath": "{engineExecutable}",
+            "packageManagerExecutable": "{engineDir}/runtime/npm.cmd",
+            "packageManagerCommand": "install --prefix \"{environmentDir}\"",
+            "environment": {
+                "NODE_PATH": "{environmentDir}/node_modules",
+                "PATH": "{environmentDir}/node_modules/.bin;{path}"
+            }
+        },
+        "requirements": {
+            "diskSpaceMb": 256
+        },
+        "install": [
+            {
+                "action": "download",
+                "url": "https://nodejs.org/dist/v25.6.1/node-v25.6.1-win-x64.zip",
+                "dest": "{temp}/node.zip"
+            },
+            {
+                "action": "extract",
+                "source": "{temp}/node.zip",
+                "dest": "{temp}/node-extract"
+            },
+            {
+                "action": "move",
+                "source": "{temp}/node-extract/node-v25.6.1-win-x64",
+                "dest": "Engines/NodeJS/runtime"
+            },
+            {
+                "action": "cleanup",
+                "target": "{temp}"
+            }
+        ],
+        "postInstall": []
+    },
+    "windows-arm64": {
+        "executablePath": "runtime/node.exe",
+        "packageManager": {
+            "command": "install",
+            "executable": "runtime/npm.cmd"
+        },
+        "moduleEnvironment": {
+            "enabled": true,
+            "directoryPrefix": "venv-",
+            "kind": "node-prefix",
+            "executablePath": "{engineExecutable}",
+            "packageManagerExecutable": "{engineDir}/runtime/npm.cmd",
+            "packageManagerCommand": "install --prefix \"{environmentDir}\"",
+            "environment": {
+                "NODE_PATH": "{environmentDir}/node_modules",
+                "PATH": "{environmentDir}/node_modules/.bin;{path}"
+            }
+        },
+        "requirements": {
+            "diskSpaceMb": 256
+        },
+        "install": [
+            {
+                "action": "download",
+                "url": "https://nodejs.org/dist/v25.6.1/node-v25.6.1-win-arm64.zip",
+                "dest": "{temp}/node.zip"
+            },
+            {
+                "action": "extract",
+                "source": "{temp}/node.zip",
+                "dest": "{temp}/node-extract"
+            },
+            {
+                "action": "move",
+                "source": "{temp}/node-extract/node-v25.6.1-win-arm64",
+                "dest": "Engines/NodeJS/runtime"
+            },
+            {
+                "action": "cleanup",
+                "target": "{temp}"
+            }
+        ],
+        "postInstall": []
+    },
     "status": {
         "installed": false,
         "installedVersion": null,

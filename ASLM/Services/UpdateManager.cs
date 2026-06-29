@@ -2,7 +2,6 @@
 
 using System.IO.Compression;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Diagnostics;
@@ -1126,37 +1125,31 @@ namespace ASLM.Services
         /// </summary>
         private string? GetConfiguredAppAssetName(AppUpdateSourceConfig source)
         {
-            var assetKey = ResolveCurrentAppAssetKey();
-            if (source.Assets.TryGetValue(assetKey, out var assetName) && !string.IsNullOrWhiteSpace(assetName))
+            var assetName = PlatformInfo.ResolveFromMap(source.Assets);
+            if (!string.IsNullOrWhiteSpace(assetName))
             {
                 return assetName;
             }
 
-            _logger.LogWarning("ASLM update asset for key '{AssetKey}' is not configured.", assetKey);
+            _logger.LogWarning("ASLM update asset for platform '{PlatformKey}' is not configured.", PlatformInfo.PlatformKey);
             return null;
         }
 
         /// <summary>
-        /// Returns the configured engine asset name for the current OS and architecture.
+        /// Returns the configured engine asset name for the resolved active platform.
         /// </summary>
         private string? GetConfiguredEngineAssetName(EngineConfig engine)
         {
             engine.Update?.Normalize();
-            if (engine.Update == null)
-            {
-                return null;
-            }
-
-            var assetKey = ResolveCurrentAppAssetKey();
-            if (engine.Update.AssetName.TryGetValue(assetKey, out var assetName) &&
-                !string.IsNullOrWhiteSpace(assetName))
+            var assetName = engine.Update?.AssetName;
+            if (!string.IsNullOrWhiteSpace(assetName))
             {
                 return assetName;
             }
 
             _logger.LogWarning(
-                "Engine update asset for key '{AssetKey}' is not configured for {EngineId}.",
-                assetKey,
+                "Engine update asset for platform '{PlatformKey}' is not configured for {EngineId}.",
+                PlatformInfo.PlatformKey,
                 engine.Id);
             return null;
         }
@@ -1741,32 +1734,6 @@ namespace ASLM.Services
         private static bool IsPrereleaseMode(string? mode)
         {
             return IsPrereleaseChannel(mode);
-        }
-
-        /// <summary>
-        /// Resolves the current application asset key from OS and architecture.
-        /// </summary>
-        private static string ResolveCurrentAppAssetKey()
-        {
-            var os = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                ? "windows"
-                : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-                    ? "linux"
-                    : RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
-                        ? "osx"
-                        : throw new PlatformNotSupportedException("The current OS is not supported by the updater.");
-
-            var architecture = RuntimeInformation.ProcessArchitecture switch
-            {
-                Architecture.X64 => "x64",
-                Architecture.Arm64 => "arm64",
-                Architecture.X86 => "x86",
-                Architecture.Arm => "arm",
-                _ => throw new PlatformNotSupportedException(
-                    $"The current architecture '{RuntimeInformation.ProcessArchitecture}' is not supported by the updater.")
-            };
-
-            return $"{os}-{architecture}";
         }
 
         /// <summary>

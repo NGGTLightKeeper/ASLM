@@ -6,7 +6,8 @@
     },
     "defaultChannel": "release",
     "assets": {
-        "windows-x64": "ASLM-windows-amd64.zip"
+        "windows-amd64": "ASLM-windows-amd64.zip",
+        "windows-arm64": "ASLM-windows-arm64.zip"
     },
     "preserve": [
         ".aslm-update/logs",

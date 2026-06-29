@@ -333,6 +333,10 @@ jobs:
         include:
           - name: windows-amd64
             runs-on: windows-latest
+            rid: win-x64
+          - name: windows-arm64
+            runs-on: windows-11-arm
+            rid: win-arm64
     steps:
       - name: Check out main
         uses: actions/checkout@v7
@@ -358,26 +362,29 @@ jobs:
 
       - name: Build release (Windows; cascades full app + installer bootstrapper)
         if: runner.os == 'Windows'
-        run: dotnet build ASLM/Installer/Installer-Bootstrapper/Installer-Bootstrapper.csproj -c Release -v minimal
+        run: dotnet build ASLM/Installer/Installer-Bootstrapper/Installer-Bootstrapper.csproj -c Release -v minimal -p:RuntimeIdentifier=${{ matrix.rid }}
 
       - name: Package artifacts (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
+        env:
+          ARTIFACT_NAME: ${{ matrix.name }}
         run: |
-          $appDir = "Build/Release/ASLM-windows-amd64"
-          $installer = "Build/Release/ASLM-Installer-windows-amd64.exe"
+          $appName = $env:ARTIFACT_NAME
+          $appDir = "Build/Release/ASLM-$appName"
+          $installer = "Build/Release/ASLM-Installer-$appName.exe"
           if (-not (Test-Path $appDir)) { throw "Build output not found: $appDir" }
           if (-not (Test-Path $installer)) { throw "Installer exe not found: $installer" }
           New-Item -ItemType Directory -Force dist | Out-Null
-          $zip = Join-Path (Get-Location) "dist/ASLM-windows-amd64.zip"
+          $zip = Join-Path (Get-Location) "dist/ASLM-$appName.zip"
           if (Test-Path $zip) { Remove-Item $zip -Force }
-          # Archive root must be the folder itself (ASLM-windows-amd64/...), so pack from its parent.
+          # Archive root must be the folder itself (ASLM-<name>/...), so pack from its parent.
           Push-Location "Build/Release"
-          & 7z a -tzip -mx=5 "$zip" "ASLM-windows-amd64" | Out-Null
+          & 7z a -tzip -mx=5 "$zip" "ASLM-$appName" | Out-Null
           $code = $LASTEXITCODE
           Pop-Location
           if ($code -ne 0) { throw "7z failed with $code" }
-          Copy-Item $installer "dist/ASLM-Installer-windows-amd64.exe" -Force
+          Copy-Item $installer "dist/ASLM-Installer-$appName.exe" -Force
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7

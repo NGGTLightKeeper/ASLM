@@ -3,11 +3,11 @@
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net10.0-windows</TargetFramework>
+		<Platforms>x64;ARM64</Platforms>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AssemblyName>ASLM-Installer</AssemblyName>
 		<RootNamespace>ASLM.Installer.Bootstrapper</RootNamespace>
-		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<SelfContained>true</SelfContained>
 		<PublishSingleFile>true</PublishSingleFile>
 		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
@@ -17,6 +17,7 @@
 		<Version>0.7.1.10</Version>
 		<FileVersion>0.7.1.10</FileVersion>
 		<InformationalVersion>0.7.1.10</InformationalVersion>
+		<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
 	</PropertyGroup>
 
 	<Import Project="..\..\..\ASLM.Build.props" />
@@ -24,9 +25,9 @@
 
 	<PropertyGroup>
 		<ASLMRepoRoot>$(MSBuildThisFileDirectory)..\..\..\</ASLMRepoRoot>
-		<ASLMBootstrapperPublishRoot>$(MSBuildProjectDirectory)\obj\$(Configuration)\bootstrapped-publish\</ASLMBootstrapperPublishRoot>
+		<ASLMBootstrapperPublishRoot>$(MSBuildProjectDirectory)\obj\$(Configuration)\bootstrapped-publish-$(ASLMBuildArch)\</ASLMBootstrapperPublishRoot>
 		<ASLMBootstrapperFinalFile>$(ASLMRepoRoot)Build\$(Configuration)\ASLM-Installer-$(ASLMBuildOs)-$(ASLMBuildArch).exe</ASLMBootstrapperFinalFile>
-		<ASLMInstallerOutputRoot>$(MSBuildThisFileDirectory)..\..\..\Build\$(Configuration)\ASLM-Installer-$(ASLMBuildOs)-$(ASLMBuildArch)\</ASLMInstallerOutputRoot>
+		<ASLMInstallerOutputRoot>$(MSBuildProjectDirectory)\obj\$(Configuration)\installer-ui-publish-$(ASLMBuildArch)\</ASLMInstallerOutputRoot>
 		<ASLMPayloadSourceRoot>$(MSBuildThisFileDirectory)..\..\..\Build\$(Configuration)\ASLM-$(ASLMBuildOs)-$(ASLMBuildArch)\</ASLMPayloadSourceRoot>
 		<ASLMInstallerProject>$(MSBuildThisFileDirectory)..\Installer\Installer.csproj</ASLMInstallerProject>
 		<ASLMPayloadFile>$(MSBuildThisFileDirectory)..\Installer\Resources\Raw\aslm-payload.zip</ASLMPayloadFile>
@@ -39,7 +40,7 @@
 		<ASLMInstallerRuntimeIdentifier Condition="'$(ASLMInstallerRuntimeIdentifier)' == ''">win-x64</ASLMInstallerRuntimeIdentifier>
 		<ASLMInstallerMaxPayloadSizeGB Condition="'$(ASLMInstallerMaxPayloadSizeGB)' == ''">8</ASLMInstallerMaxPayloadSizeGB>
 		<ASLMInstallerAllowLargePayload Condition="'$(ASLMInstallerAllowLargePayload)' == ''">false</ASLMInstallerAllowLargePayload>
-		<OutputPath>$(MSBuildProjectDirectory)\obj\$(Configuration)\installer-bootstrapper-build\</OutputPath>
+		<OutputPath>$(MSBuildProjectDirectory)\obj\$(Configuration)\installer-bootstrapper-build-$(ASLMBuildArch)\</OutputPath>
 		<PublishDir Condition="'$(PublishDir)' == ''">$(ASLMBootstrapperPublishRoot)</PublishDir>
 	</PropertyGroup>
 
@@ -79,10 +80,10 @@
 
 		<MSBuild Projects="$(ASLMInstallerProject)"
 		         Targets="Restore"
-		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);WindowsPackageType=None;MSBuildRestoreSessionId=$([System.Guid]::NewGuid())" />
+		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);WindowsPackageType=None;SelfContained=true;MSBuildRestoreSessionId=$([System.Guid]::NewGuid())" />
 		<MSBuild Projects="$(ASLMInstallerProject)"
 		         Targets="Publish"
-		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);WindowsPackageType=None;ASLMInstallerRequirePayload=true;ASLMSkipPayloadGeneration=true;PublishDir=$(ASLMInstallerOutputRoot)" />
+		         Properties="Configuration=$(Configuration);RuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifier=$(ASLMInstallerRuntimeIdentifier);RestoreRuntimeIdentifiers=$(ASLMInstallerRuntimeIdentifier);TargetFramework=$(ASLMInstallerMauiTargetFramework);WindowsPackageType=None;SelfContained=true;ASLMInstallerRequirePayload=true;ASLMSkipPayloadGeneration=true;PublishDir=$(ASLMInstallerOutputRoot)" />
 
 		<MakeDir Directories="$(ASLMBootstrapperResourceDir)" />
 		<ZipInstallerDirectory SourceDir="$(ASLMInstallerOutputRoot)"

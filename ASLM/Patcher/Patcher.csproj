@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFrameworks>net10.0-windows10.0.19041.0</TargetFrameworks>
+		<Platforms>x64;ARM64</Platforms>
 		<RootNamespace>ASLM.Patcher</RootNamespace>
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
