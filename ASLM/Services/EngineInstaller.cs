@@ -63,13 +63,14 @@ namespace ASLM.Services
                                 if (config.FileVersion == 0)
                                     config.FileVersion = 1;
 
-                                if (config.FileVersion != 1)
+                                if (config.FileVersion != 1 && config.FileVersion != 2)
                                 {
                                     Debug.WriteLine($"Unsupported fileVersion {config.FileVersion} in {jsonFile}, skipping.");
                                     continue;
                                 }
 
                                 config.SourcePath = jsonFile;
+                                config.ResolveForPlatform(PlatformInfo.OsKey, PlatformInfo.ArchKey);
                                 var manifestChanged = BackfillEngineManifestMetadata(config);
 
                                 // Validate that "installed" engines actually have their runtime on disk.
@@ -140,6 +141,12 @@ namespace ASLM.Services
                 return false;
             }
 
+            // Update metadata is platform specific; only backfill the resolved active platform.
+            if (!config.IsSupportedOnCurrentPlatform)
+            {
+                return false;
+            }
+
             var changed = false;
             config.Update ??= new EngineUpdateConfig();
             if (string.IsNullOrWhiteSpace(config.Update.Repo))
@@ -148,10 +155,9 @@ namespace ASLM.Services
                 changed = true;
             }
 
-            config.Update.AssetName ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            if (!config.Update.AssetName.ContainsKey("windows-x64"))
+            if (string.IsNullOrWhiteSpace(config.Update.AssetName))
             {
-                config.Update.AssetName["windows-x64"] = "ollama-windows-amd64.zip";
+                config.Update.AssetName = $"ollama-{config.ActivePlatformKey}.zip";
                 changed = true;
             }
 
@@ -229,6 +235,14 @@ namespace ASLM.Services
         {
             await Task.Run(async () =>
             {
+                // Resolve the active platform block and refuse to install on an unsupported platform.
+                config.ResolveForPlatform(PlatformInfo.OsKey, PlatformInfo.ArchKey);
+                if (!config.IsSupportedOnCurrentPlatform)
+                {
+                    throw new PlatformNotSupportedException(
+                        $"Engine '{config.Name}' does not support {PlatformInfo.PlatformKey}.");
+                }
+
                 // Scoped state; safe for the singleton because only one install runs at a time.
                 var baseDir = GetRootDirectory();
                 var tempDir = Path.Combine(Path.GetTempPath(), "ASLM", config.Id);

@@ -1,6 +1,21 @@
 <Project>
 
 	<PropertyGroup>
+		<ASLMArch Condition="'$(ASLMArch)' == '' and '$(RuntimeIdentifier)' != ''">$([System.Text.RegularExpressions.Regex]::Match('$(RuntimeIdentifier)', '[^-]+$').Value)</ASLMArch>
+		<ASLMArch Condition="'$(ASLMArch)' == '' and ('$(Platform)' == 'ARM64' or '$(Platform)' == 'arm64')">arm64</ASLMArch>
+		<ASLMArch Condition="'$(ASLMArch)' == '' and '$(Platform)' == 'x64'">x64</ASLMArch>
+		<ASLMArch Condition="'$(ASLMArch)' == ''">$([System.Text.RegularExpressions.Regex]::Match('$(NETCoreSdkPortableRuntimeIdentifier)', '[^-]+$').Value)</ASLMArch>
+		<ASLMArch Condition="'$(ASLMArch)' == ''">x64</ASLMArch>
+
+		<ASLMArch Condition="'$(ASLMArch)' == 'amd64' or '$(ASLMArch)' == 'x86_64'">x64</ASLMArch>
+		<ASLMArch Condition="'$(ASLMArch)' == 'aarch64'">arm64</ASLMArch>
+
+		<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$(ASLMArch)</RuntimeIdentifier>
+
+		<GenerateSatelliteAssembliesForCore>true</GenerateSatelliteAssembliesForCore>
+	</PropertyGroup>
+
+	<PropertyGroup>
 		<ASLMTargetFrameworkForBuildPath Condition="'$(TargetFramework)' != ''">$(TargetFramework)</ASLMTargetFrameworkForBuildPath>
 		<ASLMTargetFrameworkForBuildPath Condition="'$(ASLMTargetFrameworkForBuildPath)' == ''">$([System.Text.RegularExpressions.Regex]::Match('$(TargetFrameworks)', '^[^;]+').Value)</ASLMTargetFrameworkForBuildPath>
 

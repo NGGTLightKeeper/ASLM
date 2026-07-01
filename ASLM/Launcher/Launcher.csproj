@@ -3,14 +3,14 @@
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net10.0</TargetFramework>
-		<RuntimeIdentifiers Condition="'$(RuntimeIdentifier)' == '' and '$(RuntimeIdentifiers)' == ''">win-x64</RuntimeIdentifiers>
+		<Platforms>x64;ARM64</Platforms>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
     
 		<AssemblyName>ASLM</AssemblyName>
-		<Version>0.7.1.10</Version>
-		<FileVersion>0.7.1.10</FileVersion>
-		<InformationalVersion>0.7.1.10</InformationalVersion>
+		<Version>0.7.1.12</Version>
+		<FileVersion>0.7.1.12</FileVersion>
+		<InformationalVersion>0.7.1.12</InformationalVersion>
 	</PropertyGroup>
 	
 	<Import Project="..\..\ASLM.Build.props" />

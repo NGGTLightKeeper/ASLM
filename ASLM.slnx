@@ -1,18 +1,37 @@
 <Solution>
-  <Project Path="ASLM/ASLM.csproj" />
+  <Configurations>
+    <Platform Name="AMD64" />
+    <Platform Name="ARM64" />
+  </Configurations>
+  <Project Path="ASLM/ASLM.csproj">
+    <Platform Solution="*|AMD64" Project="x64" />
+    <Platform Solution="*|ARM64" Project="ARM64" />
+  </Project>
   <Project Path="ASLM/Tests/ASLM.Tests.csproj">
+    <Build Solution="Debug|ARM64" Project="false" />
+    <Build Solution="Release|AMD64" Project="false" />
+    <Build Solution="Release|ARM64" Project="false" />
     <BuildDependency Project="ASLM/ASLM.csproj" />
   </Project>
   <Project Path="ASLM/Installer/Installer/Installer.csproj">
-    <Build Solution="Debug|Any CPU" Project="false" />
+    <Platform Solution="*|AMD64" Project="x64" />
+    <Platform Solution="*|ARM64" Project="ARM64" />
     <BuildDependency Project="ASLM/Launcher/Launcher.csproj" />
   </Project>
   <Project Path="ASLM/Installer/Installer-Bootstrapper/Installer-Bootstrapper.csproj">
-    <Build Solution="Debug|Any CPU" Project="false" />
+    <Platform Solution="*|AMD64" Project="x64" />
+    <Platform Solution="*|ARM64" Project="ARM64" />
+    <Build Solution="Debug|AMD64" Project="false" />
+    <Build Solution="Debug|ARM64" Project="false" />
     <BuildDependency Project="ASLM/Installer/Installer/Installer.csproj" />
   </Project>
-  <Project Path="ASLM/Patcher/Patcher.csproj" />
+  <Project Path="ASLM/Patcher/Patcher.csproj">
+    <Platform Solution="*|AMD64" Project="x64" />
+    <Platform Solution="*|ARM64" Project="ARM64" />
+  </Project>
   <Project Path="ASLM/Launcher/Launcher.csproj" Id="ea771c0c-e673-4e08-9116-326070460555">
+    <Platform Solution="*|AMD64" Project="x64" />
+    <Platform Solution="*|ARM64" Project="ARM64" />
     <BuildDependency Project="ASLM/ASLM.csproj" />
     <BuildDependency Project="ASLM/Patcher/Patcher.csproj" />
   </Project>

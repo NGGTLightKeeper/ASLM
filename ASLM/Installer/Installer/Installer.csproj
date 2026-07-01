@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>net10.0-windows10.0.19041.0</TargetFrameworks>
+		<Platforms>x64;ARM64</Platforms>
 		<OutputType>WinExe</OutputType>
 		<RootNamespace>ASLM.Installer</RootNamespace>
 		<UseMaui>true</UseMaui>
@@ -12,7 +13,7 @@
 		<ApplicationTitle>ASLM Installer</ApplicationTitle>
 		<ApplicationId>com.companyname.aslm.installer</ApplicationId>
 		<ApplicationDisplayVersion>0.7.1</ApplicationDisplayVersion>
-		<ApplicationVersion>10</ApplicationVersion>
+		<ApplicationVersion>12</ApplicationVersion>
 		<WindowsPackageType>None</WindowsPackageType>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
@@ -21,9 +22,11 @@
 	<Import Project="..\..\..\ASLM.Build.props" />
 	<Import Project="..\Build\Installer.Build.targets" />
 
+	<PropertyGroup Condition="'$(Configuration)' == 'Release' and '$(SelfContained)' == ''">
+		<SelfContained>true</SelfContained>
+	</PropertyGroup>
+
 	<PropertyGroup>
-		<ASLMInstallerOutputRoot>$(MSBuildThisFileDirectory)..\..\..\Build\$(Configuration)\ASLM-Installer-$(ASLMBuildOs)-$(ASLMBuildArch)\</ASLMInstallerOutputRoot>
-		<OutputPath>$(ASLMInstallerOutputRoot)</OutputPath>
 		<ASLMLegalSourceDir>$(MSBuildProjectDirectory)\..\Legal</ASLMLegalSourceDir>
 		<ASLMLegalOutputFile>$(MSBuildProjectDirectory)\Resources\Raw\legal-documents.json</ASLMLegalOutputFile>
 		<ASLMPayloadFile>$(MSBuildProjectDirectory)\Resources\Raw\aslm-payload.zip</ASLMPayloadFile>
@@ -35,7 +38,8 @@
 	<ItemGroup>
 		<MauiIcon Include="..\..\Resources\AppIcon\appicon.svg" ForegroundFile="..\..\Resources\AppIcon\appiconfg.svg" Color="#17171a" />
 		<MauiSplashScreen Include="..\..\Resources\Splash\splash.svg" Color="#17171a" BaseSize="128,128" />
-		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+		<MauiAsset Include="Resources\Raw\**" Exclude="Resources\Raw\legal-documents.json" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+		<MauiAsset Include="Resources\Raw\legal-documents.json" LogicalName="legal-documents.json" />
 	</ItemGroup>
 
 	<ItemGroup>
