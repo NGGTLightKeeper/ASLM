@@ -85,7 +85,7 @@
         "install": [
             {
                 "action": "download",
-                "url": "https://nodejs.org/dist/v25.6.1/node-v25.6.1-win-arm64.zip",
+                "url": "https://nodejs.org/dist/v25.6.1/node-v25.6.1-win-x64.zip",
                 "dest": "{temp}/node.zip"
             },
             {
@@ -95,7 +95,7 @@
             },
             {
                 "action": "move",
-                "source": "{temp}/node-extract/node-v25.6.1-win-arm64",
+                "source": "{temp}/node-extract/node-v25.6.1-win-x64",
                 "dest": "Engines/NodeJS/runtime"
             },
             {

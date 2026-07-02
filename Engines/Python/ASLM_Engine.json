@@ -93,7 +93,7 @@
         "install": [
             {
                 "action": "download",
-                "url": "https://www.python.org/ftp/python/3.12.8/python-3.12.8-embed-arm64.zip",
+                "url": "https://www.python.org/ftp/python/3.12.8/python-3.12.8-embed-amd64.zip",
                 "dest": "{temp}/python-embed.zip",
                 "sha256": ""
             },
