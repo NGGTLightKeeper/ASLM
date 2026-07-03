@@ -635,6 +635,7 @@ namespace ASLM.Services
                     FileName = exePath,
                     Arguments = args,
                     WorkingDirectory = Path.GetDirectoryName(module.SourcePath) ?? "",
+                    RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -650,6 +651,7 @@ namespace ASLM.Services
                     log.Report($"✗ Failed to start package manager for {engineDep.Id}");
                     return false;
                 }
+                process.StandardInput.Close();
 
                 var sessionHandle = _consoleStore.StartProcessSession(
                     module,
@@ -779,6 +781,7 @@ namespace ASLM.Services
                     FileName = fileName,
                     Arguments = arguments,
                     WorkingDirectory = moduleDir,
+                    RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -808,6 +811,7 @@ namespace ASLM.Services
                     process.Dispose();
                     return false;
                 }
+                process.StandardInput.Close();
 
                 var sessionHandle = _consoleStore.StartProcessSession(
                     module,

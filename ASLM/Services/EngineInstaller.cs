@@ -599,6 +599,7 @@ namespace ASLM.Services
                 FileName = exePath,
                 Arguments = arguments,
                 WorkingDirectory = ctx.BaseDir,
+                RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -613,6 +614,7 @@ namespace ASLM.Services
 
             using var process = new Process { StartInfo = psi };
             process.Start();
+            process.StandardInput.Close();
 
             // Stream stdout / stderr in parallel.
             var stdoutTask = Task.Run(async () =>
