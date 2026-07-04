@@ -3,6 +3,9 @@
 using ASLM.Pages;
 using ASLM.Services;
 using Microsoft.Extensions.Logging;
+#if WINDOWS
+using Microsoft.Maui.Handlers;
+#endif
 
 namespace ASLM
 {
@@ -95,10 +98,38 @@ namespace ASLM
             builder.Services.AddTransient<SettingsView>();
             builder.Services.AddTransient<ModuleUpdateView>();
 
+#if WINDOWS
+            ConfigureWindowsCompactControlSizing();
+#endif
+
             var app = builder.Build();
             var localization = app.Services.GetRequiredService<AppLocalizationService>();
             Localization.L.Initialize(localization);
             return app;
         }
+
+#if WINDOWS
+        // Windows control sizing
+
+        /// <summary>
+        /// Removes WinUI default minimum sizes and inner padding so compact checkboxes render centered.
+        /// </summary>
+        private static void ConfigureWindowsCompactControlSizing()
+        {
+            CheckBoxHandler.Mapper.AppendToMapping("CompactWindowsCheckBox", (handler, view) =>
+            {
+                handler.PlatformView.MinWidth = 16;
+                handler.PlatformView.MinHeight = 16;
+                handler.PlatformView.Padding = new Microsoft.UI.Xaml.Thickness(0);
+            });
+
+            SwitchHandler.Mapper.AppendToMapping("CompactWindowsSwitch", (handler, view) =>
+            {
+                handler.PlatformView.MinWidth = 16;
+                handler.PlatformView.MinHeight = 16;
+                handler.PlatformView.Padding = new Microsoft.UI.Xaml.Thickness(0);
+            });
+        }
+#endif
     }
 }
