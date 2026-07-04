@@ -77,6 +77,8 @@ public sealed class ProcessSnapshotReader
         }
 
         return entries;
+#elif MACCATALYST
+        return MacProcessSnapshot.Capture();
 #else
         return [];
 #endif

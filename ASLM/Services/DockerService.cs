@@ -21,7 +21,8 @@ namespace ASLM.Services
         /// <summary>
         /// Returns whether Docker CLI checks apply on the current operating system.
         /// </summary>
-        public bool IsCheckRequiredOnThisPlatform() => OperatingSystem.IsWindows();
+        public bool IsCheckRequiredOnThisPlatform() =>
+            OperatingSystem.IsWindows() || OperatingSystem.IsMacCatalyst() || OperatingSystem.IsMacOS();
 
         /// <summary>
         /// Returns whether <c>docker</c> is available on PATH. Does not require a running daemon.
@@ -82,7 +83,7 @@ namespace ASLM.Services
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "docker",
+                    FileName = ResolveDockerExecutable(),
                     Arguments = arguments,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -123,6 +124,34 @@ namespace ASLM.Services
             }
 
             return (process.ExitCode, stdoutTask.GetAwaiter().GetResult(), stderrTask.GetAwaiter().GetResult());
+        }
+
+        /// <summary>
+        /// Returns the docker executable, checking known install locations that a GUI process PATH misses on macOS.
+        /// </summary>
+        private static string ResolveDockerExecutable()
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return "docker";
+            }
+
+            string[] candidates =
+            [
+                "/usr/local/bin/docker",
+                "/opt/homebrew/bin/docker",
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".docker", "bin", "docker")
+            ];
+
+            foreach (var candidate in candidates)
+            {
+                if (File.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return "docker";
         }
     }
 }

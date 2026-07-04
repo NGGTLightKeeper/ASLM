@@ -2704,6 +2704,20 @@ namespace ASLM.Pages
         /// </summary>
         private double SampleSystemCpu(DateTimeOffset capturedUtc)
         {
+#if MACCATALYST
+            if (!MacSystemMetrics.TryGetSystemCpuTimes(out var idleTicks, out var kernelTicks, out var userTicks))
+            {
+                return 0;
+            }
+
+            var currentSample = new HomeSystemCpuSample
+            {
+                TimestampUtc = capturedUtc,
+                IdleTime = idleTicks,
+                KernelTime = kernelTicks,
+                UserTime = userTicks
+            };
+#else
             if (!GetSystemTimes(out var idleTime, out var kernelTime, out var userTime))
             {
                 return 0;
@@ -2716,6 +2730,7 @@ namespace ASLM.Pages
                 KernelTime = ToUInt64(kernelTime),
                 UserTime = ToUInt64(userTime)
             };
+#endif
 
             if (_lastSystemCpuSample == null)
             {
@@ -2807,6 +2822,9 @@ namespace ASLM.Pages
         /// </summary>
         private static HomeDiskStats QueryDiskStats()
         {
+#if MACCATALYST
+            return MacSystemMetrics.SampleDiskStats();
+#else
             try
             {
                 using var searcher = new ManagementObjectSearcher(
@@ -2835,6 +2853,7 @@ namespace ASLM.Pages
             }
 
             return new HomeDiskStats();
+#endif
         }
 
         /// <summary>
@@ -2842,6 +2861,9 @@ namespace ASLM.Pages
         /// </summary>
         private static HomeGpuQueryResult QueryGpuUsage()
         {
+#if MACCATALYST
+            return MacSystemMetrics.QueryGpuUsage();
+#else
             var samples = new List<HomeGpuEngineSample>();
             var adapterNames = QueryGpuAdapterNames();
 
@@ -2891,6 +2913,7 @@ namespace ASLM.Pages
                 AdapterNames = adapterNames,
                 Samples = samples
             };
+#endif
         }
 
         /// <summary>
@@ -2991,10 +3014,17 @@ namespace ASLM.Pages
 
             var trackedProcessIds = processIds.ToHashSet();
 
+#if MACCATALYST
+            foreach (var pair in MacSystemMetrics.CountProcessSockets(trackedProcessIds))
+            {
+                counts[pair.Key] = pair.Value;
+            }
+#else
             IncrementCountsFromTcpTable(counts, trackedProcessIds, AddressFamily.InterNetwork);
             IncrementCountsFromTcpTable(counts, trackedProcessIds, AddressFamily.InterNetworkV6);
             IncrementCountsFromUdpTable(counts, trackedProcessIds, AddressFamily.InterNetwork);
             IncrementCountsFromUdpTable(counts, trackedProcessIds, AddressFamily.InterNetworkV6);
+#endif
 
             return counts;
         }
@@ -3199,6 +3229,9 @@ namespace ASLM.Pages
         /// </summary>
         private static HomeMemoryStatus GetMemoryStatus()
         {
+#if MACCATALYST
+            return MacSystemMetrics.GetMemoryStatus();
+#else
             var status = new MemoryStatusEx();
             if (!GlobalMemoryStatusEx(status))
             {
@@ -3210,6 +3243,7 @@ namespace ASLM.Pages
                 TotalPhysicalBytes = unchecked((long)status.TotalPhys),
                 UsedPhysicalBytes = unchecked((long)(status.TotalPhys - status.AvailPhys))
             };
+#endif
         }
 
         /// <summary>
@@ -3217,9 +3251,18 @@ namespace ASLM.Pages
         /// </summary>
         private static IoCounters GetProcessIoCountersSafe(Process process)
         {
+#if MACCATALYST
+            var (readBytes, writeBytes) = MacSystemMetrics.GetProcessDiskIo(process.Id);
+            return new IoCounters
+            {
+                ReadTransferCount = readBytes,
+                WriteTransferCount = writeBytes
+            };
+#else
             return GetProcessIoCounters(process.Handle, out var ioCounters)
                 ? ioCounters
                 : default;
+#endif
         }
 
         /// <summary>

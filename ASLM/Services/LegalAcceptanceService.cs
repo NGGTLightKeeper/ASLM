@@ -286,8 +286,7 @@ namespace ASLM.Services
         /// </summary>
         private static string GetRootDirectory()
         {
-            var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
-            return Directory.GetParent(appDir)?.FullName ?? appDir;
+            return AppRoot.Directory;
         }
     }
 }

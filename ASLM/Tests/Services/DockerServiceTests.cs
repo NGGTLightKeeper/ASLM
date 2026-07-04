@@ -11,6 +11,7 @@ public sealed class DockerServiceTests
     {
         var service = new DockerService();
 
-        service.IsCheckRequiredOnThisPlatform().Should().Be(OperatingSystem.IsWindows());
+        service.IsCheckRequiredOnThisPlatform().Should().Be(
+            OperatingSystem.IsWindows() || OperatingSystem.IsMacCatalyst() || OperatingSystem.IsMacOS());
     }
 }

@@ -11,9 +11,9 @@
 		<Nullable>enable</Nullable>
 		<AssemblyName>ASLM Patcher</AssemblyName>
 		<ApplicationTitle>ASLM Patcher</ApplicationTitle>
-		<ApplicationId>com.companyname.aslm.patcher</ApplicationId>
-		<ApplicationDisplayVersion>0.7.1</ApplicationDisplayVersion>
-		<ApplicationVersion>16</ApplicationVersion>
+		<ApplicationId>com.nextggtech.aslm.patcher</ApplicationId>
+		<ApplicationDisplayVersion>0.7.2</ApplicationDisplayVersion>
+		<ApplicationVersion>4</ApplicationVersion>
 		<WindowsPackageType>None</WindowsPackageType>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
@@ -28,6 +28,14 @@
 	<PropertyGroup>
 		<OutputPath>$(ASLMBuildOutputRoot)Patcher\</OutputPath>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="Patcher-Cli\**" />
+		<None Remove="Patcher-Cli\**" />
+		<Content Remove="Patcher-Cli\**" />
+		<EmbeddedResource Remove="Patcher-Cli\**" />
+		<MauiXaml Remove="Patcher-Cli\**" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<MauiIcon Include="..\Resources\AppIcon\appicon.svg" ForegroundFile="..\Resources\AppIcon\appiconfg.svg" Color="#17171a" />
