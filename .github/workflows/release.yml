@@ -395,12 +395,25 @@ jobs:
         if: runner.os == 'macOS'
         run: dotnet workload install maui-maccatalyst || dotnet workload install maui
 
+      - name: Select Xcode 26 (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          set -euo pipefail
+          # ASLM.csproj pins the Catalyst 26.0 SDK band; select a matching Xcode 26.0.x
+          # (runner default is 16.4, which the .NET 10 Catalyst SDK rejects).
+          XCODE=$(ls -d /Applications/Xcode_26.0*.app 2>/dev/null | sort -V | tail -1 || true)
+          if [ -z "$XCODE" ]; then XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1); fi
+          echo "Selecting $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
       - name: Build release (macOS; universal Mac Catalyst .app)
         if: runner.os == 'macOS'
         run: |
           set -euo pipefail
-          # RuntimeIdentifiers defaults to maccatalyst-x64;maccatalyst-arm64 in ASLM.csproj (universal).
-          dotnet publish ASLM/ASLM.csproj -f net10.0-maccatalyst -c Release -v minimal -p:EnableCodeSigning=false
+          # Single Catalyst TFM (net10.0-maccatalyst26.0) is defined in ASLM.csproj;
+          # RuntimeIdentifiers defaults to maccatalyst-x64;maccatalyst-arm64 there (universal).
+          dotnet publish ASLM/ASLM.csproj -c Release -v minimal -p:EnableCodeSigning=false
           APP=$(find Build/Release/ASLM-macos -type d -name "*.app" | head -1)
           if [[ -z "$APP" ]]; then echo "No .app bundle found under Build/Release/ASLM-macos" >&2; exit 1; fi
           echo "APP_BUNDLE=$APP" >> "$GITHUB_ENV"
