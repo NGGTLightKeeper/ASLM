@@ -1308,12 +1308,6 @@
   <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
     <value>Pilih nama tampilan</value>
   </data>
-  <data name="SetupWizard_DockerDescription" xml:space="preserve">
-    <value>ASLM memerlukan Docker CLI. Pasang Docker Desktop, lalu ketuk Berikutnya</value>
-  </data>
-  <data name="SetupWizard_DockerTitle" xml:space="preserve">
-    <value>Pasang Docker Desktop</value>
-  </data>
   <data name="SetupWizard_Failed" xml:space="preserve">
     <value>Instalasi gagal</value>
   </data>
@@ -1328,9 +1322,6 @@
   </data>
   <data name="SetupWizard_HideLog" xml:space="preserve">
     <value>Sembunyikan Log</value>
-  </data>
-  <data name="SetupWizard_InstallDocker" xml:space="preserve">
-    <value>Pasang Docker</value>
   </data>
   <data name="SetupWizard_Installing" xml:space="preserve">
     <value>Memasang...</value>
@@ -1364,9 +1355,6 @@
   </data>
   <data name="SetupWizard_StepFormat" xml:space="preserve">
     <value>Langkah {0} dari {1} - {2}</value>
-  </data>
-  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
-    <value>Docker Desktop</value>
   </data>
   <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
     <value>Pemilihan Modul</value>

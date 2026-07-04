@@ -46,7 +46,6 @@ namespace ASLM
             // Service registrations
             builder.Services.AddSingleton<AppDataStore>();
             builder.Services.AddSingleton<LegalAcceptanceService>();
-            builder.Services.AddSingleton<DockerService>();
             builder.Services.AddSingleton<EngineInstaller>();
             builder.Services.AddSingleton<ModuleEnvironmentResolver>();
             builder.Services.AddSingleton<ModuleTrustService>();

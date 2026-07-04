@@ -1308,12 +1308,6 @@
   <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
     <value>選擇顯示名稱</value>
   </data>
-  <data name="SetupWizard_DockerDescription" xml:space="preserve">
-    <value>ASLM 需要 Docker CLI。請安裝 Docker Desktop，然後點選下一步</value>
-  </data>
-  <data name="SetupWizard_DockerTitle" xml:space="preserve">
-    <value>安裝 Docker Desktop</value>
-  </data>
   <data name="SetupWizard_Failed" xml:space="preserve">
     <value>安裝失敗</value>
   </data>
@@ -1328,9 +1322,6 @@
   </data>
   <data name="SetupWizard_HideLog" xml:space="preserve">
     <value>隱藏記錄</value>
-  </data>
-  <data name="SetupWizard_InstallDocker" xml:space="preserve">
-    <value>安裝 Docker</value>
   </data>
   <data name="SetupWizard_Installing" xml:space="preserve">
     <value>正在安裝...</value>
@@ -1364,9 +1355,6 @@
   </data>
   <data name="SetupWizard_StepFormat" xml:space="preserve">
     <value>步驟 {0} / {1} - {2}</value>
-  </data>
-  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
-    <value>Docker Desktop</value>
   </data>
   <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
     <value>模組選取</value>

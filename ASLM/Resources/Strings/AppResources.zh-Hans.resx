@@ -1308,12 +1308,6 @@
   <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
     <value>选择显示名称</value>
   </data>
-  <data name="SetupWizard_DockerDescription" xml:space="preserve">
-    <value>ASLM 需要 Docker CLI。请安装 Docker Desktop，然后点击下一步</value>
-  </data>
-  <data name="SetupWizard_DockerTitle" xml:space="preserve">
-    <value>安装 Docker Desktop</value>
-  </data>
   <data name="SetupWizard_Failed" xml:space="preserve">
     <value>安装失败</value>
   </data>
@@ -1328,9 +1322,6 @@
   </data>
   <data name="SetupWizard_HideLog" xml:space="preserve">
     <value>隐藏日志</value>
-  </data>
-  <data name="SetupWizard_InstallDocker" xml:space="preserve">
-    <value>安装 Docker</value>
   </data>
   <data name="SetupWizard_Installing" xml:space="preserve">
     <value>正在安装...</value>
@@ -1364,9 +1355,6 @@
   </data>
   <data name="SetupWizard_StepFormat" xml:space="preserve">
     <value>第 {0} 步，共 {1} 步 - {2}</value>
-  </data>
-  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
-    <value>Docker Desktop</value>
   </data>
   <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
     <value>模块选择</value>

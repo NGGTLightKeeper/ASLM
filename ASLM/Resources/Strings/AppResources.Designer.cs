@@ -3951,24 +3951,6 @@ namespace ASLM.Resources.Strings {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на ASLM needs the Docker CLI. Install Docker Desktop, then tap Next.
-        /// </summary>
-        public static string SetupWizard_DockerDescription {
-            get {
-                return ResourceManager.GetString("SetupWizard_DockerDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Ищет локализованную строку, похожую на Install Docker Desktop.
-        /// </summary>
-        public static string SetupWizard_DockerTitle {
-            get {
-                return ResourceManager.GetString("SetupWizard_DockerTitle", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Ищет локализованную строку, похожую на Installation failed.
         /// </summary>
         public static string SetupWizard_Failed {
@@ -4010,15 +3992,6 @@ namespace ASLM.Resources.Strings {
         public static string SetupWizard_HideLog {
             get {
                 return ResourceManager.GetString("SetupWizard_HideLog", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Ищет локализованную строку, похожую на Install Docker.
-        /// </summary>
-        public static string SetupWizard_InstallDocker {
-            get {
-                return ResourceManager.GetString("SetupWizard_InstallDocker", resourceCulture);
             }
         }
         
@@ -4109,15 +4082,6 @@ namespace ASLM.Resources.Strings {
         public static string SetupWizard_ShowLog {
             get {
                 return ResourceManager.GetString("SetupWizard_ShowLog", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Ищет локализованную строку, похожую на Docker Desktop.
-        /// </summary>
-        public static string SetupWizard_Step_DockerDesktop {
-            get {
-                return ResourceManager.GetString("SetupWizard_Step_DockerDesktop", resourceCulture);
             }
         }
         

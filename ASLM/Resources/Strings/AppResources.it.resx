@@ -1308,12 +1308,6 @@
   <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
     <value>Scegli un nome visualizzato</value>
   </data>
-  <data name="SetupWizard_DockerDescription" xml:space="preserve">
-    <value>ASLM richiede la CLI Docker. Installa Docker Desktop, quindi fai clic su Avanti</value>
-  </data>
-  <data name="SetupWizard_DockerTitle" xml:space="preserve">
-    <value>Installa Docker Desktop</value>
-  </data>
   <data name="SetupWizard_Failed" xml:space="preserve">
     <value>Installazione non riuscita</value>
   </data>
@@ -1328,9 +1322,6 @@
   </data>
   <data name="SetupWizard_HideLog" xml:space="preserve">
     <value>Nascondi log</value>
-  </data>
-  <data name="SetupWizard_InstallDocker" xml:space="preserve">
-    <value>Installa Docker</value>
   </data>
   <data name="SetupWizard_Installing" xml:space="preserve">
     <value>Installazione...</value>
@@ -1364,9 +1355,6 @@
   </data>
   <data name="SetupWizard_StepFormat" xml:space="preserve">
     <value>Passaggio {0} di {1} - {2}</value>
-  </data>
-  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
-    <value>Docker Desktop</value>
   </data>
   <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
     <value>Selezione moduli</value>
