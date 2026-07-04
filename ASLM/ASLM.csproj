@@ -178,7 +178,7 @@
 	  </EmbeddedResource>
 	</ItemGroup>
 	
-	<Target Name="GenerateAslmLegalDocuments" BeforeTargets="BeforeBuild">
+	<Target Name="GenerateAslmLegalDocuments" BeforeTargets="BeforeBuild;_CollectBundleResources;CollectBundleResources">
 		<GenerateInstallerLegalDocuments SourceDir="$(ASLMLegalSourceDir)"
 		                                OutputFile="$(ASLMLegalOutputFile)" />
 	</Target>
