@@ -411,9 +411,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           set -euo pipefail
-          # Single Catalyst TFM (net10.0-maccatalyst26.0) is defined in ASLM.csproj;
-          # RuntimeIdentifiers defaults to maccatalyst-x64;maccatalyst-arm64 there (universal).
-          dotnet publish ASLM/ASLM.csproj -c Release -v minimal -p:EnableCodeSigning=false
+          dotnet publish ASLM/ASLM.csproj -f net10.0-maccatalyst26.0 -c Release -v minimal -p:EnableCodeSigning=false
           APP=$(find Build/Release/ASLM-macos -type d -name "*.app" | head -1)
           if [[ -z "$APP" ]]; then echo "No .app bundle found under Build/Release/ASLM-macos" >&2; exit 1; fi
           echo "APP_BUNDLE=$APP" >> "$GITHUB_ENV"
