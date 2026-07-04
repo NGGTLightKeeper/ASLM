@@ -716,7 +716,7 @@ namespace ASLM.Services
             var workDir = Path.Combine(rootDir, UpdateWorkDirName);
             var stagingRoot = Path.Combine(workDir, "staging", SanitizeFileName(candidate.RemoteVersion));
             var extractDir = Path.Combine(stagingRoot, "extract");
-            var archivePath = Path.Combine(stagingRoot, "download.zip");
+            var archivePath = Path.Combine(stagingRoot, GetArchiveFileName(candidate.DownloadUrl, "download"));
             var backupPath = Path.Combine(workDir, "backup", DateTime.UtcNow.ToString("yyyyMMddHHmmss"));
 
             TryDeleteDirectory(stagingRoot);
@@ -741,13 +741,16 @@ namespace ASLM.Services
                     return ResolveSinglePayloadDirectory(extractDir);
                 }, ct);
 
+                // On macOS the payload is the new .app bundle and user data lives outside it,
+                // so the swap targets the bundle and nothing needs preserving.
+                var macBundleRoot = MacBundleLocator.FindBundleRoot();
                 var pending = new PendingAppUpdate
                 {
                     Version = candidate.RemoteVersion,
                     StagingPath = payloadDir,
-                    TargetRoot = rootDir,
+                    TargetRoot = macBundleRoot ?? rootDir,
                     BackupPath = backupPath,
-                    Preserve = source.Preserve,
+                    Preserve = macBundleRoot != null ? [] : source.Preserve,
                     CreatedUtc = DateTime.UtcNow.ToString("o")
                 };
 
@@ -947,7 +950,7 @@ namespace ASLM.Services
                 "engines",
                 engine.Id,
                 Guid.NewGuid().ToString("N"));
-            var archivePath = Path.Combine(updateRoot, "engine.zip");
+            var archivePath = Path.Combine(updateRoot, GetArchiveFileName(candidate.DownloadUrl, "engine"));
             List<string>? enabledModuleSourcePaths = null;
             var modulesWereStopped = false;
 
@@ -983,6 +986,8 @@ namespace ASLM.Services
 
                     ExtractZipSafe(archivePath, runtimeDir);
                 }, ct);
+
+                EngineInstaller.EnsureExecutablePermission(engine);
 
                 var installedTag = candidate.ReleaseTag ?? candidate.RemoteVersion;
                 engine.Status.Installed = true;
@@ -1968,10 +1973,35 @@ namespace ASLM.Services
         // File system helpers
 
         /// <summary>
-        /// Extracts one ZIP archive and rejects entries that escape the target directory.
+        /// Keeps the source archive extension so extraction can pick zip or tar handling.
+        /// </summary>
+        private static string GetArchiveFileName(string? downloadUrl, string baseName)
+        {
+            var url = downloadUrl ?? string.Empty;
+            if (url.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase))
+            {
+                return baseName + ".tar.gz";
+            }
+
+            if (url.EndsWith(".tgz", StringComparison.OrdinalIgnoreCase))
+            {
+                return baseName + ".tgz";
+            }
+
+            return baseName + ".zip";
+        }
+
+        /// <summary>
+        /// Extracts one ZIP or tar.gz archive and rejects entries that escape the target directory.
         /// </summary>
         private static void ExtractZipSafe(string zipPath, string destination)
         {
+            if (ArchiveExtractor.IsTarArchive(zipPath))
+            {
+                ArchiveExtractor.ExtractToDirectory(zipPath, destination);
+                return;
+            }
+
             Directory.CreateDirectory(destination);
             var destinationPrefix = EnsureTrailingSeparator(Path.GetFullPath(destination));
 
@@ -2414,8 +2444,7 @@ namespace ASLM.Services
         /// </summary>
         private static string GetRootDirectory()
         {
-            var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
-            return Directory.GetParent(appDir)?.FullName ?? appDir;
+            return AppRoot.Directory;
         }
 
 

@@ -10,7 +10,7 @@
 		<ASLMArch Condition="'$(ASLMArch)' == 'amd64' or '$(ASLMArch)' == 'x86_64'">x64</ASLMArch>
 		<ASLMArch Condition="'$(ASLMArch)' == 'aarch64'">arm64</ASLMArch>
 
-		<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$(ASLMArch)</RuntimeIdentifier>
+		<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('windows'))">win-$(ASLMArch)</RuntimeIdentifier>
 
 		<GenerateSatelliteAssembliesForCore>true</GenerateSatelliteAssembliesForCore>
 	</PropertyGroup>
@@ -37,6 +37,7 @@
 		<ASLMBuildOs Condition="'$(ASLMBuildOs)' == '' and '$(ASLMBuildOsRaw)' == 'linux'">linux</ASLMBuildOs>
 		<ASLMBuildOs Condition="'$(ASLMBuildOs)' == '' and '$(ASLMBuildOsRaw)' == 'osx'">macos</ASLMBuildOs>
 		<ASLMBuildOs Condition="'$(ASLMBuildOs)' == '' and '$(ASLMBuildOsRaw)' == 'macos'">macos</ASLMBuildOs>
+		<ASLMBuildOs Condition="'$(ASLMBuildOs)' == '' and '$(ASLMBuildOsRaw)' == 'maccatalyst'">macos</ASLMBuildOs>
 		<ASLMBuildOs Condition="'$(ASLMBuildOs)' == ''">$(ASLMBuildOsRaw)</ASLMBuildOs>
 
 		<ASLMBuildArch Condition="'$(ASLMBuildArchRaw)' == 'x64' or '$(ASLMBuildArchRaw)' == 'amd64'">amd64</ASLMBuildArch>
@@ -45,7 +46,11 @@
 		<ASLMBuildArch Condition="'$(ASLMBuildArch)' == '' and '$(ASLMBuildArchRaw)' == 'arm'">arm</ASLMBuildArch>
 		<ASLMBuildArch Condition="'$(ASLMBuildArch)' == ''">$(ASLMBuildArchRaw)</ASLMBuildArch>
 
-		<ASLMBuildOutputRoot>$(MSBuildThisFileDirectory)Build\$(Configuration)\ASLM-$(ASLMBuildOs)-$(ASLMBuildArch)\</ASLMBuildOutputRoot>
+		<!-- macOS ships one universal (x64+arm64) build, so its artifact name carries no arch suffix. -->
+		<ASLMBuildArtifactName Condition="'$(ASLMBuildOs)' == 'macos'">ASLM-macos</ASLMBuildArtifactName>
+		<ASLMBuildArtifactName Condition="'$(ASLMBuildArtifactName)' == ''">ASLM-$(ASLMBuildOs)-$(ASLMBuildArch)</ASLMBuildArtifactName>
+
+		<ASLMBuildOutputRoot>$(MSBuildThisFileDirectory)Build\$(Configuration)\$(ASLMBuildArtifactName)\</ASLMBuildOutputRoot>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>

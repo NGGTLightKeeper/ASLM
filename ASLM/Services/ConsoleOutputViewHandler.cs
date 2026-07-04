@@ -1,5 +1,6 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
+#if WINDOWS
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Handlers;
@@ -732,3 +733,4 @@ namespace ASLM.Services
         }
     }
 }
+#endif

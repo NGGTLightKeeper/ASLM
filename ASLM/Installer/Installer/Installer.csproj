@@ -11,7 +11,7 @@
 		<Nullable>enable</Nullable>
 		<AssemblyName>ASLM-Installer</AssemblyName>
 		<ApplicationTitle>ASLM Installer</ApplicationTitle>
-		<ApplicationId>com.companyname.aslm.installer</ApplicationId>
+		<ApplicationId>com.nextggtech.aslm.installer</ApplicationId>
 		<ApplicationDisplayVersion>0.7.1</ApplicationDisplayVersion>
 		<ApplicationVersion>16</ApplicationVersion>
 		<WindowsPackageType>None</WindowsPackageType>

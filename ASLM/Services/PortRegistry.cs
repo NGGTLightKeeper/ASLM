@@ -56,9 +56,7 @@ namespace ASLM.Services
         {
             _appData = appData;
 
-            var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
-            var rootDir = Directory.GetParent(appDir)?.FullName ?? appDir;
-            _portMapPath = Path.Combine(rootDir, "Data", "App", "ASLM_Ports.json");
+            _portMapPath = Path.Combine(AppRoot.Directory, "Data", "App", "ASLM_Ports.json");
         }
 
 
@@ -482,9 +480,7 @@ namespace ASLM.Services
 
             _lastOrphanCleanupUtc = now;
 
-            var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
-            var rootDir = Directory.GetParent(appDir)?.FullName ?? appDir;
-            var modulesRoot = Path.Combine(rootDir, "Modules");
+            var modulesRoot = Path.Combine(AppRoot.Directory, "Modules");
 
             if (!Directory.Exists(modulesRoot))
             {

@@ -489,6 +489,10 @@ namespace ASLM.Services
         /// </summary>
         public static void StartLauncherForApplicationRestart()
         {
+#if MACCATALYST
+            MacAppRelauncher.StartDetachedRelaunch();
+            return;
+#else
             var root = ResolveInstallRoot();
             var launcherPath = Path.Combine(root, "ASLM.exe");
             if (!File.Exists(launcherPath))
@@ -525,6 +529,7 @@ namespace ASLM.Services
             {
                 throw new InvalidOperationException("ASLM launcher did not start.");
             }
+#endif
         }
 
         /// <summary>

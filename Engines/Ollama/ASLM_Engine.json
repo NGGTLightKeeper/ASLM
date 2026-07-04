@@ -15,6 +15,16 @@
             "os": "windows",
             "arch": "arm64",
             "key": "windows-arm64"
+        },
+        {
+            "os": "macos",
+            "arch": "arm64",
+            "key": "macos-arm64"
+        },
+        {
+            "os": "macos",
+            "arch": "amd64",
+            "key": "macos-amd64"
         }
     ],
     "windows-amd64": {
@@ -75,6 +85,66 @@
         "update": {
             "repo": "ollama/ollama",
             "assetName": "ollama-windows-arm64.zip"
+        }
+    },
+    "macos-arm64": {
+        "executablePath": "runtime/ollama",
+        "requirements": {
+            "diskSpaceMb": 4096
+        },
+        "install": [
+            {
+                "action": "download",
+                "name": "Download Ollama macOS portable TGZ (latest release)",
+                "url": "https://github.com/ollama/ollama/releases/latest/download/ollama-darwin.tgz",
+                "dest": "{temp}/ollama-darwin.tgz"
+            },
+            {
+                "action": "extract",
+                "name": "Extract Ollama to runtime directory",
+                "source": "{temp}/ollama-darwin.tgz",
+                "dest": "Engines/Ollama/runtime"
+            },
+            {
+                "action": "cleanup",
+                "name": "Remove temporary files",
+                "target": "{temp}"
+            }
+        ],
+        "postInstall": [],
+        "update": {
+            "repo": "ollama/ollama",
+            "assetName": "ollama-darwin.tgz"
+        }
+    },
+    "macos-amd64": {
+        "executablePath": "runtime/ollama",
+        "requirements": {
+            "diskSpaceMb": 4096
+        },
+        "install": [
+            {
+                "action": "download",
+                "name": "Download Ollama macOS portable TGZ (latest release)",
+                "url": "https://github.com/ollama/ollama/releases/latest/download/ollama-darwin.tgz",
+                "dest": "{temp}/ollama-darwin.tgz"
+            },
+            {
+                "action": "extract",
+                "name": "Extract Ollama to runtime directory",
+                "source": "{temp}/ollama-darwin.tgz",
+                "dest": "Engines/Ollama/runtime"
+            },
+            {
+                "action": "cleanup",
+                "name": "Remove temporary files",
+                "target": "{temp}"
+            }
+        ],
+        "postInstall": [],
+        "update": {
+            "repo": "ollama/ollama",
+            "assetName": "ollama-darwin.tgz"
         }
     },
     "status": {

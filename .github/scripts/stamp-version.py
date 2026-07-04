@@ -10,10 +10,11 @@ MAUI_PROJECTS = [
     "ASLM/Patcher/Patcher.csproj",
     "ASLM/Installer/Installer/Installer.csproj",
 ]
-# Non-MAUI WinExe apps: standard assembly version fields (full G.S.Z.W).
+# Non-MAUI console/WinExe apps: standard assembly version fields (full G.S.Z.W).
 NONMAUI_PROJECTS = [
     "ASLM/Launcher/Launcher.csproj",
     "ASLM/Installer/Installer-Bootstrapper/Installer-Bootstrapper.csproj",
+    "ASLM/Patcher/Patcher-Cli/Patcher-Cli.csproj",
 ]
 
 

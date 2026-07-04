@@ -1,8 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+		<!-- Each host builds its own platform head: WinUI on Windows, Mac Catalyst on macOS. -->
 		<TargetFrameworks>net10.0-windows10.0.19041.0</TargetFrameworks>
-		<Platforms>x64;ARM64</Platforms>
+		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx'))">net10.0-maccatalyst</TargetFrameworks>
+		<Platforms Condition="$([MSBuild]::IsOSPlatform('windows'))">x64;ARM64</Platforms>
 
 		<OutputType>Exe</OutputType>
 		<RootNamespace>ASLM</RootNamespace>
@@ -16,7 +18,7 @@
 		<ApplicationTitle>ASLM</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.ashs</ApplicationId>
+		<ApplicationId>com.nextggtech.aslm</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>0.7.1</ApplicationDisplayVersion>
@@ -27,6 +29,11 @@
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+
+		<!-- Lowest macOS the SDK allows (Catalyst 15.0 = macOS 12 Monterey) to cover old Intel Macs. -->
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
+		<!-- One universal .app (x64 + arm64) unless the caller pins a single RID. -->
+		<RuntimeIdentifiers Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst' and '$(RuntimeIdentifier)' == '' and '$(RuntimeIdentifiers)' == ''">maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers>
 	</PropertyGroup>
 	
 	<Import Project="..\ASLM.Build.props" />
@@ -174,8 +181,16 @@
 		                                OutputFile="$(ASLMLegalOutputFile)" />
 	</Target>
 
+	<!-- Mac Catalyst seeds its per-user data root from these bundled templates on first run. -->
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+		<MauiAsset Include="..\Data\**\*.*" LogicalName="seed/Data/%(RecursiveDir)%(Filename)%(Extension)" />
+		<MauiAsset Include="..\Engines\**\ASLM_Engine.json" LogicalName="seed/Engines/%(RecursiveDir)%(Filename)%(Extension)" />
+		<MauiAsset Include="..\Models\**\ASLM_Model.json" LogicalName="seed/Models/%(RecursiveDir)%(Filename)%(Extension)" />
+		<MauiAsset Include="..\Modules\**\ASLM_Module.json" LogicalName="seed/Modules/%(RecursiveDir)%(Filename)%(Extension)" />
+	</ItemGroup>
+
 	<!-- Flatten icon_*.scale-100.png into tint_png/ for PackagedIconTintCache (unpackaged WinUI). -->
-	<Target Name="_CopyResizedIconsForTint" AfterTargets="ResizetizeImages">
+	<Target Name="_CopyResizedIconsForTint" AfterTargets="ResizetizeImages" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
 		<ItemGroup>
 			<_TintPngs Include="$(IntermediateOutputPath)resizetizer\r\icon_*.scale-100.png" />
 		</ItemGroup>

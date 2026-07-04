@@ -328,6 +328,8 @@ namespace ASLM.Services
                     }
                 }
 
+                EnsureExecutablePermission(config);
+
                 // Mark engine as installed and persist to disk.
                 config.Status.Installed = true;
                 config.Status.InstalledVersion = config.Version;
@@ -489,7 +491,7 @@ namespace ASLM.Services
         }
 
         /// <summary>
-        /// Extracts a zip archive from <c>step.Source</c> to <c>step.Dest</c>.
+        /// Extracts a zip or tar.gz archive from <c>step.Source</c> to <c>step.Dest</c>.
         /// </summary>
         /// <param name="step">The installation step configuration.</param>
         /// <param name="ctx">Context for resolving paths.</param>
@@ -502,41 +504,7 @@ namespace ASLM.Services
             log.Report($"  Extracting: {source}");
             log.Report($"  To: {dest}");
 
-            Directory.CreateDirectory(dest);
-
-            // Ensure destination has a trailing separator for reliable prefix matching (Zip Slip prevention).
-            var destPrefix = dest;
-            if (!destPrefix.EndsWith(Path.DirectorySeparatorChar) && !destPrefix.EndsWith(Path.AltDirectorySeparatorChar))
-                destPrefix += Path.DirectorySeparatorChar;
-
-            using var archive = ZipFile.OpenRead(source);
-            foreach (var entry in archive.Entries)
-            {
-                var targetPath = Path.GetFullPath(Path.Combine(dest, entry.FullName));
-
-                if (!targetPath.StartsWith(destPrefix, StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"Security violation: Zip entry '{entry.FullName}' attempts to extract to '{targetPath}' which is outside the destination directory.");
-
-                // Directory entry
-                if (string.IsNullOrEmpty(entry.Name))
-                {
-                    Directory.CreateDirectory(targetPath);
-                    continue;
-                }
-
-                // Ensure parent directory exists
-                Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-
-                try
-                {
-                    entry.ExtractToFile(targetPath, overwrite: true);
-                }
-                catch (IOException)
-                {
-                    // File is locked (e.g. by a running process) — skip it
-                    log.Report($"  ⚠ Skipped (locked): {entry.FullName}");
-                }
-            }
+            ArchiveExtractor.ExtractToDirectory(source, dest, log);
 
             log.Report("  ✓ Extraction complete.");
         }
@@ -737,8 +705,36 @@ namespace ASLM.Services
         /// <returns>The root directory path.</returns>
         private static string GetRootDirectory()
         {
-            var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
-            return Directory.GetParent(appDir)?.FullName ?? appDir;
+            return AppRoot.Directory;
+        }
+
+        /// <summary>
+        /// Ensures the engine executable carries the Unix execute bit; a no-op on Windows.
+        /// </summary>
+        internal static void EnsureExecutablePermission(EngineConfig config)
+        {
+            if (OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(config.ExecutablePath))
+                return;
+
+            try
+            {
+                var engineDir = Path.GetDirectoryName(config.SourcePath);
+                if (string.IsNullOrWhiteSpace(engineDir))
+                    return;
+
+                var executable = Path.Combine(engineDir, config.ExecutablePath);
+                if (!File.Exists(executable))
+                    return;
+
+                File.SetUnixFileMode(
+                    executable,
+                    File.GetUnixFileMode(executable) |
+                    UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute);
+            }
+            catch
+            {
+                // Best effort - tar extraction preserves the mode in normal cases.
+            }
         }
 
         /// <summary>

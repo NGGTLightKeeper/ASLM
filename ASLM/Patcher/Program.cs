@@ -99,7 +99,9 @@ internal static class PatcherRunner
                 CopyDirectory(stagingPath, targetRoot, relativePath => ShouldReplacePath(relativePath, preservePatterns));
 
                 // Record the installed release and remove temporary update folders.
-                PersistInstalledReleaseTag(targetRoot, pending.Version);
+                // The data root holds ASLM_Data.json on every platform (targetRoot is the
+                // .app bundle on macOS, where no data lives).
+                PersistInstalledReleaseTag(root, pending.Version);
                 File.Delete(pendingPath);
                 TryDeleteDirectory(Path.GetDirectoryName(stagingPath) ?? stagingPath);
                 TryDeleteDirectory(backupPath);
@@ -444,9 +446,27 @@ internal static class PatcherRunner
         try
         {
             var launcherPath = ResolveLauncherPath(root, args);
-            if (string.IsNullOrWhiteSpace(launcherPath) || !File.Exists(launcherPath))
+            if (string.IsNullOrWhiteSpace(launcherPath))
             {
-                Log("Launcher not found after patch: " + (launcherPath ?? "<unresolved>"));
+                Log("Launcher not found after patch: <unresolved>");
+                return;
+            }
+
+            // macOS hands over a .app bundle path; relaunch it through launch services.
+            if (launcherPath.EndsWith(".app", StringComparison.OrdinalIgnoreCase) && Directory.Exists(launcherPath))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "/usr/bin/open",
+                    ArgumentList = { "-n", launcherPath },
+                    UseShellExecute = false
+                });
+                return;
+            }
+
+            if (!File.Exists(launcherPath))
+            {
+                Log("Launcher not found after patch: " + launcherPath);
                 return;
             }
 

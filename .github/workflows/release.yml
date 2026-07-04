@@ -337,6 +337,9 @@ jobs:
           - name: windows-arm64
             runs-on: windows-11-arm
             rid: win-arm64
+          - name: macos
+            runs-on: macos-15
+            rid: maccatalyst
     steps:
       - name: Check out main
         uses: actions/checkout@v7
@@ -354,7 +357,9 @@ jobs:
           DISPLAY: ${{ needs.prepare.outputs.display }}
           APPVER: ${{ needs.prepare.outputs.appver }}
           VERSION: ${{ needs.prepare.outputs.version }}
-        run: python .github/scripts/stamp-version.py "$DISPLAY" "$APPVER" "$VERSION"
+        run: |
+          PY=$(command -v python3 || command -v python)
+          "$PY" .github/scripts/stamp-version.py "$DISPLAY" "$APPVER" "$VERSION"
 
       - name: Install MAUI workload (Windows)
         if: runner.os == 'Windows'
@@ -385,6 +390,47 @@ jobs:
           Pop-Location
           if ($code -ne 0) { throw "7z failed with $code" }
           Copy-Item $installer "dist/ASLM-Installer-$appName.exe" -Force
+
+      - name: Install MAUI workload (macOS)
+        if: runner.os == 'macOS'
+        run: dotnet workload install maui-maccatalyst || dotnet workload install maui
+
+      - name: Build release (macOS; universal Mac Catalyst .app)
+        if: runner.os == 'macOS'
+        run: |
+          set -euo pipefail
+          # RuntimeIdentifiers defaults to maccatalyst-x64;maccatalyst-arm64 in ASLM.csproj (universal).
+          dotnet publish ASLM/ASLM.csproj -f net10.0-maccatalyst -c Release -v minimal -p:EnableCodeSigning=false
+          APP=$(find Build/Release/ASLM-macos -type d -name "*.app" | head -1)
+          if [[ -z "$APP" ]]; then echo "No .app bundle found under Build/Release/ASLM-macos" >&2; exit 1; fi
+          echo "APP_BUNDLE=$APP" >> "$GITHUB_ENV"
+
+      - name: Embed patcher helpers (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          set -euo pipefail
+          dotnet publish ASLM/Patcher/Patcher-Cli/Patcher-Cli.csproj -c Release -r osx-x64 -p:SelfContained=true -o out/patcher-x64 -v minimal
+          dotnet publish ASLM/Patcher/Patcher-Cli/Patcher-Cli.csproj -c Release -r osx-arm64 -p:SelfContained=true -o out/patcher-arm64 -v minimal
+          mkdir -p "$APP_BUNDLE/Contents/Helpers"
+          cp out/patcher-x64/aslm-patcher "$APP_BUNDLE/Contents/Helpers/aslm-patcher-x64"
+          cp out/patcher-arm64/aslm-patcher "$APP_BUNDLE/Contents/Helpers/aslm-patcher-arm64"
+
+      - name: Sign (ad-hoc) and package artifacts (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          set -euo pipefail
+          # No developer certificate yet: ad-hoc signatures keep arm64 loadable; Gatekeeper
+          # still asks the user to allow the app on first launch.
+          codesign --force --deep --sign - "$APP_BUNDLE"
+          codesign --verify --deep --strict "$APP_BUNDLE"
+
+          mkdir -p dist dmg-root
+          ditto "$APP_BUNDLE" "dmg-root/$(basename "$APP_BUNDLE")"
+          ln -s /Applications dmg-root/Applications
+          hdiutil create -volname "ASLM" -srcfolder dmg-root -ov -format UDZO "dist/ASLM-Installer-macos.dmg"
+
+          # Self-update asset: tar.gz preserves permissions and symlinks for the in-app updater.
+          tar -C "$(dirname "$APP_BUNDLE")" -czf dist/ASLM-macos.tar.gz "$(basename "$APP_BUNDLE")"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7

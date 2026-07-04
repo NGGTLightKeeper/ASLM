@@ -8,6 +8,7 @@
 	<Target Name="RunAslmUnitTestsAfterBuild"
 	        AfterTargets="Build"
 	        Condition="'$(SkipUnitTestsOnBuild)' != 'true'
+	                 and $([MSBuild]::IsOSPlatform('windows'))
 	                 and Exists('$(ASLMTestsProjectPath)')
 	                 and ('$(TargetFrameworks)' == '' or '$(TargetFramework)' != '')
 	                 and '$(SelfContained)' != 'true'

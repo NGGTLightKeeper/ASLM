@@ -4481,6 +4481,7 @@ namespace ASLM.Pages
                     FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
                     {
                         [DevicePlatform.WinUI] = new[] { ".json" },
+                        [DevicePlatform.MacCatalyst] = new[] { "public.json" },
                         [DevicePlatform.macOS] = new[] { "json" },
                         [DevicePlatform.iOS] = new[] { "public.json" },
                         [DevicePlatform.Android] = new[] { "application/json" }
@@ -4543,6 +4544,8 @@ namespace ASLM.Pages
                 }
 
                 await File.WriteAllTextAsync(path, json);
+#elif MACCATALYST
+                await MacThemeFileExporter.ExportAsync(SanitizeThemeFileName(t.Name), json);
 #endif
             }
             catch (Exception ex)

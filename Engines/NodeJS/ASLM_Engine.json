@@ -15,6 +15,16 @@
             "os": "windows",
             "arch": "arm64",
             "key": "windows-arm64"
+        },
+        {
+            "os": "macos",
+            "arch": "arm64",
+            "key": "macos-arm64"
+        },
+        {
+            "os": "macos",
+            "arch": "amd64",
+            "key": "macos-amd64"
         }
     ],
     "windows-amd64": {
@@ -96,6 +106,94 @@
             {
                 "action": "move",
                 "source": "{temp}/node-extract/node-v25.6.1-win-x64",
+                "dest": "Engines/NodeJS/runtime"
+            },
+            {
+                "action": "cleanup",
+                "target": "{temp}"
+            }
+        ],
+        "postInstall": []
+    },
+    "macos-arm64": {
+        "executablePath": "runtime/bin/node",
+        "packageManager": {
+            "command": "install",
+            "executable": "runtime/bin/npm"
+        },
+        "moduleEnvironment": {
+            "enabled": true,
+            "directoryPrefix": "venv-",
+            "kind": "node-prefix",
+            "executablePath": "{engineExecutable}",
+            "packageManagerExecutable": "{engineDir}/runtime/bin/npm",
+            "packageManagerCommand": "install --prefix \"{environmentDir}\"",
+            "environment": {
+                "NODE_PATH": "{environmentDir}/node_modules",
+                "PATH": "{engineDir}/runtime/bin:{environmentDir}/node_modules/.bin:{path}"
+            }
+        },
+        "requirements": {
+            "diskSpaceMb": 256
+        },
+        "install": [
+            {
+                "action": "download",
+                "url": "https://nodejs.org/dist/v25.6.1/node-v25.6.1-darwin-arm64.tar.gz",
+                "dest": "{temp}/node.tar.gz"
+            },
+            {
+                "action": "extract",
+                "source": "{temp}/node.tar.gz",
+                "dest": "{temp}/node-extract"
+            },
+            {
+                "action": "move",
+                "source": "{temp}/node-extract/node-v25.6.1-darwin-arm64",
+                "dest": "Engines/NodeJS/runtime"
+            },
+            {
+                "action": "cleanup",
+                "target": "{temp}"
+            }
+        ],
+        "postInstall": []
+    },
+    "macos-amd64": {
+        "executablePath": "runtime/bin/node",
+        "packageManager": {
+            "command": "install",
+            "executable": "runtime/bin/npm"
+        },
+        "moduleEnvironment": {
+            "enabled": true,
+            "directoryPrefix": "venv-",
+            "kind": "node-prefix",
+            "executablePath": "{engineExecutable}",
+            "packageManagerExecutable": "{engineDir}/runtime/bin/npm",
+            "packageManagerCommand": "install --prefix \"{environmentDir}\"",
+            "environment": {
+                "NODE_PATH": "{environmentDir}/node_modules",
+                "PATH": "{engineDir}/runtime/bin:{environmentDir}/node_modules/.bin:{path}"
+            }
+        },
+        "requirements": {
+            "diskSpaceMb": 256
+        },
+        "install": [
+            {
+                "action": "download",
+                "url": "https://nodejs.org/dist/v25.6.1/node-v25.6.1-darwin-x64.tar.gz",
+                "dest": "{temp}/node.tar.gz"
+            },
+            {
+                "action": "extract",
+                "source": "{temp}/node.tar.gz",
+                "dest": "{temp}/node-extract"
+            },
+            {
+                "action": "move",
+                "source": "{temp}/node-extract/node-v25.6.1-darwin-x64",
                 "dest": "Engines/NodeJS/runtime"
             },
             {

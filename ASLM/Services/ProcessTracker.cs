@@ -9,11 +9,14 @@ namespace ASLM.Services
 {
     /// <summary>
     /// Groups ASLM and its child processes into one Windows Job Object.
+    /// On other platforms it tracks child processes and kills their trees on dispose.
     /// </summary>
     public sealed class ProcessTracker : IDisposable
     {
         private readonly SafeFileHandle? _jobHandle;
         private readonly ILogger<ProcessTracker> _logger;
+        private readonly object _trackedLock = new();
+        private readonly List<Process> _trackedProcesses = [];
         private bool _disposed;
 
         // Initialization
@@ -27,7 +30,7 @@ namespace ASLM.Services
 
             if (!OperatingSystem.IsWindows())
             {
-                _logger.LogWarning("ProcessTracker: Job Objects are only supported on Windows.");
+                _logger.LogInformation("ProcessTracker: tracking child PIDs with kill-on-dispose (no Job Objects on this OS).");
                 return;
             }
 
@@ -84,7 +87,22 @@ namespace ASLM.Services
         /// </summary>
         public bool AddProcess(Process process)
         {
-            if (_disposed || _jobHandle == null || _jobHandle.IsInvalid)
+            if (_disposed)
+            {
+                return false;
+            }
+
+            if (!OperatingSystem.IsWindows())
+            {
+                lock (_trackedLock)
+                {
+                    _trackedProcesses.Add(process);
+                }
+
+                return true;
+            }
+
+            if (_jobHandle == null || _jobHandle.IsInvalid)
             {
                 return false;
             }
@@ -121,7 +139,41 @@ namespace ASLM.Services
             }
 
             _disposed = true;
+
+            if (!OperatingSystem.IsWindows())
+            {
+                KillTrackedProcessTrees();
+            }
+
             _jobHandle?.Dispose();
+        }
+
+        /// <summary>
+        /// Kills every tracked child process tree that is still alive.
+        /// </summary>
+        private void KillTrackedProcessTrees()
+        {
+            List<Process> processes;
+            lock (_trackedLock)
+            {
+                processes = [.. _trackedProcesses];
+                _trackedProcesses.Clear();
+            }
+
+            foreach (var process in processes)
+            {
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        process.Kill(entireProcessTree: true);
+                    }
+                }
+                catch
+                {
+                    // The owner may have disposed or stopped the process already.
+                }
+            }
         }
 
 
