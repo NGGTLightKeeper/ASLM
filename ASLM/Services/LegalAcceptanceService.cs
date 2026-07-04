@@ -91,7 +91,8 @@ namespace ASLM.Services
         /// </summary>
         public async Task<IReadOnlyList<LegalDocument>> LoadDocumentsAsync(CancellationToken cancellationToken = default)
         {
-            await using var stream = await AppPackageFile.OpenReadAsync(LegalDocumentsFileName);
+            await using var stream = typeof(LegalAcceptanceService).Assembly.GetManifestResourceStream(LegalDocumentsFileName)
+                ?? throw new FileNotFoundException("Embedded legal documents were not found.", LegalDocumentsFileName);
             var documents = await JsonSerializer.DeserializeAsync<List<LegalDocument>>(stream, _jsonOptions, cancellationToken);
 
             return documents is { Count: > 0 }
