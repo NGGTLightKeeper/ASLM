@@ -91,7 +91,7 @@ namespace ASLM.Services
         /// </summary>
         public async Task<IReadOnlyList<LegalDocument>> LoadDocumentsAsync(CancellationToken cancellationToken = default)
         {
-            await using var stream = await FileSystem.OpenAppPackageFileAsync(LegalDocumentsFileName);
+            await using var stream = await AppPackageFile.OpenReadAsync(LegalDocumentsFileName);
             var documents = await JsonSerializer.DeserializeAsync<List<LegalDocument>>(stream, _jsonOptions, cancellationToken);
 
             return documents is { Count: > 0 }

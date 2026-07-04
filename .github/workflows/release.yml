@@ -438,7 +438,7 @@ jobs:
           mkdir -p dist dmg-root
           ditto "$APP_BUNDLE" "dmg-root/$(basename "$APP_BUNDLE")"
           ln -s /Applications dmg-root/Applications
-          hdiutil create -volname "ASLM" -srcfolder dmg-root -ov -format UDZO "dist/ASLM-Installer-macos.dmg"
+          hdiutil create -volname "ASLM" -srcfolder dmg-root -ov -format UDZO "dist/ASLM-macos.dmg"
 
           # Self-update asset: tar.gz preserves permissions and symlinks for the in-app updater.
           tar -C "$(dirname "$APP_BUNDLE")" -czf dist/ASLM-macos.tar.gz "$(basename "$APP_BUNDLE")"
