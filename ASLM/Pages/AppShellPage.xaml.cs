@@ -1641,11 +1641,14 @@ namespace ASLM.Pages
             });
         }
 
+#endif
+
         /// <summary>
         /// Wires the native WebView2 once the MAUI handler attaches so module pages can receive drag-and-drop.
         /// </summary>
         private void Browser_HandlerChanged(object? sender, EventArgs e)
         {
+#if WINDOWS
             ReleaseModuleWebViewDropTarget();
 
             if (Browser.Handler?.PlatformView is not Microsoft.UI.Xaml.Controls.WebView2 native)
@@ -1663,8 +1666,10 @@ namespace ASLM.Pages
             {
                 ApplyModuleBrowserNavigation(_moduleBrowserNavigationSequence, targetUrl);
             }
+#endif
         }
 
+#if WINDOWS
         /// <summary>
         /// Enables drag-and-drop on the module WebView2 after the core is initialized.
         /// </summary>
