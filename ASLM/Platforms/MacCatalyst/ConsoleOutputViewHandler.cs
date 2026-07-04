@@ -51,7 +51,7 @@ namespace ASLM.Services
             {
                 Editable = false,
                 Selectable = true,
-                Font = UIFont.MonospacedSystemFont(12f, UIFontWeight.Regular),
+                Font = UIFont.GetMonospacedSystemFont(12f, UIFontWeight.Regular),
                 TextContainerInset = new UIEdgeInsets(8, 10, 8, 10),
                 ClipsToBounds = true
             };
