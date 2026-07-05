@@ -1,5 +1,6 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
+using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO.Compression;
 
@@ -45,6 +46,14 @@ namespace ASLM.Services
         /// </summary>
         private static void ExtractTar(string archivePath, string destination)
         {
+            // Apple bsdtar puts LIBARCHIVE.xattr.* PAX records into its tarballs, which
+            // System.Formats.Tar cannot parse - macOS extraction goes through the system tar.
+            if (OperatingSystem.IsMacCatalyst() || OperatingSystem.IsMacOS())
+            {
+                ExtractTarWithSystemTar(archivePath, destination);
+                return;
+            }
+
             using var archiveStream = File.OpenRead(archivePath);
 
             if (archivePath.EndsWith(".tar", StringComparison.OrdinalIgnoreCase))
@@ -55,6 +64,37 @@ namespace ASLM.Services
 
             using var gzipStream = new GZipStream(archiveStream, CompressionMode.Decompress);
             TarFile.ExtractToDirectory(gzipStream, destination, overwriteFiles: true);
+        }
+
+        /// <summary>
+        /// Extracts a tarball with the system bsdtar, which auto-detects compression and
+        /// preserves modes and symlinks. Extended attributes stay out of the extracted
+        /// files so archives cannot reintroduce quarantine flags.
+        /// </summary>
+        private static void ExtractTarWithSystemTar(string archivePath, string destination)
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "/usr/bin/tar",
+                UseShellExecute = false,
+                RedirectStandardError = true
+            };
+            startInfo.ArgumentList.Add("--no-xattrs");
+            startInfo.ArgumentList.Add("-xf");
+            startInfo.ArgumentList.Add(archivePath);
+            startInfo.ArgumentList.Add("-C");
+            startInfo.ArgumentList.Add(destination);
+
+            using var process = Process.Start(startInfo)
+                ?? throw new InvalidOperationException("System tar failed to start.");
+            var stderr = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                throw new InvalidOperationException(
+                    $"System tar exited with code {process.ExitCode}: {stderr.Trim()}");
+            }
         }
 
         /// <summary>
