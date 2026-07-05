@@ -49,8 +49,18 @@ namespace ASLM.Services
 
                 if (Directory.Exists(enginesRoot))
                 {
-                    foreach (var jsonFile in Directory.EnumerateFiles(enginesRoot, "ASLM_Engine.json", SearchOption.AllDirectories))
+                    // Probe each engine folder for its manifest directly. A recursive
+                    // EnumerateFiles name filter returns nothing for the seeded Engines
+                    // folder on Mac Catalyst, so engines go through the same per-folder
+                    // scan the module discovery uses.
+                    foreach (var engineDir in Directory.EnumerateDirectories(enginesRoot))
                     {
+                        var jsonFile = Path.Combine(engineDir, "ASLM_Engine.json");
+                        if (!File.Exists(jsonFile))
+                        {
+                            continue;
+                        }
+
                         try
                         {
                             var json = File.ReadAllText(jsonFile);
@@ -77,7 +87,6 @@ namespace ASLM.Services
                                 // If a user manually deleted the runtime folder, reset the status.
                                 if (config.Status.Installed)
                                 {
-                                    var engineDir = Path.GetDirectoryName(jsonFile)!;
                                     var runtimeDir = Path.Combine(engineDir, "runtime");
 
                                     if (!Directory.Exists(runtimeDir) ||
