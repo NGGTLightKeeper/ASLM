@@ -28,7 +28,7 @@ namespace ASLM.Services
             get
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return "windows";
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) return "macos";
+                if (OperatingSystem.IsMacCatalyst() || RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) return "macos";
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return "linux";
                 throw new PlatformNotSupportedException("The current OS is not supported.");
             }
