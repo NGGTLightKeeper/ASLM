@@ -45,6 +45,16 @@
 		<SelfContained>true</SelfContained>
 	</PropertyGroup>
 
+	<!-- Mac Catalyst Release trims assemblies. Keep reflection-based JSON enabled and root the
+	     ASLM assembly so the engine manifest converter can deserialize its nested types, which
+	     the trimmer otherwise removes because they are only reached through a custom converter. -->
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+		<JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+	</PropertyGroup>
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+		<TrimmerRootAssembly Include="ASLM" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<InternalsVisibleTo Include="ASLM.Tests" />
 	</ItemGroup>
