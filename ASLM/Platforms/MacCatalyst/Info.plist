@@ -5,7 +5,7 @@
 	<!-- iPad idiom: the Mac idiom (6) misplaces MAUI-rendered content and breaks several controls. -->
 	<key>UIDeviceFamily</key>
 	<array>
-		<integer>6</integer>
+		<integer>2</integer>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
