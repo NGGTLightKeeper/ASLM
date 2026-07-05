@@ -37,9 +37,11 @@ namespace ASLM.Services
 
             if (OperatingSystem.IsMacCatalyst() || OperatingSystem.IsMacOS())
             {
+                // SpecialFolder.LocalApplicationData maps to ~/Documents on Mac Catalyst,
+                // so the Application Support path is built from the home directory instead.
                 return Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    AppName);
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    "Library", "Application Support", AppName);
             }
 
             var appDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);

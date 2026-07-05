@@ -186,13 +186,8 @@
 		                                OutputFile="$(ASLMLegalOutputFile)" />
 	</Target>
 
-	<!-- Mac Catalyst seeds its per-user data root from these bundled templates on first run. -->
-	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
-		<MauiAsset Include="..\Data\**\*.*" LogicalName="seed/Data/%(RecursiveDir)%(Filename)%(Extension)" />
-		<MauiAsset Include="..\Engines\**\ASLM_Engine.json" LogicalName="seed/Engines/%(RecursiveDir)%(Filename)%(Extension)" />
-		<MauiAsset Include="..\Models\**\ASLM_Model.json" LogicalName="seed/Models/%(RecursiveDir)%(Filename)%(Extension)" />
-		<MauiAsset Include="..\Modules\**\ASLM_Module.json" LogicalName="seed/Modules/%(RecursiveDir)%(Filename)%(Extension)" />
-	</ItemGroup>
+	<!-- Mac Catalyst first-run seed templates are embedded by the release workflow
+	     (Embed data seeds step): the universal multi-RID publish drops MSBuild bundle items. -->
 
 	<!-- Flatten icon_*.scale-100.png into tint_png/ for PackagedIconTintCache (unpackaged WinUI). -->
 	<Target Name="_CopyResizedIconsForTint" AfterTargets="ResizetizeImages" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">

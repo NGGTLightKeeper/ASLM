@@ -113,9 +113,6 @@
               VerticalOptions="Fill"
               InputTransparent="True"
               CascadeInputTransparent="False">
-            <BoxView Grid.Row="0"
-                     Color="Transparent"
-                     InputTransparent="True" />
             <Grid Grid.Row="1"
                   Margin="0,0,16,16"
                   HorizontalOptions="End"
