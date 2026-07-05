@@ -2,9 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- iPad idiom: the Mac idiom (6) misplaces MAUI-rendered content and breaks several controls. -->
 	<key>UIDeviceFamily</key>
 	<array>
-		<integer>6</integer>
+		<integer>2</integer>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
