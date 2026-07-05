@@ -332,11 +332,11 @@
                         <Grid IsVisible="{Binding IsMenuOpen}"
                               ZIndex="10"
                               InputTransparent="False">
-                            <BoxView Color="#01000000">
-                                <BoxView.GestureRecognizers>
+                            <Grid BackgroundColor="Transparent">
+                                <Grid.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding CloseMenuCommand}" />
-                                </BoxView.GestureRecognizers>
-                            </BoxView>
+                                </Grid.GestureRecognizers>
+                            </Grid>
 
                             <Border BackgroundColor="{DynamicResource BackgroundTertiary}"
                                     Stroke="{DynamicResource Separator}"

@@ -24,7 +24,7 @@
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>0.7.2</ApplicationDisplayVersion>
-		<ApplicationVersion>43</ApplicationVersion>
+		<ApplicationVersion>45</ApplicationVersion>
 
 		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
 		<WindowsPackageType>None</WindowsPackageType>
@@ -44,6 +44,16 @@
 	<PropertyGroup Condition="'$(Configuration)' == 'Release' and '$(SelfContained)' == ''">
 		<SelfContained>true</SelfContained>
 	</PropertyGroup>
+
+	<!-- Mac Catalyst Release trims assemblies. Keep reflection-based JSON enabled and root the
+	     ASLM assembly so the engine manifest converter can deserialize its nested types, which
+	     the trimmer otherwise removes because they are only reached through a custom converter. -->
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+		<JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+	</PropertyGroup>
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+		<TrimmerRootAssembly Include="ASLM" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<InternalsVisibleTo Include="ASLM.Tests" />
