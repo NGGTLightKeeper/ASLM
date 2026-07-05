@@ -67,8 +67,6 @@
                     <CheckBox x:Name="AcceptLegalCheckBox"
                               CheckedChanged="OnAcceptLegalChanged"
                               Color="{StaticResource SystemBlue}"
-                              WidthRequest="24"
-                              HeightRequest="24"
                               HorizontalOptions="Center"
                               VerticalOptions="Center" />
                     <Label x:Name="AcceptLegalLabel"

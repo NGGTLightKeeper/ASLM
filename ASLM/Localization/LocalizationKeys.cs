@@ -435,14 +435,11 @@ public static class LocalizationKeys
     public const string SetupWizard_Canceled = "SetupWizard_Canceled";
     public const string SetupWizard_DisplayNamePlaceholder = "SetupWizard_DisplayNamePlaceholder";
     public const string SetupWizard_DisplayNameTitle = "SetupWizard_DisplayNameTitle";
-    public const string SetupWizard_DockerDescription = "SetupWizard_DockerDescription";
-    public const string SetupWizard_DockerTitle = "SetupWizard_DockerTitle";
     public const string SetupWizard_Failed = "SetupWizard_Failed";
     public const string SetupWizard_FastSetup = "SetupWizard_FastSetup";
     public const string SetupWizard_FastSetupHint = "SetupWizard_FastSetupHint";
     public const string SetupWizard_Finish = "SetupWizard_Finish";
     public const string SetupWizard_HideLog = "SetupWizard_HideLog";
-    public const string SetupWizard_InstallDocker = "SetupWizard_InstallDocker";
     public const string SetupWizard_Installing = "SetupWizard_Installing";
     public const string SetupWizard_Next_Install = "SetupWizard_Next_Install";
     public const string SetupWizard_ModulesPortLabel = "SetupWizard_ModulesPortLabel";
@@ -454,7 +451,6 @@ public static class LocalizationKeys
     public const string SetupWizard_SetupComplete = "SetupWizard_SetupComplete";
     public const string SetupWizard_ShowLog = "SetupWizard_ShowLog";
     public const string SetupWizard_StepFormat = "SetupWizard_StepFormat";
-    public const string SetupWizard_Step_DockerDesktop = "SetupWizard_Step_DockerDesktop";
     public const string SetupWizard_Step_ModuleSelection = "SetupWizard_Step_ModuleSelection";
     public const string SetupWizard_Step_Modules = "SetupWizard_Step_Modules";
     public const string SetupWizard_Step_PortAllocation = "SetupWizard_Step_PortAllocation";

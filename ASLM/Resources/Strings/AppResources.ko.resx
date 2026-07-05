@@ -1308,12 +1308,6 @@
   <data name="SetupWizard_DisplayNameTitle" xml:space="preserve">
     <value>표시 이름 선택</value>
   </data>
-  <data name="SetupWizard_DockerDescription" xml:space="preserve">
-    <value>ASLM에 Docker CLI가 필요합니다. Docker Desktop을 설치한 후 다음을 누르세요</value>
-  </data>
-  <data name="SetupWizard_DockerTitle" xml:space="preserve">
-    <value>Docker Desktop 설치</value>
-  </data>
   <data name="SetupWizard_Failed" xml:space="preserve">
     <value>설치 실패</value>
   </data>
@@ -1328,9 +1322,6 @@
   </data>
   <data name="SetupWizard_HideLog" xml:space="preserve">
     <value>로그 숨기기</value>
-  </data>
-  <data name="SetupWizard_InstallDocker" xml:space="preserve">
-    <value>Docker 설치</value>
   </data>
   <data name="SetupWizard_Installing" xml:space="preserve">
     <value>설치 중...</value>
@@ -1364,9 +1355,6 @@
   </data>
   <data name="SetupWizard_StepFormat" xml:space="preserve">
     <value>{1}단계 중 {0}단계 - {2}</value>
-  </data>
-  <data name="SetupWizard_Step_DockerDesktop" xml:space="preserve">
-    <value>Docker Desktop</value>
   </data>
   <data name="SetupWizard_Step_ModuleSelection" xml:space="preserve">
     <value>모듈 선택</value>
