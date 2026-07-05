@@ -426,6 +426,23 @@ jobs:
           cp out/patcher-x64/aslm-patcher "$APP_BUNDLE/Contents/Helpers/aslm-patcher-x64"
           cp out/patcher-arm64/aslm-patcher "$APP_BUNDLE/Contents/Helpers/aslm-patcher-arm64"
 
+      - name: Embed data seeds (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          set -euo pipefail
+          # First-run templates for MacAppDataSeeder; copied into the bundle here because
+          # the MAUI/macios universal (multi-RID) publish drops MauiAsset and BundleResource items.
+          SEED="$APP_BUNDLE/Contents/Resources/seed"
+          mkdir -p "$SEED/Data"
+          cp -R Data/. "$SEED/Data/"
+          for f in Engines/*/ASLM_Engine.json Models/*/ASLM_Model.json Modules/*/ASLM_Module.json; do
+            [[ -e "$f" ]] || continue
+            mkdir -p "$SEED/$(dirname "$f")"
+            cp "$f" "$SEED/$f"
+          done
+          echo "Embedded seeds:"
+          find "$SEED" -type f | sed "s|^$SEED/||" | sort
+
       - name: Sign (ad-hoc) and package artifacts (macOS)
         if: runner.os == 'macOS'
         run: |
