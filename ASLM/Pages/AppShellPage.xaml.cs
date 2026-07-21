@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using ASLM.Localization;
 using ASLM.Models;
-using ASLM.Services;
 using Microsoft.Maui.Controls.Shapes;
 
 namespace ASLM.Pages

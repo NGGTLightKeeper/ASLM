@@ -6,7 +6,7 @@ using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Handlers;
 using UIKit;
 
-namespace ASLM.Services
+namespace ASLM.Services.Internal
 {
     /// <summary>
     /// Maps <see cref="ConsoleOutputView"/> to a native UITextView with bottom-pinned scrolling.

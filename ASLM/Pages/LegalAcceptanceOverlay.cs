@@ -1,7 +1,6 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
 using ASLM.Localization;
-using ASLM.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ASLM.Pages;

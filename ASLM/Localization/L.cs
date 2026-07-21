@@ -1,7 +1,6 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
 using ASLM.Resources.Strings;
-using ASLM.Services;
 
 namespace ASLM.Localization
 {

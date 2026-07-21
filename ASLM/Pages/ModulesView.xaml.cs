@@ -8,7 +8,6 @@ using System.Text;
 using System.Windows.Input;
 using ASLM.Localization;
 using ASLM.Models;
-using ASLM.Services;
 using Microsoft.Maui.Controls;
 
 namespace ASLM.Pages
