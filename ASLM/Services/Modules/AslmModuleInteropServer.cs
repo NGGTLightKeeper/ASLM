@@ -16,7 +16,7 @@ namespace ASLM.Services.Modules
     {
         private readonly AppDataStore _appData;
         private readonly PortRegistry _ports;
-        private readonly AslmApiServer _apiServer;
+        private readonly AslmMirrorServer _mirrorServer;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly ModuleRunner _moduleRunner;
         private readonly ModuleLaunchCoordinator _launchCoordinator;
@@ -57,7 +57,7 @@ namespace ASLM.Services.Modules
         public AslmModuleInteropServer(
             AppDataStore appData,
             PortRegistry ports,
-            AslmApiServer apiServer,
+            AslmMirrorServer mirrorServer,
             ModuleInstaller moduleInstaller,
             ModuleRunner moduleRunner,
             ModuleLaunchCoordinator launchCoordinator,
@@ -66,7 +66,7 @@ namespace ASLM.Services.Modules
         {
             _appData = appData;
             _ports = ports;
-            _apiServer = apiServer;
+            _mirrorServer = mirrorServer;
             _moduleInstaller = moduleInstaller;
             _moduleRunner = moduleRunner;
             _launchCoordinator = launchCoordinator;
@@ -344,8 +344,8 @@ namespace ASLM.Services.Modules
         private AslmApiResponseDto BuildAslmApiResponseDto()
         {
             var apiEnabled = _appData.Data.Api.ServerEnabled;
-            var apiPort = _ports.TryGetInternalServicePort(PortRegistry.AslmApiServiceId, PortRegistry.AslmApiPortKey);
-            var dto = ModuleInteropPortsBuilder.BuildAslmApiDto(apiEnabled, apiPort, _apiServer.IsRunning);
+            var apiPort = _ports.TryGetInternalServicePort(PortRegistry.AslmMirrorServiceId, PortRegistry.AslmMirrorPortKey);
+            var dto = ModuleInteropPortsBuilder.BuildAslmApiDto(apiEnabled, apiPort, _mirrorServer.IsRunning);
             return new AslmApiResponseDto(dto.Enabled, dto.Running, dto.Port, dto.BaseUrl);
         }
 
@@ -355,7 +355,7 @@ namespace ASLM.Services.Modules
         private List<RunningModuleDto> BuildRunningModulesResponseDtos()
         {
             var apiEnabled = _appData.Data.Api.ServerEnabled;
-            var apiPort = _ports.TryGetInternalServicePort(PortRegistry.AslmApiServiceId, PortRegistry.AslmApiPortKey);
+            var apiPort = _ports.TryGetInternalServicePort(PortRegistry.AslmMirrorServiceId, PortRegistry.AslmMirrorPortKey);
             var mirrorBase = ModuleInteropPortsBuilder.ResolveMirrorBaseUrl(apiEnabled, apiPort);
 
             return _moduleRunner.GetRunningModuleConfigs()

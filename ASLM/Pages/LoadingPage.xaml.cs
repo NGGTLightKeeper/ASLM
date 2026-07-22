@@ -18,7 +18,7 @@ namespace ASLM.Pages
         private readonly GitHubAccountStore _githubAccountStore;
         private readonly GitHubUpdateClient _githubUpdateClient;
         private readonly UpdateScheduler _updateScheduler;
-        private readonly AslmApiServer _apiServer;
+        private readonly AslmMirrorServer _mirrorServer;
         private readonly AslmModuleInteropServer _moduleInteropServer;
         private readonly ThemeService _themeService;
         private readonly CustomThemesStore _customThemesStore;
@@ -41,7 +41,7 @@ namespace ASLM.Pages
             GitHubAccountStore githubAccountStore,
             GitHubUpdateClient githubUpdateClient,
             UpdateScheduler updateScheduler,
-            AslmApiServer apiServer,
+            AslmMirrorServer mirrorServer,
             AslmModuleInteropServer moduleInteropServer,
             ThemeService themeService,
             CustomThemesStore customThemesStore,
@@ -57,7 +57,7 @@ namespace ASLM.Pages
             _githubAccountStore = githubAccountStore;
             _githubUpdateClient = githubUpdateClient;
             _updateScheduler = updateScheduler;
-            _apiServer = apiServer;
+            _mirrorServer = mirrorServer;
             _moduleInteropServer = moduleInteropServer;
             _themeService = themeService;
             _customThemesStore = customThemesStore;
@@ -97,7 +97,7 @@ namespace ASLM.Pages
             await Task.Run(() => _moduleTrustService.InitializeAsync());
             await Task.Run(() => _customThemesStore.LoadAsync());
             await Task.Run(() => _notifications.InitializeAsync());
-            await Task.Run(() => _apiServer.StartIfEnabledAsync());
+            await Task.Run(() => _mirrorServer.StartIfEnabledAsync());
             await Task.Run(() => _moduleInteropServer.EnsureStartedAsync());
             await Task.Run(() => _rateLimitStore.InitializeAsync());
             await Task.Run(() => _githubAccountStore.InitializeAsync());

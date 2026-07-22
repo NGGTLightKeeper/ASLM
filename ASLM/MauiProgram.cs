@@ -76,7 +76,7 @@ namespace ASLM
             builder.Services.AddSingleton<UpdateScheduler>();
             builder.Services.AddSingleton<ModuleLaunchCoordinator>();
             builder.Services.AddSingleton<AslmModuleInteropServer>();
-            builder.Services.AddSingleton<AslmApiServer>();
+            builder.Services.AddSingleton<AslmMirrorServer>();
             builder.Services.AddSingleton<SettingsService>();
             builder.Services.AddSingleton<CustomThemesStore>();
             builder.Services.AddSingleton<ThemeService>();

@@ -14,10 +14,10 @@ namespace ASLM.Services.Modules
     public class PortRegistry
     {
         // Port-map owner used by the internal ASLM API mirror server.
-        public const string AslmApiServiceId = "__aslm-api";
+        public const string AslmMirrorServiceId = "__aslm-mirror";
 
         // Port key used by the internal ASLM API mirror server.
-        public const string AslmApiPortKey = "server-port";
+        public const string AslmMirrorPortKey = "mirror-port";
 
         private const int MaxPort = 65535;
 
@@ -208,9 +208,9 @@ namespace ASLM.Services.Modules
 
         /// <summary>
         /// Rebuilds persisted port assignments for modules and internal listeners.
-        /// When <paramref name="reserveAslmApiServer"/> is true, reserves the ASLM API mirror port; always reserves the module interop listener port.
+        /// When <paramref name="reserveAslmMirrorServer"/> is true, reserves the ASLM mirror server port; always reserves the module interop listener port.
         /// </summary>
-        public bool RedistributePorts(bool reserveAslmApiServer)
+        public bool RedistributePorts(bool reserveAslmMirrorServer)
         {
             var changed = false;
 
@@ -218,19 +218,19 @@ namespace ASLM.Services.Modules
             {
                 EnsureLoaded();
 
-                if (reserveAslmApiServer)
+                if (reserveAslmMirrorServer)
                 {
-                    if (!_portMap.TryGetValue(AslmApiServiceId, out var apiPorts))
+                    if (!_portMap.TryGetValue(AslmMirrorServiceId, out var apiPorts))
                     {
                         apiPorts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                        _portMap[AslmApiServiceId] = apiPorts;
+                        _portMap[AslmMirrorServiceId] = apiPorts;
                     }
 
-                    apiPorts.TryAdd(AslmApiPortKey, 0);
+                    apiPorts.TryAdd(AslmMirrorPortKey, 0);
                 }
                 else
                 {
-                    _portMap.Remove(AslmApiServiceId);
+                    _portMap.Remove(AslmMirrorServiceId);
                 }
 
                 if (!_portMap.TryGetValue(AslmModuleInteropServiceId, out var interopPorts))
@@ -244,7 +244,7 @@ namespace ASLM.Services.Modules
                 var nextMap = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
                 var usedPorts = new HashSet<int>();
 
-                foreach (var owner in GetRedistributionOwners(reserveAslmApiServer))
+                foreach (var owner in GetRedistributionOwners(reserveAslmMirrorServer))
                 {
                     if (!nextMap.TryGetValue(owner.Id, out var ports))
                     {
@@ -617,11 +617,11 @@ namespace ASLM.Services.Modules
         /// <summary>
         /// Returns the owners and port keys in stable redistribution order.
         /// </summary>
-        private List<RedistributionOwner> GetRedistributionOwners(bool reserveAslmApiServer)
+        private List<RedistributionOwner> GetRedistributionOwners(bool reserveAslmMirrorServer)
         {
             return _portMap
                 .Where(pair =>
-                    reserveAslmApiServer || !pair.Key.Equals(AslmApiServiceId, StringComparison.OrdinalIgnoreCase))
+                    reserveAslmMirrorServer || !pair.Key.Equals(AslmMirrorServiceId, StringComparison.OrdinalIgnoreCase))
                 .Where(static pair => pair.Value.Count > 0)
                 .Select(pair => new RedistributionOwner(
                     pair.Key,
@@ -643,7 +643,7 @@ namespace ASLM.Services.Modules
         /// </summary>
         private static int GetRedistributionOwnerRank(string ownerId)
         {
-            if (ownerId.Equals(AslmApiServiceId, StringComparison.OrdinalIgnoreCase) ||
+            if (ownerId.Equals(AslmMirrorServiceId, StringComparison.OrdinalIgnoreCase) ||
                 ownerId.Equals(AslmModuleInteropServiceId, StringComparison.OrdinalIgnoreCase))
             {
                 return 0;

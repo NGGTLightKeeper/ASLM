@@ -85,8 +85,8 @@ namespace ASLM
                 var updateScheduler = _services.GetService<UpdateScheduler>();
                 updateScheduler?.Dispose();
 
-                var apiServer = _services.GetService<AslmApiServer>();
-                apiServer?.Dispose();
+                var mirrorServer = _services.GetService<AslmMirrorServer>();
+                mirrorServer?.Dispose();
 
                 var moduleInteropServer = _services.GetService<AslmModuleInteropServer>();
                 moduleInteropServer?.Dispose();

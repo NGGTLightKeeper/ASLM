@@ -17,7 +17,7 @@ namespace ASLM.Services.API
     /// <summary>
     /// Hosts a local path-mounted reverse proxy for module endpoints declared in <c>Data/App/ASLM_Ports.json</c>.
     /// </summary>
-    public class AslmApiServer : IDisposable
+    public class AslmMirrorServer : IDisposable
     {
         private const int BackendRedirectLimit = 10;
         private const string RouteHeaderName = "X-ASLM-Mirror-Route";
@@ -26,7 +26,7 @@ namespace ASLM.Services.API
         private readonly AppDataStore _appData;
         private readonly PortRegistry _ports;
         private readonly ModuleInstaller _moduleInstaller;
-        private readonly ILogger<AslmApiServer> _logger;
+        private readonly ILogger<AslmMirrorServer> _logger;
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
             PropertyNameCaseInsensitive = true
@@ -49,13 +49,13 @@ namespace ASLM.Services.API
         // Initialization
 
         /// <summary>
-        /// Creates the ASLM API reverse proxy and resolves its runtime data path.
+        /// Creates the ASLM mirror server (path-mounted reverse proxy) and resolves its runtime data path.
         /// </summary>
-        public AslmApiServer(
+        public AslmMirrorServer(
             AppDataStore appData,
             PortRegistry ports,
             ModuleInstaller moduleInstaller,
-            ILogger<AslmApiServer> logger)
+            ILogger<AslmMirrorServer> logger)
         {
             _appData = appData;
             _ports = ports;
@@ -89,7 +89,7 @@ namespace ASLM.Services.API
         public bool IsEnabled => _appData.Data.Api.ServerEnabled;
 
         /// <summary>
-        /// Gets the localhost port reserved for the ASLM API reverse proxy.
+        /// Gets the localhost port reserved for the ASLM mirror server.
         /// </summary>
         public int Port
         {
@@ -98,7 +98,7 @@ namespace ASLM.Services.API
                 lock (_stateLock)
                 {
                     return _activePort ??
-                           _ports.TryGetInternalServicePort(PortRegistry.AslmApiServiceId, PortRegistry.AslmApiPortKey) ??
+                           _ports.TryGetInternalServicePort(PortRegistry.AslmMirrorServiceId, PortRegistry.AslmMirrorPortKey) ??
                            _appData.Data.Ports.ModulesStart;
                 }
             }
@@ -133,11 +133,11 @@ namespace ASLM.Services.API
         {
             if (!IsEnabled)
             {
-                _ports.RedistributePorts(reserveAslmApiServer: false);
+                _ports.RedistributePorts(reserveAslmMirrorServer: false);
                 return;
             }
 
-            _ports.RedistributePorts(reserveAslmApiServer: true);
+            _ports.RedistributePorts(reserveAslmMirrorServer: true);
             await StartAsync();
         }
 
@@ -156,13 +156,13 @@ namespace ASLM.Services.API
 
             if (enabled)
             {
-                _ports.RedistributePorts(reserveAslmApiServer: true);
+                _ports.RedistributePorts(reserveAslmMirrorServer: true);
                 await StartAsync();
             }
             else
             {
                 await StopAsync();
-                _ports.RedistributePorts(reserveAslmApiServer: false);
+                _ports.RedistributePorts(reserveAslmMirrorServer: false);
             }
         }
 
@@ -247,7 +247,7 @@ namespace ASLM.Services.API
         /// <summary>
         /// Returns the currently declared module hosts from the dynamic ASLM port map.
         /// </summary>
-        public IReadOnlyList<AslmApiHostInfo> GetHosts()
+        public IReadOnlyList<AslmMirrorHostInfo> GetHosts()
         {
             return LoadPortMap()
                 .SelectMany(module => module.Value.Select(host => CreateHostInfo(module.Key, host.Key, host.Value, null)))
@@ -260,7 +260,7 @@ namespace ASLM.Services.API
         /// <summary>
         /// Returns declared module hosts and marks whether each target TCP port is accepting connections.
         /// </summary>
-        public async Task<IReadOnlyList<AslmApiHostInfo>> GetHostsWithAvailabilityAsync(CancellationToken ct = default)
+        public async Task<IReadOnlyList<AslmMirrorHostInfo>> GetHostsWithAvailabilityAsync(CancellationToken ct = default)
         {
             var hosts = GetHosts();
             var tasks = hosts.Select(async host =>
@@ -1639,10 +1639,10 @@ namespace ASLM.Services.API
         /// <summary>
         /// Creates one host info object for the ASLM UI and web index.
         /// </summary>
-        private AslmApiHostInfo CreateHostInfo(string moduleId, string hostKey, int port, bool? isOnline)
+        private AslmMirrorHostInfo CreateHostInfo(string moduleId, string hostKey, int port, bool? isOnline)
         {
             var route = ProxyRoute.Proxy(moduleId, hostKey, BuildHostRouteKey(hostKey), port, "/", new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase));
-            return new AslmApiHostInfo(
+            return new AslmMirrorHostInfo(
                 moduleId,
                 hostKey,
                 port,
@@ -1797,12 +1797,12 @@ namespace ASLM.Services.API
         private int GetAssignedPort()
         {
             _ports.GetOrAssignInternalServicePort(
-                PortRegistry.AslmApiServiceId,
-                PortRegistry.AslmApiPortKey);
-            _ports.EnsurePortsAvailable(PortRegistry.AslmApiServiceId);
+                PortRegistry.AslmMirrorServiceId,
+                PortRegistry.AslmMirrorPortKey);
+            _ports.EnsurePortsAvailable(PortRegistry.AslmMirrorServiceId);
             return _ports.GetOrAssignInternalServicePort(
-                PortRegistry.AslmApiServiceId,
-                PortRegistry.AslmApiPortKey);
+                PortRegistry.AslmMirrorServiceId,
+                PortRegistry.AslmMirrorPortKey);
         }
 
         /// <summary>
@@ -1933,7 +1933,7 @@ namespace ASLM.Services.API
     /// <summary>
     /// Describes one ASLM API mirror host displayed in the UI.
     /// </summary>
-    public record AslmApiHostInfo(
+    public record AslmMirrorHostInfo(
         string ModuleId,
         string HostKey,
         int Port,

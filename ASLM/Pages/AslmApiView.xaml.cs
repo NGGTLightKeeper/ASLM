@@ -17,7 +17,7 @@ namespace ASLM.Pages
     /// </summary>
     public partial class AslmApiView : ContentView, INotifyPropertyChanged, ILocalizable
     {
-        private readonly AslmApiServer _apiServer;
+        private readonly AslmMirrorServer _mirrorServer;
         private readonly NotificationCenter _notifications;
         private readonly ModuleInstaller _moduleInstaller;
         private readonly AppLocalizationService _localization;
@@ -45,12 +45,12 @@ namespace ASLM.Pages
         /// Creates the ASLM API page and hooks service state notifications.
         /// </summary>
         public AslmApiView(
-            AslmApiServer apiServer,
+            AslmMirrorServer mirrorServer,
             NotificationCenter notifications,
             ModuleInstaller moduleInstaller,
             AppLocalizationService localization)
         {
-            _apiServer = apiServer;
+            _mirrorServer = mirrorServer;
             _notifications = notifications;
             _moduleInstaller = moduleInstaller;
             _localization = localization;
@@ -61,7 +61,7 @@ namespace ASLM.Pages
             Loaded += OnLoaded;
             Unloaded += OnUnloaded;
             LocalizableAttach.Hook(this, _localization, this);
-            _apiServer.StateChanged += OnServerStateChanged;
+            _mirrorServer.StateChanged += OnServerStateChanged;
             _moduleInstaller.ModulesChanged += OnModulesChanged;
         }
 
@@ -207,7 +207,7 @@ namespace ASLM.Pages
                 return;
             }
 
-            await Launcher.Default.OpenAsync(_apiServer.BaseUrl);
+            await Launcher.Default.OpenAsync(_mirrorServer.BaseUrl);
         }
 
         // Refresh
@@ -220,7 +220,7 @@ namespace ASLM.Pages
             ApplyServerState();
             EnsureModuleDisplayStatesLoading();
 
-            var hosts = await Task.Run(_apiServer.GetHosts);
+            var hosts = await Task.Run(_mirrorServer.GetHosts);
             SynchronizeHostRows(hosts, _moduleDisplayStates);
         }
 
@@ -228,7 +228,7 @@ namespace ASLM.Pages
         /// Updates host rows in place so periodic refreshes do not recreate the list visual tree.
         /// </summary>
         private void SynchronizeHostRows(
-            IReadOnlyList<AslmApiHostInfo> hosts,
+            IReadOnlyList<AslmMirrorHostInfo> hosts,
             IReadOnlyDictionary<string, AslmApiModuleDisplayState> moduleStates)
         {
             var activeKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -372,7 +372,7 @@ namespace ASLM.Pages
 
                 if (Hosts.Count > 0)
                 {
-                    SynchronizeHostRows(_apiServer.GetHosts(), _moduleDisplayStates);
+                    SynchronizeHostRows(_mirrorServer.GetHosts(), _moduleDisplayStates);
                 }
             });
         }
@@ -448,9 +448,9 @@ namespace ASLM.Pages
         /// </summary>
         private void ApplyServerState()
         {
-            var isRunning = _apiServer.IsRunning;
+            var isRunning = _mirrorServer.IsRunning;
 
-            ServerUrl = _apiServer.BaseUrl;
+            ServerUrl = _mirrorServer.BaseUrl;
             CanOpenServer = isRunning;
         }
 
@@ -504,7 +504,7 @@ namespace ASLM.Pages
         /// Creates a host row from the current service host info.
         /// </summary>
         public AslmApiHostViewModel(
-            AslmApiHostInfo host,
+            AslmMirrorHostInfo host,
             AslmApiModuleDisplayState moduleState,
             NotificationCenter notifications)
         {
@@ -670,7 +670,7 @@ namespace ASLM.Pages
         /// <summary>
         /// Updates the row from fresh service data without recreating the row object.
         /// </summary>
-        public void Update(AslmApiHostInfo host, AslmApiModuleDisplayState moduleState)
+        public void Update(AslmMirrorHostInfo host, AslmApiModuleDisplayState moduleState)
         {
             ModuleId = host.ModuleId;
             UpdateModuleState(moduleState);

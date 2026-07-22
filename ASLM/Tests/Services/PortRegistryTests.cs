@@ -47,11 +47,11 @@ public sealed class PortRegistryTests
 
         var registry = new PortRegistry(appData);
 
-        var first = registry.GetOrAssignInternalServicePort(PortRegistry.AslmApiServiceId, PortRegistry.AslmApiPortKey);
-        var second = registry.GetOrAssignInternalServicePort(PortRegistry.AslmApiServiceId, PortRegistry.AslmApiPortKey);
+        var first = registry.GetOrAssignInternalServicePort(PortRegistry.AslmMirrorServiceId, PortRegistry.AslmMirrorPortKey);
+        var second = registry.GetOrAssignInternalServicePort(PortRegistry.AslmMirrorServiceId, PortRegistry.AslmMirrorPortKey);
 
         second.Should().Be(first);
-        registry.TryGetInternalServicePort(PortRegistry.AslmApiServiceId, PortRegistry.AslmApiPortKey)
+        registry.TryGetInternalServicePort(PortRegistry.AslmMirrorServiceId, PortRegistry.AslmMirrorPortKey)
             .Should().Be(first);
     }
 

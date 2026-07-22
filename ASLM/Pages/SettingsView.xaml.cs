@@ -54,7 +54,7 @@ namespace ASLM.Pages
         private readonly GitHubUpdateClient _githubUpdateClient;
         private readonly UpdateManager _updateManager;
         private readonly EngineInstaller _engineInstaller;
-        private readonly AslmApiServer _apiServer;
+        private readonly AslmMirrorServer _mirrorServer;
         private readonly NotificationCenter _notifications;
         private readonly ThemeService _themeService;
         private readonly CustomThemesStore _customThemesStore;
@@ -369,7 +369,7 @@ namespace ASLM.Pages
             GitHubUpdateClient githubUpdateClient,
             UpdateManager updateManager,
             EngineInstaller engineInstaller,
-            AslmApiServer apiServer,
+            AslmMirrorServer mirrorServer,
             NotificationCenter notifications,
             ThemeService themeService,
             CustomThemesStore customThemesStore)
@@ -382,7 +382,7 @@ namespace ASLM.Pages
             _githubUpdateClient = githubUpdateClient;
             _updateManager = updateManager;
             _engineInstaller = engineInstaller;
-            _apiServer = apiServer;
+            _mirrorServer = mirrorServer;
             _notifications = notifications;
             _themeService = themeService;
             _customThemesStore = customThemesStore;
@@ -686,7 +686,7 @@ namespace ASLM.Pages
         /// </summary>
         private void LoadAslmDraftsFromAppData()
         {
-            var snapshot = SettingsService.BuildAslmDraftSnapshot(_appData, _apiServer.IsEnabled);
+            var snapshot = SettingsService.BuildAslmDraftSnapshot(_appData, _mirrorServer.IsEnabled);
             _userNameDraft = snapshot.UserName;
             _portStartDraft = snapshot.PortStart;
             _apiServerEnabledDraft = snapshot.ApiServerEnabled;
@@ -2815,17 +2815,17 @@ namespace ASLM.Pages
 
                 if (_apiServerEnabledDraft != _aslmBaseline.ApiServerEnabled)
                 {
-                    await _apiServer.SetEnabledAsync(_apiServerEnabledDraft);
+                    await _mirrorServer.SetEnabledAsync(_apiServerEnabledDraft);
                 }
 
                 _aslmBaseline = new AslmBaseline(
                     _userNameDraft,
                     _portStartDraft,
-                    _apiServer.IsEnabled);
-                _apiServerEnabledDraft = _apiServer.IsEnabled;
+                    _mirrorServer.IsEnabled);
+                _apiServerEnabledDraft = _mirrorServer.IsEnabled;
                 _consoleBaseline = _consoleDraft;
                 _legalAutoAcceptBaseline = _legalAutoAcceptDraft;
-                _updateBaseline = SettingsService.BuildAslmDraftSnapshot(_appData, _apiServer.IsEnabled).UpdateBaseline;
+                _updateBaseline = SettingsService.BuildAslmDraftSnapshot(_appData, _mirrorServer.IsEnabled).UpdateBaseline;
                 _updateDraft = _updateBaseline;
                 PortErrorLabel.IsVisible = false;
 
