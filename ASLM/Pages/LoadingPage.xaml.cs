@@ -23,6 +23,7 @@ namespace ASLM.Pages
         private readonly ThemeService _themeService;
         private readonly CustomThemesStore _customThemesStore;
         private readonly ModuleTrustService _moduleTrustService;
+        private readonly SunriseService _sunriseService;
         private readonly AppLocalizationService _localization;
         private readonly IServiceProvider _services;
         private bool _initialized;
@@ -46,6 +47,7 @@ namespace ASLM.Pages
             ThemeService themeService,
             CustomThemesStore customThemesStore,
             ModuleTrustService moduleTrustService,
+            SunriseService sunriseService,
             AppLocalizationService localization,
             IServiceProvider services)
         {
@@ -62,6 +64,7 @@ namespace ASLM.Pages
             _themeService = themeService;
             _customThemesStore = customThemesStore;
             _moduleTrustService = moduleTrustService;
+            _sunriseService = sunriseService;
             _localization = localization;
             _services = services;
             LocalizableAttach.Hook(this, _localization, this);
@@ -92,6 +95,7 @@ namespace ASLM.Pages
 
             _initialized = true;
             await Task.Run(() => _appData.InitializeAsync());
+            await Task.Run(() => _sunriseService.InitializeAsync());
             await Task.Run(() => _legalAcceptance.InitializeAsync());
             _localization.ApplyCulture();
             await Task.Run(() => _moduleTrustService.InitializeAsync());

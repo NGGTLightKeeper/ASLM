@@ -80,6 +80,7 @@ namespace ASLM
             builder.Services.AddSingleton<SettingsService>();
             builder.Services.AddSingleton<CustomThemesStore>();
             builder.Services.AddSingleton<ThemeService>();
+            builder.Services.AddSingleton<SunriseService>();
 
             // Page registrations
             builder.Services.AddTransient<AppShellPage>();

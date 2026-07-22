@@ -90,6 +90,9 @@ namespace ASLM
 
                 var moduleInteropServer = _services.GetService<AslmModuleInteropServer>();
                 moduleInteropServer?.Dispose();
+
+                var sunriseService = _services.GetService<SunriseService>();
+                sunriseService?.Dispose();
             }
             catch (Exception ex)
             {
