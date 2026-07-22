@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 using ASLM.Models;
 using Microsoft.Extensions.Logging;
 
-namespace ASLM.Services.Modules
+namespace ASLM.Services.API
 {
     /// <summary>
     /// Hosts a local JSON HTTP API that exposes module registry data and coordinates module starts.
