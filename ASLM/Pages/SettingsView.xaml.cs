@@ -58,6 +58,7 @@ namespace ASLM.Pages
         private readonly NotificationCenter _notifications;
         private readonly ThemeService _themeService;
         private readonly CustomThemesStore _customThemesStore;
+        private readonly SunriseService _sunriseService;
         private readonly List<SettingControlMapping> _settingMappings = [];
         private readonly Dictionary<string, SettingBaseline> _settingBaselines = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Border> _categoryButtons = new(StringComparer.OrdinalIgnoreCase);
@@ -82,12 +83,15 @@ namespace ASLM.Pages
         private bool _isOllamaAccountActionRunning;
         private bool _isOllamaMetadataRefreshRunning;
         private bool _isGitHubAccountActionRunning;
+        private bool _isAslmAccountActionRunning;
         private int _actionButtonUpdateQueued;
         private string _ollamaAccountAction = string.Empty;
         private Button? _ollamaAccountButton;
         private Label? _ollamaAccountStatusLabel;
         private Button? _githubAccountButton;
         private Label? _githubAccountStatusLabel;
+        private Button? _aslmAccountButton;
+        private Label? _aslmAccountStatusLabel;
         private CompactToggle? _checkUpdatesToggle;
         private CompactToggle? _autoUpdatesToggle;
         private Picker? _appUpdateChannelPicker;
@@ -111,6 +115,7 @@ namespace ASLM.Pages
         private bool _legalAutoAcceptBaseline = true;
         private CancellationTokenSource? _ollamaMetadataRefreshCts;
         private CancellationTokenSource? _ollamaStatusPollingCts;
+        private CancellationTokenSource? _aslmAccountActionCts;
         private bool _settingsReconcileTimerStarted;
         private bool _settingsReconcileTimerStopRequested;
 
@@ -372,7 +377,8 @@ namespace ASLM.Pages
             AslmMirrorServer mirrorServer,
             NotificationCenter notifications,
             ThemeService themeService,
-            CustomThemesStore customThemesStore)
+            CustomThemesStore customThemesStore,
+            SunriseService sunriseService)
         {
             _appData = appData;
             _settingsService = settingsService;
@@ -386,6 +392,7 @@ namespace ASLM.Pages
             _notifications = notifications;
             _themeService = themeService;
             _customThemesStore = customThemesStore;
+            _sunriseService = sunriseService;
             InitializeComponent();
             LocalizableAttach.Hook(this, _localization, this);
             ApplyFlatEntryStyle(UsernameEntry);
@@ -461,6 +468,7 @@ namespace ASLM.Pages
 
             StopOllamaStatusPolling();
             StopOllamaMetadataRefresh();
+            StopAslmAccountAction();
             _ollamaSettings.StopManagedRuntime();
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
@@ -531,6 +539,7 @@ namespace ASLM.Pages
             StopSettingsReconcileTimer();
             StopOllamaStatusPolling();
             StopOllamaMetadataRefresh();
+            StopAslmAccountAction();
             _ollamaSettings.StopManagedRuntime();
         }
 
@@ -1132,7 +1141,7 @@ namespace ASLM.Pages
         /// </summary>
         private void UpdateActionButtons()
         {
-            var canInteract = !_isSaving && _activeCategory != null;
+            var canInteract = !_isSaving && !_isAslmAccountActionRunning && _activeCategory != null;
             var hasChanges = canInteract && HasAnyUnsavedChanges();
             var canReset = _activeCategory != null;
             DefaultButton.IsVisible = canReset;
@@ -1251,6 +1260,8 @@ namespace ASLM.Pages
             _settingMappings.Clear();
             ResetRenderedControlReferences();
             PrepareCategorySurface(showAslmContainer: true, showModuleContainer: true, showEmptyState: false);
+            AccountModeSection.IsVisible = false;
+            AccountModeSection.Children.Clear();
             UserProfileSection.IsVisible = false;
             PortsSection.IsVisible = true;
 
@@ -1279,7 +1290,10 @@ namespace ASLM.Pages
             _settingMappings.Clear();
             ResetRenderedControlReferences();
             PrepareCategorySurface(showAslmContainer: true, showModuleContainer: true, showEmptyState: false);
-            UserProfileSection.IsVisible = true;
+            AccountModeSection.Children.Clear();
+            AccountModeSection.Children.Add(CreateAslmAccountCard());
+            AccountModeSection.IsVisible = true;
+            UserProfileSection.IsVisible = !_sunriseService.IsCloudAccount;
             PortsSection.IsVisible = false;
 
             var section = CreateModuleSectionBorder();
@@ -1292,6 +1306,7 @@ namespace ASLM.Pages
             ModuleSettingsContainer.Children.Add(section);
 
             _githubDraft = _githubAccountStore.GetState();
+            UpdateAslmAccountActionControls();
             UpdateGitHubAccountActionControls();
             UpdateOllamaAccountActionControls();
             StartOllamaMetadataRefresh();
@@ -2007,6 +2022,51 @@ namespace ASLM.Pages
         }
 
         /// <summary>
+        /// Builds the ASLM local/cloud account card shown at the top of the Accounts category.
+        /// </summary>
+        private Border CreateAslmAccountCard()
+        {
+            var card = CreateSettingCardBorder();
+            var row = new Grid
+            {
+                ColumnSpacing = 16,
+                VerticalOptions = LayoutOptions.Center,
+                MinimumHeightRequest = 44
+            };
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+
+            var text = new VerticalStackLayout
+            {
+                Spacing = TitleDescriptionSpacing,
+                VerticalOptions = LayoutOptions.Center
+            };
+
+            var title = CreateCardTitle(L.Get(LocalizationKeys.Settings_AslmAccount_Title));
+            title.VerticalOptions = LayoutOptions.Center;
+            text.Children.Add(title);
+
+            _aslmAccountStatusLabel = CreateSecondaryLabel(BuildAslmAccountStatusText());
+            _aslmAccountStatusLabel.LineBreakMode = LineBreakMode.WordWrap;
+            _aslmAccountStatusLabel.MaxLines = 2;
+            text.Children.Add(_aslmAccountStatusLabel);
+
+            row.Children.Add(text);
+            Grid.SetColumn(text, 0);
+
+            _aslmAccountButton = CreateInlineActionButton(
+                _sunriseService.IsCloudAccount
+                    ? L.Get(LocalizationKeys.Settings_AslmAccount_SwitchToLocal)
+                    : L.Get(LocalizationKeys.Settings_AslmAccount_SwitchToCloud),
+                OnAslmAccountButtonClicked);
+            row.Children.Add(_aslmAccountButton);
+            Grid.SetColumn(_aslmAccountButton, 1);
+
+            card.Content = row;
+            return card;
+        }
+
+        /// <summary>
         /// Builds the GitHub account card shown in the Accounts category.
         /// </summary>
         private Border CreateGitHubAccountCard()
@@ -2641,7 +2701,10 @@ namespace ASLM.Pages
                     RenderAslmCategory();
                     break;
                 case SettingsCategoryKind.Accounts:
-                    _userNameDraft = Environment.UserName;
+                    if (!_sunriseService.IsCloudAccount)
+                    {
+                        _userNameDraft = Environment.UserName;
+                    }
                     RenderAccountsCategory();
                     break;
                 case SettingsCategoryKind.Updates:
@@ -2941,6 +3004,158 @@ namespace ASLM.Pages
             var newPage = application.CreateStartupPage();
             var window = application.Windows[0];
             window.Page = newPage;
+        }
+
+        /// <summary>
+        /// Switches the ASLM profile between local mode and browser-authorized SUNRISE mode.
+        /// </summary>
+        private async void OnAslmAccountButtonClicked(object? sender, EventArgs e)
+        {
+            if (_isAslmAccountActionRunning)
+            {
+                return;
+            }
+
+            if (_sunriseService.IsCloudAccount)
+            {
+                var confirmed = await ShowAlertAsync(
+                    L.Get(LocalizationKeys.Settings_AslmAccount_SwitchToLocalTitle),
+                    L.Get(LocalizationKeys.Settings_AslmAccount_SwitchToLocalMessage),
+                    L.Get(LocalizationKeys.Settings_AslmAccount_SwitchToLocalConfirm),
+                    L.Get(LocalizationKeys.Common_Cancel));
+                if (!confirmed)
+                {
+                    return;
+                }
+            }
+
+            try
+            {
+                _isAslmAccountActionRunning = true;
+                var actionCts = new CancellationTokenSource();
+                _aslmAccountActionCts = actionCts;
+                UpdateAslmAccountActionControls();
+                UpdateActionButtons();
+
+                if (_sunriseService.IsCloudAccount)
+                {
+                    await _sunriseService.SelectLocalAccountAsync(actionCts.Token);
+                }
+                else
+                {
+                    var result = await _sunriseService.AuthenticateApplicationAsync(actionCts.Token);
+                    if (!result.Success)
+                    {
+                        if (actionCts.IsCancellationRequested)
+                        {
+                            return;
+                        }
+
+                        var error = string.IsNullOrWhiteSpace(result.Error)
+                            ? L.Get(LocalizationKeys.SetupWizard_CloudAccountRequired)
+                            : result.Error;
+                        await ShowErrorAsync(L.Get(
+                            LocalizationKeys.Settings_AslmAccount_AuthenticationFailed,
+                            error));
+                        return;
+                    }
+                }
+
+                _userNameDraft = _appData.Data.User.Name;
+                _aslmBaseline = _aslmBaseline with { UserName = _userNameDraft };
+                UsernameEntry.Text = _userNameDraft;
+                if (_activeCategory?.Kind == SettingsCategoryKind.Accounts)
+                {
+                    RenderAccountsCategory();
+                    UpdateActionButtons();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Closing the settings overlay cancels an outstanding browser sign-in.
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ASLM account switch failed: {ex}");
+                await ShowErrorAsync(L.Get(
+                    LocalizationKeys.Settings_AslmAccount_AuthenticationFailed,
+                    ex.Message));
+            }
+            finally
+            {
+                _aslmAccountActionCts?.Dispose();
+                _aslmAccountActionCts = null;
+                _isAslmAccountActionRunning = false;
+                UpdateAslmAccountActionControls();
+                UpdateActionButtons();
+            }
+        }
+
+        /// <summary>
+        /// Cancels an in-flight ASLM browser authorization when the settings view closes.
+        /// </summary>
+        private void StopAslmAccountAction()
+        {
+            _aslmAccountActionCts?.Cancel();
+        }
+
+        /// <summary>
+        /// Builds the status line for the active local or cloud ASLM account mode.
+        /// </summary>
+        private string BuildAslmAccountStatusText()
+        {
+            if (_isAslmAccountActionRunning)
+            {
+                return L.Get(LocalizationKeys.Settings_AslmAccount_Connecting);
+            }
+
+            if (!_sunriseService.IsCloudAccount)
+            {
+                return L.Get(LocalizationKeys.Settings_AslmAccount_LocalStatus);
+            }
+
+            return L.Get(
+                LocalizationKeys.Settings_AslmAccount_CloudStatus,
+                GetCloudAccountDisplayName(_sunriseService.UserData.Account));
+        }
+
+        /// <summary>
+        /// Refreshes the ASLM account card after authorization or a mode switch.
+        /// </summary>
+        private void UpdateAslmAccountActionControls()
+        {
+            if (_aslmAccountStatusLabel != null)
+            {
+                _aslmAccountStatusLabel.Text = BuildAslmAccountStatusText();
+            }
+
+            if (_aslmAccountButton != null)
+            {
+                _aslmAccountButton.Text = _isAslmAccountActionRunning
+                    ? L.Get(LocalizationKeys.Settings_AslmAccount_Connecting)
+                    : _sunriseService.IsCloudAccount
+                        ? L.Get(LocalizationKeys.Settings_AslmAccount_SwitchToLocal)
+                        : L.Get(LocalizationKeys.Settings_AslmAccount_SwitchToCloud);
+                _aslmAccountButton.IsEnabled = !_isAslmAccountActionRunning;
+            }
+        }
+
+        /// <summary>
+        /// Resolves the best user-facing name exposed by a SUNRISE account.
+        /// </summary>
+        private static string GetCloudAccountDisplayName(SunriseUserAccount account)
+        {
+            if (!string.IsNullOrWhiteSpace(account.Aslm?.Username))
+            {
+                return account.Aslm.Username;
+            }
+
+            if (!string.IsNullOrWhiteSpace(account.Username))
+            {
+                return account.Username;
+            }
+
+            return account.Email;
         }
 
         /// <summary>
@@ -3289,6 +3504,12 @@ namespace ASLM.Pages
             _githubAccountStatusLabel = null;
         }
 
+        private void ResetAslmAccountControlReferences()
+        {
+            _aslmAccountButton = null;
+            _aslmAccountStatusLabel = null;
+        }
+
         /// <summary>
         /// Clears all dynamic control references before rebuilding one category UI tree.
         /// </summary>
@@ -3296,6 +3517,7 @@ namespace ASLM.Pages
         {
             ResetOllamaControlReferences();
             ResetGitHubControlReferences();
+            ResetAslmAccountControlReferences();
             ResetUpdateControlReferences();
             ResetAslmApiControlReferences();
         }

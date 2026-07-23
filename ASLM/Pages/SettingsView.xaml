@@ -102,6 +102,11 @@
                         <VerticalStackLayout x:Name="AslmSettingsContainer"
                                              Spacing="0"
                                              IsVisible="False">
+                            <VerticalStackLayout x:Name="AccountModeSection"
+                                                 Spacing="8"
+                                                 Margin="0,0,0,16"
+                                                 IsVisible="False" />
+
                             <VerticalStackLayout x:Name="UserProfileSection" Spacing="8">
                                 <Label x:Name="DisplayNameTitleLabel"
                                        Text="Display Name"

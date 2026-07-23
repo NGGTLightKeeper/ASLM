@@ -27,6 +27,11 @@
       "domainType": "NGGT_OSS"
     },
     {
+      "name": "WEB_AuthApp",
+      "url": "id/authapp/",
+      "domainType": "NGGT_OSS"
+    },
+    {
       "name": "API_AslmGetUserData",
       "url": "api/aslm/getuserdata/",
       "domainType": "NGGT_OSS"

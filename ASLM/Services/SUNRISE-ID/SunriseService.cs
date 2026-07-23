@@ -1,11 +1,16 @@
 // Copyright NGGT.LightKeeper. All Rights Reserved.
 
 using System.Net.Http;
+using System.Net;
+using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ASLM.Models;
+using ASLM.Services.Internal;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.ApplicationModel;
 
 namespace ASLM.Services.Sunrise
 {
@@ -14,7 +19,12 @@ namespace ASLM.Services.Sunrise
     /// </summary>
     public sealed class SunriseService : IDisposable
     {
-        private const int CurrentFileVersion = 1;
+        private const int CurrentFileVersion = 2;
+
+        private const int CallbackHeaderLimit = 16 * 1024;
+        private const int CallbackBodyLimit = 32 * 1024;
+        private const int CallbackConnectionLimit = 8;
+        private static readonly TimeSpan CallbackTimeout = TimeSpan.FromMinutes(5);
 
         private const string DomainsFileName = "SUNRISE_Domains.json";
         private const string UrlsFileName = "SUNRISE_URLs.json";
@@ -22,12 +32,15 @@ namespace ASLM.Services.Sunrise
         private const string UserDataFileName = "SUNRISE_UserData.json";
 
         private const string DefaultDomainType = "NGGT_OSS";
+        private const string ApplicationIdentifier = "ASLM";
 
         public const string SignupEndpoint = "API_Singup";
         public const string AuthenticationEndpoint = "JWT_Auth";
         public const string RefreshEndpoint = "JWT_Refresh";
         public const string VerifyEndpoint = "JWT_Verify";
         public const string PasswordRecoveryEndpoint = "WEB_PasswordRecovery";
+        public const string ApplicationAuthenticationEndpoint = "WEB_AuthApp";
+        public const string ApplicationAuthenticationSuccessEndpoint = "WEB_AuthAppSuccess";
         public const string AslmGetUserDataEndpoint = "API_AslmGetUserData";
         public const string AslmCreateProfileEndpoint = "API_AslmCreateProfile";
 
@@ -36,10 +49,19 @@ namespace ASLM.Services.Sunrise
         public const string ErrorProfileAslm = "ErrorProfileASLM";
         public const string ErrorAslmIsActive = "ErrorAslmIsActive";
         public const string ErrorAslmIsBanned = "ErrorAslmIsBanned";
+        public const string ErrorBrowserLaunch = "ErrorBrowserLaunch";
+        public const string ErrorAuthenticationCancelled = "ErrorAuthenticationCancelled";
+        public const string ErrorAuthenticationTimeout = "ErrorAuthenticationTimeout";
+        public const string ErrorAuthenticationCallback = "ErrorAuthenticationCallback";
+        public const string ErrorTokenRefresh = "ErrorTokenRefresh";
+        public const string ErrorAccountRequest = "ErrorAccountRequest";
+        public const string ErrorProfileCreation = "ErrorProfileCreation";
 
         private readonly ILogger<SunriseService> _logger;
+        private readonly AppDataStore _appData;
         private readonly HttpClient _httpClient;
         private readonly SemaphoreSlim _dataGate = new(1, 1);
+        private readonly SemaphoreSlim _accountOperationGate = new(1, 1);
 
         private readonly string _domainsFilePath;
         private readonly string _urlsFilePath;
@@ -89,15 +111,26 @@ namespace ASLM.Services.Sunrise
         /// </summary>
         public SunriseUserData UserData => _userDataDocument.UserData;
 
+        /// <summary>
+        /// Gets the selected ASLM account mode persisted in <c>ASLM_Data.json</c>.
+        /// </summary>
+        public AppAccountMode AccountMode => _appData.Data.User.AccountMode;
+
+        /// <summary>
+        /// Gets whether ASLM currently uses a SUNRISE cloud account.
+        /// </summary>
+        public bool IsCloudAccount => AccountMode == AppAccountMode.Cloud;
+
 
         // Construction
 
         /// <summary>
         /// Creates the service and resolves all persisted data paths below <c>Data/App</c>.
         /// </summary>
-        public SunriseService(ILogger<SunriseService> logger)
+        public SunriseService(ILogger<SunriseService> logger, AppDataStore appData)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _appData = appData ?? throw new ArgumentNullException(nameof(appData));
             _httpClient = new HttpClient();
 
             var dataDirectory = Path.Combine(AppRoot.Directory, "Data", "App");
@@ -129,21 +162,25 @@ namespace ASLM.Services.Sunrise
                     _domainsFilePath,
                     CreateDefaultDomainsData,
                     data => data.Normalize(),
+                    persistDefaults: true,
                     ct);
                 _urlsData = await LoadDocumentAsync(
                     _urlsFilePath,
                     CreateDefaultUrlsData,
                     data => data.Normalize(),
+                    persistDefaults: true,
                     ct);
                 _tokensData = await LoadDocumentAsync(
                     _tokensFilePath,
                     CreateDefaultTokensData,
                     data => data.Normalize(),
+                    persistDefaults: false,
                     ct);
                 _userDataDocument = await LoadDocumentAsync(
                     _userDataFilePath,
                     CreateDefaultUserDataDocument,
                     data => data.Normalize(),
+                    persistDefaults: false,
                     ct);
 
                 var domainsChanged = EnsureDefaultDomain();
@@ -225,6 +262,52 @@ namespace ASLM.Services.Sunrise
         /// Returns the configured password-recovery web page URI.
         /// </summary>
         public Uri GetPasswordRecoveryUri() => CreateFullUri(PasswordRecoveryEndpoint);
+
+        /// <summary>
+        /// Builds the SUNRISE application-authentication page URI for a validated loopback callback.
+        /// </summary>
+        public Uri GetApplicationAuthenticationUri(Uri redirectUri, string state)
+        {
+            ArgumentNullException.ThrowIfNull(redirectUri);
+
+            if (!IsValidLoopbackRedirectUri(redirectUri))
+            {
+                throw new ArgumentException(
+                    "The SUNRISE callback must use the fixed /sunrise-auth/ path on an IPv4 loopback port.",
+                    nameof(redirectUri));
+            }
+
+            if (!IsValidCallbackState(state))
+            {
+                throw new ArgumentException("The SUNRISE callback state is invalid.", nameof(state));
+            }
+
+            var endpoint = CreateFullUri(ApplicationAuthenticationEndpoint);
+            var separator = string.IsNullOrEmpty(endpoint.Query) ? "?" : "&";
+            return new Uri(
+                endpoint.AbsoluteUri + separator +
+                "app=" + Uri.EscapeDataString(ApplicationIdentifier) +
+                "&redirect_uri=" + Uri.EscapeDataString(redirectUri.AbsoluteUri) +
+                "&state=" + Uri.EscapeDataString(state),
+                UriKind.Absolute);
+        }
+
+        /// <summary>
+        /// Returns the SUNRISE page shown after the loopback callback is accepted.
+        /// </summary>
+        public Uri GetApplicationAuthenticationSuccessUri()
+        {
+            var endpoint = CreateFullUri(ApplicationAuthenticationSuccessEndpoint);
+            if (!endpoint.IsAbsoluteUri ||
+                (endpoint.Scheme != Uri.UriSchemeHttp && endpoint.Scheme != Uri.UriSchemeHttps) ||
+                !string.IsNullOrEmpty(endpoint.UserInfo))
+            {
+                throw new InvalidOperationException(
+                    "The SUNRISE application-authentication success endpoint must be an HTTP or HTTPS URI without user information.");
+            }
+
+            return endpoint;
+        }
 
 
         // Generic web request
@@ -401,6 +484,332 @@ namespace ASLM.Services.Sunrise
         }
 
 
+        // ASLM account integration
+
+        /// <summary>
+        /// Opens the SUNRISE authorization page and receives its JWT pair through a temporary
+        /// IPv4 loopback listener. Tokens are accepted only in a form-encoded POST body with
+        /// the cryptographically random state generated for this attempt.
+        /// </summary>
+        public async Task<SunriseAppAuthenticationResult> AuthenticateApplicationAsync(
+            CancellationToken ct = default)
+        {
+            ThrowIfDisposed();
+            await _accountOperationGate.WaitAsync(ct);
+            try
+            {
+                await InitializeAsync(ct);
+
+                var previousRefresh = _tokensData.Jwt.TokenRefresh;
+                var previousAccess = _tokensData.Jwt.TokenAccess;
+                var state = CreateCallbackState();
+
+                using var listener = new TcpListener(IPAddress.Loopback, 0);
+                listener.Start(1);
+
+                var localEndpoint = (IPEndPoint)listener.LocalEndpoint;
+                var redirectUri = new Uri($"http://127.0.0.1:{localEndpoint.Port}/sunrise-auth/");
+                var authenticationUri = GetApplicationAuthenticationUri(redirectUri, state);
+                var authenticationSuccessUri = GetApplicationAuthenticationSuccessUri();
+
+                bool browserOpened;
+                try
+                {
+                    browserOpened = await Launcher.Default.OpenAsync(authenticationUri);
+                }
+                catch (Exception ex) when (ex is FeatureNotSupportedException or InvalidOperationException)
+                {
+                    _logger.LogWarning(ex, "The SUNRISE authentication page could not be opened.");
+                    return AuthenticationFailure(ErrorBrowserLaunch);
+                }
+
+                if (!browserOpened)
+                {
+                    return AuthenticationFailure(ErrorBrowserLaunch);
+                }
+
+                SunriseCallbackPayload callback;
+                using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                timeoutCts.CancelAfter(CallbackTimeout);
+                try
+                {
+                    callback = await ReceiveAuthenticationCallbackAsync(
+                        listener,
+                        state,
+                        authenticationSuccessUri,
+                        timeoutCts.Token);
+                }
+                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                {
+                    return AuthenticationFailure(ErrorAuthenticationTimeout);
+                }
+                catch (OperationCanceledException)
+                {
+                    return AuthenticationFailure(ErrorAuthenticationCancelled);
+                }
+                catch (InvalidDataException ex)
+                {
+                    _logger.LogWarning(ex, "The SUNRISE authentication callback was rejected.");
+                    return AuthenticationFailure(ErrorAuthenticationCallback);
+                }
+
+                try
+                {
+                    // From this point onward every unsuccessful exit restores the credentials
+                    // that existed before the browser flow, even if the candidate write itself
+                    // is interrupted after partially reaching persistent storage.
+                    await StoreTokensAsync(callback.Refresh, callback.Access, ct);
+                    var syncResult = await SynchronizeAccountCoreAsync(ct);
+                    if (!syncResult.Success || syncResult.Account == null)
+                    {
+                        await RestoreTokensAfterFailedAuthenticationAsync(previousRefresh, previousAccess);
+                        return AuthenticationFailure(syncResult.Error);
+                    }
+
+                    await ApplyCloudAccountAsync(syncResult.Account, selectCloud: true, ct);
+                    return new SunriseAppAuthenticationResult
+                    {
+                        Success = true,
+                        Account = syncResult.Account
+                    };
+                }
+                catch
+                {
+                    await RestoreTokensAfterFailedAuthenticationAsync(previousRefresh, previousAccess);
+                    throw;
+                }
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                return AuthenticationFailure(ErrorAuthenticationCancelled);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or IOException or SocketException)
+            {
+                _logger.LogWarning(ex, "SUNRISE application authentication failed.");
+                return AuthenticationFailure(ErrorAuthenticationCallback);
+            }
+            finally
+            {
+                _accountOperationGate.Release();
+            }
+        }
+
+        /// <summary>
+        /// Refreshes tokens and account data for the selected cloud account. A missing ASLM
+        /// profile is created once and the account data is then requested again.
+        /// </summary>
+        public async Task<SunriseAccountSyncResult> SynchronizeCloudAccountAsync(
+            CancellationToken ct = default)
+        {
+            ThrowIfDisposed();
+            await _accountOperationGate.WaitAsync(ct);
+            try
+            {
+                await InitializeAsync(ct);
+                if (!IsCloudAccount)
+                {
+                    return new SunriseAccountSyncResult
+                    {
+                        Success = true,
+                        Skipped = true,
+                        Account = _userDataDocument.UserData.Account
+                    };
+                }
+
+                var result = await SynchronizeAccountCoreAsync(ct);
+                if (result.Success && result.Account != null)
+                {
+                    await ApplyCloudAccountAsync(result.Account, selectCloud: false, ct);
+                }
+
+                return result;
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or IOException or SocketException)
+            {
+                // Startup callers can report this result without replacing persisted credentials
+                // or preventing the rest of ASLM from loading.
+                _logger.LogWarning(ex, "SUNRISE cloud-account synchronization failed.");
+                return SyncFailure(ErrorAccountRequest);
+            }
+            finally
+            {
+                _accountOperationGate.Release();
+            }
+        }
+
+        /// <summary>
+        /// Selects the existing local ASLM account and clears SUNRISE credentials.
+        /// </summary>
+        public async Task SelectLocalAccountAsync(CancellationToken ct = default)
+        {
+            ThrowIfDisposed();
+            await _accountOperationGate.WaitAsync(ct);
+            try
+            {
+                await InitializeAsync(ct);
+
+                // Once a local switch starts, finish credential cleanup even if the settings
+                // surface closes and cancels its UI operation. Clearing credentials before
+                // persisting Local also prevents a local-mode file from retaining valid JWTs.
+                await StoreTokensAsync(string.Empty, string.Empty, CancellationToken.None);
+                await ClearUserDataAsync(CancellationToken.None);
+
+                _appData.Data.User.AccountMode = AppAccountMode.Local;
+                _appData.Data.User.Name = _appData.Data.User.LocalName;
+                await _appData.SaveAsync();
+            }
+            finally
+            {
+                _accountOperationGate.Release();
+            }
+        }
+
+        /// <summary>
+        /// Signs out of the SUNRISE cloud account and returns ASLM to local-account mode.
+        /// </summary>
+        public Task SignOutAsync(CancellationToken ct = default) => SelectLocalAccountAsync(ct);
+
+        private async Task<SunriseAccountSyncResult> SynchronizeAccountCoreAsync(CancellationToken ct)
+        {
+            if (!TryGetRefreshToken(out var refreshToken))
+            {
+                return SyncFailure(ErrorTokenRefresh);
+            }
+
+            using (var refreshResponse = await RefreshTokenAsync(refreshToken, ct))
+            {
+                if (!refreshResponse.IsSuccessStatusCode)
+                {
+                    return SyncFailure(ErrorTokenRefresh);
+                }
+
+                var tokenJson = await refreshResponse.Content.ReadAsStringAsync(ct);
+                if (!await UpdateTokensAsync(tokenJson, ct))
+                {
+                    return SyncFailure(ErrorTokenRefresh);
+                }
+            }
+
+            var profileCreated = false;
+            var accountResponse = await RequestAccountJsonAsync(ct);
+            if (!accountResponse.Success)
+            {
+                return SyncFailure(accountResponse.Error);
+            }
+
+            if (!CheckUserData(accountResponse.Json, out var accountError))
+            {
+                if (!string.Equals(accountError, ErrorProfileAslm, StringComparison.Ordinal))
+                {
+                    return SyncFailure(accountError);
+                }
+
+                bool createSucceeded;
+                using (var createResponse = await CreateAslmProfileAsync(ct))
+                {
+                    createSucceeded = createResponse.IsSuccessStatusCode;
+                }
+
+                // Always refetch after the create attempt. A second ASLM client may have
+                // created the same profile after our initial read, in which case SUNRISE
+                // returns profile_exists while the desired final state is already present.
+                accountResponse = await RequestAccountJsonAsync(ct);
+                if (!accountResponse.Success)
+                {
+                    return SyncFailure(createSucceeded ? accountResponse.Error : ErrorProfileCreation);
+                }
+
+                if (!CheckUserData(accountResponse.Json, out accountError))
+                {
+                    if (!createSucceeded && string.Equals(accountError, ErrorProfileAslm, StringComparison.Ordinal))
+                    {
+                        return SyncFailure(ErrorProfileCreation);
+                    }
+
+                    return SyncFailure(accountError);
+                }
+
+                profileCreated = createSucceeded;
+            }
+
+            if (!await UpdateUserDataAsync(accountResponse.Json, ct))
+            {
+                return SyncFailure(ErrorUserData);
+            }
+
+            return new SunriseAccountSyncResult
+            {
+                Success = true,
+                ProfileCreated = profileCreated,
+                Account = _userDataDocument.UserData.Account
+            };
+        }
+
+        private async Task<(bool Success, string Json, string Error)> RequestAccountJsonAsync(
+            CancellationToken ct)
+        {
+            using var response = await GetAslmUserDataAsync(ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                return (false, string.Empty, ErrorAccountRequest);
+            }
+
+            return (true, await response.Content.ReadAsStringAsync(ct), string.Empty);
+        }
+
+        private async Task ApplyCloudAccountAsync(
+            SunriseUserAccount account,
+            bool selectCloud,
+            CancellationToken ct)
+        {
+            if (selectCloud && _appData.Data.User.AccountMode == AppAccountMode.Local)
+            {
+                _appData.Data.User.LocalName = _appData.Data.User.Name;
+            }
+
+            var profileName = account.Aslm?.Username;
+            if (!string.IsNullOrWhiteSpace(profileName))
+            {
+                _appData.Data.User.Name = profileName.Trim();
+            }
+
+            if (selectCloud)
+            {
+                _appData.Data.User.AccountMode = AppAccountMode.Cloud;
+            }
+
+            await _appData.SaveAsync();
+        }
+
+        private static SunriseAppAuthenticationResult AuthenticationFailure(string error) => new()
+        {
+            Error = string.IsNullOrWhiteSpace(error) ? ErrorAccountRequest : error
+        };
+
+        private static SunriseAccountSyncResult SyncFailure(string error) => new()
+        {
+            Error = string.IsNullOrWhiteSpace(error) ? ErrorAccountRequest : error
+        };
+
+        private async Task RestoreTokensAfterFailedAuthenticationAsync(
+            string refreshToken,
+            string accessToken)
+        {
+            try
+            {
+                await StoreTokensAsync(refreshToken, accessToken, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to restore SUNRISE tokens after an unsuccessful authentication attempt.");
+            }
+        }
+
+
         // Token persistence
 
         /// <summary>
@@ -438,19 +847,8 @@ namespace ASLM.Services.Sunrise
                 return false;
             }
 
-            await _dataGate.WaitAsync(ct);
-            try
-            {
-                _tokensData.Jwt.TokenRefresh = response.Refresh;
-                _tokensData.Jwt.TokenAccess = response.Access;
-                _tokensData.Normalize();
-                await SaveDocumentCoreAsync(_tokensFilePath, _tokensData, ct);
-                return true;
-            }
-            finally
-            {
-                _dataGate.Release();
-            }
+            await StoreTokensAsync(response.Refresh, response.Access, ct);
+            return true;
         }
 
         /// <summary>
@@ -459,13 +857,22 @@ namespace ASLM.Services.Sunrise
         public async Task ClearTokensAsync(CancellationToken ct = default)
         {
             ThrowIfDisposed();
-            await InitializeAsync(ct);
+            await StoreTokensAsync(string.Empty, string.Empty, ct);
+        }
 
+        private async Task StoreTokensAsync(
+            string refreshToken,
+            string accessToken,
+            CancellationToken ct)
+        {
+            ThrowIfDisposed();
+            await InitializeAsync(ct);
             await _dataGate.WaitAsync(ct);
             try
             {
-                _tokensData.Jwt.TokenRefresh = string.Empty;
-                _tokensData.Jwt.TokenAccess = string.Empty;
+                _tokensData.Jwt.TokenRefresh = refreshToken ?? string.Empty;
+                _tokensData.Jwt.TokenAccess = accessToken ?? string.Empty;
+                _tokensData.Normalize();
                 await SaveDocumentCoreAsync(_tokensFilePath, _tokensData, ct);
             }
             finally
@@ -476,6 +883,27 @@ namespace ASLM.Services.Sunrise
 
 
         // User data persistence and validation
+
+        /// <summary>
+        /// Clears the cached and persisted SUNRISE account graph.
+        /// </summary>
+        public async Task ClearUserDataAsync(CancellationToken ct = default)
+        {
+            ThrowIfDisposed();
+            await InitializeAsync(ct);
+
+            await _dataGate.WaitAsync(ct);
+            try
+            {
+                _userDataDocument = CreateDefaultUserDataDocument();
+                _userDataDocument.Normalize();
+                await SaveDocumentCoreAsync(_userDataFilePath, _userDataDocument, ct);
+            }
+            finally
+            {
+                _dataGate.Release();
+            }
+        }
 
         /// <summary>
         /// Validates the account and ASLM state returned in a <c>user_data</c> API response.
@@ -590,6 +1018,343 @@ namespace ASLM.Services.Sunrise
         }
 
 
+        // Browser callback helpers
+
+        private static async Task<SunriseCallbackPayload> ReceiveAuthenticationCallbackAsync(
+            TcpListener listener,
+            string expectedState,
+            Uri successRedirectUri,
+            CancellationToken ct)
+        {
+            InvalidDataException? lastError = null;
+            for (var attempt = 0; attempt < CallbackConnectionLimit; attempt++)
+            {
+                using var client = await listener.AcceptTcpClientAsync(ct);
+                if (client.Client.RemoteEndPoint is not IPEndPoint remoteEndpoint ||
+                    !IPAddress.IsLoopback(remoteEndpoint.Address))
+                {
+                    lastError = new InvalidDataException("The callback did not originate from loopback.");
+                    continue;
+                }
+
+                try
+                {
+                    var request = await ReadCallbackRequestAsync(client.GetStream(), ct);
+                    var callbackPort = ((IPEndPoint)listener.LocalEndpoint).Port;
+                    var payload = ParseCallbackRequest(
+                        request.Method,
+                        request.Target,
+                        request.Headers,
+                        request.Body,
+                        $"127.0.0.1:{callbackPort}");
+                    if (!StateMatches(expectedState, payload.State))
+                    {
+                        throw new InvalidDataException("The callback state did not match the authorization attempt.");
+                    }
+
+                    await WriteCallbackRedirectAsync(client.GetStream(), successRedirectUri, ct);
+                    return payload;
+                }
+                catch (InvalidDataException ex)
+                {
+                    lastError = ex;
+                    try
+                    {
+                        await WriteCallbackErrorResponseAsync(client.GetStream(), ct);
+                    }
+                    catch (Exception responseError) when (responseError is IOException or SocketException)
+                    {
+                        // The rejected peer may close before reading the response.
+                    }
+                }
+            }
+
+            throw lastError ?? new InvalidDataException("No valid SUNRISE callback was received.");
+        }
+
+        private static async Task<(
+            string Method,
+            string Target,
+            Dictionary<string, string> Headers,
+            byte[] Body)> ReadCallbackRequestAsync(
+                NetworkStream stream,
+                CancellationToken ct)
+        {
+            using var received = new MemoryStream();
+            var buffer = new byte[4096];
+            var headerEnd = -1;
+
+            while (headerEnd < 0)
+            {
+                var read = await stream.ReadAsync(buffer.AsMemory(), ct);
+                if (read == 0)
+                {
+                    throw new InvalidDataException("The callback request ended before its headers were complete.");
+                }
+
+                received.Write(buffer, 0, read);
+                headerEnd = FindHeaderTerminator(received.GetBuffer(), checked((int)received.Length));
+                if (headerEnd < 0 && received.Length > CallbackHeaderLimit)
+                {
+                    throw new InvalidDataException("The callback headers exceeded their size limit.");
+                }
+            }
+
+            if (headerEnd > CallbackHeaderLimit)
+            {
+                throw new InvalidDataException("The callback headers exceeded their size limit.");
+            }
+
+            var allBytes = received.GetBuffer();
+            for (var index = 0; index < headerEnd; index++)
+            {
+                if (allBytes[index] > 0x7f)
+                {
+                    throw new InvalidDataException("The callback headers were not ASCII.");
+                }
+            }
+
+            var headerText = Encoding.ASCII.GetString(allBytes, 0, headerEnd);
+            var lines = headerText.Split("\r\n", StringSplitOptions.None);
+            var requestParts = lines[0].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (requestParts.Length != 3 || !requestParts[2].StartsWith("HTTP/1.", StringComparison.Ordinal))
+            {
+                throw new InvalidDataException("The callback request line was invalid.");
+            }
+
+            var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            for (var index = 1; index < lines.Length; index++)
+            {
+                var separator = lines[index].IndexOf(':');
+                if (separator <= 0)
+                {
+                    throw new InvalidDataException("A callback header was invalid.");
+                }
+
+                var name = lines[index][..separator].Trim();
+                var value = lines[index][(separator + 1)..].Trim();
+                if (string.IsNullOrEmpty(name) || !headers.TryAdd(name, value))
+                {
+                    throw new InvalidDataException("A callback header was empty or duplicated.");
+                }
+            }
+
+            if (headers.ContainsKey("Transfer-Encoding") ||
+                !headers.TryGetValue("Content-Length", out var lengthText) ||
+                !int.TryParse(lengthText, out var contentLength) ||
+                contentLength <= 0 || contentLength > CallbackBodyLimit)
+            {
+                throw new InvalidDataException("The callback content length was invalid.");
+            }
+
+            var bodyOffset = headerEnd + 4;
+            var bufferedBodyLength = checked((int)received.Length) - bodyOffset;
+            if (bufferedBodyLength > contentLength)
+            {
+                throw new InvalidDataException("The callback contained unexpected trailing data.");
+            }
+
+            var body = new byte[contentLength];
+            if (bufferedBodyLength > 0)
+            {
+                Buffer.BlockCopy(allBytes, bodyOffset, body, 0, bufferedBodyLength);
+            }
+
+            var bodyRead = bufferedBodyLength;
+            while (bodyRead < contentLength)
+            {
+                var read = await stream.ReadAsync(body.AsMemory(bodyRead, contentLength - bodyRead), ct);
+                if (read == 0)
+                {
+                    throw new InvalidDataException("The callback body ended early.");
+                }
+
+                bodyRead += read;
+            }
+
+            return (requestParts[0], requestParts[1], headers, body);
+        }
+
+        private static SunriseCallbackPayload ParseCallbackRequest(
+            string method,
+            string target,
+            IReadOnlyDictionary<string, string> headers,
+            byte[] body,
+            string expectedHost)
+        {
+            if (!string.Equals(method, "POST", StringComparison.Ordinal) ||
+                !string.Equals(target, "/sunrise-auth/", StringComparison.Ordinal))
+            {
+                throw new InvalidDataException("The callback must be a POST to /sunrise-auth/.");
+            }
+
+            if (!headers.TryGetValue("Host", out var host) ||
+                !string.Equals(host, expectedHost, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException("The callback host was invalid.");
+            }
+
+            if (!headers.TryGetValue("Content-Type", out var contentType) ||
+                !string.Equals(
+                    contentType.Split(';', 2)[0].Trim(),
+                    "application/x-www-form-urlencoded",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException("The callback content type was invalid.");
+            }
+
+            string formText;
+            try
+            {
+                formText = new UTF8Encoding(false, true).GetString(body);
+            }
+            catch (DecoderFallbackException ex)
+            {
+                throw new InvalidDataException("The callback body was not valid UTF-8.", ex);
+            }
+
+            var form = ParseFormBody(formText);
+            if (!form.TryGetValue("state", out var state) || !IsValidCallbackState(state) ||
+                !form.TryGetValue("access", out var access) || string.IsNullOrWhiteSpace(access) ||
+                !form.TryGetValue("refresh", out var refresh) || string.IsNullOrWhiteSpace(refresh))
+            {
+                throw new InvalidDataException("The callback did not contain a complete token payload.");
+            }
+
+            return new SunriseCallbackPayload
+            {
+                State = state,
+                Access = access,
+                Refresh = refresh
+            };
+        }
+
+        private static Dictionary<string, string> ParseFormBody(string formBody)
+        {
+            var values = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var pair in formBody.Split('&', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var separator = pair.IndexOf('=');
+                if (separator <= 0)
+                {
+                    throw new InvalidDataException("The callback form body was malformed.");
+                }
+
+                var name = DecodeFormValue(pair[..separator]);
+                var value = DecodeFormValue(pair[(separator + 1)..]);
+                if (!values.TryAdd(name, value))
+                {
+                    throw new InvalidDataException("The callback form contained a duplicated field.");
+                }
+            }
+
+            return values;
+        }
+
+        private static string DecodeFormValue(string value)
+        {
+            try
+            {
+                return Uri.UnescapeDataString(value.Replace('+', ' '));
+            }
+            catch (UriFormatException ex)
+            {
+                throw new InvalidDataException("The callback form contained invalid escaping.", ex);
+            }
+        }
+
+        private static async Task WriteCallbackRedirectAsync(
+            NetworkStream stream,
+            Uri redirectUri,
+            CancellationToken ct)
+        {
+            var response = Encoding.ASCII.GetBytes(
+                "HTTP/1.1 303 See Other\r\n" +
+                $"Location: {redirectUri.AbsoluteUri}\r\n" +
+                "Content-Length: 0\r\n" +
+                "Cache-Control: no-store\r\n" +
+                "Pragma: no-cache\r\n" +
+                "Referrer-Policy: no-referrer\r\n" +
+                "Connection: close\r\n\r\n");
+
+            await stream.WriteAsync(response.AsMemory(), ct);
+            await stream.FlushAsync(ct);
+        }
+
+        private static async Task WriteCallbackErrorResponseAsync(
+            NetworkStream stream,
+            CancellationToken ct)
+        {
+            const string message = "ASLM rejected this authentication response. Return to ASLM and try again.";
+            var bodyBytes = Encoding.UTF8.GetBytes(message);
+            var response = Encoding.ASCII.GetBytes(
+                "HTTP/1.1 400 Bad Request\r\n" +
+                "Content-Type: text/plain; charset=utf-8\r\n" +
+                $"Content-Length: {bodyBytes.Length}\r\n" +
+                "Cache-Control: no-store\r\n" +
+                "Pragma: no-cache\r\n" +
+                "Referrer-Policy: no-referrer\r\n" +
+                "Connection: close\r\n\r\n");
+
+            await stream.WriteAsync(response.AsMemory(), ct);
+            await stream.WriteAsync(bodyBytes.AsMemory(), ct);
+            await stream.FlushAsync(ct);
+        }
+
+        private static int FindHeaderTerminator(byte[] bytes, int length)
+        {
+            for (var index = 0; index <= length - 4; index++)
+            {
+                if (bytes[index] == '\r' && bytes[index + 1] == '\n' &&
+                    bytes[index + 2] == '\r' && bytes[index + 3] == '\n')
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private static string CreateCallbackState()
+        {
+            var state = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            return state.TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        }
+
+        private static bool IsValidCallbackState(string? state)
+        {
+            if (state == null || state.Length is < 22 or > 128)
+            {
+                return false;
+            }
+
+            return state.All(character =>
+                character is >= 'A' and <= 'Z' or
+                >= 'a' and <= 'z' or
+                >= '0' and <= '9' or
+                '-' or '_');
+        }
+
+        private static bool StateMatches(string expected, string received)
+        {
+            var expectedBytes = Encoding.ASCII.GetBytes(expected);
+            var receivedBytes = Encoding.ASCII.GetBytes(received);
+            return expectedBytes.Length == receivedBytes.Length &&
+                CryptographicOperations.FixedTimeEquals(expectedBytes, receivedBytes);
+        }
+
+        private static bool IsValidLoopbackRedirectUri(Uri redirectUri) =>
+            redirectUri.IsAbsoluteUri &&
+            string.Equals(redirectUri.Scheme, Uri.UriSchemeHttp, StringComparison.Ordinal) &&
+            string.Equals(redirectUri.Host, "127.0.0.1", StringComparison.Ordinal) &&
+            redirectUri.Port is >= 1024 and <= 65535 &&
+            string.Equals(redirectUri.Authority, $"127.0.0.1:{redirectUri.Port}", StringComparison.Ordinal) &&
+            string.Equals(redirectUri.AbsolutePath, "/sunrise-auth/", StringComparison.Ordinal) &&
+            string.IsNullOrEmpty(redirectUri.Query) &&
+            string.IsNullOrEmpty(redirectUri.Fragment) &&
+            string.IsNullOrEmpty(redirectUri.UserInfo);
+
+
         // Header and payload helpers
 
         /// <summary>
@@ -663,6 +1428,7 @@ namespace ASLM.Services.Sunrise
             string filePath,
             Func<T> createDefault,
             Action<T> normalize,
+            bool persistDefaults,
             CancellationToken ct)
             where T : class
         {
@@ -692,7 +1458,11 @@ namespace ASLM.Services.Sunrise
 
             var defaults = createDefault();
             normalize(defaults);
-            await SaveDocumentCoreAsync(filePath, defaults, ct);
+            if (persistDefaults)
+            {
+                await SaveDocumentCoreAsync(filePath, defaults, ct);
+            }
+
             return defaults;
         }
 
@@ -797,6 +1567,8 @@ namespace ASLM.Services.Sunrise
             CreateUrl(RefreshEndpoint, "api/id/token/refresh/"),
             CreateUrl(VerifyEndpoint, "api/id/token/verify/"),
             CreateUrl(PasswordRecoveryEndpoint, "id/"),
+            CreateUrl(ApplicationAuthenticationEndpoint, "id/authapp/"),
+            CreateUrl(ApplicationAuthenticationSuccessEndpoint, "id/authapp/success/"),
             CreateUrl(AslmGetUserDataEndpoint, "api/aslm/getuserdata/"),
             CreateUrl(AslmCreateProfileEndpoint, "api/aslm/createprofile/")
         ];
@@ -859,6 +1631,7 @@ namespace ASLM.Services.Sunrise
             _disposed = true;
             _httpClient.Dispose();
             _dataGate.Dispose();
+            _accountOperationGate.Dispose();
         }
     }
 }

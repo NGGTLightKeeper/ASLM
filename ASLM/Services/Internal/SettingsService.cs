@@ -328,6 +328,11 @@ namespace ASLM.Services.Internal
             bool legalAutoAcceptUpdates)
         {
             appData.Data.User.Name = userName;
+            if (appData.Data.User.AccountMode == AppAccountMode.Local)
+            {
+                appData.Data.User.LocalName = userName;
+            }
+
             appData.Data.Ports.ModulesStart = modulesStart;
             appData.Data.Consoles.SidebarVisible = consoleDraft.SidebarVisible;
             appData.Data.Consoles.ShowCompletedProcesses = consoleDraft.ShowCompletedProcesses;

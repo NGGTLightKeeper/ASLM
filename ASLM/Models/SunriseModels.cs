@@ -348,6 +348,37 @@ namespace ASLM.Models
     }
 
 
+    // Account integration results
+
+    /// <summary>
+    /// Describes the result of browser-based SUNRISE authorization for ASLM.
+    /// </summary>
+    public sealed class SunriseAppAuthenticationResult
+    {
+        public bool Success { get; init; }
+
+        public string Error { get; init; } = string.Empty;
+
+        public SunriseUserAccount? Account { get; init; }
+    }
+
+    /// <summary>
+    /// Describes one background synchronization of a selected SUNRISE cloud account.
+    /// </summary>
+    public sealed class SunriseAccountSyncResult
+    {
+        public bool Success { get; init; }
+
+        public bool Skipped { get; init; }
+
+        public bool ProfileCreated { get; init; }
+
+        public string Error { get; init; } = string.Empty;
+
+        public SunriseUserAccount? Account { get; init; }
+    }
+
+
     // Web API payloads
 
     internal sealed class SunriseAuthRequest
@@ -402,5 +433,14 @@ namespace ASLM.Models
     {
         [JsonPropertyName("user_data")]
         public SunriseUserAccount? UserData { get; set; }
+    }
+
+    internal sealed class SunriseCallbackPayload
+    {
+        public string State { get; init; } = string.Empty;
+
+        public string Access { get; init; } = string.Empty;
+
+        public string Refresh { get; init; } = string.Empty;
     }
 }
