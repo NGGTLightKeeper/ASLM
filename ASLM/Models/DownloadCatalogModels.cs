@@ -609,6 +609,12 @@ namespace ASLM.Models
     /// </summary>
     public class DownloadCatalogSnapshot
     {
+        // Number of installed modules that declare a configured downloads bridge.
+        public int ConfiguredProviderCount { get; set; }
+
+        // Number of configured providers whose category request completed successfully.
+        public int SuccessfulProviderCount { get; set; }
+
         // Categories shown in the shared download page.
         public List<DownloadCatalogCategory> Categories { get; set; } = [];
 

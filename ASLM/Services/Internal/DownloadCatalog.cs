@@ -61,7 +61,7 @@ namespace ASLM.Services.Internal
                 await bridgeThrottle.WaitAsync(ct);
                 try
                 {
-                    await LoadModuleCatalogAsync(
+                    return await LoadModuleCatalogAsync(
                         module,
                         queryText,
                         filters,
@@ -78,12 +78,17 @@ namespace ASLM.Services.Internal
                 }
             });
 
-            await Task.WhenAll(loadTasks);
+            var providerResults = await Task.WhenAll(loadTasks);
 
             // Convert builders only after every module has contributed its portion of the catalog.
             return new DownloadCatalogSnapshot
             {
-                Warnings = warnings,
+                ConfiguredProviderCount = bridgeModules.Count,
+                SuccessfulProviderCount = providerResults.Count(static succeeded => succeeded),
+                Warnings = warnings
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(static warning => warning, StringComparer.OrdinalIgnoreCase)
+                    .ToList(),
                 Categories = categoryBuilders.Values
                     .Select(builder => builder.ToCategory(_stateStore))
                     .OrderBy(category => category.SortOrder)
@@ -95,7 +100,7 @@ namespace ASLM.Services.Internal
         /// <summary>
         /// Loads and merges the bridge catalog exposed by one module.
         /// </summary>
-        private async Task LoadModuleCatalogAsync(
+        private async Task<bool> LoadModuleCatalogAsync(
             ModuleConfig module,
             string? queryText,
             IReadOnlyCollection<string>? filters,
@@ -119,7 +124,13 @@ namespace ASLM.Services.Internal
             {
                 _logger.LogWarning(ex, "Failed to load download categories for module {ModuleId}.", module.Id);
                 AddWarning(warnings, mergeLock, $"{module.Name}: download categories could not be loaded.");
-                return;
+                MergeDeclaredCategories(module, categoryBuilders, mergeLock);
+                return false;
+            }
+
+            if (categories.Count == 0)
+            {
+                categories = CreateDeclaredCategoryPayloads(module);
             }
 
             foreach (var category in categories)
@@ -135,6 +146,12 @@ namespace ASLM.Services.Internal
                 var groupKey = !string.IsNullOrWhiteSpace(category.GroupKey)
                     ? category.GroupKey
                     : $"{module.Id}:{category.Id}";
+
+                CategoryBuilder categoryBuilder;
+                lock (mergeLock)
+                {
+                    categoryBuilder = GetOrCreateCategoryBuilder(categoryBuilders, groupKey, category);
+                }
 
                 ModuleDownloadBridgeResponse itemResponse;
                 try
@@ -152,10 +169,13 @@ namespace ASLM.Services.Internal
                     continue;
                 }
 
+                foreach (var warning in itemResponse.Warnings)
+                {
+                    AddWarning(warnings, mergeLock, $"{module.Name}: {warning}");
+                }
+
                 lock (mergeLock)
                 {
-                    var categoryBuilder = GetOrCreateCategoryBuilder(categoryBuilders, groupKey, category);
-
                     foreach (var filterPayload in itemResponse.Filters)
                     {
                         ct.ThrowIfCancellationRequested();
@@ -191,6 +211,8 @@ namespace ASLM.Services.Internal
                     }
                 }
             }
+
+            return true;
         }
 
         /// <summary>
@@ -201,6 +223,45 @@ namespace ASLM.Services.Internal
             lock (mergeLock)
             {
                 warnings.Add(warning);
+            }
+        }
+
+        /// <summary>
+        /// Materializes the categories declared directly in one module manifest.
+        /// </summary>
+        private static List<ModuleDownloadCategoryPayload> CreateDeclaredCategoryPayloads(ModuleConfig module)
+        {
+            return module.DownloadsBridge?.Categories
+                .Where(static category => category != null && !string.IsNullOrWhiteSpace(category.Id))
+                .Select(static category => new ModuleDownloadCategoryPayload
+                {
+                    Id = category.Id,
+                    Title = category.Title,
+                    Description = category.Description,
+                    GroupKey = category.GroupKey,
+                    TargetRef = category.TargetRef,
+                    SortOrder = category.SortOrder
+                })
+                .ToList() ?? [];
+        }
+
+        /// <summary>
+        /// Adds manifest-declared categories when a provider process cannot be queried.
+        /// </summary>
+        private static void MergeDeclaredCategories(
+            ModuleConfig module,
+            IDictionary<string, CategoryBuilder> categoryBuilders,
+            object mergeLock)
+        {
+            lock (mergeLock)
+            {
+                foreach (var category in CreateDeclaredCategoryPayloads(module))
+                {
+                    var groupKey = !string.IsNullOrWhiteSpace(category.GroupKey)
+                        ? category.GroupKey
+                        : $"{module.Id}:{category.Id}";
+                    GetOrCreateCategoryBuilder(categoryBuilders, groupKey, category);
+                }
             }
         }
 

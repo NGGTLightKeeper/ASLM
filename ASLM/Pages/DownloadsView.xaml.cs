@@ -54,6 +54,8 @@ namespace ASLM.Pages
         private readonly HashSet<string> _selectedFilterKeys = new(StringComparer.OrdinalIgnoreCase);
         private string _lastCatalogSignature = string.Empty;
         private string _lastDetailSignature = string.Empty;
+        private int _configuredProviderCount;
+        private int _successfulProviderCount;
         private List<DownloadCatalogItem> _categoryItems = [];
         private DownloadCategoryViewModel? _activeCategory;
         private DownloadListItemViewModel? _selectedItem;
@@ -399,9 +401,7 @@ namespace ASLM.Pages
                 ItemListEmptyMessage = snapshot.Warnings.Count > 0
                     ? string.Join(" ", snapshot.Warnings)
                     : BuildEmptyItemListMessage();
-                DetailEmptyMessage = snapshot.Categories.Count == 0
-                    ? L.Get(LocalizationKeys.Downloads_DetailEmpty_NoBridge)
-                    : L.Get(LocalizationKeys.Downloads_DetailEmpty_Hint);
+                DetailEmptyMessage = BuildDetailEmptyMessage();
 
                 if (_selectedItem != null)
                 {
@@ -414,15 +414,7 @@ namespace ASLM.Pages
 
                 if (!silentRefresh)
                 {
-                    StatusText = snapshot.Categories.Count == 0
-                        ? L.Get(LocalizationKeys.Downloads_NoSharedDownloads)
-                        : forceRefresh
-                            ? snapshot.Categories.Count == 1
-                                ? L.Get(LocalizationKeys.Downloads_CatalogUpdatedOneCategory)
-                                : L.Get(LocalizationKeys.Downloads_CatalogUpdatedManyFormat, snapshot.Categories.Count)
-                            : snapshot.Categories.Count == 1
-                                ? L.Get(LocalizationKeys.Downloads_LoadedOneCategory)
-                                : L.Get(LocalizationKeys.Downloads_LoadedManyFormat, snapshot.Categories.Count);
+                    StatusText = BuildCatalogStatus(snapshot, forceRefresh);
                 }
             }
             catch (OperationCanceledException)
@@ -458,6 +450,8 @@ namespace ASLM.Pages
         /// </summary>
         private void ApplySnapshot(DownloadCatalogSnapshot snapshot, string? selectedCategoryKey, string? selectedItemKey)
         {
+            _configuredProviderCount = snapshot.ConfiguredProviderCount;
+            _successfulProviderCount = snapshot.SuccessfulProviderCount;
             Categories.Clear();
             foreach (var category in snapshot.Categories)
             {
@@ -485,6 +479,10 @@ namespace ASLM.Pages
             _categoryItems = category?.Category.Items.ToList() ?? [];
             BuildAvailableFilters();
             ApplyCurrentItemFilters(selectedItemKey);
+            if (_selectedItem == null)
+            {
+                DetailEmptyMessage = BuildDetailEmptyMessage();
+            }
             RaiseCategoryProperties();
         }
 
@@ -618,6 +616,56 @@ namespace ASLM.Pages
             return L.Get(LocalizationKeys.Downloads_EmptyCategory);
         }
 
+        /// <summary>
+        /// Distinguishes an absent bridge from providers that failed or returned no downloads.
+        /// </summary>
+        private string BuildDetailEmptyMessage()
+        {
+            if (_configuredProviderCount > 0 && _successfulProviderCount == 0)
+            {
+                return L.Get(LocalizationKeys.Downloads_CatalogBridgeLoadFailed);
+            }
+
+            if (Categories.Count > 0)
+            {
+                return L.Get(LocalizationKeys.Downloads_EmptyCategory);
+            }
+
+            if (_configuredProviderCount == 0)
+            {
+                return L.Get(LocalizationKeys.Downloads_DetailEmpty_NoBridge);
+            }
+
+            return L.Get(LocalizationKeys.Downloads_NoSharedDownloads);
+        }
+
+        /// <summary>
+        /// Builds the status shown after one catalog snapshot has completed.
+        /// </summary>
+        private static string BuildCatalogStatus(DownloadCatalogSnapshot snapshot, bool forceRefresh)
+        {
+            if (snapshot.ConfiguredProviderCount > 0 && snapshot.SuccessfulProviderCount == 0)
+            {
+                return L.Get(LocalizationKeys.Downloads_CatalogBridgeLoadFailed);
+            }
+
+            if (snapshot.Categories.Count == 0)
+            {
+                return L.Get(LocalizationKeys.Downloads_NoSharedDownloads);
+            }
+
+            if (forceRefresh)
+            {
+                return snapshot.Categories.Count == 1
+                    ? L.Get(LocalizationKeys.Downloads_CatalogUpdatedOneCategory)
+                    : L.Get(LocalizationKeys.Downloads_CatalogUpdatedManyFormat, snapshot.Categories.Count);
+            }
+
+            return snapshot.Categories.Count == 1
+                ? L.Get(LocalizationKeys.Downloads_LoadedOneCategory)
+                : L.Get(LocalizationKeys.Downloads_LoadedManyFormat, snapshot.Categories.Count);
+        }
+
 
         // Localization
 
@@ -634,13 +682,9 @@ namespace ASLM.Pages
             OnPropertyChanged(nameof(ActiveCategoryTitle));
             OnPropertyChanged(nameof(ActiveCategoryItemCountLabel));
 
-            if (Categories.Count == 0)
+            if (!HasSelectedItem)
             {
-                DetailEmptyMessage = L.Get(LocalizationKeys.Downloads_DetailEmpty_NoBridge);
-            }
-            else if (!HasSelectedItem)
-            {
-                DetailEmptyMessage = L.Get(LocalizationKeys.Downloads_DetailEmpty_Hint);
+                DetailEmptyMessage = BuildDetailEmptyMessage();
             }
 
             if (IsItemListEmptyVisible)
@@ -1367,7 +1411,14 @@ namespace ASLM.Pages
         private static string ComputeCatalogSignature(DownloadCatalogSnapshot snapshot)
         {
             var builder = new StringBuilder();
+            builder.Append(snapshot.ConfiguredProviderCount).Append(';');
+            builder.Append(snapshot.SuccessfulProviderCount).Append(';');
             builder.Append(snapshot.Categories.Count).Append(';');
+
+            foreach (var warning in snapshot.Warnings)
+            {
+                AppendSignatureSegment(builder, warning);
+            }
 
             foreach (var category in snapshot.Categories)
             {

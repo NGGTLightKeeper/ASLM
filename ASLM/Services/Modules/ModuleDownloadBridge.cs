@@ -14,6 +14,7 @@ namespace ASLM.Services.Modules
     public class ModuleDownloadBridge
     {
         private const int MaxBridgeOutputCharacters = 2_000_000;
+        private static readonly TimeSpan BridgeRequestTimeout = TimeSpan.FromSeconds(30);
 
         private readonly EngineInstaller _engineInstaller;
         private readonly ModuleEnvironmentResolver _environmentResolver;
@@ -252,37 +253,46 @@ namespace ASLM.Services.Modules
                 return CreateErrorResponse("Module directory could not be resolved.");
             }
 
+            using var requestCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            requestCts.CancelAfter(BridgeRequestTimeout);
+            var requestToken = requestCts.Token;
+            Process? process = null;
+            Task<string>? stdoutTask = null;
+            Task<string>? stderrTask = null;
+
             try
             {
                 if (!string.IsNullOrWhiteSpace(bridge.Engine))
                 {
                     var engineConfig = _engineInstaller.GetEngineConfig(bridge.Engine)
                         ?? throw new InvalidOperationException($"Engine '{bridge.Engine}' is not installed.");
-                    await _environmentResolver.EnsureEnvironmentAsync(module, engineConfig, null, ct);
+                    await _environmentResolver.EnsureEnvironmentAsync(module, engineConfig, null, requestToken)
+                        .ConfigureAwait(false);
                 }
 
                 // Start the bridge process with the same module context used by regular commands.
                 var psi = CreateProcessStartInfo(module, bridge, moduleDir);
-                using var process = new Process { StartInfo = psi };
+                process = new Process { StartInfo = psi };
 
                 if (!process.Start())
                 {
                     return CreateErrorResponse("Downloads bridge process could not be started.");
                 }
 
-                // Write the JSON request first, then read both output streams to avoid blocking.
+                // Drain both streams immediately so a verbose bridge cannot block while stdin is written.
+                stdoutTask = ReadBoundedToEndAsync(process.StandardOutput, requestToken);
+                stderrTask = ReadBoundedToEndAsync(process.StandardError, requestToken);
+
+                // StandardInputEncoding is explicitly BOM-less so every JSON parser sees '{' as the first byte.
                 var requestJson = JsonSerializer.Serialize(request, _jsonOptions);
-                await process.StandardInput.WriteAsync(requestJson.AsMemory(), ct);
-                await process.StandardInput.FlushAsync();
+                await process.StandardInput.WriteAsync(requestJson.AsMemory(), requestToken).ConfigureAwait(false);
+                await process.StandardInput.FlushAsync().ConfigureAwait(false);
                 process.StandardInput.Close();
 
-                var stdoutTask = ReadBoundedToEndAsync(process.StandardOutput, ct);
-                var stderrTask = ReadBoundedToEndAsync(process.StandardError, ct);
+                await process.WaitForExitAsync(requestToken).ConfigureAwait(false);
 
-                await process.WaitForExitAsync(ct);
-
-                var stdout = await stdoutTask;
-                var stderr = await stderrTask;
+                var stdout = await stdoutTask.ConfigureAwait(false);
+                var stderr = await stderrTask.ConfigureAwait(false);
 
                 if (process.ExitCode != 0)
                 {
@@ -315,14 +325,86 @@ namespace ASLM.Services.Modules
                 response.Normalize();
                 return response;
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
+                await TerminateProcessTreeAsync(process, stdoutTask, stderrTask).ConfigureAwait(false);
                 throw;
+            }
+            catch (OperationCanceledException) when (requestCts.IsCancellationRequested)
+            {
+                await TerminateProcessTreeAsync(process, stdoutTask, stderrTask).ConfigureAwait(false);
+                _logger.LogWarning(
+                    "Downloads bridge request for module {ModuleId} timed out after {TimeoutSeconds} seconds.",
+                    module.Id,
+                    BridgeRequestTimeout.TotalSeconds);
+                return CreateErrorResponse(
+                    $"Downloads bridge request timed out after {BridgeRequestTimeout.TotalSeconds:0} seconds.");
             }
             catch (Exception ex)
             {
+                await TerminateProcessTreeAsync(process, stdoutTask, stderrTask).ConfigureAwait(false);
                 _logger.LogError(ex, "Downloads bridge invocation failed for module {ModuleId}.", module.Id);
                 return CreateErrorResponse(ex.Message);
+            }
+            finally
+            {
+                process?.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Stops a failed or canceled bridge process and observes its redirected output tasks.
+        /// </summary>
+        private static async Task TerminateProcessTreeAsync(
+            Process? process,
+            Task<string>? stdoutTask,
+            Task<string>? stderrTask)
+        {
+            if (process != null)
+            {
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        process.Kill(entireProcessTree: true);
+                    }
+                }
+                catch
+                {
+                    // The process may have exited between the state check and termination request.
+                }
+
+                try
+                {
+                    await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // Cleanup remains best-effort when the operating system no longer exposes the process handle.
+                }
+            }
+
+            await ObserveOutputTaskAsync(stdoutTask).ConfigureAwait(false);
+            await ObserveOutputTaskAsync(stderrTask).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Observes one redirected output task without allowing cleanup failures to replace the primary error.
+        /// </summary>
+        private static async Task ObserveOutputTaskAsync(Task<string>? outputTask)
+        {
+            if (outputTask == null)
+            {
+                return;
+            }
+
+            try
+            {
+                await outputTask.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+            }
+            catch
+            {
+                // Output may be interrupted while a canceled process tree is being terminated.
             }
         }
 
@@ -379,7 +461,7 @@ namespace ASLM.Services.Modules
         /// <summary>
         /// Creates the process startup info for one bridge invocation.
         /// </summary>
-        private ProcessStartInfo CreateProcessStartInfo(
+        internal ProcessStartInfo CreateProcessStartInfo(
             ModuleConfig module,
             ModuleDownloadsBridge bridge,
             string moduleDir)
@@ -422,6 +504,7 @@ namespace ASLM.Services.Modules
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
+                StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
                 StandardOutputEncoding = Encoding.UTF8,
                 StandardErrorEncoding = Encoding.UTF8
             };
